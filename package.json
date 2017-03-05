@@ -1,0 +1,41 @@
+{
+  "name": "wildduck",
+  "version": "1.0.0",
+  "description": "IMAP server built with Node.js and MongoDB",
+  "main": "index.js",
+  "scripts": {
+    "test": "grunt"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "EUPL-1.1",
+  "devDependencies": {
+    "chai": "^3.5.0",
+    "eslint-config-nodemailer": "^1.0.0",
+    "grunt": "^1.0.1",
+    "grunt-cli": "^1.2.0",
+    "grunt-mocha-test": "^0.13.2",
+    "mocha": "^3.0.2",
+    "grunt-eslint": "^19.0.0"
+  },
+  "dependencies": {
+    "addressparser": "^1.0.1",
+    "clone": "^1.0.2",
+    "libbase64": "^0.1.0",
+    "nodemailer-fetch": "^1.6.0",
+    "utf7": "^1.0.2",
+    "bcryptjs": "^2.4.3",
+    "config": "^1.25.1",
+    "mailparser": "^2.0.2",
+    "mongodb": "^2.2.24",
+    "npmlog": "^4.0.2",
+    "redis": "^2.6.5",
+    "smtp-server": "^2.0.2",
+    "uuid": "^3.0.1",
+    "toml": "^2.3.2"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/wildduck-email/wildduck.git"
+  }
+}
