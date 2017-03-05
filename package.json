@@ -7,7 +7,7 @@
     "test": "grunt"
   },
   "keywords": [],
-  "author": "",
+  "author": "Andris Reinman",
   "license": "EUPL-1.1",
   "devDependencies": {
     "chai": "^3.5.0",
