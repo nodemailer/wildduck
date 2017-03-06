@@ -1,5 +1,7 @@
 # Wild Duck Mail Agent
 
+![](https://cldup.com/qlZnwOz0na.jpg)
+
 This is a very early preview of an IMAP server built with Node.js and MongoDB.
 
 ### Goals of the Project
