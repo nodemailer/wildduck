@@ -11,7 +11,7 @@ This is a very early preview of an IMAP server built with Node.js and MongoDB.
 
 ### Todo
 
-Does it work? Yes, it does. You can run the server and get a working IMAP server for mail store, LMTP server for pushing messages to the mail store and HTTP API server to create new users. All handled by Node.js and MongoDB, no additional dependencies needed.
+Does it work? Yes, it does. You can run the server and get a working IMAP server for mail store, LMTP and SMTP servers for pushing messages to the mail store and HTTP API server to create new users. All handled by Node.js and MongoDB, no additional dependencies needed.
 
 Is the server scalable? Not yet. These are some actions that must be done:
 
