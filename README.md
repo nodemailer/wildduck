@@ -82,7 +82,7 @@ Create an email account and use your IMAP client to connect to it. To send mail 
 node examples/push.mail.js username@example.com
 ```
 
-This should "deliver" a new message to the INBOX of *username@example.com*, if your email client is connected then you should promptly see the new message.
+This should "deliver" a new message to the INBOX of *username@example.com* by using the built-in SMTP maildrop interface. If your email client is connected then you should promptly see the new message.
 
 ## License
 
