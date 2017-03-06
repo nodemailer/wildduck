@@ -11,6 +11,8 @@ This is a very early preview of an IMAP server built with Node.js and MongoDB.
 
 ### Todo
 
+Does it work? Yes, it does. You can run the server and get a working IMAP server for mail store, LMTP server for pushing messages to the mail store and HTTP API server to create new users.
+
 Is the server scalable? Not yet. These are some actions that must be done:
 
 1. Separate attachments from indexed mime tree and store these to GridFS. Currently entire message is loaded whenever a FETCH or SEARCH call is made (unless body needs not to be touched, for example if only FLAGs are checked)
