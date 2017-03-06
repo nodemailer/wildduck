@@ -17,20 +17,19 @@ const server = new SMTPServer({
     logger: {
         info(...args) {
             args.shift();
-            log.info('LMTP', ...args);
+            log.info('SMTP', ...args);
         },
         debug(...args) {
             args.shift();
-            log.silly('LMTP', ...args);
+            log.silly('SMTP', ...args);
         },
         error(...args) {
             args.shift();
-            log.error('LMTP', ...args);
+            log.error('SMTP', ...args);
         }
     },
 
     name: false,
-    lmtp: true,
 
     // not required but nice-to-have
     banner: 'Welcome to Wild Duck Mail Agent',
@@ -39,7 +38,7 @@ const server = new SMTPServer({
     disabledCommands: ['AUTH', 'STARTTLS'],
 
     // Accept messages up to 10 MB
-    size: config.lmtp.maxMB * 1024 * 1024,
+    size: config.smtp.maxMB * 1024 * 1024,
 
     // Validate RCPT TO envelope address. Example allows all addresses that do not start with 'deny'
     // If this method is not set, all addresses are allowed
@@ -50,7 +49,7 @@ const server = new SMTPServer({
             username
         }, (err, user) => {
             if (err) {
-                log.error('LMTP', err);
+                log.error('SMTP', err);
                 return callback(new Error('Database error'));
             }
             if (!user) {
@@ -82,14 +81,14 @@ const server = new SMTPServer({
         });
 
         stream.once('error', err => {
-            log.error('LMTP', err);
+            log.error('SMTP', err);
             callback(new Error('Error reading from stream'));
         });
 
         stream.once('end', () => {
             let err;
             if (stream.sizeExceeded) {
-                err = new Error('Error: message exceeds fixed maximum message size ' + config.lmtp.maxMB + ' MB');
+                err = new Error('Error: message exceeds fixed maximum message size ' + config.smtp.maxMB + ' MB');
                 err.responseCode = 552;
                 return callback(err);
             }
@@ -113,7 +112,7 @@ const server = new SMTPServer({
                 chunklen += header.length;
 
                 imapServer.addToMailbox(username, 'INBOX', {
-                    source: 'LMTP',
+                    source: 'SMTP',
                     from: normalizeAddress(session.envelope.mailFrom && session.envelope.mailFrom.address || ''),
                     to: session.envelope.rcptTo.map(item => normalizeAddress(item.address)),
                     origin: session.remoteAddress,
@@ -127,7 +126,7 @@ const server = new SMTPServer({
                     chunklen -= header.length;
 
                     if (err) {
-                        log.error('LMTP', err);
+                        log.error('SMTP', err);
                     }
 
                     storeNext();
@@ -163,12 +162,12 @@ function normalizeAddress(address, withNames) {
 }
 
 module.exports = (imap, done) => {
-    if (!config.lmtp.enabled) {
+    if (!config.smtp.enabled) {
         return setImmediate(() => done(null, false));
     }
     MongoClient.connect(config.mongo, (err, mongo) => {
         if (err) {
-            log.error('LMTP', 'Could not initialize MongoDB: %s', err.message);
+            log.error('SMTP', 'Could not initialize MongoDB: %s', err.message);
             return;
         }
         database = mongo;
@@ -181,10 +180,10 @@ module.exports = (imap, done) => {
                 started = true;
                 return done(err);
             }
-            log.error('LMTP', err);
+            log.error('SMTP', err);
         });
 
-        server.listen(config.lmtp.port, config.lmtp.host, () => {
+        server.listen(config.smtp.port, config.smtp.host, () => {
             if (started) {
                 return server.close();
             }

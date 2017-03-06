@@ -30,7 +30,7 @@ Is the server scalable? Not yet. These are some actions that must be done:
 
 **Step 2.** Install dependencies
 
-    $ npm install --production
+    $ npm install
 
 **Step 3.** Modify [config file](./config/default.js)
 
@@ -73,6 +73,16 @@ The response for successful operation should look like this:
 ```
 
 After you have created an user you can use these credentials to log in to the IMAP server. Additionally the LMTP server starts accepting mail for this email address.
+
+## Testing
+
+Create an email account and use your IMAP client to connect to it. To send mail to this account, run the example script:
+
+```
+node examples/push.mail.js username@example.com
+```
+
+This should "deliver" a new message to the INBOX of *username@example.com*, if your email client is connected then you should promptly see the new message.
 
 ## License
 

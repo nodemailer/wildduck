@@ -4,6 +4,7 @@ let config = require('config');
 let log = require('npmlog');
 let imap = require('./imap');
 let lmtp = require('./lmtp');
+let smtp = require('./smtp');
 let api = require('./api');
 
 log.level = config.log.level;
@@ -18,12 +19,18 @@ imap((err, imap) => {
             log.error('App', 'Failed to start LMTP server');
             return process.exit(1);
         }
-        api(imap, err => {
+        smtp(imap, err => {
             if (err) {
-                log.error('App', 'Failed to start API server');
+                log.error('App', 'Failed to start SMTP server');
                 return process.exit(1);
             }
-            log.info('App', 'All servers started, ready to process some mail');
+            api(imap, err => {
+                if (err) {
+                    log.error('App', 'Failed to start API server');
+                    return process.exit(1);
+                }
+                log.info('App', 'All servers started, ready to process some mail');
+            });
         });
     });
 });

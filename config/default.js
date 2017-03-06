@@ -13,7 +13,15 @@ module.exports = {
     },
 
     lmtp: {
+        enabled: true,
         port: 2424,
+        host: '0.0.0.0',
+        maxMB: 5
+    },
+
+    smtp: {
+        enabled: true,
+        port: 2525,
         host: '0.0.0.0',
         maxMB: 5
     },

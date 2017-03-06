@@ -16,7 +16,8 @@
     "grunt-cli": "^1.2.0",
     "grunt-eslint": "^19.0.0",
     "grunt-mocha-test": "^0.13.2",
-    "mocha": "^3.2.0"
+    "mocha": "^3.2.0",
+    "nodemailer": "^3.1.4"
   },
   "dependencies": {
     "addressparser": "^1.0.1",
