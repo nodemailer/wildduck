@@ -23,17 +23,24 @@ Is the server scalable? Not yet. These are some actions that must be done:
 
 ## Usage
 
-Install dependencies
+**Step 1.** Get the code from github
 
-    npm install --production
+    $ git clone git://github.com/wildduck-email/wildduck.git
+    $ cd wildduck
 
-Modify [config file](./config/default.js)
+**Step 2.** Install dependencies
 
-Run the [index queries](./indexes.js) in MongoDB (optional, the app would work without it as indexes only become relevant once you have more than few messages stored)
+    $ npm install --production
 
-Run the server
+**Step 3.** Modify [config file](./config/default.js)
+
+**Step 4.** Run the [index queries](./indexes.js) in MongoDB (optional, the app would work without it as indexes only become relevant once you have more than few messages stored)
+
+**Step 5.** Run the server
 
     npm start
+
+**Step 6.** Create an user account (see [below](#create-user))
 
 ## Create user
 
