@@ -15,10 +15,11 @@ Does it work? Yes, it does. You can run the server and get a working IMAP server
 
 Is the server scalable? Not yet. These are some actions that must be done:
 
-1. Separate attachments from indexed mime tree and store these to GridFS. Currently entire message is loaded whenever a FETCH or SEARCH call is made (unless body needs not to be touched, for example if only FLAGs are checked)
+1. Separate attachments from indexed mime tree and store these to GridFS. Currently entire message is loaded whenever a FETCH or SEARCH call is made (unless body needs not to be touched, for example if only FLAGs are checked). This also means that the message size is currently limited. MongoDB database records are capped at 16MB and this should contain also the metadata for the message.
 2. Optimize SEARCH queries to use MongoDB queries. Currently only simple stuff (flag, internaldate, not flag, modseq) is included in query and more complex comparisons are handled by the application but this means that too much data must be loaded from database (unless it is a very simple query like "SEARCH UNSEEN" that is already optimized)
 3. Optimize FETCH queries to load only partial data for BODY subparts
 4. Build a publish-subscribe solution to notify changes process-wide (and server-wide). Currently update notifications are propagated only inside the same process (journaled update data is available from DB for everybody but the notification that there is new data is not propagated outside current process).
+5. Parse incoming message into the mime tree as a stream. Currently the entire message is buffered in memory before being parsed.
 
 ## Usage
 
