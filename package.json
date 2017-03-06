@@ -1,6 +1,6 @@
 {
   "name": "wildduck",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "IMAP server built with Node.js and MongoDB",
   "main": "index.js",
   "scripts": {
@@ -20,19 +20,21 @@
   },
   "dependencies": {
     "addressparser": "^1.0.1",
-    "clone": "^1.0.2",
-    "libbase64": "^0.1.0",
-    "nodemailer-fetch": "^1.6.0",
-    "utf7": "^1.0.2",
     "bcryptjs": "^2.4.3",
+    "clone": "^1.0.2",
     "config": "^1.25.1",
+    "joi": "^10.2.2",
+    "libbase64": "^0.1.0",
     "mailparser": "^2.0.2",
     "mongodb": "^2.2.24",
+    "nodemailer-fetch": "^1.6.0",
     "npmlog": "^4.0.2",
     "redis": "^2.6.5",
+    "restify": "^4.3.0",
     "smtp-server": "^2.0.2",
-    "uuid": "^3.0.1",
-    "toml": "^2.3.2"
+    "toml": "^2.3.2",
+    "utf7": "^1.0.2",
+    "uuid": "^3.0.1"
   },
   "repository": {
     "type": "git",

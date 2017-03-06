@@ -19,6 +19,38 @@ Run the server
 
     npm start
 
+## Create user
+
+Users can be created with HTTP requests
+
+### POST /user/create
+
+Arguments
+
+  * **username** is an email address of the user
+  * **password** is the password for the user
+
+**Example**
+
+```
+curl -XPOST "http://localhost:8080/user/create" -H 'content-type: application/json' -d '{
+    "username": "username@example.com",
+    "password": "secretpass"
+}'
+```
+
+The response for successful operation should look like this:
+
+```json
+{
+    "success": true,
+    "id": "58bd6815dddb5ac5063d3590",
+    "username": "username@example.com"
+}
+```
+
+After you have created an user you can use these credentials to log in to the IMAP server. Additionally the LMTP server starts accepting mail for this email address.
+
 ## License
 
 Wild Duck Mail Agent is licensed under the [European Union Public License 1.1](http://ec.europa.eu/idabc/eupl.html).

@@ -5,17 +5,20 @@ module.exports = {
         level: 'silly'
     },
 
-    imap: {
-        port: 9993,
-        host: '127.0.0.1',
-        maxUnflaggedMessages: 10
-    },
-
     mongo: 'mongodb://127.0.0.1:27017/wildduck',
 
-    mx: {
-        port: 2525,
+    imap: {
+        port: 9993,
+        host: '127.0.0.1'
+    },
+
+    lmtp: {
+        port: 2424,
         host: '0.0.0.0',
-        maxMB: 2
+        maxMB: 5
+    },
+
+    api: {
+        port: 8080
     }
 };
