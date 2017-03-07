@@ -14,13 +14,16 @@ This is a very early preview of an IMAP server built with Node.js and MongoDB.
 
 Wild Duck IMAP server supports the following IMAP standards:
 
-* The entire IMAP4rev1 suite with some minor differences from the spec. Intentionally missing is the `\Recent` flag as it does not provide any real value, only makes things more complicated. RENAME works a bit differently than spec describes.
-* IDLE
-* CONDSTORE (except metadata stuff)
-* STARTTLS
-* UNSELECT
-* UIDPLUS
-* SPECIAL-USE
+* The entire **IMAP4rev1** suite with some minor differences from the spec. Intentionally missing is the `\Recent` flag as it does not provide any real value, only makes things more complicated. RENAME works a bit differently than spec describes.
+* **IDLE** – notfies about new and deleted messages and also about flag updates
+* **CONDSTORE** and **ENABLE** – supports most of the spec, except metadata stuff which is ignored
+* **STARTTLS**
+* **NAMESPACE** – minimal support, just lists the single user namespace with hierarchy separator
+* **UNSELECT**
+* **UIDPLUS**
+* **SPECIAL-USE**
+* **ID**
+* **AUTHENTICATE PLAIN** and **SASL-IR**
 
 ### FAQ
 
