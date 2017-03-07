@@ -8,12 +8,35 @@ This is a very early preview of an IMAP server built with Node.js and MongoDB.
 
 1. Build a scalable IMAP server that uses clustered database instead of single machine file system as mail store
 2. Push notifications. Your application (eg. a webmail client) should be able to request changes (new and deleted messages, flag changes) to be pushed to client instead of using IMAP to fetch stuff from the server
+3. Provide Gmail-like features like pushing sent messages automatically to Sent Mail folder or notifying about messages moved to Junk folder so these could be marked as spam
 
-### Todo
+### Supported features
 
-Does it work? Yes, it does. You can run the server and get a working IMAP server for mail store, LMTP and SMTP servers for pushing messages to the mail store and HTTP API server to create new users. All handled by Node.js and MongoDB, no additional dependencies needed.
+Wild Duck IMAP server supports the following IMAP standards:
 
-Is the server scalable? Not yet. These are some actions that must be done:
+* The entire IMAP4rev1 suite with some minor differences from the spec. Intentionally missing is the `\Recent` flag as it does not provide any real value, only makes things more complicated. RENAME works a bit differently than spec describes.
+* IDLE
+* CONDSTORE (except metadata stuff)
+* STARTTLS
+* UNSELECT
+* UIDPLUS
+* SPECIAL-USE
+
+### FAQ
+
+**Does it work?**
+
+Yes, it does. You can run the server and get a working IMAP server for mail store, LMTP and/or SMTP servers for pushing messages to the mail store and HTTP API server to create new users. All handled by Node.js and MongoDB, no additional dependencies needed.
+
+**Isn't it bad to use a database as a mail store?**
+
+Yes, historically it has been considered a bad practice to store emails in a database. And for a good reason. The data model of relational databases like MySQL does not work well with tree like structures (email mime tree) or large blobs (email source).
+
+Notice the word "relational"? In fact documents stores like MongoDB work very well with emails. Document store is great for storing tree-like structures and while GridFS is not as good as "real" object storage, it is good enough for storing the raw parts of the message.
+
+**Is the server scalable?**
+
+Not yet. These are some actions that must be done:
 
 1. Separate attachments from indexed mime tree and store these to GridFS. Currently entire message is loaded whenever a FETCH or SEARCH call is made (unless body needs not to be touched, for example if only FLAGs are checked). This also means that the message size is currently limited. MongoDB database records are capped at 16MB and this should contain also the metadata for the message.
 2. Optimize SEARCH queries to use MongoDB queries. Currently only simple stuff (flag, internaldate, not flag, modseq) is included in query and more complex comparisons are handled by the application but this means that too much data must be loaded from database (unless it is a very simple query like "SEARCH UNSEEN" that is already optimized)
