@@ -2,6 +2,7 @@
 
 const crypto = require('crypto');
 const EventEmitter = require('events').EventEmitter;
+const redis = require('redis');
 
 class ImapNotifier extends EventEmitter {
 
@@ -9,6 +10,9 @@ class ImapNotifier extends EventEmitter {
         super();
 
         this.database = options.database;
+
+        this.subsriber = redis.createClient();
+        this.publisher = redis.createClient();
 
         let logfunc = (...args) => {
             let level = args.shift() || 'DEBUG';
@@ -26,7 +30,18 @@ class ImapNotifier extends EventEmitter {
         this._listeners = new EventEmitter();
         this._listeners.setMaxListeners(0);
 
-        EventEmitter.call(this);
+        this.publishTimer = false;
+        this.subsriber.on('message', (channel, message) => {
+            if (channel === 'wd_events') {
+                try {
+                    let data = JSON.parse(message);
+                    this._listeners.emit(data.e, data.p);
+                } catch (E) {
+                    //
+                }
+            }
+        });
+        this.subsriber.subscribe('wd_events');
     }
 
     /**
@@ -156,7 +171,11 @@ class ImapNotifier extends EventEmitter {
     fire(username, path, payload) {
         let eventName = this._eventName(username, path);
         setImmediate(() => {
-            this._listeners.emit(eventName, payload);
+            let data = JSON.stringify({
+                e: eventName,
+                p: payload
+            });
+            this.publisher.publish('wd_events', data);
         });
     }
 
