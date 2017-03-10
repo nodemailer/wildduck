@@ -13,25 +13,25 @@ module.exports = {
     },
 
     imap: {
-        port: 9993,
+        port: 9998,
         host: '127.0.0.1'
     },
 
     lmtp: {
         enabled: true,
-        port: 2424,
+        port: 3424,
         host: '0.0.0.0',
         maxMB: 5
     },
 
     smtp: {
         enabled: true,
-        port: 2525,
+        port: 3525,
         host: '0.0.0.0',
         maxMB: 5
     },
 
     api: {
-        port: 8080
+        port: 8380
     }
 };
