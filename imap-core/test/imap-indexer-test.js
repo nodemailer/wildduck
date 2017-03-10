@@ -6,14 +6,14 @@
 let chai = require('chai');
 let expect = chai.expect;
 
-let http = require('http');
+//let http = require('http');
 let fs = require('fs');
 let Indexer = require('../lib/indexer/indexer');
 let indexer = new Indexer();
 
 chai.config.includeStack = true;
 
-const HTTP_PORT = 9998;
+//const HTTP_PORT = 9998;
 
 let fixtures = {
     simple: {
@@ -44,6 +44,7 @@ describe('#parseMimeTree', function () {
     });
 });
 
+/*
 describe('#rebuild', function () {
     let httpServer;
 
@@ -66,6 +67,7 @@ describe('#rebuild', function () {
     afterEach(function (done) {
         httpServer.close(done);
     });
+
 
     it('should rebuild using stream', function (done) {
         let message = `Content-Type: multipart/mixed;
@@ -230,3 +232,4 @@ X-Attachment-Stream-Encoded: Yes
         });
     });
 });
+*/

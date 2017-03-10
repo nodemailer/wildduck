@@ -564,20 +564,31 @@ module.exports = function (options) {
         let folder = folders.get(mailbox);
         let highestModseq = 0;
 
-        let uidList = folder.messages.filter(message => {
-            let match = session.matchSearchQuery(message, options.query);
-            if (match && highestModseq < message.modseq) {
-                highestModseq = message.modseq;
+        let uidList = [];
+        let checked = 0;
+        let checkNext = () => {
+            if (checked >= folder.messages.length) {
+                return callback(null, {
+                    uidList,
+                    highestModseq
+                });
             }
-            return match;
-        }).map(message => message.uid);
-
-        callback(null, {
-            uidList,
-            highestModseq
-        });
+            let message = folder.messages[checked++];
+            session.matchSearchQuery(message, options.query, (err, match) => {
+                if (err) {
+                    // ignore
+                }
+                if (match && highestModseq < message.modseq) {
+                    highestModseq = message.modseq;
+                }
+                if (match) {
+                    uidList.push(message.uid);
+                }
+                checkNext();
+            });
+        };
+        checkNext();
     };
-
 
     return server;
 };

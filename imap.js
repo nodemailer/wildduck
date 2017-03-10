@@ -718,7 +718,8 @@ server.onFetch = function (path, options, session, callback) {
             internaldate: true,
             flags: true,
             envelope: true,
-            bodystructure: true
+            bodystructure: true,
+            size: true
         };
 
         if (!options.metadataOnly) {
@@ -1126,7 +1127,7 @@ server.addToMailbox = (username, path, meta, date, flags, raw, callback) => {
                     headerdate,
                     flags,
                     unseen: !flags.includes('\\Seen'),
-                    size: raw.length,
+                    size: server.indexer.getSize(mimeTree),
                     meta,
                     modseq: 0,
                     mimeTree,

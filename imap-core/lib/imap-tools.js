@@ -492,10 +492,14 @@ module.exports.getQueryResponse = function (query, message, options) {
                 break;
 
             case 'bodystructure':
-                if (!mimeTree) {
-                    mimeTree = indexer.parseMimeTree(message.raw);
+                if (message.envelope) {
+                    value = message.envelope;
+                } else {
+                    if (!mimeTree) {
+                        mimeTree = indexer.parseMimeTree(message.raw);
+                    }
+                    value = indexer.getBodyStructure(mimeTree);
                 }
-                value = indexer.getBodyStructure(mimeTree);
                 break;
 
             case 'envelope':

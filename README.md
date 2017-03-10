@@ -110,7 +110,7 @@ After you have created an user you can use these credentials to log in to the IM
 Create an email account and use your IMAP client to connect to it. To send mail to this account, run the example script:
 
 ```
-node examples/push.mail.js username@example.com
+node examples/push-mail.js username@example.com
 ```
 
 This should "deliver" a new message to the INBOX of *username@example.com* by using the built-in SMTP maildrop interface. If your email client is connected then you should promptly see the new message.

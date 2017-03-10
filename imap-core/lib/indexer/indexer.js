@@ -2,22 +2,26 @@
 
 'use strict';
 
-let stream = require('stream');
-let PassThrough = stream.PassThrough;
+const stream = require('stream');
+const PassThrough = stream.PassThrough;
 
-let BodyStructure = require('./body-structure');
-let createEnvelope = require('./create-envelope');
-let parseMimeTree = require('./parse-mime-tree');
-let fetch = require('nodemailer-fetch');
-let libbase64 = require('libbase64');
-let util = require('util');
-let LengthLimiter = require('../length-limiter');
+const BodyStructure = require('./body-structure');
+const createEnvelope = require('./create-envelope');
+const parseMimeTree = require('./parse-mime-tree');
+const LengthLimiter = require('../length-limiter');
+// const ObjectID = require('mongodb').ObjectID;
+const GridFs = require('grid-fs');
+
+// TODO: store large attachments to GridStore
 
 class Indexer {
 
     constructor(options) {
         this.options = options || {};
         this.fetchOptions = this.options.fetchOptions || {};
+
+        this.database = this.options.database;
+        this.gridstore = new GridFs(this.database, 'attachments');
 
         // create logger
         this.logger = this.options.logger || {
@@ -53,7 +57,7 @@ class Indexer {
         let walk = (node, next) => {
 
             if (!textOnly || !root) {
-                append(filterHeaders(node.header).join('\r\n') + '\r\n');
+                append(formatHeaders(node.header).join('\r\n') + '\r\n');
             }
 
             let finalize = () => {
@@ -67,32 +71,29 @@ class Indexer {
 
             root = false;
 
-            if (node.body || node.parsedHeader['x-attachment-stream-url']) {
+            if (node.body || node.attachmentId) {
                 append(false, true); // force newline
                 size += node.size;
             }
 
             if (node.boundary) {
                 append('--' + node.boundary);
-            } else if (node.parsedHeader['x-attachment-stream-url']) {
-                return finalize();
             }
 
-            let pos = 0;
-            let processChildNodes = () => {
-                if (pos >= node.childNodes.length) {
-                    return finalize();
-                }
-                let childNode = node.childNodes[pos++];
-                walk(childNode, () => {
-                    if (pos < node.childNodes.length) {
-                        append('--' + node.boundary);
-                    }
-                    return processChildNodes();
-                });
-            };
-
             if (Array.isArray(node.childNodes)) {
+                let pos = 0;
+                let processChildNodes = () => {
+                    if (pos >= node.childNodes.length) {
+                        return finalize();
+                    }
+                    let childNode = node.childNodes[pos++];
+                    walk(childNode, () => {
+                        if (pos < node.childNodes.length) {
+                            append('--' + node.boundary);
+                        }
+                        return processChildNodes();
+                    });
+                };
                 processChildNodes();
             } else {
                 finalize();
@@ -132,7 +133,7 @@ class Indexer {
         let walk = (node, next) => {
 
             if (!textOnly || !root) {
-                append(filterHeaders(node.header).join('\r\n') + '\r\n');
+                append(formatHeaders(node.header).join('\r\n') + '\r\n');
             }
 
             root = false;
@@ -150,58 +151,25 @@ class Indexer {
 
             if (node.boundary) {
                 append('--' + node.boundary);
-            } else if (node.parsedHeader['x-attachment-stream-url']) {
-                let streamUrl = node.parsedHeader['x-attachment-stream-url'].replace(/^<|>$/g, '');
-                let streamEncoded = /^\s*YES\s*$/i.test(node.parsedHeader['x-attachment-stream-encoded']);
-
+            } else if (node.attachmentId) {
                 append(false, true); // force newline between header and contents
 
-                let headers = {};
-                if (this.fetchOptions.userAgent) {
-                    headers['User-Agent'] = this.fetchOptions.userAgent;
-                }
-
-                if (this.fetchOptions.cookies) {
-                    headers.Cookie = this.fetchOptions.cookies.get(streamUrl);
-                }
-
-                this.logger.debug('Fetching <%s>\nHeaders: %s', streamUrl, util.inspect(headers, false, 22));
-
                 let limiter = new LengthLimiter(node.size);
+                let attachmentStream = this.gridstore.createReadStream(node.attachmentId);
 
-                let fetchStream = fetch(streamUrl, {
-                    userAgent: this.fetchOptions.userAgent,
-                    maxRedirects: this.fetchOptions.maxRedirects,
-                    cookies: this.fetchOptions.cookies,
-                    timeout: 60 * 1000 // timeout after one minute of inactivity
-                });
-
-                fetchStream.on('error', err => {
+                attachmentStream.once('error', err => {
                     res.emit('error', err);
                 });
 
-                limiter.on('error', err => {
+                limiter.once('error', err => {
                     res.emit('error', err);
                 });
 
-                limiter.on('end', () => finalize());
+                limiter.once('end', () => finalize());
 
-                if (!streamEncoded) {
-                    let b64encoder = new libbase64.Encoder();
-                    b64encoder.on('error', err => {
-                        res.emit('error', err);
-                    });
-                    // encode stream as base64
-                    fetchStream.pipe(b64encoder).pipe(limiter).pipe(res, {
-                        end: false
-                    });
-                } else {
-                    // already encoded, pipe directly to output
-                    fetchStream.pipe(limiter).pipe(res, {
-                        end: false
-                    });
-                }
-
+                attachmentStream.pipe(limiter).pipe(res, {
+                    end: false
+                });
                 return;
             }
 
@@ -406,7 +374,7 @@ class Indexer {
             case 'header':
                 if (!selector.path) {
                     // BODY[HEADER] mail header
-                    return filterHeaders(node.header).join('\r\n') + '\r\n\r\n';
+                    return formatHeaders(node.header).join('\r\n') + '\r\n\r\n';
                 } else if (node.message) {
                     // BODY[1.2.3.HEADER] embedded message/rfc822 header
                     return (node.message.header || []).join('\r\n') + '\r\n\r\n';
@@ -418,7 +386,7 @@ class Indexer {
                 if (!selector.headers || !selector.headers.length) {
                     return '\r\n\r\n';
                 }
-                return filterHeaders(node.header).filter(line => {
+                return formatHeaders(node.header).filter(line => {
                     let key = line.split(':').shift().toLowerCase().trim();
                     return selector.headers.indexOf(key) >= 0;
                 }).join('\r\n') + '\r\n\r\n';
@@ -426,16 +394,16 @@ class Indexer {
             case 'header.fields.not':
                 // BODY[HEADER.FIELDS.NOT (Key1 Key2 KeyN)] all but selected header keys
                 if (!selector.headers || !selector.headers.length) {
-                    return filterHeaders(node.header).join('\r\n') + '\r\n\r\n';
+                    return formatHeaders(node.header).join('\r\n') + '\r\n\r\n';
                 }
-                return filterHeaders(node.header).filter(line => {
+                return formatHeaders(node.header).filter(line => {
                     let key = line.split(':').shift().toLowerCase().trim();
                     return selector.headers.indexOf(key) < 0;
                 }).join('\r\n') + '\r\n\r\n';
 
             case 'mime':
                 // BODY[1.2.3.MIME] mime node header
-                return filterHeaders(node.header).join('\r\n') + '\r\n\r\n';
+                return formatHeaders(node.header).join('\r\n') + '\r\n\r\n';
 
             case 'text':
                 if (!selector.path) {
@@ -451,15 +419,14 @@ class Indexer {
                 return '';
         }
     }
-
 }
 
-function filterHeaders(headers) {
+function formatHeaders(headers) {
     headers = headers || [];
     if (!Array.isArray(headers)) {
         headers = [].concat(headers || []);
     }
-    return headers.filter(header => !/^X-Attachment-Stream/i.test(header));
+    return headers;
 }
 
 module.exports = Indexer;

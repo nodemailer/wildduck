@@ -169,11 +169,6 @@ let queryHandlers = {
             parts = headers[i].split(':');
             key = (parts.shift() || '').trim().toLowerCase();
 
-            if (/^X-Attachment-Stream/i.test(key)) {
-                // skip special headers
-                continue;
-            }
-
             value = (parts.join(':') || '');
 
             if (key === header && (!term || value.toLowerCase().indexOf(term) >= 0)) {

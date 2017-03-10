@@ -21,5 +21,8 @@ transporter.sendMail({
     to: recipient,
     subject: 'Test message [' + Date.now() + ']',
     text: 'Hello world! Current time is ' + new Date().toString(),
-    html: '<p>Hello world! Current time is <em>' + new Date().toString() + '</em></p>'
+    html: '<p>Hello world! Current time is <em>' + new Date().toString() + '</em></p>',
+    attachments: [{
+        path: __dirname + '/swan.jpg'
+    }]
 });

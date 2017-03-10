@@ -110,10 +110,10 @@ class MIMEParser {
             if (node.body) {
                 let lineCount = node.body.length;
                 node.body = node.body.join('').
-                    // ensure proper line endings
+                // ensure proper line endings
                 replace(/\r?\n/g, '\r\n');
-                node.size = this.getNodeSize(node);
-                node.lineCount = this.getLineCount(node, lineCount);
+                node.size = (node.body || '').length;
+                node.lineCount = lineCount;
             }
             node.childNodes.forEach(walker);
 
@@ -126,41 +126,6 @@ class MIMEParser {
             delete node.parentBoundary;
         };
         walker(this.tree);
-    }
-
-    getNodeSize(node) {
-        let bodyLength = (node.body || '').length;
-        let streamSize = 0;
-        let streamEncoded = /^\s*YES\s*$/i.test(node.parsedHeader['x-attachment-stream-encoded']);
-
-        if (node.parsedHeader['x-attachment-stream-url']) {
-            streamSize = Number(node.parsedHeader['x-attachment-stream-size']) || 0;
-
-            if (!streamEncoded) {
-                // stream needs base64 encoding, calculate post-encoded size
-                streamSize = Math.ceil(streamSize / 3 * 4); // convert to base64 length
-                if (streamSize % 4) {
-                    // add base64 padding
-                    streamSize += (4 - (streamSize % 4));
-                }
-                streamSize += Math.floor(streamSize / 76) * 2; // add newlines
-            }
-        }
-
-        return streamSize + bodyLength;
-    }
-
-    getLineCount(node, lineCount) {
-        if (node.parsedHeader['x-attachment-stream-lines']) {
-            // use pre-calculated line count
-            return Math.max(lineCount - 1, 0) + (Number(node.parsedHeader['x-attachment-stream-lines']) || 0);
-        } else if (node.parsedHeader['x-attachment-stream-url']) {
-            // calculate line count for standard base64 encoded content
-            let streamSize = this.getNodeSize(node);
-            return Math.max(lineCount - 1, 0) + Math.ceil(streamSize / 78);
-        }
-
-        return lineCount;
     }
 
     /**
