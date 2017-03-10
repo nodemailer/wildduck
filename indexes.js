@@ -78,3 +78,7 @@ db.messages.createIndex({
 db.messages.createIndex({
     uid: -1
 });
+
+db['attachments.files'].createIndex({
+    'metadata.messages': 1
+});

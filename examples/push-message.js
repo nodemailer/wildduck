@@ -17,12 +17,17 @@ const transporter = nodemailer.createTransport({
 });
 
 transporter.sendMail({
+    envelope: {
+        from: 'andris@kreata.ee',
+        to: [recipient]
+    },
     from: 'andris@kreata.ee',
     to: recipient,
     subject: 'Test message [' + Date.now() + ']',
     text: 'Hello world! Current time is ' + new Date().toString(),
     html: '<p>Hello world! Current time is <em>' + new Date().toString() + '</em></p>',
     attachments: [{
-        path: __dirname + '/swan.jpg'
+        path: __dirname + '/swan.jpg',
+        filename: 'swän.jpg'
     }]
 });

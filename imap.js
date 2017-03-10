@@ -10,7 +10,7 @@ const MongoClient = mongodb.MongoClient;
 const ImapNotifier = require('./imap-notifier');
 const imapHandler = IMAPServerModule.imapHandler;
 const bcrypt = require('bcryptjs');
-//const fs = require('fs');
+const ObjectID = require('mongodb').ObjectID;
 const Indexer = require('./imap-core/lib/indexer/indexer');
 
 // Setup server
@@ -563,7 +563,19 @@ server.onExpunge = function (path, update, session, callback) {
                 if (!message) {
                     return cursor.close(() => {
                         this.notifier.fire(username, path);
-                        return callback(null, true);
+
+                        // delete all attachments that do not have any active links to message objects
+                        database.collection('attachments.files').deleteMany({
+                            'metadata.messages': {
+                                $size: 0
+                            }
+                        }, err => {
+                            if (err) {
+                                // ignore as we don't really care if we have orphans or not
+                            }
+
+                            return callback(null, true);
+                        });
                     });
                 }
 
@@ -577,12 +589,28 @@ server.onExpunge = function (path, update, session, callback) {
                     if (err) {
                         return cursor.close(() => callback(err));
                     }
-                    this.notifier.addEntries(username, path, {
-                        command: 'EXPUNGE',
-                        ignore: session.id,
-                        uid: message.uid,
-                        message: message._id
-                    }, processNext);
+
+                    // remove link to message from attachments (if any exist)
+                    database.collection('attachments.files').updateMany({
+                        'metadata.messages': message._id
+                    }, {
+                        $pull: {
+                            'metadata.messages': message._id
+                        }
+                    }, {
+                        multi: true,
+                        w: 1
+                    }, err => {
+                        if (err) {
+                            // ignore as we don't really care if we have orphans or not
+                        }
+                        this.notifier.addEntries(username, path, {
+                            command: 'EXPUNGE',
+                            ignore: session.id,
+                            uid: message.uid,
+                            message: message._id
+                        }, processNext);
+                    });
                 });
             });
         };
@@ -644,6 +672,8 @@ server.onCopy = function (path, update, session, callback) {
                         });
                     }
 
+                    let sourceId = message._id;
+
                     sourceUid.unshift(message.uid);
                     database.collection('mailboxes').findOneAndUpdate({
                         _id: target._id
@@ -666,7 +696,7 @@ server.onCopy = function (path, update, session, callback) {
                         let uidNext = item.value.uidNext;
                         destinationUid.unshift(uidNext);
 
-                        message._id = null;
+                        message._id = new ObjectID();
                         message.mailbox = target._id;
                         message.uid = uidNext;
 
@@ -679,11 +709,27 @@ server.onCopy = function (path, update, session, callback) {
                             if (err) {
                                 return callback(err);
                             }
-                            this.notifier.addEntries(username, target.path, {
-                                command: 'EXISTS',
-                                uid: message.uid,
-                                message: message._id
-                            }, processNext);
+
+                            // remove link to message from attachments (if any exist)
+                            database.collection('attachments.files').updateMany({
+                                'metadata.messages': sourceId
+                            }, {
+                                $push: {
+                                    'metadata.messages': message._id
+                                }
+                            }, {
+                                multi: true,
+                                w: 1
+                            }, err => {
+                                if (err) {
+                                    // should we care about this error?
+                                }
+                                this.notifier.addEntries(username, target.path, {
+                                    command: 'EXISTS',
+                                    uid: message.uid,
+                                    message: message._id
+                                }, processNext);
+                            });
                         });
                     });
                 });
@@ -759,7 +805,8 @@ server.onFetch = function (path, options, session, callback) {
                     query: options.query,
                     values: session.getQueryResponse(options.query, message, {
                         logger: this.logger,
-                        fetchOptions: {}
+                        fetchOptions: {},
+                        database
                     })
                 }));
 
@@ -1059,6 +1106,7 @@ server.addToMailbox = (username, path, meta, date, flags, raw, callback) => {
     let envelope = server.indexer.getEnvelope(mimeTree);
     let bodystructure = server.indexer.getBodyStructure(mimeTree);
     let messageId = envelope[9] || uuidV1() + '@wildduck.email';
+    let id = new ObjectID();
 
     // check if mailbox exists
     database.collection('mailboxes').findOne({
@@ -1075,43 +1123,35 @@ server.addToMailbox = (username, path, meta, date, flags, raw, callback) => {
             return callback(err);
         }
 
-        // check if message with same Message-ID exists
-        database.collection('messages').findOne({
-            mailbox: mailbox._id,
-            messageId
-        }, (err, message) => {
+        // acquire new UID
+        database.collection('mailboxes').findOneAndUpdate({
+            _id: mailbox._id
+        }, {
+            $inc: {
+                uidNext: 1
+            }
+        }, {}, (err, item) => {
             if (err) {
                 return callback(err);
             }
 
-            if (message) {
-                // message already exists, skip
-                return callback(null, true, {
-                    uidValidity: mailbox.uidValidity,
-                    uid: message.uid
-                });
+            if (!item || !item.value) {
+                // was not able to acquire a lock
+                let err = new Error('Mailbox is missing');
+                err.imapResponse = 'TRYCREATE';
+                return callback(err);
             }
 
-            // acquire new UID
-            database.collection('mailboxes').findOneAndUpdate({
-                _id: mailbox._id
-            }, {
-                $inc: {
-                    uidNext: 1
-                }
-            }, {}, (err, item) => {
+            let mailbox = item.value;
+
+            // calculate size before removing large attachments from mime tree
+            let size = server.indexer.getSize(mimeTree);
+
+            // move large attachments to GridStore
+            server.indexer.storeAttachments(id, mimeTree, 50 * 1024, err => {
                 if (err) {
                     return callback(err);
                 }
-
-                if (!item || !item.value) {
-                    // was not able to acquire a lock
-                    let err = new Error('Mailbox is missing');
-                    err.imapResponse = 'TRYCREATE';
-                    return callback(err);
-                }
-
-                let mailbox = item.value;
 
                 let internaldate = date && new Date(date) || new Date();
                 let headerdate = mimeTree.parsedHeader.date && new Date(mimeTree.parsedHeader.date);
@@ -1121,13 +1161,14 @@ server.addToMailbox = (username, path, meta, date, flags, raw, callback) => {
                 }
 
                 let message = {
+                    _id: id,
                     mailbox: mailbox._id,
                     uid: mailbox.uidNext,
                     internaldate,
                     headerdate,
                     flags,
                     unseen: !flags.includes('\\Seen'),
-                    size: server.indexer.getSize(mimeTree),
+                    size,
                     meta,
                     modseq: 0,
                     mimeTree,
@@ -1171,7 +1212,9 @@ module.exports = done => {
 
         database = db;
 
-        server.indexer = new Indexer();
+        server.indexer = new Indexer({
+            database
+        });
 
         // setup notification system for updates
         server.notifier = new ImapNotifier({

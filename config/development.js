@@ -21,14 +21,14 @@ module.exports = {
         enabled: true,
         port: 3424,
         host: '0.0.0.0',
-        maxMB: 5
+        maxMB: 25
     },
 
     smtp: {
         enabled: true,
         port: 3525,
         host: '0.0.0.0',
-        maxMB: 5
+        maxMB: 25
     },
 
     api: {

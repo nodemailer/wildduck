@@ -9,10 +9,9 @@ const BodyStructure = require('./body-structure');
 const createEnvelope = require('./create-envelope');
 const parseMimeTree = require('./parse-mime-tree');
 const LengthLimiter = require('../length-limiter');
-// const ObjectID = require('mongodb').ObjectID;
+const ObjectID = require('mongodb').ObjectID;
 const GridFs = require('grid-fs');
-
-// TODO: store large attachments to GridStore
+const libmime = require('libmime');
 
 class Indexer {
 
@@ -21,7 +20,9 @@ class Indexer {
         this.fetchOptions = this.options.fetchOptions || {};
 
         this.database = this.options.database;
-        this.gridstore = new GridFs(this.database, 'attachments');
+        if (this.database) {
+            this.gridstore = new GridFs(this.database, 'attachments');
+        }
 
         // create logger
         this.logger = this.options.logger || {
@@ -213,6 +214,84 @@ class Indexer {
      */
     parseMimeTree(rfc822) {
         return parseMimeTree(rfc822);
+    }
+
+    /**
+     * Parses structured MIME tree from a rfc822 message source
+     *
+     * @param  {String|Buffer} rfc822 E-mail message as 'binary'-string or Buffer
+     * @return {Object} Parsed mime tree
+     */
+    storeAttachments(messageId, mimeTree, sizeLimit, callback) {
+        let walk = (node, next) => {
+
+            let continueProcessing = () => {
+                if (Array.isArray(node.childNodes)) {
+                    let pos = 0;
+                    let processChildNode = () => {
+                        if (pos >= node.childNodes.length) {
+                            return next();
+                        }
+                        let childNode = node.childNodes[pos++];
+                        walk(childNode, processChildNode);
+                    };
+                    setImmediate(processChildNode);
+                } else {
+                    setImmediate(next);
+                }
+            };
+
+            if (node.body && node.size > sizeLimit) {
+                let attachmentId = new ObjectID();
+                let contentType = node.parsedHeader['content-type'] && node.parsedHeader['content-type'].value || 'application/octet-stream';
+                let fileName = (node.parsedHeader['content-disposition'] && node.parsedHeader['content-disposition'].params && node.parsedHeader['content-disposition'].params.filename) || (node.parsedHeader['content-type'] && node.parsedHeader['content-type'].params && node.parsedHeader['content-type'].params.name) || false;
+
+                if (fileName) {
+                    try {
+                        fileName = libmime.decodeWords(fileName);
+                    } catch (E) {
+                        // failed to parse filename, keep as is (most probably an unknown charset is used)
+                    }
+                }
+
+                let returned = false;
+                let store = this.gridstore.createWriteStream(attachmentId, {
+                    fsync: true,
+                    content_type: contentType,
+                    metadata: {
+                        messages: [messageId],
+                        fileName,
+                        contentType,
+                        created: new Date()
+                    }
+                });
+
+                store.once('error', err => {
+                    if (returned) {
+                        return;
+                    }
+                    returned = true;
+                    callback(err);
+                });
+
+                store.on('close', () => {
+                    if (returned) {
+                        return;
+                    }
+                    returned = true;
+
+                    node.body = false;
+                    node.attachmentId = attachmentId;
+
+                    return continueProcessing();
+                });
+
+                store.end(Buffer.from(node.body, 'binary'));
+            } else {
+                continueProcessing();
+            }
+        };
+        walk(mimeTree, callback);
     }
 
     /**
