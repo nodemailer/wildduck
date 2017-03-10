@@ -722,7 +722,6 @@ server.onFetch = function (path, options, session, callback) {
         };
 
         if (!options.metadataOnly) {
-            //projection.raw = true;
             projection.mimeTree = true;
         }
 
@@ -835,12 +834,13 @@ server.onSearch = function (path, options, session, callback) {
         let projection = {
             uid: true,
             internaldate: true,
+            headerdate: true,
             flags: true,
             modseq: true
         };
 
         if (options.terms.includes('body') || options.terms.includes('text') || options.terms.includes('header')) {
-            projection.raw = true;
+            projection.mimeTree = true;
         }
 
         if (!options.terms.includes('all')) {
@@ -934,6 +934,72 @@ server.onSearch = function (path, options, session, callback) {
                                 internaldate: entry
                             });
                         }
+                        break;
+                    case 'headerdate':
+                        {
+                            let op = false;
+                            let value = new Date(term.value + ' GMT');
+                            switch (term.operator) {
+                                case '<':
+                                    op = '$lt';
+                                    break;
+                                case '<=':
+                                    op = '$lte';
+                                    break;
+                                case '>':
+                                    op = '$gt';
+                                    break;
+                                case '>=':
+                                    op = '$gte';
+                                    break;
+                            }
+                            let entry = !op ? [{
+                                $gte: value
+                            }, {
+                                $lt: new Date(value.getTime() + 24 * 3600 * 1000)
+                            }] : {
+                                [op]: value
+                            };
+
+                            if (!query.$and) {
+                                query.$and = [];
+                            }
+                            query.$and.push({
+                                headerdate: entry
+                            });
+                        }
+                        break;
+                    case 'size':
+                        {
+                            let op = '$eq';
+                            let value = Number(term.value) || 0;
+                            switch (term.operator) {
+                                case '<':
+                                    op = '$lt';
+                                    break;
+                                case '<=':
+                                    op = '$lte';
+                                    break;
+                                case '>':
+                                    op = '$gt';
+                                    break;
+                                case '>=':
+                                    op = '$gte';
+                                    break;
+                            }
+                            let entry = {
+                                [op]: value
+                            };
+
+                            if (!query.$and) {
+                                query.$and = [];
+                            }
+
+                            query.$and.push({
+                                size: entry
+                            });
+                        }
+                        break;
                 }
             });
         }
@@ -1040,13 +1106,21 @@ server.addToMailbox = (username, path, meta, date, flags, raw, callback) => {
 
                 let mailbox = item.value;
 
+                let internaldate = date && new Date(date) || new Date();
+                let headerdate = mimeTree.parsedHeader.date && new Date(mimeTree.parsedHeader.date);
+
+                if (headerdate.toString() === 'Invalid Date') {
+                    headerdate = internaldate;
+                }
+
                 let message = {
                     mailbox: mailbox._id,
                     uid: mailbox.uidNext,
-                    internaldate: date && new Date(date) || new Date(),
-                    raw,
+                    internaldate,
+                    headerdate,
                     flags,
                     unseen: !flags.includes('\\Seen'),
+                    size: raw.length,
                     meta,
                     modseq: 0,
                     mimeTree,

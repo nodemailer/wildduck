@@ -499,10 +499,14 @@ module.exports.getQueryResponse = function (query, message, options) {
                 break;
 
             case 'envelope':
-                if (!mimeTree) {
-                    mimeTree = indexer.parseMimeTree(message.raw);
+                if (message.envelope) {
+                    value = message.envelope;
+                } else {
+                    if (!mimeTree) {
+                        mimeTree = indexer.parseMimeTree(message.raw);
+                    }
+                    value = indexer.getEnvelope(mimeTree);
                 }
-                value = indexer.getEnvelope(mimeTree);
                 break;
 
             case 'rfc822':
@@ -513,10 +517,14 @@ module.exports.getQueryResponse = function (query, message, options) {
                 break;
 
             case 'rfc822.size':
-                if (!mimeTree) {
-                    mimeTree = indexer.parseMimeTree(message.raw);
+                if (message.size) {
+                    value = message.size;
+                } else {
+                    if (!mimeTree) {
+                        mimeTree = indexer.parseMimeTree(message.raw);
+                    }
+                    value = indexer.getSize(mimeTree);
                 }
-                value = indexer.getSize(mimeTree);
                 break;
 
             case 'rfc822.header':

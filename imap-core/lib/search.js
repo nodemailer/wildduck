@@ -36,12 +36,17 @@ let queryHandlers = {
 
     // matches message header date
     date: function (message, query) {
-        let mimeTree = message.mimeTree;
-        if (!mimeTree) {
-            mimeTree = indexer.parseMimeTree(message.raw);
+        let date;
+        if (message.headerdate) {
+            date = message.headerdate;
+        } else {
+            let mimeTree = message.mimeTree;
+            if (!mimeTree) {
+                mimeTree = indexer.parseMimeTree(message.raw);
+            }
+            date = mimeTree.parsedHeader.date || message.internaldate;
         }
 
-        let date = mimeTree.parsedHeader.date || message.internaldate;
         switch (query.operator) {
             case '<':
                 return getShortDate(date) < getShortDate(query.value);
@@ -56,7 +61,7 @@ let queryHandlers = {
 
     // matches message body
     body: function (message, query) {
-        let body = (message.raw || '').toString();
+        let body = indexer.getContents(message.mimeTree).toString();
         let bodyStart = body.match(/\r?\r?\n/);
         if (!bodyStart) {
             return false;
@@ -66,7 +71,8 @@ let queryHandlers = {
 
     // matches message source
     text: function (message, query) {
-        return (message.raw || '').toString().toLowerCase().indexOf((query.value || '').toString().toLowerCase()) >= 0;
+        let body = indexer.getContents(message.mimeTree).toString();
+        return body.toLowerCase().indexOf((query.value || '').toString().toLowerCase()) >= 0;
     },
 
     // matches message UID number. Sequence queries are also converted to UID queries
@@ -76,15 +82,18 @@ let queryHandlers = {
 
     // matches message source size
     size: function (message, query) {
-        let raw = message.raw || '';
+        let size = message.size;
+        if (!size) {
+            size = (message.raw || '').length;
+        }
 
         switch (query.operator) {
             case '<':
-                return raw.length < query.value;
+                return size < query.value;
             case '=':
-                return raw.length === query.value;
+                return size === query.value;
             case '>':
-                return raw.length > query.value;
+                return size > query.value;
         }
 
         return false;

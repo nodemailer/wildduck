@@ -52,10 +52,24 @@ db.messages.createIndex({
 });
 
 db.messages.createIndex({
-    date: 1
+    internaldate: 1
 });
 db.messages.createIndex({
-    date: -1
+    internaldate: -1
+});
+
+db.messages.createIndex({
+    headerdate: 1
+});
+db.messages.createIndex({
+    headerdate: -1
+});
+
+db.messages.createIndex({
+    size: 1
+});
+db.messages.createIndex({
+    size: -1
 });
 
 db.messages.createIndex({
