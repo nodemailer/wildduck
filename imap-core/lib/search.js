@@ -6,36 +6,32 @@ let indexer = new Indexer();
 module.exports.matchSearchQuery = matchSearchQuery;
 
 let queryHandlers = {
-
-    // atom beautify uses invalid indentation that messes up shorthand methods
-    /*eslint-disable object-shorthand */
-
     // always matches
-    all: function () {
-        return true;
+    all(message, query, callback) {
+        return callback(null, true);
     },
 
     // matches if the message object includes (exists:true) or does not include (exists:false) specifiec flag
-    flag: function (message, query) {
+    flag(message, query, callback) {
         let pos = [].concat(message.flags || []).indexOf(query.value);
-        return query.exists ? pos >= 0 : pos < 0;
+        return callback(null, query.exists ? pos >= 0 : pos < 0);
     },
 
     // matches message receive date
-    internaldate: function (message, query) {
+    internaldate(message, query, callback) {
         switch (query.operator) {
             case '<':
-                return getShortDate(message.internaldate) < getShortDate(query.value);
+                return callback(null, getShortDate(message.internaldate) < getShortDate(query.value));
             case '=':
-                return getShortDate(message.internaldate) === getShortDate(query.value);
+                return callback(null, getShortDate(message.internaldate) === getShortDate(query.value));
             case '>=':
-                return getShortDate(message.internaldate) >= getShortDate(query.value);
+                return callback(null, getShortDate(message.internaldate) >= getShortDate(query.value));
         }
-        return false;
+        return callback(null, false);
     },
 
     // matches message header date
-    date: function (message, query) {
+    date(message, query, callback) {
         let date;
         if (message.headerdate) {
             date = message.headerdate;
@@ -49,39 +45,97 @@ let queryHandlers = {
 
         switch (query.operator) {
             case '<':
-                return getShortDate(date) < getShortDate(query.value);
+                return callback(null, getShortDate(date) < getShortDate(query.value));
             case '=':
-                return getShortDate(date) === getShortDate(query.value);
+                return callback(null, getShortDate(date) === getShortDate(query.value));
             case '>=':
-                return getShortDate(date) >= getShortDate(query.value);
+                return callback(null, getShortDate(date) >= getShortDate(query.value));
         }
 
-        return false;
+        return callback(null, false);
     },
 
     // matches message body
-    body: function (message, query) {
-        let body = indexer.getContents(message.mimeTree).toString();
-        let bodyStart = body.match(/\r?\r?\n/);
-        if (!bodyStart) {
-            return false;
-        }
-        return body.substr(bodyStart.index + bodyStart[0].length).toLowerCase().indexOf((query.value || '').toString().toLowerCase()) >= 0;
+    body(message, query, callback) {
+        let data = indexer.getContents(message.mimeTree, {
+            type: 'text'
+        });
+
+        let resolveData = next => {
+            if (data.type !== 'stream') {
+                return next(null, data.value);
+            }
+
+            let chunks = [];
+            let chunklen = 0;
+
+            data.value.once('error', err => next(err));
+
+            data.value.on('readable', () => {
+                let chunk;
+                while ((chunk = data.value.read()) !== null) {
+                    chunks.push(chunk);
+                    chunklen += chunk.length;
+                }
+            });
+
+            data.value.on('end', () => {
+                next(null, Buffer.concat(chunks, chunklen));
+            });
+        };
+
+        resolveData((err, body) => {
+            if (err) {
+                return callback(err);
+            }
+            callback(null, body.toString().toLowerCase().indexOf((query.value || '').toString().toLowerCase()) >= 0);
+        });
     },
 
     // matches message source
-    text: function (message, query) {
-        let body = indexer.getContents(message.mimeTree).toString();
-        return body.toLowerCase().indexOf((query.value || '').toString().toLowerCase()) >= 0;
+    text(message, query, callback) {
+        let data = indexer.getContents(message.mimeTree, {
+            type: 'content'
+        });
+
+        let resolveData = next => {
+            if (data.type !== 'stream') {
+                return next(null, data.value);
+            }
+
+            let chunks = [];
+            let chunklen = 0;
+
+            data.value.once('error', err => next(err));
+
+            data.value.on('readable', () => {
+                let chunk;
+                while ((chunk = data.value.read()) !== null) {
+                    chunks.push(chunk);
+                    chunklen += chunk.length;
+                }
+            });
+
+            data.value.on('end', () => {
+                next(null, Buffer.concat(chunks, chunklen));
+            });
+        };
+
+        resolveData((err, text) => {
+            if (err) {
+                return callback(err);
+            }
+            callback(null, text.toString().toLowerCase().indexOf((query.value || '').toString().toLowerCase()) >= 0);
+        });
     },
 
     // matches message UID number. Sequence queries are also converted to UID queries
-    uid: function (message, query) {
-        return query.value.indexOf(message.uid) >= 0;
+    uid(message, query, callback) {
+        return callback(null, query.value.indexOf(message.uid) >= 0);
     },
 
     // matches message source size
-    size: function (message, query) {
+    size(message, query, callback) {
         let size = message.size;
         if (!size) {
             size = (message.raw || '').length;
@@ -89,18 +143,18 @@ let queryHandlers = {
 
         switch (query.operator) {
             case '<':
-                return size < query.value;
+                return callback(null, size < query.value);
             case '=':
-                return size === query.value;
+                return callback(null, size === query.value);
             case '>':
-                return size > query.value;
+                return callback(null, size > query.value);
         }
 
-        return false;
+        return callback(null, false);
     },
 
     // matches message headers
-    header: function (message, query) {
+    header(message, query, callback) {
         let mimeTree = message.mimeTree;
         if (!mimeTree) {
             mimeTree = indexer.parseMimeTree(message.raw || '');
@@ -123,24 +177,22 @@ let queryHandlers = {
             value = (parts.join(':') || '');
 
             if (key === header && (!term || value.toLowerCase().indexOf(term) >= 0)) {
-                return true;
+                return callback(null, true);
             }
         }
 
-        return false;
+        return callback(null, false);
     },
 
     // matches messages with modifyIndex exual or greater than criteria
-    modseq: function (message, query) {
-        return message.modseq >= query.value;
+    modseq(message, query, callback) {
+        return callback(null, message.modseq >= query.value);
     },
 
     // charset argument is ignored
-    charset: function () {
-        return true;
+    charset(message, query, callback) {
+        return callback(null, true);
     }
-
-    /*eslint-enable object-shorthand */
 };
 
 /**
@@ -164,20 +216,41 @@ function getShortDate(date) {
  * @param {Object} query Query term object
  * @returns {Boolean} Term matched (true) or not (false)
  */
-function matchSearchTerm(message, query) {
+function matchSearchTerm(message, query, callback) {
 
     if (Array.isArray(query)) {
         // AND, all terms need to match
-        return matchSearchQuery(message, query);
+        return matchSearchQuery(message, query, callback);
     }
 
     if (!query || typeof query !== 'object') {
         // unknown query term
-        return false;
+        return setImmediate(() => callback(null, false));
     }
 
     switch (query.key) {
         case 'or':
+            {
+                // OR, only single match needed
+                let checked = 0;
+                let checkNext = () => {
+                    if (checked >= query.value.length) {
+                        return callback(null, false);
+                    }
+                    let term = query.value[checked++];
+                    matchSearchTerm(message, term, (err, match) => {
+                        if (err) {
+                            return callback(err);
+                        }
+                        if (match) {
+                            return callback(null, true);
+                        }
+                        setImmediate(checkNext);
+                    });
+                };
+                return setImmediate(checkNext);
+            }
+            /*
             // OR, only single match needed
             for (let i = query.value.length - 1; i >= 0; i--) {
                 if (matchSearchTerm(message, query.value[i])) {
@@ -185,15 +258,21 @@ function matchSearchTerm(message, query) {
                 }
             }
             return false;
+            */
         case 'not':
             // return reverse match
-            return !matchSearchTerm(message, query.value);
+            return matchSearchTerm(message, query.value, (err, match) => {
+                if (err) {
+                    return callback(err);
+                }
+                callback(null, !match);
+            });
         default:
             // check if there is a handler for the term and use it
             if (queryHandlers.hasOwnProperty(query.key)) {
-                return queryHandlers[query.key](message, query);
+                return setImmediate(() => queryHandlers[query.key](message, query, callback));
             }
-            return false;
+            return setImmediate(() => callback(null, false));
     }
 }
 
@@ -204,16 +283,35 @@ function matchSearchTerm(message, query) {
  * @param {Object} query Query term object
  * @returns {Boolean} Term matched (true) or not (false)
  */
-function matchSearchQuery(message, query) {
+function matchSearchQuery(message, query, callback) {
     if (!Array.isArray(query)) {
         query = [].concat(query || []);
     }
 
-    for (let i = 0, len = query.length; i < len; i++) {
-        if (!matchSearchTerm(message, query[i])) {
-            return false;
+    let checked = 0;
+    let checkNext = () => {
+        if (checked >= query.length) {
+            return callback(null, true);
         }
-    }
+        let term = query[checked++];
+        matchSearchTerm(message, term, (err, match) => {
+            if (err) {
+                return callback(err);
+            }
+            if (!match) {
+                return callback(null, false);
+            }
+            setImmediate(checkNext);
+        });
+    };
+    return setImmediate(checkNext);
+    /*
+        for (let i = 0, len = query.length; i < len; i++) {
+            if (!matchSearchTerm(message, query[i])) {
+                return false;
+            }
+        }
 
-    return true;
+        return true;
+        */
 }

@@ -22,7 +22,7 @@
   "dependencies": {
     "addressparser": "^1.0.1",
     "bcryptjs": "^2.4.3",
-    "clone": "^2.1.0",
+    "clone": "^2.1.1",
     "config": "^1.25.1",
     "joi": "^10.2.2",
     "libbase64": "^0.1.0",

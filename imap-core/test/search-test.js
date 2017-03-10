@@ -4,6 +4,9 @@
 
 let parseQueryTerms = require('../lib/commands/search').parseQueryTerms;
 let matchSearchQuery = require('../lib/search').matchSearchQuery;
+let Indexer = require('../lib/indexer/indexer');
+let indexer = new Indexer();
+
 let chai = require('chai');
 let expect = chai.expect;
 chai.config.includeStack = true;
@@ -400,8 +403,8 @@ describe('#parseQueryTerms', function () {
 
 describe('Search term match tests', function () {
     describe('AND', function () {
-        it('should find all matches', function () {
-            expect(matchSearchQuery({}, [{
+        it('should find all matches', function (done) {
+            matchSearchQuery({}, [{
                 key: 'all',
                 value: true
             }, {
@@ -413,11 +416,15 @@ describe('Search term match tests', function () {
             }, {
                 key: 'all',
                 value: true
-            }])).to.be.true;
+            }], (err, match) => {
+                expect(err).to.not.exist;
+                expect(match).to.be.true;
+                done();
+            });
         });
 
-        it('should fail on single error', function () {
-            expect(matchSearchQuery({}, [{
+        it('should fail on single error', function (done) {
+            matchSearchQuery({}, [{
                 key: 'all',
                 value: true
             }, {
@@ -430,13 +437,17 @@ describe('Search term match tests', function () {
                 key: 'flag',
                 value: 'zzzzzzz',
                 exists: true
-            }])).to.be.false;
+            }], (err, match) => {
+                expect(err).to.not.exist;
+                expect(match).to.be.false;
+                done();
+            });
         });
     });
 
     describe('OR', function () {
-        it('should succeed with at least one match', function () {
-            expect(matchSearchQuery({}, {
+        it('should succeed with at least one match', function (done) {
+            matchSearchQuery({}, {
                 key: 'or',
                 value: [{
                     key: 'flag',
@@ -450,11 +461,15 @@ describe('Search term match tests', function () {
                     value: 'zzzzzzz',
                     exists: true
                 }]
-            })).to.be.true;
+            }, (err, match) => {
+                expect(err).to.not.exist;
+                expect(match).to.be.true;
+                done();
+            });
         });
 
-        it('should fail with no matches', function () {
-            expect(matchSearchQuery({}, {
+        it('should fail with no matches', function (done) {
+            matchSearchQuery({}, {
                 key: 'or',
                 value: [{
                     key: 'flag',
@@ -465,419 +480,581 @@ describe('Search term match tests', function () {
                     value: 'zzzzzzz',
                     exists: true
                 }]
-            })).to.be.false;
+            }, (err, match) => {
+                expect(err).to.not.exist;
+                expect(match).to.be.false;
+                done();
+            });
         });
     });
 
     describe('NOT', function () {
-        it('should succeed with false value', function () {
-            expect(matchSearchQuery({}, {
+        it('should succeed with false value', function (done) {
+            matchSearchQuery({}, {
                 key: 'not',
                 value: {
                     key: 'flag',
                     value: 'zzzzzzz',
                     exists: true
                 }
-            })).to.be.true;
+            }, (err, match) => {
+                expect(err).to.not.exist;
+                expect(match).to.be.true;
+                done();
+            });
         });
 
-        it('should fail with thruthy value', function () {
-            expect(matchSearchQuery({}, {
+        it('should fail with thruthy value', function (done) {
+            matchSearchQuery({}, {
                 key: 'not',
                 value: {
                     key: 'all',
                     value: true
                 }
-            })).to.be.false;
+            }, (err, match) => {
+                expect(err).to.not.exist;
+                expect(match).to.be.false;
+                done();
+            });
         });
     });
 
     describe('ALL', function () {
-        it('should match ALL', function () {
-            expect(matchSearchQuery({}, {
+        it('should match ALL', function (done) {
+            matchSearchQuery({}, {
                 key: 'all',
                 value: true
-            })).to.be.true;
+            }, (err, match) => {
+                expect(err).to.not.exist;
+                expect(match).to.be.true;
+                done();
+            });
         });
     });
 
     describe('FLAG', function () {
-        it('should match existing flag', function () {
-            expect(matchSearchQuery({
+        it('should match existing flag', function (done) {
+            matchSearchQuery({
                 flags: ['abc', 'def', 'ghi']
             }, {
                 key: 'flag',
                 value: 'def',
                 exists: true
-            })).to.be.true;
+            }, (err, match) => {
+                expect(err).to.not.exist;
+                expect(match).to.be.true;
+                done();
+            });
         });
 
-        it('should match non-existing flag', function () {
-            expect(matchSearchQuery({
+        it('should match non-existing flag', function (done) {
+            matchSearchQuery({
                 flags: ['abc', 'def', 'ghi']
             }, {
                 key: 'flag',
                 value: 'zzzzz',
                 exists: false
-            })).to.be.true;
+            }, (err, match) => {
+                expect(err).to.not.exist;
+                expect(match).to.be.true;
+                done();
+            });
         });
 
-        it('should fail non-existing flag', function () {
-            expect(matchSearchQuery({
+        it('should fail non-existing flag', function (done) {
+            matchSearchQuery({
                 flags: ['abc', 'def', 'ghi']
             }, {
                 key: 'flag',
                 value: 'zzzzz',
                 exists: true
-            })).to.be.false;
+            }, (err, match) => {
+                expect(err).to.not.exist;
+                expect(match).to.be.false;
+                done();
+            });
         });
 
-        it('should fail existing flag', function () {
-            expect(matchSearchQuery({
+        it('should fail existing flag', function (done) {
+            matchSearchQuery({
                 flags: ['abc', 'def', 'ghi']
             }, {
                 key: 'flag',
                 value: 'abc',
                 exists: false
-            })).to.be.false;
+            }, (err, match) => {
+                expect(err).to.not.exist;
+                expect(match).to.be.false;
+                done();
+            });
         });
     });
 
     describe('INTERNALDATE', function () {
-        it('should match <', function () {
-            expect(matchSearchQuery({
+        it('should match <', function (done) {
+            matchSearchQuery({
                 internaldate: new Date('1999-01-01')
             }, {
                 key: 'internaldate',
                 value: '2001-01-01',
                 operator: '<'
-            })).to.be.true;
+            }, (err, match) => {
+                expect(err).to.not.exist;
+                expect(match).to.be.true;
+                done();
+            });
         });
 
-        it('should not match <', function () {
-            expect(matchSearchQuery({
+        it('should not match <', function (done) {
+            matchSearchQuery({
                 internaldate: new Date('1999-01-01')
             }, {
                 key: 'internaldate',
                 value: '1998-01-01',
                 operator: '<'
-            })).to.be.false;
+            }, (err, match) => {
+                expect(err).to.not.exist;
+                expect(match).to.be.false;
+                done();
+            });
         });
 
-        it('should match =', function () {
-            expect(matchSearchQuery({
+        it('should match =', function (done) {
+            matchSearchQuery({
                 internaldate: new Date('1999-01-01')
             }, {
                 key: 'internaldate',
                 value: '1999-01-01',
                 operator: '='
-            })).to.be.true;
+            }, (err, match) => {
+                expect(err).to.not.exist;
+                expect(match).to.be.true;
+                done();
+            });
         });
 
-        it('should not match <', function () {
-            expect(matchSearchQuery({
+        it('should not match <', function (done) {
+            matchSearchQuery({
                 internaldate: new Date('1999-01-01')
             }, {
                 key: 'internaldate',
                 value: '1999-01-02',
                 operator: '='
-            })).to.be.false;
+            }, (err, match) => {
+                expect(err).to.not.exist;
+                expect(match).to.be.false;
+                done();
+            });
         });
 
-        it('should match >=', function () {
-            expect(matchSearchQuery({
+        it('should match >=', function (done) {
+            matchSearchQuery({
                 internaldate: new Date('1999-01-01')
             }, {
                 key: 'internaldate',
                 value: '1999-01-01',
                 operator: '>='
-            })).to.be.true;
+            }, (err, match) => {
+                expect(err).to.not.exist;
+                expect(match).to.be.true;
 
-            expect(matchSearchQuery({
-                internaldate: new Date('1999-01-02')
-            }, {
-                key: 'internaldate',
-                value: '1999-01-01',
-                operator: '>='
-            })).to.be.true;
+                matchSearchQuery({
+                    internaldate: new Date('1999-01-02')
+                }, {
+                    key: 'internaldate',
+                    value: '1999-01-01',
+                    operator: '>='
+                }, (err, match) => {
+                    expect(err).to.not.exist;
+                    expect(match).to.be.true;
+                    done();
+                });
+            });
         });
 
-        it('should not match >=', function () {
-            expect(matchSearchQuery({
+        it('should not match >=', function (done) {
+            matchSearchQuery({
                 internaldate: new Date('1999-01-01')
             }, {
                 key: 'internaldate',
                 value: '1999-01-02',
                 operator: '>='
-            })).to.be.false;
+            }, (err, match) => {
+                expect(err).to.not.exist;
+                expect(match).to.be.false;
+                done();
+            });
         });
     });
 
     describe('DATE', function () {
         let raw = 'Subject: test\r\nDate: 1999-01-01\r\n\r\nHello world!';
 
-        it('should match <', function () {
-            expect(matchSearchQuery({
-                raw
+        it('should match <', function (done) {
+            matchSearchQuery({
+                mimeTree: indexer.parseMimeTree(raw)
             }, {
                 key: 'date',
                 value: '2001-01-01',
                 operator: '<'
-            })).to.be.true;
+            }, (err, match) => {
+                expect(err).to.not.exist;
+                expect(match).to.be.true;
+                done();
+            });
         });
 
-        it('should not match <', function () {
-            expect(matchSearchQuery({
-                raw
+        it('should not match <', function (done) {
+            matchSearchQuery({
+                mimeTree: indexer.parseMimeTree(raw)
             }, {
                 key: 'date',
                 value: '1998-01-01',
                 operator: '<'
-            })).to.be.false;
+            }, (err, match) => {
+                expect(err).to.not.exist;
+                expect(match).to.be.false;
+                done();
+            });
         });
 
-        it('should match =', function () {
-            expect(matchSearchQuery({
-                raw
+        it('should match =', function (done) {
+            matchSearchQuery({
+                mimeTree: indexer.parseMimeTree(raw)
             }, {
                 key: 'date',
                 value: '1999-01-01',
                 operator: '='
-            })).to.be.true;
+            }, (err, match) => {
+                expect(err).to.not.exist;
+                expect(match).to.be.true;
+                done();
+            });
         });
 
-        it('should not match <', function () {
-            expect(matchSearchQuery({
-                raw
+        it('should not match <', function (done) {
+            matchSearchQuery({
+                mimeTree: indexer.parseMimeTree(raw)
             }, {
                 key: 'date',
                 value: '1999-01-02',
                 operator: '='
-            })).to.be.false;
+            }, (err, match) => {
+                expect(err).to.not.exist;
+                expect(match).to.be.false;
+                done();
+            });
         });
 
-        it('should match >=', function () {
-            expect(matchSearchQuery({
-                raw
+        it('should match >=', function (done) {
+            matchSearchQuery({
+                mimeTree: indexer.parseMimeTree(raw)
             }, {
                 key: 'date',
                 value: '1999-01-01',
                 operator: '>='
-            })).to.be.true;
+            }, (err, match) => {
+                expect(err).to.not.exist;
+                expect(match).to.be.true;
 
-            expect(matchSearchQuery({
-                raw
-            }, {
-                key: 'date',
-                value: '1998-01-01',
-                operator: '>='
-            })).to.be.true;
+
+                matchSearchQuery({
+                    mimeTree: indexer.parseMimeTree(raw)
+                }, {
+                    key: 'date',
+                    value: '1998-01-01',
+                    operator: '>='
+                }, (err, match) => {
+                    expect(err).to.not.exist;
+                    expect(match).to.be.true;
+                    done();
+                });
+            });
         });
 
-        it('should not match >=', function () {
-            expect(matchSearchQuery({
-                raw
+        it('should not match >=', function (done) {
+            matchSearchQuery({
+                mimeTree: indexer.parseMimeTree(raw)
             }, {
                 key: 'date',
                 value: '1999-01-02',
                 operator: '>='
-            })).to.be.false;
+            }, (err, match) => {
+                expect(err).to.not.exist;
+                expect(match).to.be.false;
+                done();
+            });
         });
     });
 
     describe('BODY', function () {
         let raw = 'Subject: test\r\n\r\nHello world!';
 
-        it('should match a string', function () {
-            expect(matchSearchQuery({
-                raw
+        it('should match a string', function (done) {
+            matchSearchQuery({
+                mimeTree: indexer.parseMimeTree(raw)
             }, {
                 key: 'body',
                 value: 'hello'
-            })).to.be.true;
+            }, (err, match) => {
+                expect(err).to.not.exist;
+                expect(match).to.be.true;
+                done();
+            });
         });
 
-        it('should not match a string', function () {
-            expect(matchSearchQuery({
-                raw
+        it('should not match a string', function (done) {
+            matchSearchQuery({
+                mimeTree: indexer.parseMimeTree(raw)
             }, {
                 key: 'body',
                 value: 'test'
-            })).to.be.false;
+            }, (err, match) => {
+                expect(err).to.not.exist;
+                expect(match).to.be.false;
+                done();
+            });
         });
     });
 
     describe('TEXT', function () {
         let raw = 'Subject: test\r\n\r\nHello world!';
 
-        it('should match a string', function () {
-            expect(matchSearchQuery({
-                raw
+        it('should match a string', function (done) {
+            matchSearchQuery({
+                mimeTree: indexer.parseMimeTree(raw)
             }, {
                 key: 'text',
                 value: 'hello'
-            })).to.be.true;
+            }, (err, match) => {
+                expect(err).to.not.exist;
+                expect(match).to.be.true;
 
-            expect(matchSearchQuery({
-                raw
-            }, {
-                key: 'text',
-                value: 'test'
-            })).to.be.true;
+                matchSearchQuery({
+                    mimeTree: indexer.parseMimeTree(raw)
+                }, {
+                    key: 'text',
+                    value: 'test'
+                }, (err, match) => {
+                    expect(err).to.not.exist;
+                    expect(match).to.be.true;
+                    done();
+                });
+            });
         });
 
-        it('should not match a string', function () {
-            expect(matchSearchQuery({
-                raw
+        it('should not match a string', function (done) {
+            matchSearchQuery({
+                mimeTree: indexer.parseMimeTree(raw)
             }, {
                 key: 'text',
                 value: 'zzzzz'
-            })).to.be.false;
+            }, (err, match) => {
+                expect(err).to.not.exist;
+                expect(match).to.be.false;
+                done();
+            });
         });
     });
 
     describe('UID', function () {
-        it('should match message uid', function () {
-            expect(matchSearchQuery({
+        it('should match message uid', function (done) {
+            matchSearchQuery({
                 uid: 123
             }, {
                 key: 'uid',
                 value: [11, 123, 134]
-            })).to.be.true;
+            }, (err, match) => {
+                expect(err).to.not.exist;
+                expect(match).to.be.true;
+                done();
+            });
         });
 
-        it('should not match message uid', function () {
-            expect(matchSearchQuery({
+        it('should not match message uid', function (done) {
+            matchSearchQuery({
                 uid: 124
             }, {
                 key: 'uid',
                 value: [11, 123, 134]
-            })).to.be.false;
+            }, (err, match) => {
+                expect(err).to.not.exist;
+                expect(match).to.be.false;
+                done();
+            });
         });
     });
 
     describe('SIZE', function () {
-        it('should match <', function () {
-            expect(matchSearchQuery({
-                raw: new Buffer(10)
+        it('should match <', function (done) {
+            matchSearchQuery({
+                size: 10
             }, {
                 key: 'size',
                 value: 11,
                 operator: '<'
-            })).to.be.true;
+            }, (err, match) => {
+                expect(err).to.not.exist;
+                expect(match).to.be.true;
+                done();
+            });
         });
 
-        it('should not match <', function () {
-            expect(matchSearchQuery({
-                raw: new Buffer(10)
+        it('should not match <', function (done) {
+            matchSearchQuery({
+                size: 10
             }, {
                 key: 'size',
                 value: 9,
                 operator: '<'
-            })).to.be.false;
+            }, (err, match) => {
+                expect(err).to.not.exist;
+                expect(match).to.be.false;
+                done();
+            });
         });
 
-        it('should match =', function () {
-            expect(matchSearchQuery({
-                raw: new Buffer(10)
+        it('should match =', function (done) {
+            matchSearchQuery({
+                size: 10
             }, {
                 key: 'size',
                 value: 10,
                 operator: '='
-            })).to.be.true;
+            }, (err, match) => {
+                expect(err).to.not.exist;
+                expect(match).to.be.true;
+                done();
+            });
         });
 
-        it('should not match =', function () {
-            expect(matchSearchQuery({
-                raw: new Buffer(10)
+        it('should not match =', function (done) {
+            matchSearchQuery({
+                size: 10
             }, {
                 key: 'size',
                 value: 11,
                 operator: '='
-            })).to.be.false;
+            }, (err, match) => {
+                expect(err).to.not.exist;
+                expect(match).to.be.false;
+                done();
+            });
         });
 
-        it('should match >', function () {
-            expect(matchSearchQuery({
-                raw: new Buffer(10)
+        it('should match >', function (done) {
+            matchSearchQuery({
+                size: 10
             }, {
                 key: 'size',
                 value: 9,
                 operator: '>'
-            })).to.be.true;
+            }, (err, match) => {
+                expect(err).to.not.exist;
+                expect(match).to.be.true;
+                done();
+            });
         });
 
-        it('should not match <', function () {
-            expect(matchSearchQuery({
-                raw: new Buffer(10)
+        it('should not match <', function (done) {
+            matchSearchQuery({
+                size: 10
             }, {
                 key: 'size',
                 value: 11,
                 operator: '>'
-            })).to.be.false;
+            }, (err, match) => {
+                expect(err).to.not.exist;
+                expect(match).to.be.false;
+                done();
+            });
         });
     });
 
     describe('header', function () {
         let raw = 'Subject: test\r\n\r\nHello world!';
 
-        it('should match header value', function () {
-            expect(matchSearchQuery({
-                raw
+        it('should match header value', function (done) {
+            matchSearchQuery({
+                mimeTree: indexer.parseMimeTree(raw)
             }, {
                 key: 'header',
                 value: 'test',
                 header: 'subject'
-            })).to.be.true;
+            }, (err, match) => {
+                expect(err).to.not.exist;
+                expect(match).to.be.true;
+                done();
+            });
         });
 
-        it('should match empty header value', function () {
-            expect(matchSearchQuery({
-                raw
+        it('should match empty header value', function (done) {
+            matchSearchQuery({
+                mimeTree: indexer.parseMimeTree(raw)
             }, {
                 key: 'header',
                 value: '',
                 header: 'subject'
-            })).to.be.true;
+            }, (err, match) => {
+                expect(err).to.not.exist;
+                expect(match).to.be.true;
+                done();
+            });
         });
 
-        it('should not match header value', function () {
-            expect(matchSearchQuery({
-                raw
+        it('should not match header value', function (done) {
+            matchSearchQuery({
+                mimeTree: indexer.parseMimeTree(raw)
             }, {
                 key: 'header',
                 value: 'tests',
                 header: 'subject'
-            })).to.be.false;
+            }, (err, match) => {
+                expect(err).to.not.exist;
+                expect(match).to.be.false;
+                done();
+            });
         });
     });
 
     describe('MODSEQ', function () {
-        it('should match equal modseq', function () {
-            expect(matchSearchQuery({
+        it('should match equal modseq', function (done) {
+            matchSearchQuery({
                 modseq: 500
             }, {
                 key: 'modseq',
                 value: [500]
-            })).to.be.true;
+            }, (err, match) => {
+                expect(err).to.not.exist;
+                expect(match).to.be.true;
+                done();
+            });
         });
 
-        it('should match greater modseq', function () {
-            expect(matchSearchQuery({
+        it('should match greater modseq', function (done) {
+            matchSearchQuery({
                 modseq: 1000
             }, {
                 key: 'modseq',
                 value: [500]
-            })).to.be.true;
+            }, (err, match) => {
+                expect(err).to.not.exist;
+                expect(match).to.be.true;
+                done();
+            });
         });
 
-        it('should not match lesser modseq', function () {
-            expect(matchSearchQuery({
+        it('should not match lesser modseq', function (done) {
+            matchSearchQuery({
                 modseq: 500
             }, {
                 key: 'modseq',
                 value: [100]
-            })).to.be.true;
+            }, (err, match) => {
+                expect(err).to.not.exist;
+                expect(match).to.be.true;
+                done();
+            });
         });
     });
 });

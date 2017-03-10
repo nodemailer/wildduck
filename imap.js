@@ -1029,15 +1029,21 @@ server.onSearch = function (path, options, session, callback) {
                     message.raw = message.raw.toString();
                 }
 
-                let match = session.matchSearchQuery(message, options.query);
-                if (match && highestModseq < message.modseq) {
-                    highestModseq = message.modseq;
-                }
-                if (match) {
-                    uidList.push(message.uid);
-                }
+                session.matchSearchQuery(message, options.query, (err, match) => {
+                    if (err) {
+                        return cursor.close(() => callback(err));
+                    }
 
-                processNext();
+                    if (match && highestModseq < message.modseq) {
+                        highestModseq = message.modseq;
+                    }
+
+                    if (match) {
+                        uidList.push(message.uid);
+                    }
+
+                    processNext();
+                });
             });
         };
 
