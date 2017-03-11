@@ -307,7 +307,7 @@ module.exports = function (options) {
     };
 
     // STORE / UID STORE, updates flags for selected UIDs
-    server.onUpdate = function (mailbox, update, session, callback) {
+    server.onStore = function (mailbox, update, session, callback) {
         this.logger.debug('[%s] Updating messages in "%s"', session.id, mailbox);
 
         if (!folders.has(mailbox)) {

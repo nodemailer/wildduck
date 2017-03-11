@@ -385,7 +385,9 @@ server.onStatus = function (path, session, callback) {
             }
             database.collection('messages').find({
                 mailbox: mailbox._id,
-                unseen: true
+                flags: {
+                    $ne: '\\Seen'
+                }
             }).count((err, unseen) => {
                 if (err) {
                     return callback(err);
@@ -425,7 +427,7 @@ server.onAppend = function (path, flags, date, raw, session, callback) {
 };
 
 // STORE / UID STORE, updates flags for selected UIDs
-server.onUpdate = function (path, update, session, callback) {
+server.onStore = function (path, update, session, callback) {
     this.logger.debug('[%s] Updating messages in "%s"', session.id, path);
 
     let username = session.user.username;
@@ -466,6 +468,7 @@ server.onUpdate = function (path, update, session, callback) {
                     });
                 }
 
+                let flagsupdate = {};
                 let updated = false;
                 switch (update.action) {
                     case 'set':
@@ -473,8 +476,11 @@ server.onUpdate = function (path, update, session, callback) {
                         if (message.flags.length !== update.value.length || update.value.filter(flag => message.flags.indexOf(flag) < 0).length) {
                             updated = true;
                         }
-                        // set flags
                         message.flags = [].concat(update.value);
+                        // set flags
+                        flagsupdate.$set = {
+                            flags: message.flags
+                        };
                         break;
 
                     case 'add':
@@ -485,6 +491,13 @@ server.onUpdate = function (path, update, session, callback) {
                             }
                             return false;
                         }));
+
+                        // add flags
+                        flagsupdate.$addToSet = {
+                            flags: {
+                                $each: update.value
+                            }
+                        };
                         break;
 
                     case 'remove':
@@ -495,6 +508,13 @@ server.onUpdate = function (path, update, session, callback) {
                             updated = true;
                             return false;
                         });
+
+                        // remove flags
+                        flagsupdate.$pull = {
+                            flags: {
+                                $in: update.value
+                            }
+                        };
                         break;
                 }
 
@@ -508,12 +528,7 @@ server.onUpdate = function (path, update, session, callback) {
                 if (updated) {
                     database.collection('messages').findOneAndUpdate({
                         _id: message._id
-                    }, {
-                        $set: {
-                            flags: message.flags,
-                            unseen: !message.flags.includes('\\Seen')
-                        }
-                    }, {}, err => {
+                    }, flagsupdate, {}, err => {
                         if (err) {
                             return cursor.close(() => callback(err));
                         }
@@ -838,8 +853,7 @@ server.onFetch = function (path, options, session, callback) {
                         _id: message._id
                     }, {
                         $set: {
-                            flags: message.flags,
-                            unseen: false
+                            flags: message.flags
                         }
                     }, {}, err => {
                         if (err) {
@@ -1176,7 +1190,6 @@ server.addToMailbox = (username, path, meta, date, flags, raw, callback) => {
                     internaldate,
                     headerdate,
                     flags,
-                    unseen: !flags.includes('\\Seen'),
                     size,
                     meta,
                     modseq: 0,

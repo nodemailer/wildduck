@@ -18,6 +18,7 @@ module.exports = {
         let mailbox = command.attributes[0] && command.attributes[0].value || '';
 
         if (!this.acceptUTF8Enabled) {
+            // decode before normalizing to uncover stuff like ending / etc.
             mailbox = utf7.decode(mailbox);
         }
 

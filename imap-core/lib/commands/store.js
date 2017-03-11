@@ -24,7 +24,7 @@ module.exports = {
     handler(command, callback) {
 
         // Check if STORE method is set
-        if (typeof this._server.onUpdate !== 'function') {
+        if (typeof this._server.onStore !== 'function') {
             return callback(null, {
                 response: 'NO',
                 message: 'STORE not implemented'
@@ -114,7 +114,7 @@ module.exports = {
 
         let messages = imapTools.getMessageRange(this.selected.uidList, range, false);
 
-        this._server.onUpdate(this.selected.mailbox, {
+        this._server.onStore(this.selected.mailbox, {
             value: flags,
             action,
             type,
