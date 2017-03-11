@@ -24,7 +24,8 @@ let serverOptions = {
         info: log.silly.bind(log, 'IMAP'),
         debug: log.silly.bind(log, 'IMAP'),
         error: log.error.bind(log, 'IMAP')
-    }
+    },
+    maxMessage: config.imap.maxMB * 1024 * 1024
 };
 
 if (config.imap.key) {

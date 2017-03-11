@@ -31,7 +31,9 @@ module.exports = {
         host: '127.0.0.1',
         //key: '/path/to/server/key.pem'
         //cert: '/path/to/server/cert.pem'
-        secure: true
+        secure: true,
+        // Max size for messages uploaded via APPEND
+        maxMB: 5
     },
 
     lmtp: {
