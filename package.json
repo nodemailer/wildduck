@@ -4,7 +4,8 @@
   "description": "IMAP server built with Node.js and MongoDB",
   "main": "index.js",
   "scripts": {
-    "test": "grunt"
+    "test": "grunt",
+    "indexes": "mongo `node ./bin/mongo.js` indexes.js"
   },
   "keywords": [],
   "author": "Andris Reinman",

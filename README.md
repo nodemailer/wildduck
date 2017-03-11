@@ -75,30 +75,58 @@ The problem with quota counters is that the actions (*store message + increment 
 
 Assuming you have MongoDB and Redis running somewhere.
 
-**Step 1.** Get the code from github
+### Step 1. Get the code from github
 
 ```
 $ git clone git://github.com/wildduck-email/wildduck.git
 $ cd wildduck
 ```
 
-**Step 2.** Install dependencies
+### Step 2. Install dependencies
+
+Install dependencies from npm
 
 ```
-$ npm install
+$ npm install --production
 ```
 
-**Step 3.** Modify [config file](./config/default.js)
+### Step 3. Modify config
 
-**Step 4.** Run the [index queries](./indexes.js) in MongoDB (optional, the app would work without it as indexes only become relevant once you have more than few messages stored)
+You can either modify the default [config file](./config/default.js) or alternatively generate an environment related config file that gets merged with the default values. Read about the config module [here](https://www.npmjs.com/package/config)
 
-**Step 5.** Run the server
+### Step 4. Add indexes
+
+Run the [index queries](./indexes.js) in MongoDB (optional, the app would work without it as indexes only become relevant once you have more than few messages stored)
+
+There's a helper script that you can run from the command line
+
+```
+$ npm run indexes
+```
+
+Or if you want to use mongo settings from environment related config file, eg from `production.js`, run the following
+
+```
+$ NODE_ENV=production npm run indexes
+```
+
+### Step 5. Run the server
+
+To use the default config file, run the following
 
 ```
 npm start
 ```
 
-**Step 6.** Create an user account (see [below](#create-user))
+Or if you want to use environment related config file, eg from `production.js`, run the following
+
+```
+NODE_ENV=production npm start
+```
+
+### Step 5. Create an user account
+
+See see [below](#create-user) for details about creating new user accounts
 
 ## Create user
 
@@ -130,7 +158,7 @@ The response for successful operation should look like this:
 }
 ```
 
-After you have created an user you can use these credentials to log in to the IMAP server. Additionally the LMTP server starts accepting mail for this email address.
+After you have created an user you can use these credentials to log in to the IMAP server. Additionally the LMTP and SMTP servers starts accepting mail for this email address.
 
 ## Testing
 
