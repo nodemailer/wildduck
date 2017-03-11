@@ -2,16 +2,15 @@
 
 ![](https://cldup.com/qlZnwOz0na.jpg)
 
-Wild Duck is an IMAP server built with Node.js, MongoDB and Redis. Node.js runs the application, MongoDB is used as the mail store and Redis is used for ephemeral actions like publish/subscribe or caching.
+Wild Duck is an IMAP server built with Node.js, MongoDB and Redis. Node.js runs the application, MongoDB is used as the mail store and Redis is used for ephemeral actions like publish/subscribe and caching.
 
-> **NB** Wild Duck is currently in **beta**. You should not use it in production.
+> **NB!** Wild Duck is currently in **beta**. You should not use it in production.
 
 ## Goals of the Project
 
 1. Build a scalable IMAP server that uses clustered database instead of single machine file system as mail store
 2. Push notifications. Your application (eg. a webmail client) should be able to request changes (new and deleted messages, flag changes) to be pushed to client instead of using IMAP to fetch stuff from the server
 3. Provide Gmail-like features like pushing sent messages automatically to Sent Mail folder or notifying about messages moved to Junk folder so these could be marked as spam
-4. Maybe allow some kind of message manipulation through plugins? This would allow to turn Wild Duck for example into an encrypted mail server – mail data would be encrypted using users public key before storing it to DB and decrypted with users private key whenever the user logs in and FETCHes or SEARCHes messages. Private key would be protected by users password. For the user the encryption layer would be invisible while guaranteeing that if the user is currently not logged in then there would be no way to read the messages as the private key is locked.
 
 ## Supported features
 
@@ -50,12 +49,11 @@ Notice the word "relational"? In fact documents stores like MongoDB work very we
 
 ### Is the server scalable?
 
-Not yet. These are some changes that need to be done:
+Not yet exactly. Even though on some parts Wild Duck is already fast, there are still some important improvements that need to be done:
 
 1. Optimize SEARCH queries to use MongoDB queries. Currently only simple stuff (flag, internaldate, not flag, modseq) is included in query and more complex comparisons are handled by the application but this means that too much data must be loaded from database (unless it is a very simple query like "SEARCH UNSEEN" that is already optimized)
 2. Optimize FETCH queries to load only partial data for BODY subparts
 3. Parse incoming message into the mime tree as a stream. Currently the entire message is buffered in memory before being parsed.
-4. Add quota handling. Every time a user gets a new message added to storage, the quota counter should increase. If only a single quota root would be used per account then implementing rfc2087 should be fairly easy. What is not so easy is keeping count on copied and deleted messages (there's a great technique for this described in the [mail.ru blog](https://team.mail.ru/efficient-storage-how-we-went-down-from-50-pb-to-32-pb/)).
 
 ### How does it work?
 
@@ -64,6 +62,12 @@ Whenever a message is received Wild Duck parses it into a tree-like structure ba
 Wild Duck tries to keep minimal state for sessions to be able to distribute sessions between different hosts. Whenever a mailbox is opened the entire message list is loaded as an array of UID values. The first UID in the array element points to the message #1 in IMAP, second one points to message #2 etc.
 
 Actual update data (information about new and deleted messages, flag updates and such) is stored to a journal log and an update beacon is propagated through Redis pub/sub whenever something happens. If a session detects that there have been some changes in the current mailbox and it is possible to notify the user about it (eg. a NOOP call was made), journaled log is loaded from the database and applied to the UID array one action at a time. Once all journaled updates have applied then the result should match the latest state. If it is not possible to notify the user (eg a FETCH call was made), then journal log is not loaded and the user continues to see the old state.
+
+### Future considerations
+
+1. Add interoperability with current servers, for example by fetching authentication data from MySQL
+2. Maybe allow some kind of message manipulation through plugins? This would allow to turn Wild Duck for example into an encrypted mail server – mail data would be encrypted using users public key before storing it to DB and decrypted with users private key whenever the user logs in and FETCHes or SEARCHes messages. Private key would be protected by users password. For the user the encryption layer would be invisible while guaranteeing that if the user is currently not logged in then there would be no way to read the messages as the private key is locked.
+3. Add quota handling. Every time a user gets a new message added to storage, the quota counter should increase. If only a single quota root would be used per account then implementing rfc2087 should be fairly easy. What is not so easy is keeping count on copied and deleted messages (there's a great technique for this described in the [mail.ru blog](https://team.mail.ru/efficient-storage-how-we-went-down-from-50-pb-to-32-pb/)).
 
 ## Usage
 
