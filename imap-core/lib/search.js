@@ -59,7 +59,7 @@ let queryHandlers = {
     body(message, query, callback) {
         let data = indexer.getContents(message.mimeTree, {
             type: 'text'
-        });
+        }, true);
 
         let resolveData = next => {
             if (data.type !== 'stream') {
@@ -96,7 +96,7 @@ let queryHandlers = {
     text(message, query, callback) {
         let data = indexer.getContents(message.mimeTree, {
             type: 'content'
-        });
+        }, true);
 
         let resolveData = next => {
             if (data.type !== 'stream') {

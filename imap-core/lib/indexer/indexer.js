@@ -111,9 +111,10 @@ class Indexer {
      *
      * @param  {Object} mimeTree Parsed mimeTree object
      * @param  {Boolean} textOnly If true, do not include the message header in the response
+     * @param  {Boolean} skipExternal If true, do not include the external nodes
      * @return {Stream} Message stream
      */
-    rebuild(mimeTree, textOnly) {
+    rebuild(mimeTree, textOnly, skipExternal) {
         let res = new PassThrough();
         let first = true;
         let root = true;
@@ -152,7 +153,7 @@ class Indexer {
 
             if (node.boundary) {
                 append('--' + node.boundary);
-            } else if (node.attachmentId) {
+            } else if (node.attachmentId && !skipExternal) {
                 append(false, true); // force newline between header and contents
 
                 let limiter = new LengthLimiter(node.size);
@@ -245,6 +246,7 @@ class Indexer {
                 let attachmentId = new ObjectID();
                 let contentType = node.parsedHeader['content-type'] && node.parsedHeader['content-type'].value || 'application/octet-stream';
                 let fileName = (node.parsedHeader['content-disposition'] && node.parsedHeader['content-disposition'].params && node.parsedHeader['content-disposition'].params.filename) || (node.parsedHeader['content-type'] && node.parsedHeader['content-type'].params && node.parsedHeader['content-type'].params.name) || false;
+                let transferEncoding = node.parsedHeader['content-transfer-encoding'] || '7bit';
 
                 if (fileName) {
                     try {
@@ -262,6 +264,7 @@ class Indexer {
                         messages: [messageId],
                         fileName,
                         contentType,
+                        transferEncoding,
                         created: new Date()
                     }
                 });
@@ -418,9 +421,10 @@ class Indexer {
      *
      * @param  {Object} mimeTree Parsed mimeTree object
      * @param  {Object} selector What data to return
+     * @param  {Boolean} skipExternal If true, do not include the external nodes
      * @return {String} node contents
      */
-    getContents(mimeTree, selector) {
+    getContents(mimeTree, selector, skipExternal) {
         let node = mimeTree;
 
         if (typeof selector === 'string') {
@@ -445,10 +449,10 @@ class Indexer {
             case 'content':
                 if (!selector.path) {
                     // BODY[]
-                    return this.rebuild(node);
+                    return this.rebuild(node, false, skipExternal);
                 }
                 // BODY[1.2.3]
-                return this.rebuild(node, true);
+                return this.rebuild(node, true, skipExternal);
 
             case 'header':
                 if (!selector.path) {
@@ -487,10 +491,10 @@ class Indexer {
             case 'text':
                 if (!selector.path) {
                     // BODY[TEXT] mail body without headers
-                    return this.rebuild(node, true);
+                    return this.rebuild(node, true, skipExternal);
                 } else if (node.message) {
                     // BODY[1.2.3.TEXT] embedded message/rfc822 body without headers
-                    return this.rebuild(node.message, true);
+                    return this.rebuild(node.message, true, skipExternal);
                 }
 
                 return '';
