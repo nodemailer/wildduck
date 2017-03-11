@@ -5,7 +5,21 @@ module.exports = {
         level: 'silly'
     },
 
+    // downgrade process user after binding to ports
+    //user: 'wildduck',
+    //group: 'wildduck',
+
+    // log to syslog if true
+    syslog: false,
+
+    // process title and syslog ident
+    ident: 'wildduck',
+
+    // how many processes to start
+    processes: 1,
+
     mongo: 'mongodb://127.0.0.1:27017/wildduck',
+
     redis: {
         host: 'localhost',
         port: 6379,

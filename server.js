@@ -1,36 +1,61 @@
+/* eslint global-require:0 */
+
 'use strict';
 
 let config = require('config');
 let log = require('npmlog');
-let imap = require('./imap');
-let lmtp = require('./lmtp');
-let smtp = require('./smtp');
-let api = require('./api');
+let packageData = require('./package.json');
 
 log.level = config.log.level;
+require('./logger');
 
-imap((err, imap) => {
-    if (err) {
-        log.error('App', 'Failed to start IMAP server');
-        return process.exit(1);
+let printLogo = () => {
+    log.info('App', '.##...##..######..##......#####...#####...##..##...####...##..##.');
+    log.info('App', '.##...##....##....##......##..##..##..##..##..##..##..##..##.##..');
+    log.info('App', '.##.#.##....##....##......##..##..##..##..##..##..##......####...');
+    log.info('App', '.#######....##....##......##..##..##..##..##..##..##..##..##.##..');
+    log.info('App', '..##.##...######..######..#####...#####....####....####...##..##.');
+    log.info('App', '                       --- v' + packageData.version + ' ---');
+};
+
+if (!config.processes || config.processes <= 1) {
+    printLogo();
+    if (config.ident) {
+        process.title = config.ident;
     }
-    lmtp(imap, err => {
-        if (err) {
-            log.error('App', 'Failed to start LMTP server');
-            return process.exit(1);
+    // single process mode, do not fork anything
+    require('./worker.js');
+} else {
+    let cluster = require('cluster');
+
+    if (cluster.isMaster) {
+        printLogo();
+
+        if (config.ident) {
+            process.title = config.ident + ' master';
         }
-        smtp(imap, err => {
-            if (err) {
-                log.error('App', 'Failed to start SMTP server');
-                return process.exit(1);
-            }
-            api(imap, err => {
-                if (err) {
-                    log.error('App', 'Failed to start API server');
-                    return process.exit(1);
-                }
-                log.info('App', 'All servers started, ready to process some mail');
-            });
+
+        log.info('App', `Master [${process.pid}] is running`);
+
+        let forkWorker = () => {
+            let worker = cluster.fork();
+            log.info('App', `Forked worker ${worker.process.pid}`);
+        };
+
+        // Fork workers.
+        for (let i = 0; i < config.processes; i++) {
+            forkWorker();
+        }
+
+        cluster.on('exit', worker => {
+            log.info('App', `Worker ${worker.process.pid} died`);
+            setTimeout(forkWorker, 1000);
         });
-    });
-});
+    } else {
+        if (config.ident) {
+            process.title = config.ident + ' worker';
+        }
+
+        require('./worker.js');
+    }
+}
