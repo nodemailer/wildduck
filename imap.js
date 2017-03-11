@@ -32,7 +32,7 @@ let database;
 
 
 server.onAuth = function (login, session, callback) {
-    let username = (login.username || '').toString().replace(/\./g, '').trim();
+    let username = (login.username || '').toString().trim();
 
     database.collection('users').findOne({
         username
