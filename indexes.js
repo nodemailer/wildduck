@@ -82,3 +82,14 @@ db.messages.createIndex({
 db['attachments.files'].createIndex({
     'metadata.messages': 1
 });
+
+db.journal.createIndex({
+    mailbox: 1,
+    modseq: 1
+});
+
+db.journal.createIndex({
+    created: 1
+}, {
+    expireAfterSeconds: 21600
+});

@@ -98,6 +98,10 @@ class ImapNotifier extends EventEmitter {
             return callback(null, false);
         }
 
+        entries.forEach(entry => {
+            entry.created = new Date();
+        });
+
         this.database.collection('mailboxes').findOneAndUpdate({
             username,
             path
