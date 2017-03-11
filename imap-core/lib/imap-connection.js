@@ -439,7 +439,7 @@ class IMAPConnection extends EventEmitter {
                 continue; // skip this
             }
 
-            this._server.logger.info('[%s] UIDS: %s', this.id, JSON.stringify(this.selected.uidList));
+            this._server.logger.info('[%s] UIDS: %s', this.id, this.selected.uidList.length);
             switch (update.command) {
 
                 case 'EXISTS':
