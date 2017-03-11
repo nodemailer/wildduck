@@ -71,7 +71,7 @@ module.exports = {
             }
         }
 
-        mailbox = imapTools.normalizeMailbox(mailbox);
+        mailbox = imapTools.normalizeMailbox(mailbox, !this.acceptUTF8Enabled);
 
         // mark CONDSTORE as enabled
         if (statusQuery.indexOf('HIGHESTMODSEQ') >= 0 && !this.condstoreEnabled) {

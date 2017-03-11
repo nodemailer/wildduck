@@ -2,6 +2,7 @@
 
 let imapHandler = require('../handler/imap-handler');
 let imapTools = require('../imap-tools');
+let utf7 = require('utf7').imap;
 
 // tag LIST (SPECIAL-USE) "" "%" RETURN (SPECIAL-USE)
 
@@ -79,7 +80,7 @@ module.exports = {
             });
         }
 
-        let query = imapTools.normalizeMailbox(reference + mailbox);
+        let query = imapTools.normalizeMailbox(reference + mailbox, !this.acceptUTF8Enabled);
 
         let listResponse = (err, list) => {
             if (err) {
@@ -115,7 +116,11 @@ module.exports = {
                 })));
 
                 response.attributes.push('/');
-                response.attributes.push(folder.path);
+                let path = folder.path;
+                if (!this.acceptUTF8Enabled) {
+                    path = utf7.encode(path);
+                }
+                response.attributes.push(path);
 
                 this.send(imapHandler.compiler(response));
             });

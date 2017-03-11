@@ -28,7 +28,7 @@ module.exports = function (response, isLogging) {
         maxLength = maxLength || 0;
 
         if (resp.length) {
-            queue.push(new Buffer(resp, 'binary'));
+            queue.push(new Buffer(resp));
             lr = resp;
             resp = '';
         }
@@ -88,7 +88,7 @@ module.exports = function (response, isLogging) {
             } else if (typeof value !== 'string') {
                 value = (value || '').toString();
             }
-            output.write(new Buffer(value, 'binary'));
+            output.write(new Buffer(value));
             return emit();
         }
     };

@@ -20,7 +20,7 @@ module.exports = {
 
     handler(command, callback) {
 
-        let mailbox = imapTools.normalizeMailbox(command.attributes[0] && command.attributes[0].value || '');
+        let mailbox = imapTools.normalizeMailbox(command.attributes[0] && command.attributes[0].value || '', !this.acceptUTF8Enabled);
 
         let extensions = [].
         concat(command.attributes[1] || []).

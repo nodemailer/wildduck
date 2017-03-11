@@ -174,7 +174,7 @@ class BodyStructure {
             return data;
         } else {
             return data.
-                // skip body MD5 from extension fields
+            // skip body MD5 from extension fields
             concat(this.getExtensionFields(node, options).slice(1));
         }
     }

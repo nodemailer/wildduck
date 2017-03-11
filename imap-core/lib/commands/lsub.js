@@ -2,6 +2,7 @@
 
 let imapHandler = require('../handler/imap-handler');
 let imapTools = require('../imap-tools');
+let utf7 = require('utf7').imap;
 
 // tag LSUB "" "%"
 
@@ -29,7 +30,7 @@ module.exports = {
             });
         }
 
-        let query = imapTools.normalizeMailbox(reference + mailbox);
+        let query = imapTools.normalizeMailbox(reference + mailbox, !this.acceptUTF8Enabled);
 
         let lsubResponse = (err, list) => {
 
@@ -42,6 +43,11 @@ module.exports = {
                     return;
                 }
 
+                let path = folder.path;
+                if (!this.acceptUTF8Enabled) {
+                    path = utf7.encode(path);
+                }
+
                 let response = {
                     tag: '*',
                     command: 'LSUB',
@@ -50,7 +56,7 @@ module.exports = {
                             type: 'atom',
                             value: flag
                         })),
-                        '/', folder.path
+                        '/', path
                     ]
                 };
 

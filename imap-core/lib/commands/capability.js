@@ -10,14 +10,13 @@ module.exports = {
             if (!this._server.options.ignoreSTARTTLS) {
                 capabilities.push('LOGINDISABLED');
             }
-            capabilities.push('ENABLE');
-            capabilities.push('CONDSTORE');
         }
 
         if (this.state === 'Not Authenticated') {
             capabilities.push('AUTH=PLAIN');
             capabilities.push('ID');
             capabilities.push('SASL-IR');
+            capabilities.push('ENABLE');
         } else {
             capabilities.push('CHILDREN');
             capabilities.push('ID');
@@ -26,6 +25,9 @@ module.exports = {
             capabilities.push('SPECIAL-USE');
             capabilities.push('UIDPLUS');
             capabilities.push('UNSELECT');
+            capabilities.push('ENABLE');
+            capabilities.push('CONDSTORE');
+            capabilities.push('UTF8=ACCEPT');
         }
 
         capabilities.sort((a, b) => a.localeCompare(b));

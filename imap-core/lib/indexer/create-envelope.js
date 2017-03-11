@@ -11,7 +11,7 @@
 module.exports = function (header) {
     return [
         header.date || null,
-        header.subject || '',
+        toUtf8(header.subject || ''),
         processAddress(header.from),
         processAddress(header.sender, header.from),
         processAddress(header['reply-to'], header.from),
@@ -42,7 +42,7 @@ function processAddress(arr, defaults) {
     arr.forEach(addr => {
         if (!addr.group) {
             result.push([
-                addr.name || null, null, (addr.address || '').split('@').shift() || null, (addr.address || '').split('@').pop() || null
+                toUtf8(addr.name) || null, null, toUtf8(addr.address || '').split('@').shift() || null, toUtf8(addr.address || '').split('@').pop() || null
             ]);
         } else {
             // Handle group syntax
@@ -53,4 +53,11 @@ function processAddress(arr, defaults) {
     });
 
     return result;
+}
+
+function toUtf8(value) {
+    if (value && typeof value === 'string') {
+        value = Buffer.from(value, 'binary').toString();
+    }
+    return value;
 }

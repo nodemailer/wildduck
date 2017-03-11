@@ -1,6 +1,7 @@
 'use strict';
 
 let imapTools = require('../imap-tools');
+let utf7 = require('utf7').imap;
 
 // tag CREATE "mailbox"
 
@@ -15,6 +16,10 @@ module.exports = {
     handler(command, callback) {
 
         let mailbox = command.attributes[0] && command.attributes[0].value || '';
+
+        if (!this.acceptUTF8Enabled) {
+            mailbox = utf7.decode(mailbox);
+        }
 
         // Check if CREATE method is set
         if (typeof this._server.onCreate !== 'function') {

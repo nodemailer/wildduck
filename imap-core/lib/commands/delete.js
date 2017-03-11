@@ -15,6 +15,7 @@ module.exports = {
     handler(command, callback) {
 
         let mailbox = command.attributes[0] && command.attributes[0].value || '';
+        mailbox = imapTools.normalizeMailbox(mailbox, !this.acceptUTF8Enabled);
 
         // Check if DELETE method is set
         if (typeof this._server.onDelete !== 'function') {
@@ -23,8 +24,6 @@ module.exports = {
                 message: 'DELETE not implemented'
             });
         }
-
-        mailbox = imapTools.normalizeMailbox(mailbox);
 
         if (!mailbox) {
             // nothing to check for if mailbox is not defined

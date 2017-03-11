@@ -25,6 +25,7 @@ Wild Duck IMAP server supports the following IMAP standards:
 - **SPECIAL-USE**
 - **ID**
 - **AUTHENTICATE PLAIN** and **SASL-IR**
+- **UTF8=ACCEPT**
 
 ## FAQ
 
@@ -37,6 +38,7 @@ Yes, it does. You can run the server and get a working IMAP server for mail stor
 1. Start as many instances as you want. You can start multiple Wild Duck instances in different machines and as long as they share the same MongoDB and Redis settings, users can connect to any instances. This is very different from more traditional IMAP servers where a single user always needs to connect (or proxied) to the same IMAP server. Wild Duck keeps all required state information in MongoDB, so it does not matter which IMAP instance you use.
 2. Super easy to tweak. The entire codebase is pure JavaScript, so there's nothing to compile or anything platform specific. If you need to tweak something then change the code, restart the app and you're ready to go. If it works on one machine then most probably it works in every other machine as well.
 3. Works almost on any OS including Windows. At least if you get MongoDB and Redis ([Windows fork](https://github.com/MSOpenTech/redis)) running first.
+4. Focus on internationalization, ie. supporting email addresses with non-ascii characters
 
 ### Isn't it bad to use a database as a mail store?
 

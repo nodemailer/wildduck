@@ -1,6 +1,7 @@
 'use strict';
 
 let Indexer = require('./indexer/indexer');
+let utf7 = require('utf7').imap;
 
 module.exports.systemFlags = ['\\answered', '\\flagged', '\\draft', '\\deleted', '\\seen'];
 
@@ -195,7 +196,7 @@ module.exports.validateSequnce = function (range) {
     return !!(range.length && /^(\d+|\*)(:\d+|:\*)?(,(\d+|\*)(:\d+|:\*)?)*$/.test(range));
 };
 
-module.exports.normalizeMailbox = function (mailbox) {
+module.exports.normalizeMailbox = function (mailbox, utf7Encoded) {
     if (!mailbox) {
         return '';
     }
@@ -208,6 +209,11 @@ module.exports.normalizeMailbox = function (mailbox) {
     if (parts[0].toUpperCase() === 'INBOX') {
         parts[0] = 'INBOX';
     }
+
+    if (utf7Encoded) {
+        parts = parts.map(value => utf7.decode(value));
+    }
+
     mailbox = parts.join('/');
 
     return mailbox;

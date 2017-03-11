@@ -37,7 +37,10 @@ module.exports = {
             });
         }
 
-        // ignore commands with adjacent spaces
+        mailbox = imapTools.normalizeMailbox(mailbox, !this.acceptUTF8Enabled);
+        newname = imapTools.normalizeMailbox(newname, !this.acceptUTF8Enabled);
+
+        // ignore commands with adjacent separators
         if (/\/{2,}/.test(newname)) {
             return callback(null, {
                 response: 'NO',
@@ -45,9 +48,6 @@ module.exports = {
                 message: 'Adjacent hierarchy separators are not supported'
             });
         }
-
-        mailbox = imapTools.normalizeMailbox(mailbox);
-        newname = imapTools.normalizeMailbox(newname);
 
         // Renaming INBOX is permitted by RFC3501 but not by this implementation
         if (mailbox === 'INBOX') {

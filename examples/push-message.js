@@ -18,12 +18,12 @@ const transporter = nodemailer.createTransport({
 
 transporter.sendMail({
     envelope: {
-        from: 'andris@kreata.ee',
+        from: 'andrisööö@kreata.ee',
         to: [recipient]
     },
-    from: 'andris@kreata.ee',
+    from: 'andrisööö@kreata.ee',
     to: recipient,
-    subject: 'Test message [' + Date.now() + ']',
+    subject: 'Test ööö message [' + Date.now() + ']',
     text: 'Hello world! Current time is ' + new Date().toString(),
     html: '<p>Hello world! Current time is <em>' + new Date().toString() + '</em></p>',
     attachments: [{

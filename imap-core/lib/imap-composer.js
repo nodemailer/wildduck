@@ -13,7 +13,6 @@ class IMAPComposer extends Transform {
         this.connection = options.connection;
     }
 
-
     _transform(obj, encoding, done) {
         if (!obj) {
             return done();
