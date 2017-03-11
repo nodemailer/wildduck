@@ -37,10 +37,13 @@ class BodyStructure {
                 case 'text':
                     return this.processTextNode(node, options);
                 case 'message':
-                    if (!options.attachmentRFC822) {
-                        return this.processRFC822Node(node, options);
+                    if (node.parsedHeader['content-type'].subtype === 'rfc822') {
+                        if (!options.attachmentRFC822) {
+                            return this.processRFC822Node(node, options);
+                        }
+                        return this.processAttachmentNode(node, options);
                     }
-                    return this.processAttachmentNode(node, options);
+                    // fall through
                 default:
                     return this.processAttachmentNode(node, options);
             }
