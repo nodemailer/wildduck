@@ -98,7 +98,7 @@ You can either modify the default [config file](./config/default.js) or alternat
 
 Run the [index queries](./indexes.js) in MongoDB (optional, the app would work without it as indexes only become relevant once you have more than few messages stored)
 
-There's a helper script that you can run from the command line
+There's a helper script that you can run from the command line to add/updated indexes in the database provided by the configuration file
 
 ```
 $ npm run indexes
