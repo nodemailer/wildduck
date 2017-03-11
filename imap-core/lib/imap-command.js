@@ -125,21 +125,33 @@ class IMAPCommand {
                 return next(err);
             }
 
-            this.connection._server.logger.debug('[%s] C:', this.connection.id, this.payload);
+
 
             // check if the payload needs to be directod to a preset handler
             if (typeof this.connection._nextHandler === 'function') {
+                this.connection._server.logger.debug('[%s] C: <%s bytes of data>', this.connection.id, this.payload && this.payload.length || 0);
                 return this.connection._nextHandler(this.payload, next);
             }
 
             try {
                 this.parsed = imapHandler.parser(this.payload);
             } catch (E) {
+                this.connection._server.logger.debug('[%s] C:', this.connection.id, this.payload);
                 this.connection.send(this.tag + ' BAD ' + E.message);
                 return next();
             }
 
             let handler = commands.get(this.command);
+
+            if (/^(AUTHENTICATE|LOGIN)/.test(this.command) && Array.isArray(this.parsed.attributes)) {
+                this.parsed.attributes.forEach(attr => {
+                    if (attr && typeof attr === 'object' && attr.value) {
+                        attr.sensitive = true;
+                    }
+                });
+            }
+
+            this.connection._server.logger.debug('[%s] C:', this.connection.id, imapHandler.compiler(this.parsed, false, true));
 
             this.validateCommand(this.parsed, handler, err => {
                 if (err) {

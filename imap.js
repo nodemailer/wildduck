@@ -1154,9 +1154,9 @@ server.addToMailbox = (username, path, meta, date, flags, raw, callback) => {
                 }
 
                 let internaldate = date && new Date(date) || new Date();
-                let headerdate = mimeTree.parsedHeader.date && new Date(mimeTree.parsedHeader.date);
+                let headerdate = mimeTree.parsedHeader.date && new Date(mimeTree.parsedHeader.date) || false;
 
-                if (headerdate.toString() === 'Invalid Date') {
+                if (!headerdate || headerdate.toString() === 'Invalid Date') {
                     headerdate = internaldate;
                 }
 
