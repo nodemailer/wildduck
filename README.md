@@ -2,7 +2,9 @@
 
 ![](https://cldup.com/qlZnwOz0na.jpg)
 
-This is a very early preview of an IMAP server built with Node.js, MongoDB and Redis. Node.js runs the application, MongoDB is used as the mail store and Redis is used for ephemeral actions like publish/subscribe or caching.
+Wild Duck is an IMAP server built with Node.js, MongoDB and Redis. Node.js runs the application, MongoDB is used as the mail store and Redis is used for ephemeral actions like publish/subscribe or caching.
+
+> **NB** Wild Duck is currently in **beta**. You should not use it in production.
 
 ## Goals of the Project
 
