@@ -242,15 +242,25 @@ class Indexer {
                 }
             };
 
-            if (node.body && node.size > sizeLimit) {
+            let contentType = (node.parsedHeader['content-type'] && node.parsedHeader['content-type'].value || 'application/octet-stream').toLowerCase().trim();
+            let disposition = (node.parsedHeader['content-disposition'] && node.parsedHeader['content-disposition'].value || '').toLowerCase().trim() || false;
+
+            let curSizeLimit = sizeLimit;
+
+            // If the current node is HTML or Plaintext then allow larger content included in the mime tree
+            if (['text/plain', 'text/html'].includes(contentType) && (!disposition || disposition === 'inline')) {
+                curSizeLimit = Math.max(sizeLimit, 200 * 1024);
+            }
+
+            if (node.body && node.size > curSizeLimit) {
                 let attachmentId = new ObjectID();
-                let contentType = node.parsedHeader['content-type'] && node.parsedHeader['content-type'].value || 'application/octet-stream';
-                let fileName = (node.parsedHeader['content-disposition'] && node.parsedHeader['content-disposition'].params && node.parsedHeader['content-disposition'].params.filename) || (node.parsedHeader['content-type'] && node.parsedHeader['content-type'].params && node.parsedHeader['content-type'].params.name) || false;
+
                 let transferEncoding = node.parsedHeader['content-transfer-encoding'] || '7bit';
+                let fileName = (node.parsedHeader['content-disposition'] && node.parsedHeader['content-disposition'].params && node.parsedHeader['content-disposition'].params.filename) || (node.parsedHeader['content-type'] && node.parsedHeader['content-type'].params && node.parsedHeader['content-type'].params.name) || false;
 
                 if (fileName) {
                     try {
-                        fileName = libmime.decodeWords(fileName);
+                        fileName = libmime.decodeWords(fileName).trim();
                     } catch (E) {
                         // failed to parse filename, keep as is (most probably an unknown charset is used)
                     }
@@ -261,11 +271,17 @@ class Indexer {
                     fsync: true,
                     content_type: contentType,
                     metadata: {
+                        // if we copy the same message to other mailboxes then instead
+                        // of copying attachments we add a pointer to the new message here
                         messages: [messageId],
+                        // decoded filename to display in a web client or API
                         fileName,
+                        // content-type for the attachment
                         contentType,
-                        transferEncoding,
-                        created: new Date()
+                        // is it really an attachment? maybe it's a very long text part?
+                        disposition,
+                        // how to decode contents if a webclient or API asks for the attachment
+                        transferEncoding
                     }
                 });
 
