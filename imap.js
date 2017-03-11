@@ -35,7 +35,7 @@ if (config.imap.cert) {
     serverOptions.cert = fs.readFileSync(config.imap.cert);
 }
 
-let server = new IMAPServer();
+let server = new IMAPServer(serverOptions);
 
 let database;
 
