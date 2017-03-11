@@ -88,6 +88,8 @@ class IMAPCommand {
                 command.expecting > Math.max(Number(this.connection._server.options.maxMessage) || 0, MAX_MESSAGE_SIZE)) {
 
                 this.connection._server.logger.debug('[%s] C:', this.connection.id, this.payload);
+
+                this.payload = ''; // reset payload
                 this.connection.send(this.tag + ' NO Literal too big');
                 return callback(new Error('Literal too big'));
             }
