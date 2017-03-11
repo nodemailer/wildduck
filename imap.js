@@ -12,12 +12,11 @@ const imapHandler = IMAPServerModule.imapHandler;
 const bcrypt = require('bcryptjs');
 const ObjectID = require('mongodb').ObjectID;
 const Indexer = require('./imap-core/lib/indexer/indexer');
+const fs = require('fs');
 
 // Setup server
-let server = new IMAPServer({
-    secure: true,
-    //key: config.imap.key ? fs.readFileSync(config.imap.key) : false,
-    //cert: config.imap.cert ? fs.readFileSync(config.imap.cert) : false,
+let serverOptions = {
+    secure: config.imap.secure,
     id: {
         name: 'test'
     },
@@ -26,7 +25,17 @@ let server = new IMAPServer({
         debug: log.silly.bind(log, 'IMAP'),
         error: log.error.bind(log, 'IMAP')
     }
-});
+};
+
+if (config.imap.key) {
+    serverOptions.key = fs.readFileSync(config.imap.key);
+}
+
+if (config.imap.cert) {
+    serverOptions.cert = fs.readFileSync(config.imap.cert);
+}
+
+let server = new IMAPServer();
 
 let database;
 

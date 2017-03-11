@@ -28,7 +28,10 @@ module.exports = {
 
     imap: {
         port: 9993,
-        host: '127.0.0.1'
+        host: '127.0.0.1',
+        //key: '/path/to/server/key.pem'
+        //cert: '/path/to/server/cert.pem'
+        secure: true
     },
 
     lmtp: {
