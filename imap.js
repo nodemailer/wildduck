@@ -537,6 +537,8 @@ server.onStore = function (path, update, session, callback) {
                     }));
                 }
 
+                this.logger.info('UPDATED: %s', updated ? 'YES' : 'NO');
+
                 if (updated) {
                     database.collection('messages').findOneAndUpdate({
                         _id: message._id
@@ -552,6 +554,8 @@ server.onStore = function (path, update, session, callback) {
                             flags: message.flags,
                             message: message._id
                         });
+
+                        this.logger.info('NOTIFY: %s', JSON.stringify(notifyEntries));
 
                         if (notifyEntries.length > 100) {
                             setImmediate(() => this.notifier.addEntries(username, path, notifyEntries, processNext));
