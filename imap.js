@@ -460,11 +460,12 @@ server.onStore = function (path, update, session, callback) {
         let notifyEntries = [];
         let done = (...args) => {
             if (notifyEntries.length) {
-                setImmediate(() => this.notifier.addEntries(username, path, notifyEntries, () => {
+                let entries = notifyEntries;
+                notifyEntries = [];
+                setImmediate(() => this.notifier.addEntries(username, path, entries, () => {
                     this.notifier.fire(username, path);
                     return callback(...args);
                 }));
-                notifyEntries = [];
                 return;
             }
             this.notifier.fire(username, path);
@@ -474,7 +475,7 @@ server.onStore = function (path, update, session, callback) {
         let processNext = () => {
             cursor.next((err, message) => {
                 if (err) {
-                    return callback(err);
+                    return done(err);
                 }
                 if (!message) {
                     return cursor.close(() => done(null, true));
@@ -537,8 +538,6 @@ server.onStore = function (path, update, session, callback) {
                     }));
                 }
 
-                this.logger.info('UPDATED: %s', updated ? 'YES' : 'NO');
-
                 if (updated) {
                     database.collection('messages').findOneAndUpdate({
                         _id: message._id
@@ -555,11 +554,10 @@ server.onStore = function (path, update, session, callback) {
                             message: message._id
                         });
 
-                        this.logger.info('NOTIFY: %s', JSON.stringify(notifyEntries));
-
                         if (notifyEntries.length > 100) {
-                            setImmediate(() => this.notifier.addEntries(username, path, notifyEntries, processNext));
+                            let entries = notifyEntries;
                             notifyEntries = [];
+                            setImmediate(() => this.notifier.addEntries(username, path, entries, processNext));
                             return;
                         } else {
                             setImmediate(() => processNext());

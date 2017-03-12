@@ -92,7 +92,6 @@ class ImapNotifier extends EventEmitter {
      * @param {Function} callback Runs once the entry is either stored or an error occurred
      */
     addEntries(username, path, entries, callback) {
-        this.logger.info('NOTIFY "%s":"%s" %s', username, path, JSON.stringify(entries));
         if (entries && !Array.isArray(entries)) {
             entries = [entries];
         } else if (!entries || !entries.length) {
