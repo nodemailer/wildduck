@@ -458,6 +458,18 @@ server.onStore = function (path, update, session, callback) {
         ]);
 
         let notifyEntries = [];
+        let done = (...args) => {
+            if (notifyEntries.length) {
+                setImmediate(() => this.notifier.addEntries(username, path, notifyEntries, () => {
+                    this.notifier.fire(username, path);
+                    return callback(...args);
+                }));
+                notifyEntries = [];
+                return;
+            }
+            this.notifier.fire(username, path);
+            return callback(...args);
+        };
 
         let processNext = () => {
             cursor.next((err, message) => {
@@ -465,18 +477,7 @@ server.onStore = function (path, update, session, callback) {
                     return callback(err);
                 }
                 if (!message) {
-                    return cursor.close(() => {
-                        if (notifyEntries.length) {
-                            setImmediate(() => this.notifier.addEntries(username, path, notifyEntries, () => {
-                                this.notifier.fire(username, path);
-                                return callback(null, true);
-                            }));
-                            notifyEntries = [];
-                            return;
-                        }
-                        this.notifier.fire(username, path);
-                        return callback(null, true);
-                    });
+                    return cursor.close(() => done(null, true));
                 }
 
                 let flagsupdate = {};
@@ -541,18 +542,7 @@ server.onStore = function (path, update, session, callback) {
                         _id: message._id
                     }, flagsupdate, {}, err => {
                         if (err) {
-                            return cursor.close(() => {
-                                if (notifyEntries.length) {
-                                    setImmediate(() => this.notifier.addEntries(username, path, notifyEntries, () => {
-                                        this.notifier.fire(username, path);
-                                        return callback(err);
-                                    }));
-                                    notifyEntries = [];
-                                    return;
-                                }
-                                this.notifier.fire(username, path);
-                                callback(err);
-                            });
+                            return cursor.close(() => done(err));
                         }
 
                         notifyEntries.push({
@@ -567,8 +557,9 @@ server.onStore = function (path, update, session, callback) {
                             setImmediate(() => this.notifier.addEntries(username, path, notifyEntries, processNext));
                             notifyEntries = [];
                             return;
+                        } else {
+                            setImmediate(() => processNext());
                         }
-                        setImmediate(() => processNext());
                     });
                 } else {
                     processNext();

@@ -27,7 +27,9 @@ module.exports = {
             capabilities.push('UNSELECT');
             capabilities.push('ENABLE');
             capabilities.push('CONDSTORE');
-            capabilities.push('UTF8=ACCEPT');
+            // hide UTF8 capability as there are still some bugs related
+            // to converting data from binary to utf8 charset
+            //capabilities.push('UTF8=ACCEPT');
         }
 
         capabilities.sort((a, b) => a.localeCompare(b));
