@@ -457,6 +457,8 @@ server.onStore = function (path, update, session, callback) {
             ['uid', 1]
         ]);
 
+        let notifyEntries = [];
+
         let processNext = () => {
             cursor.next((err, message) => {
                 if (err) {
@@ -464,6 +466,14 @@ server.onStore = function (path, update, session, callback) {
                 }
                 if (!message) {
                     return cursor.close(() => {
+                        if (notifyEntries.length) {
+                            setImmediate(() => this.notifier.addEntries(username, path, notifyEntries, () => {
+                                this.notifier.fire(username, path);
+                                return callback(null, true);
+                            }));
+                            notifyEntries = [];
+                            return;
+                        }
                         this.notifier.fire(username, path);
                         return callback(null, true);
                     });
@@ -531,15 +541,34 @@ server.onStore = function (path, update, session, callback) {
                         _id: message._id
                     }, flagsupdate, {}, err => {
                         if (err) {
-                            return cursor.close(() => callback(err));
+                            return cursor.close(() => {
+                                if (notifyEntries.length) {
+                                    setImmediate(() => this.notifier.addEntries(username, path, notifyEntries, () => {
+                                        this.notifier.fire(username, path);
+                                        return callback(err);
+                                    }));
+                                    notifyEntries = [];
+                                    return;
+                                }
+                                this.notifier.fire(username, path);
+                                callback(err);
+                            });
                         }
-                        this.notifier.addEntries(username, path, {
+
+                        notifyEntries.push({
                             command: 'FETCH',
                             ignore: session.id,
                             uid: message.uid,
                             flags: message.flags,
                             message: message._id
-                        }, processNext);
+                        });
+
+                        if (notifyEntries.length > 100) {
+                            setImmediate(() => this.notifier.addEntries(username, path, notifyEntries, processNext));
+                            notifyEntries = [];
+                            return;
+                        }
+                        setImmediate(() => processNext());
                     });
                 } else {
                     processNext();
