@@ -870,13 +870,15 @@ server.onFetch = function (path, options, session, callback) {
                         return processNext();
                     }
 
+                    this.logger.debug('[%s] UPDATE FLAGS for "%s"', session.id, message.uid);
+
                     message.flags.unshift('\\Seen');
 
                     database.collection('messages').findOneAndUpdate({
                         _id: message._id
                     }, {
-                        $set: {
-                            flags: message.flags
+                        $addToSet: {
+                            flags: '\\Seen'
                         }
                     }, {}, err => {
                         if (err) {
