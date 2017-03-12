@@ -26,7 +26,7 @@ Wild Duck IMAP server supports the following IMAP standards:
 - **SPECIAL-USE**
 - **ID**
 - **AUTHENTICATE PLAIN** and **SASL-IR**
-- **UTF8=ACCEPT**
+- ~~**UTF8=ACCEPT**~~ (FIXME: had to revert this change as internally strings are handled as binary, not utf8 and thus mixed encodings were used if conversion was not properly handled)
 
 ## FAQ
 
