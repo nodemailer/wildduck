@@ -224,7 +224,7 @@ module.exports = {
         this._server.logger.debug('[%s] FETCH: %s', this.id, JSON.stringify({
             metadataOnly: !!metadataOnly,
             markAsSeen: !!markAsSeen,
-            messages,
+            messages:messages.length,
             query,
             changedSince,
             isUid
