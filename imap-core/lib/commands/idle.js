@@ -24,7 +24,7 @@ module.exports = {
             }
 
             if (token.toUpperCase().trim() !== 'DONE') {
-                return callback(new Error('Invalid Idle continuation'));
+                return callback(new Error('Invalid Idle continuation (' + JSON.stringify(token) + ')'));
             }
 
             callback(null, {
