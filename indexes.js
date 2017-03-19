@@ -89,6 +89,11 @@ db.journal.createIndex({
 });
 
 db.journal.createIndex({
+    mailbox: 1,
+    modseq: -1
+});
+
+db.journal.createIndex({
     created: 1
 }, {
     expireAfterSeconds: 21600

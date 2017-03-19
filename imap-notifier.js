@@ -30,12 +30,52 @@ class ImapNotifier extends EventEmitter {
         this._listeners = new EventEmitter();
         this._listeners.setMaxListeners(0);
 
-        this.publishTimer = false;
+        let publishTimers = new Map();
+        let scheduleDataEvent = ev => {
+            let data;
+
+            let fire = () => {
+                clearTimeout(data.timeout);
+                publishTimers.delete(ev);
+                this._listeners.emit(ev);
+            };
+
+            if (publishTimers.has(ev)) {
+                data = publishTimers.get(ev) || {};
+                clearTimeout(data.timeout);
+                data.count++;
+
+                if (data.initial < Date.now() - 1000) {
+                    // if the event has been held back already for a second, the fire immediatelly
+                    return fire();
+                }
+            } else {
+                // initialize new event object
+                data = {
+                    ev,
+                    count: 1,
+                    initial: Date.now(),
+                    timeout: null
+                };
+            }
+
+            data.timeout = setTimeout(fire, 100);
+            data.timeout.unref();
+
+            if (!publishTimers.has(ev)) {
+                publishTimers.set(ev, data);
+            }
+        };
+
         this.subsriber.on('message', (channel, message) => {
             if (channel === 'wd_events') {
                 try {
                     let data = JSON.parse(message);
-                    this._listeners.emit(data.e, data.p);
+                    if (data.e && !data.p) {
+                        scheduleDataEvent(data.e);
+                    } else {
+                        this._listeners.emit(data.e, data.p);
+                    }
                 } catch (E) {
                     //
                 }
@@ -98,28 +138,54 @@ class ImapNotifier extends EventEmitter {
             return callback(null, false);
         }
 
+        let modseqsNeeded = entries.length;
         entries.forEach(entry => {
+            if (entry.modseq) {
+                modseqsNeeded--;
+            }
             entry.created = new Date();
         });
 
-        this.database.collection('mailboxes').findOneAndUpdate({
+        let mailbox;
+        if (username && typeof username === 'object' && username._id) {
+            mailbox = username;
+            username = false;
+        }
+        let mailboxQuery = mailbox ? {
+            _id: mailbox._id
+        } : {
             username,
             path
-        }, {
-            $inc: {
-                modifyIndex: entries.length
+        };
+
+        let getMailbox = next => {
+            if (modseqsNeeded) {
+                return this.database.collection('mailboxes').findOneAndUpdate(mailboxQuery, {
+                    $inc: {
+                        modifyIndex: modseqsNeeded
+                    }
+                }, {}, (err, item) => {
+                    if (err) {
+                        return callback(err);
+                    }
+
+                    next(null, item && item.value);
+                });
             }
-        }, {}, (err, item) => {
+            if (mailbox) {
+                return next(null, mailbox);
+            }
+            this.database.collection('mailboxes').findOne(mailboxQuery, next);
+        };
+
+        getMailbox((err, mailbox) => {
             if (err) {
                 return callback(err);
             }
-
-            if (!item || !item.value) {
-                // was not able to acquire a lock
+            if (!mailbox) {
                 return callback(null, new Error('Selected mailbox does not exist'));
             }
 
-            let mailbox = item.value;
             let startIndex = mailbox.modifyIndex;
 
             let updated = 0;
@@ -137,11 +203,14 @@ class ImapNotifier extends EventEmitter {
                 }
 
                 let entry = entries[updated++];
+                let setModseq = !!entry.modseq;
 
                 entry.mailbox = mailbox._id;
-                entry.modseq = ++startIndex;
+                if (!setModseq) {
+                    entry.modseq = ++startIndex;
+                }
 
-                if (entry.message) {
+                if (entry.message && setModseq) {
                     this.database.collection('messages').findOneAndUpdate({
                         _id: entry.message,
                         modseq: {
@@ -210,6 +279,8 @@ class ImapNotifier extends EventEmitter {
                 modseq: {
                     $gt: modifyIndex
                 }
+            }).sort({
+                modseq: 1
             }).toArray(callback);
         });
     }

@@ -1,3 +1,5 @@
+/* eslint no-console: 0 */
+
 'use strict';
 
 const recipient = process.argv[2];
@@ -13,7 +15,7 @@ const nodemailer = require('nodemailer');
 const transporter = nodemailer.createTransport({
     host: 'localhost',
     port: config.smtp.port,
-    logger: true
+    logger: false
 });
 
 transporter.sendMail({
@@ -30,4 +32,13 @@ transporter.sendMail({
         path: __dirname + '/swan.jpg',
         filename: 'swän.jpg'
     }]
+}, (err, info) => {
+    if (err && err.response) {
+        console.log('Message failed: %s', err.response);
+    } else if (err) {
+        console.log(err);
+    } else {
+        console.log(info);
+    }
 });
+}

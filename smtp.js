@@ -126,7 +126,7 @@ const server = new SMTPServer({
                     chunklen -= header.length;
 
                     if (err) {
-                        log.error('SMTP', err);
+                        return callback(err);
                     }
 
                     storeNext();

@@ -18,7 +18,7 @@
     "grunt-eslint": "^19.0.0",
     "grunt-mocha-test": "^0.13.2",
     "mocha": "^3.2.0",
-    "nodemailer": "^3.1.5"
+    "nodemailer": "^3.1.7"
   },
   "dependencies": {
     "addressparser": "^1.0.1",
@@ -30,12 +30,13 @@
     "libbase64": "^0.1.0",
     "libmime": "^3.1.0",
     "mailparser": "^2.0.2",
-    "mongodb": "^2.2.24",
+    "mongodb": "^2.2.25",
     "nodemailer-fetch": "^2.1.0",
     "npmlog": "^4.0.2",
-    "redis": "^2.6.5",
+    "redfour": "^1.0.0",
+    "redis": "^2.7.1",
     "restify": "^4.3.0",
-    "smtp-server": "^2.0.2",
+    "smtp-server": "^2.0.3",
     "toml": "^2.3.2",
     "utf7": "^1.0.2",
     "uuid": "^3.0.1"

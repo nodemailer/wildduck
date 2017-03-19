@@ -13,9 +13,10 @@ const bcrypt = require('bcryptjs');
 const ObjectID = require('mongodb').ObjectID;
 const Indexer = require('./imap-core/lib/indexer/indexer');
 const fs = require('fs');
+const RedFour = require('redfour');
 
 // Setup server
-let serverOptions = {
+const serverOptions = {
     secure: config.imap.secure,
     id: {
         name: 'test'
@@ -36,10 +37,14 @@ if (config.imap.cert) {
     serverOptions.cert = fs.readFileSync(config.imap.cert);
 }
 
-let server = new IMAPServer(serverOptions);
+const server = new IMAPServer(serverOptions);
+
+const redlock = new RedFour({
+    redis: config.redis,
+    namespace: 'wildduck'
+});
 
 let database;
-
 
 server.onAuth = function (login, session, callback) {
     let username = (login.username || '').toString().trim();
@@ -1171,77 +1176,98 @@ server.addToMailbox = (username, path, meta, date, flags, raw, callback) => {
             return callback(err);
         }
 
-        // acquire new UID
-        database.collection('mailboxes').findOneAndUpdate({
-            _id: mailbox._id
-        }, {
-            $inc: {
-                uidNext: 1
-            }
-        }, {}, (err, item) => {
+        // calculate size before removing large attachments from mime tree
+        let size = server.indexer.getSize(mimeTree);
+
+        // move large attachments to GridStore
+        server.indexer.storeAttachments(id, mimeTree, 50 * 1024, err => {
             if (err) {
                 return callback(err);
             }
 
-            if (!item || !item.value) {
-                // was not able to acquire a lock
-                let err = new Error('Mailbox is missing');
-                err.imapResponse = 'TRYCREATE';
-                return callback(err);
-            }
-
-            let mailbox = item.value;
-
-            // calculate size before removing large attachments from mime tree
-            let size = server.indexer.getSize(mimeTree);
-
-            // move large attachments to GridStore
-            server.indexer.storeAttachments(id, mimeTree, 50 * 1024, err => {
+            // Another server might be waiting for the lock like this.
+            redlock.waitAcquireLock(mailbox._id.toString(), 30 * 1000, 10 * 1000, (err, lock) => {
                 if (err) {
                     return callback(err);
                 }
 
-                let internaldate = date && new Date(date) || new Date();
-                let headerdate = mimeTree.parsedHeader.date && new Date(mimeTree.parsedHeader.date) || false;
-
-                if (!headerdate || headerdate.toString() === 'Invalid Date') {
-                    headerdate = internaldate;
+                if (!lock || !lock.success) {
+                    // did not get a insert lock in 10 seconds
+                    return callback(new Error('The user you are trying to contact is receiving mail at a rate that prevents additional messages from being delivered. Please resend your message at a later time'));
                 }
 
-                let message = {
-                    _id: id,
-                    mailbox: mailbox._id,
-                    uid: mailbox.uidNext,
-                    internaldate,
-                    headerdate,
-                    flags,
-                    size,
-                    meta,
-                    modseq: 0,
-                    mimeTree,
-                    envelope,
-                    bodystructure,
-                    messageId
-                };
-
-                database.collection('messages').insertOne(message, err => {
+                // acquire new UID+MODSEQ
+                database.collection('mailboxes').findOneAndUpdate({
+                    _id: mailbox._id
+                }, {
+                    $inc: {
+                        // allocate bot UID and MODSEQ values so when journal is later sorted by
+                        // modseq then UIDs are always in ascending order
+                        uidNext: 1,
+                        modifyIndex: 1
+                    }
+                }, (err, item) => {
                     if (err) {
+                        redlock.releaseLock(lock, () => false);
                         return callback(err);
                     }
-                    server.notifier.addEntries(username, path, {
-                        command: 'EXISTS',
-                        uid: message.uid,
-                        message: message._id
-                    }, () => {
+
+                    if (!item || !item.value) {
+                        // was not able to acquire a lock
+                        let err = new Error('Mailbox is missing');
+                        err.imapResponse = 'TRYCREATE';
+                        redlock.releaseLock(lock, () => false);
+                        return callback(err);
+                    }
+
+                    let mailbox = item.value;
+
+                    let internaldate = date && new Date(date) || new Date();
+                    let headerdate = mimeTree.parsedHeader.date && new Date(mimeTree.parsedHeader.date) || false;
+
+                    if (!headerdate || headerdate.toString() === 'Invalid Date') {
+                        headerdate = internaldate;
+                    }
+
+                    let message = {
+                        _id: id,
+                        mailbox: mailbox._id,
+                        uid: mailbox.uidNext,
+                        internaldate,
+                        headerdate,
+                        flags,
+                        size,
+                        meta,
+                        modseq: mailbox.modifyIndex + 1,
+                        mimeTree,
+                        envelope,
+                        bodystructure,
+                        messageId
+                    };
+
+                    database.collection('messages').insertOne(message, err => {
+                        if (err) {
+                            redlock.releaseLock(lock, () => false);
+                            return callback(err);
+                        }
 
                         let uidValidity = mailbox.uidValidity;
                         let uid = message.uid;
 
-                        server.notifier.fire(username, path);
+                        server.notifier.addEntries(mailbox, false, {
+                            command: 'EXISTS',
+                            uid: message.uid,
+                            message: message._id,
+                            modseq: message.modseq
+                        }, () => {
 
-                        return callback(null, true, {
-                            uidValidity,
-                            uid
+                            redlock.releaseLock(lock, () => {
+                                server.notifier.fire(username, path);
+                                return callback(null, true, {
+                                    uidValidity,
+                                    uid
+                                });
+                            });
                         });
                     });
                 });
