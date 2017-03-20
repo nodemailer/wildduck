@@ -118,7 +118,7 @@ class IMAPConnection extends EventEmitter {
      */
     send(payload, callback) {
         if (this._socket && this._socket.writable) {
-            this._socket.write(payload + '\r\n', 'utf-8', callback);
+            this._socket.write(payload + '\r\n', 'binary', callback);
             this._server.logger.debug('[%s] S:', this.id, payload);
         }
     }

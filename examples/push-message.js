@@ -41,4 +41,3 @@ transporter.sendMail({
         console.log(info);
     }
 });
-}

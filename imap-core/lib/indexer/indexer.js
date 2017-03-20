@@ -50,7 +50,7 @@ class Indexer {
                 data = data.join('\r\n');
             }
             if (data || force) {
-                size += new Buffer((first ? '' : '\r\n') + (data || ''), 'binary').length;
+                size += Buffer.from((first ? '' : '\r\n') + (data || ''), 'binary').length;
                 first = false;
             }
         };
@@ -126,7 +126,7 @@ class Indexer {
                 data = data.join('\r\n');
             }
             if (remainder || data || force) {
-                res.write(new Buffer((first ? '' : '\r\n') + (remainder || '') + (data || ''), 'binary'));
+                res.write(Buffer.from((first ? '' : '\r\n') + (remainder || '') + (data || ''), 'binary'));
                 first = false;
             }
             remainder = '';
@@ -423,7 +423,7 @@ class Indexer {
             });
 
         } else {
-            return setImmediate(() => callback(null, new Buffer((data || '').toString(), 'binary')));
+            return setImmediate(() => callback(null, Buffer.from((data || '').toString(), 'binary')));
         }
     }
 
