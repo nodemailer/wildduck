@@ -37,7 +37,7 @@ module.exports = {
     },
 
     lmtp: {
-        enabled: true,
+        enabled: false,
         port: 2424,
         host: '0.0.0.0',
         maxMB: 5

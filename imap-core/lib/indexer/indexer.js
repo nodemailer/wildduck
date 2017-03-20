@@ -150,11 +150,17 @@ class Indexer {
             }
 
             root = false;
-            if (node.body && node.body.buffer) {
+            if (Buffer.isBuffer(node.body)) {
+                // node Buffer
+                remainder = node.body;
+            } else if (node.body && node.body.buffer) {
+                // mongodb Binary
                 remainder = node.body.buffer;
             } else if (typeof node.body === 'string') {
+                // binary string
                 remainder = Buffer.from(node.body, 'binary');
             } else {
+                // whatever
                 remainder = node.body;
             }
 

@@ -26,8 +26,8 @@ module.exports = {
         }
 
         let range = command.attributes[0] && command.attributes[0].value || '';
-        let mailbox = command.attributes[1] && command.attributes[1].value || '';
-        mailbox = imapTools.normalizeMailbox(mailbox, !this.acceptUTF8Enabled);
+        let path = Buffer.from(command.attributes[1] && command.attributes[1].value || '', 'binary').toString();
+        let mailbox = imapTools.normalizeMailbox(path, !this.acceptUTF8Enabled);
 
         if (!mailbox) {
             return callback(new Error('Invalid mailbox argument for ' + cmd));

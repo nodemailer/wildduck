@@ -81,7 +81,7 @@ function authenticate(connection, token, callback) {
 
         callback(null, {
             response: 'OK',
-            message: username + ' authenticated'
+            message: new Buffer(username + ' authenticated').toString('binary')
         });
 
     });

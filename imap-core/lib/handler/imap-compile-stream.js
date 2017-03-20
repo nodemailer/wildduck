@@ -8,7 +8,7 @@ let PassThrough = streams.PassThrough;
 let LengthLimiter = require('../length-limiter');
 
 /**
- * Compiles an input object into
+ * Compiles an input object into a streamed IMAP response
  */
 module.exports = function (response, isLogging) {
     let output = new PassThrough();
@@ -55,7 +55,6 @@ module.exports = function (response, isLogging) {
         }
 
         let value = queue.shift();
-
         if (value.type === 'stream') {
             if (!value.expectedLength) {
                 return emit();
@@ -79,7 +78,7 @@ module.exports = function (response, isLogging) {
                 waiting = false;
                 return emit();
             });
-        } else if (value instanceof Buffer) {
+        } else if (Buffer.isBuffer(value)) {
             output.write(value);
             return emit();
         } else {
@@ -96,6 +95,11 @@ module.exports = function (response, isLogging) {
     let walk = function (node, callback) {
         if (lastType === 'LITERAL' || (['(', '<', '['].indexOf((resp || lr).substr(-1)) < 0 && (resp || lr).length)) {
             resp += ' ';
+        }
+
+        if (node && node.buffer && !Buffer.isBuffer(node)) {
+            // mongodb binary
+            node = node.buffer;
         }
 
         if (Array.isArray(node)) {
@@ -119,11 +123,11 @@ module.exports = function (response, isLogging) {
             return setImmediate(callback);
         }
 
-        if (typeof node === 'string') {
+        if (typeof node === 'string' || Buffer.isBuffer(node)) {
             if (isLogging && node.length > 20) {
                 resp += '"(* ' + node.length + 'B string *)"';
             } else {
-                resp += JSON.stringify(node);
+                resp += JSON.stringify(node.toString('binary'));
             }
             return setImmediate(callback);
         }
@@ -144,6 +148,7 @@ module.exports = function (response, isLogging) {
             case 'LITERAL':
                 {
                     let nval = node.value;
+
                     if (typeof nval === 'number') {
                         nval = nval.toString();
                     }
@@ -172,7 +177,7 @@ module.exports = function (response, isLogging) {
                             //value is a stream object
                             emit(nval, node.expectedLength, node.startFrom, node.maxLength);
                         } else {
-                            resp = nval || '';
+                            resp = (nval || '').toString('binary');
                         }
                     }
                     break;
@@ -181,12 +186,12 @@ module.exports = function (response, isLogging) {
                 if (isLogging && node.value.length > 20) {
                     resp += '"(* ' + node.value.length + 'B string *)"';
                 } else {
-                    resp += JSON.stringify(node.value || '');
+                    resp += JSON.stringify((node.value || '').toString('binary'));
                 }
                 break;
             case 'TEXT':
             case 'SEQUENCE':
-                resp += node.value || '';
+                resp += (node.value || '').toString('binary');
                 break;
 
             case 'NUMBER':
@@ -196,7 +201,7 @@ module.exports = function (response, isLogging) {
             case 'ATOM':
             case 'SECTION':
                 {
-                    val = node.value || '';
+                    val = (node.value || '').toString('binary');
 
                     if (imapFormalSyntax.verify(val.charAt(0) === '\\' ? val.substr(1) : val, imapFormalSyntax['ATOM-CHAR']()) >= 0) {
                         val = JSON.stringify(val);

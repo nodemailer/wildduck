@@ -19,8 +19,8 @@ module.exports = {
 
     handler(command, callback) {
 
-        let reference = command.attributes[0] && command.attributes[0].value || '';
-        let mailbox = command.attributes[1] && command.attributes[1].value || '';
+        let reference = Buffer.from(command.attributes[0] && command.attributes[0].value || '', 'binary').toString();
+        let mailbox = Buffer.from(command.attributes[1] && command.attributes[1].value || '', 'binary').toString();
 
         // Check if LIST method is set
         if (typeof this._server.onLsub !== 'function') {
@@ -46,6 +46,8 @@ module.exports = {
                 let path = folder.path;
                 if (!this.acceptUTF8Enabled) {
                     path = utf7.encode(path);
+                }else{
+                    path = Buffer.from(path);
                 }
 
                 let response = {

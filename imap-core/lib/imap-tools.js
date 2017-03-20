@@ -1,7 +1,9 @@
 'use strict';
 
-let Indexer = require('./indexer/indexer');
-let utf7 = require('utf7').imap;
+const Indexer = require('./indexer/indexer');
+const utf7 = require('utf7').imap;
+const libmime = require('libmime');
+const punycode = require('punycode');
 
 module.exports.systemFlags = ['\\answered', '\\flagged', '\\draft', '\\deleted', '\\seen'];
 
@@ -498,16 +500,38 @@ module.exports.getQueryResponse = function (query, message, options) {
                 break;
 
             case 'bodystructure':
-                if (message.bodystructure) {
-                    value = message.bodystructure;
-                } else {
-                    if (!mimeTree) {
-                        mimeTree = indexer.parseMimeTree(message.raw);
+                {
+                    if (message.bodystructure) {
+                        value = message.bodystructure;
+                    } else {
+                        if (!mimeTree) {
+                            mimeTree = indexer.parseMimeTree(message.raw);
+                        }
+                        value = indexer.getBodyStructure(mimeTree);
                     }
-                    value = indexer.getBodyStructure(mimeTree);
-                }
-                break;
 
+                    let walk = arr => {
+                        arr.forEach((entry, i) => {
+                            if (Array.isArray(entry)) {
+                                return walk(entry);
+                            }
+                            if (!entry || typeof entry !== 'object') {
+                                return;
+                            }
+                            let val = entry;
+                            if (!Buffer.isBuffer(val) && val.buffer) {
+                                val = val.buffer;
+                            }
+                            arr[i] = libmime.encodeWords(val.toString(), false, Infinity);
+                        });
+                    };
+
+                    if (!options.acceptUTF8Enabled) {
+                        walk(value);
+                    }
+
+                    break;
+                }
             case 'envelope':
                 if (message.envelope) {
                     value = message.envelope;
@@ -516,6 +540,47 @@ module.exports.getQueryResponse = function (query, message, options) {
                         mimeTree = indexer.parseMimeTree(message.raw);
                     }
                     value = indexer.getEnvelope(mimeTree);
+                }
+                if (!options.acceptUTF8Enabled) {
+                    // encode unicode values
+
+                    // subject
+                    value[1] = libmime.encodeWords(value[1], false, Infinity);
+
+                    for (let i = 2; i < 8; i++) {
+                        if (value[i] && Array.isArray(value[i])) {
+                            value[i].forEach(addr => {
+                                if (addr[0] && typeof addr[0] === 'object') {
+                                    // name
+                                    let val = addr[0];
+                                    if (!Buffer.isBuffer(val) && val.buffer) {
+                                        val = val.buffer;
+                                    }
+                                    addr[0] = libmime.encodeWords(val.toString(), false, Infinity);
+                                }
+
+                                if (addr[2] && typeof addr[2] === 'object') {
+                                    // username
+                                    let val = addr[2];
+                                    if (!Buffer.isBuffer(val) && val.buffer) {
+                                        val = val.buffer;
+                                    }
+                                    addr[2] = libmime.encodeWords(val.toString(), false, Infinity);
+                                }
+
+                                if (addr[3] && typeof addr[3] === 'object') {
+                                    // domain
+                                    let val = addr[3];
+                                    if (!Buffer.isBuffer(val) && val.buffer) {
+                                        val = val.buffer;
+                                    }
+                                    addr[3] = punycode.toASCII(val.toString());
+                                }
+                            });
+                        }
+                    }
+
+                    // libmime.encodeWords(value, false, Infinity)
                 }
                 break;
 

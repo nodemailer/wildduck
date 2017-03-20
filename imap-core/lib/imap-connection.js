@@ -269,8 +269,9 @@ class IMAPConnection extends EventEmitter {
 
             formatResponse: this.formatResponse.bind(this),
             getQueryResponse: imapTools.getQueryResponse,
-            matchSearchQuery: search.matchSearchQuery
+            matchSearchQuery: search.matchSearchQuery,
 
+            isUTF8Enabled: () => this.acceptUTF8Enabled
         };
     }
 

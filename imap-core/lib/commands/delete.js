@@ -14,7 +14,7 @@ module.exports = {
 
     handler(command, callback) {
 
-        let mailbox = command.attributes[0] && command.attributes[0].value || '';
+        let mailbox = Buffer.from(command.attributes[0] && command.attributes[0].value || '', 'binary').toString();
         mailbox = imapTools.normalizeMailbox(mailbox, !this.acceptUTF8Enabled);
 
         // Check if DELETE method is set

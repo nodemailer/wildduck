@@ -200,7 +200,7 @@ class MIMEParser {
             if (this._node.parsedHeader[key]) {
                 [].concat(this._node.parsedHeader[key] || []).forEach(value => {
                     if (value) {
-                        addresses = addresses.concat(addressparser(value) || []);
+                        addresses = addresses.concat(addressparser(Buffer.from(value, 'binary').toString()) || []);
                     }
                 });
                 this._node.parsedHeader[key] = addresses;

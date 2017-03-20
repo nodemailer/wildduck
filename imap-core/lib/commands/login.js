@@ -13,8 +13,8 @@ module.exports = {
 
     handler(command, callback) {
 
-        let username = (command.attributes[0].value || '').toString().trim();
-        let password = (command.attributes[1].value || '').toString().trim();
+        let username = Buffer.from((command.attributes[0].value || '').toString().trim(), 'binary').toString();
+        let password = Buffer.from((command.attributes[1].value || '').toString().trim(), 'binary').toString();
 
         if (!this.secure && !this._server.options.ignoreSTARTTLS) {
             // Only allow authentication using TLS
@@ -59,7 +59,7 @@ module.exports = {
 
             callback(null, {
                 response: 'OK',
-                message: username + ' authenticated'
+                message: new Buffer(username + ' authenticated').toString('binary')
             });
 
         });

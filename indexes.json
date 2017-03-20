@@ -4,7 +4,8 @@
         "name": "users",
         "key": {
             "username": 1
-        }
+        },
+        "unique": true
     }]
 }, {
     "collection": "mailboxes",

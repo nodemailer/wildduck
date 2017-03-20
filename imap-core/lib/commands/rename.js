@@ -17,8 +17,8 @@ module.exports = {
 
     handler(command, callback) {
 
-        let mailbox = command.attributes[0] && command.attributes[0].value || '';
-        let newname = command.attributes[1] && command.attributes[1].value || '';
+        let mailbox = Buffer.from(command.attributes[0] && command.attributes[0].value || '', 'binary').toString();
+        let newname = Buffer.from(command.attributes[1] && command.attributes[1].value || '', 'binary').toString();
 
         // Check if RENAME method is set
         if (typeof this._server.onRename !== 'function') {

@@ -1,20 +1,19 @@
 'use strict';
 
 const log = require('npmlog');
-const uuidV1 = require('uuid/v1');
 const config = require('config');
 const IMAPServerModule = require('./imap-core');
 const IMAPServer = IMAPServerModule.IMAPServer;
 const mongodb = require('mongodb');
 const MongoClient = mongodb.MongoClient;
-const ImapNotifier = require('./imap-notifier');
+const ImapNotifier = require('./lib/imap-notifier');
 const imapHandler = IMAPServerModule.imapHandler;
 const bcrypt = require('bcryptjs');
 const ObjectID = require('mongodb').ObjectID;
 const Indexer = require('./imap-core/lib/indexer/indexer');
 const fs = require('fs');
-const RedFour = require('redfour');
 const setupIndexes = require('./indexes.json');
+const MessageHandler = require('./lib/message-handler');
 
 // Setup server
 const serverOptions = {
@@ -40,12 +39,8 @@ if (config.imap.cert) {
 
 const server = new IMAPServer(serverOptions);
 
-const redlock = new RedFour({
-    redis: config.redis,
-    namespace: 'wildduck'
-});
-
 let database;
+let messageHandler;
 
 server.onAuth = function (login, session, callback) {
     let username = (login.username || '').toString().trim();
@@ -418,11 +413,18 @@ server.onAppend = function (path, flags, date, raw, session, callback) {
 
     let username = session.user.username;
 
-    this.addToMailbox(username, path, {
-        source: 'IMAP',
-        user: username,
-        time: Date.now()
-    }, date, flags, raw, (err, status, data) => {
+    messageHandler.add({
+        username: session.user.username,
+        path,
+        meta: {
+            source: 'IMAP',
+            user: username,
+            time: Date.now()
+        },
+        date,
+        flags,
+        raw
+    }, (err, status, data) => {
         if (err) {
             if (err.imapResponse) {
                 return callback(null, err.imapResponse);
@@ -859,7 +861,8 @@ server.onFetch = function (path, options, session, callback) {
                     values: session.getQueryResponse(options.query, message, {
                         logger: this.logger,
                         fetchOptions: {},
-                        database
+                        database,
+                        acceptUTF8Enabled: session.isUTF8Enabled()
                     })
                 }));
 
@@ -1153,130 +1156,6 @@ server.onSearch = function (path, options, session, callback) {
     });
 };
 
-server.addToMailbox = (username, path, meta, date, flags, raw, callback) => {
-    server.logger.debug('[%s] Appending message to "%s" for "%s"', 'API', path, username);
-
-    let mimeTree = server.indexer.parseMimeTree(raw);
-    let envelope = server.indexer.getEnvelope(mimeTree);
-    let bodystructure = server.indexer.getBodyStructure(mimeTree);
-    let messageId = envelope[9] || uuidV1() + '@wildduck.email';
-    let id = new ObjectID();
-
-    // check if mailbox exists
-    database.collection('mailboxes').findOne({
-        username,
-        path
-    }, (err, mailbox) => {
-        if (err) {
-            return callback(err);
-        }
-
-        if (!mailbox) {
-            let err = new Error('Mailbox is missing');
-            err.imapResponse = 'TRYCREATE';
-            return callback(err);
-        }
-
-        // calculate size before removing large attachments from mime tree
-        let size = server.indexer.getSize(mimeTree);
-
-        // move large attachments to GridStore
-        server.indexer.storeAttachments(id, mimeTree, 50 * 1024, err => {
-            if (err) {
-                return callback(err);
-            }
-
-            // Another server might be waiting for the lock like this.
-            redlock.waitAcquireLock(mailbox._id.toString(), 30 * 1000, 10 * 1000, (err, lock) => {
-                if (err) {
-                    return callback(err);
-                }
-
-                if (!lock || !lock.success) {
-                    // did not get a insert lock in 10 seconds
-                    return callback(new Error('The user you are trying to contact is receiving mail at a rate that prevents additional messages from being delivered. Please resend your message at a later time'));
-                }
-
-                // acquire new UID+MODSEQ
-                database.collection('mailboxes').findOneAndUpdate({
-                    _id: mailbox._id
-                }, {
-                    $inc: {
-                        // allocate bot UID and MODSEQ values so when journal is later sorted by
-                        // modseq then UIDs are always in ascending order
-                        uidNext: 1,
-                        modifyIndex: 1
-                    }
-                }, (err, item) => {
-                    if (err) {
-                        redlock.releaseLock(lock, () => false);
-                        return callback(err);
-                    }
-
-                    if (!item || !item.value) {
-                        // was not able to acquire a lock
-                        let err = new Error('Mailbox is missing');
-                        err.imapResponse = 'TRYCREATE';
-                        redlock.releaseLock(lock, () => false);
-                        return callback(err);
-                    }
-
-                    let mailbox = item.value;
-
-                    let internaldate = date && new Date(date) || new Date();
-                    let headerdate = mimeTree.parsedHeader.date && new Date(mimeTree.parsedHeader.date) || false;
-
-                    if (!headerdate || headerdate.toString() === 'Invalid Date') {
-                        headerdate = internaldate;
-                    }
-
-                    let message = {
-                        _id: id,
-                        mailbox: mailbox._id,
-                        uid: mailbox.uidNext,
-                        internaldate,
-                        headerdate,
-                        flags,
-                        size,
-                        meta,
-                        modseq: mailbox.modifyIndex + 1,
-                        mimeTree,
-                        envelope,
-                        bodystructure,
-                        messageId
-                    };
-
-                    database.collection('messages').insertOne(message, err => {
-                        if (err) {
-                            redlock.releaseLock(lock, () => false);
-                            return callback(err);
-                        }
-
-                        let uidValidity = mailbox.uidValidity;
-                        let uid = message.uid;
-
-                        server.notifier.addEntries(mailbox, false, {
-                            command: 'EXISTS',
-                            uid: message.uid,
-                            message: message._id,
-                            modseq: message.modseq
-                        }, () => {
-
-                            redlock.releaseLock(lock, () => {
-                                server.notifier.fire(username, path);
-                                return callback(null, true, {
-                                    uidValidity,
-                                    uid
-                                });
-                            });
-                        });
-                    });
-                });
-            });
-        });
-    });
-};
-
 module.exports = done => {
     MongoClient.connect(config.mongo, (err, db) => {
         if (err) {
@@ -1289,6 +1168,7 @@ module.exports = done => {
 
         let start = () => {
 
+            messageHandler = new MessageHandler(database);
 
             server.indexer = new Indexer({
                 database

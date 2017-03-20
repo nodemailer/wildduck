@@ -1,6 +1,7 @@
 'use strict';
 
-let createEnvelope = require('./create-envelope');
+const libmime = require('libmime');
+const createEnvelope = require('./create-envelope');
 
 class BodyStructure {
 
@@ -73,10 +74,18 @@ class BodyStructure {
             // body parameter parenthesized list
             node.parsedHeader['content-type'] &&
             node.parsedHeader['content-type'].hasParams &&
-            this.flatten(Object.keys(node.parsedHeader['content-type'].params).map(key => [
-                options.upperCaseKeys ? key.toUpperCase() : key,
-                node.parsedHeader['content-type'].params[key]
-            ])) || null,
+            this.flatten(Object.keys(node.parsedHeader['content-type'].params).map(key => {
+                let value = node.parsedHeader['content-type'].params[key];
+                try {
+                    value = Buffer.from(libmime.decodeWords(value).trim());
+                } catch (E) {
+                    // failed to parse value
+                }
+                return [
+                    options.upperCaseKeys ? key.toUpperCase() : key,
+                    value
+                ];
+            })) || null,
 
             // body id
             node.parsedHeader['content-id'] || null,
@@ -123,10 +132,18 @@ class BodyStructure {
                 node.parsedHeader['content-disposition'].value,
                 node.parsedHeader['content-disposition'].params &&
                 node.parsedHeader['content-disposition'].hasParams &&
-                this.flatten(Object.keys(node.parsedHeader['content-disposition'].params).map(key => [
-                    options.upperCaseKeys ? key.toUpperCase() : key,
-                    node.parsedHeader['content-disposition'].params[key]
-                ])) || null
+                this.flatten(Object.keys(node.parsedHeader['content-disposition'].params).map(key => {
+                    let value = node.parsedHeader['content-disposition'].params[key];
+                    try {
+                        value = Buffer.from(libmime.decodeWords(value).trim());
+                    } catch (E) {
+                        // failed to parse value
+                    }
+                    return [
+                        options.upperCaseKeys ? key.toUpperCase() : key,
+                        value
+                    ];
+                })) || null
             ] || null,
 
             // body language
@@ -167,10 +184,18 @@ class BodyStructure {
             // body parameter parenthesized list
             node.parsedHeader['content-type'] &&
             node.parsedHeader['content-type'].hasParams &&
-            this.flatten(Object.keys(node.parsedHeader['content-type'].params).map(key => [
-                options.upperCaseKeys ? key.toUpperCase() : key,
-                node.parsedHeader['content-type'].params[key]
-            ])) || null
+            this.flatten(Object.keys(node.parsedHeader['content-type'].params).map(key => {
+                let value = node.parsedHeader['content-type'].params[key];
+                try {
+                    value = Buffer.from(libmime.decodeWords(value).trim());
+                } catch (E) {
+                    // failed to parse value
+                }
+                return [
+                    options.upperCaseKeys ? key.toUpperCase() : key,
+                    value
+                ];
+            })) || null
         ]);
 
         if (options.body) {

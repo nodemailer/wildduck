@@ -51,11 +51,11 @@ module.exports = {
         }
 
         // ""
-        reference = command.attributes[arrPos] && command.attributes[arrPos].value || '';
+        reference = Buffer.from(command.attributes[arrPos] && command.attributes[arrPos].value || '', 'binary').toString();
         arrPos++;
 
         // "%"
-        mailbox = command.attributes[arrPos] && command.attributes[arrPos].value || '';
+        mailbox = Buffer.from(command.attributes[arrPos] && command.attributes[arrPos].value || '', 'binary').toString();
         arrPos++;
 
         // RETURN (SPECIAL-USE)
@@ -119,6 +119,8 @@ module.exports = {
                 let path = folder.path;
                 if (!this.acceptUTF8Enabled) {
                     path = utf7.encode(path);
+                } else {
+                    path = Buffer.from(path);
                 }
                 response.attributes.push(path);
 

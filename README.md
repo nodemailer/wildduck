@@ -26,7 +26,7 @@ Wild Duck IMAP server supports the following IMAP standards:
 - **SPECIAL-USE**
 - **ID**
 - **AUTHENTICATE PLAIN** and **SASL-IR**
-- ~~**UTF8=ACCEPT**~~ (FIXME: had to revert this change as internally strings are handled as binary, not utf8 and thus mixed encodings were used if conversion was not properly handled)
+- **UTF8=ACCEPT** – this also means that Wild Duck natively supports unicode email usernames
 
 ## FAQ
 
@@ -120,7 +120,7 @@ Users can be created with HTTP requests
 
 Arguments
 
-- **username** is an email address of the user
+- **username** is an email address of the user. Username can not contain + as plus is used to mark recipient labels
 - **password** is the password for the user
 
 **Example**

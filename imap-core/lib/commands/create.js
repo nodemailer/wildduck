@@ -15,7 +15,7 @@ module.exports = {
 
     handler(command, callback) {
 
-        let mailbox = command.attributes[0] && command.attributes[0].value || '';
+        let mailbox = Buffer.from(command.attributes[0] && command.attributes[0].value || '', 'binary').toString();
 
         if (!this.acceptUTF8Enabled) {
             // decode before normalizing to uncover stuff like ending / etc.

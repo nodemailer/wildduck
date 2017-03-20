@@ -7,7 +7,7 @@ const mongodb = require('mongodb');
 const MongoClient = mongodb.MongoClient;
 const Joi = require('joi');
 const bcrypt = require('bcryptjs');
-const punycode = require('punycode');
+const tools = require('./lib/tools');
 
 let database;
 
@@ -26,7 +26,12 @@ server.post('/user/create', (req, res, next) => {
         password: Joi.string().min(3).max(100).required()
     });
 
-    const result = Joi.validate(req.params, schema, {
+    let username = req.params.username;
+
+    const result = Joi.validate({
+        username: username.replace(/[\u0080-\uFFFF]/g, 'x'),
+        password: req.params.password
+    }, schema, {
         abortEarly: false,
         convert: true,
         allowUnknown: true
@@ -39,8 +44,15 @@ server.post('/user/create', (req, res, next) => {
         return next();
     }
 
-    let username = normalizeAddress(result.value.username);
+    username = tools.normalizeAddress(username);
     let password = result.value.password;
+
+    if (username.indexOf('+') >= 0) {
+        res.json({
+            error: 'Username can not contain +'
+        });
+        return next();
+    }
 
     database.collection('users').findOne({
         username
@@ -126,30 +138,7 @@ server.post('/user/create', (req, res, next) => {
     });
 });
 
-function normalizeAddress(address, withNames) {
-    if (typeof address === 'string') {
-        address = {
-            address
-        };
-    }
-    if (!address || !address.address) {
-        return '';
-    }
-    let user = address.address.substr(0, address.address.lastIndexOf('@'));
-    let domain = address.address.substr(address.address.lastIndexOf('@') + 1);
-    let addr = user.trim() + '@' + punycode.toASCII(domain.toLowerCase().trim());
-
-    if (withNames) {
-        return {
-            name: address.name || '',
-            address: addr
-        };
-    }
-
-    return addr;
-}
-
-module.exports = (imap, done) => {
+module.exports = done => {
     MongoClient.connect(config.mongo, (err, mongo) => {
         if (err) {
             log.error('LMTP', 'Could not initialize MongoDB: %s', err.message);

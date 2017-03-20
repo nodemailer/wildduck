@@ -36,7 +36,8 @@ module.exports = {
             });
         }
 
-        let mailbox = imapTools.normalizeMailbox((command.attributes.shift() || {}).value, !this.acceptUTF8Enabled);
+        let path = Buffer.from((command.attributes.shift() || {}).value || 'binary').toString();
+        let mailbox = imapTools.normalizeMailbox(path, !this.acceptUTF8Enabled);
         let message = command.attributes.pop();
         let flags = [];
         let internaldate = false;

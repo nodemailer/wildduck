@@ -6,9 +6,10 @@ const SMTPServer = require('smtp-server').SMTPServer;
 const mongodb = require('mongodb');
 const MongoClient = mongodb.MongoClient;
 const crypto = require('crypto');
-const punycode = require('punycode');
+const tools = require('./lib/tools');
+const MessageHandler = require('./lib/message-handler');
 
-let imapServer;
+let messageHandler;
 let database;
 
 const server = new SMTPServer({
@@ -43,7 +44,12 @@ const server = new SMTPServer({
     // Validate RCPT TO envelope address. Example allows all addresses that do not start with 'deny'
     // If this method is not set, all addresses are allowed
     onRcptTo(address, session, callback) {
-        let username = normalizeAddress(address.address);
+        let recipient = tools.normalizeAddress(address.address);
+        let username = recipient.replace(/\+[^@]*@/, '@');
+
+        if (session.users && session.users.has(username)) {
+            return callback();
+        }
 
         database.collection('users').findOne({
             username
@@ -57,10 +63,10 @@ const server = new SMTPServer({
             }
 
             if (!session.users) {
-                session.users = new Set();
+                session.users = new Map();
             }
 
-            session.users.add(username);
+            session.users.set(username, recipient);
 
             callback();
         });
@@ -104,29 +110,38 @@ const server = new SMTPServer({
                     return callback(null, 'Message queued as ' + hash.digest('hex').toUpperCase());
                 }
 
-                let username = users[stored++];
+                let username = users[stored][0];
+                let recipient = users[stored][1];
+                stored++;
 
                 // add Delivered-To
                 let header = Buffer.from('Delivered-To: ' + username + '\r\n');
                 chunks.unshift(header);
                 chunklen += header.length;
 
-                imapServer.addToMailbox(username, 'INBOX', {
-                    source: 'SMTP',
-                    from: normalizeAddress(session.envelope.mailFrom && session.envelope.mailFrom.address || ''),
-                    to: session.envelope.rcptTo.map(item => normalizeAddress(item.address)),
-                    origin: session.remoteAddress,
-                    originhost: session.clientHostname,
-                    transhost: session.hostNameAppearsAs,
-                    transtype: session.transmissionType,
-                    time: Date.now()
-                }, false, [], Buffer.concat(chunks, chunklen), err => {
+                messageHandler.add({
+                    username,
+                    path: 'INBOX',
+                    meta: {
+                        source: 'SMTP',
+                        from: tools.normalizeAddress(session.envelope.mailFrom && session.envelope.mailFrom.address || ''),
+                        to: recipient,
+                        origin: session.remoteAddress,
+                        originhost: session.clientHostname,
+                        transhost: session.hostNameAppearsAs,
+                        transtype: session.transmissionType,
+                        time: Date.now()
+                    },
+                    date: false,
+                    flags: false,
+                    raw: Buffer.concat(chunks, chunklen)
+                }, err => {
                     // remove Delivered-To
                     chunks.shift();
                     chunklen -= header.length;
 
                     if (err) {
-                        return callback(err);
+                        log.error('LMTP', err);
                     }
 
                     storeNext();
@@ -138,30 +153,7 @@ const server = new SMTPServer({
     }
 });
 
-function normalizeAddress(address, withNames) {
-    if (typeof address === 'string') {
-        address = {
-            address
-        };
-    }
-    if (!address || !address.address) {
-        return '';
-    }
-    let user = address.address.substr(0, address.address.lastIndexOf('@'));
-    let domain = address.address.substr(address.address.lastIndexOf('@') + 1);
-    let addr = user.trim() + '@' + punycode.toASCII(domain.toLowerCase().trim());
-
-    if (withNames) {
-        return {
-            name: address.name || '',
-            address: addr
-        };
-    }
-
-    return addr;
-}
-
-module.exports = (imap, done) => {
+module.exports = done => {
     if (!config.smtp.enabled) {
         return setImmediate(() => done(null, false));
     }
@@ -171,7 +163,7 @@ module.exports = (imap, done) => {
             return;
         }
         database = mongo;
-        imapServer = imap;
+        messageHandler = new MessageHandler(database);
 
         let started = false;
 

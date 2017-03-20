@@ -18,6 +18,11 @@ module.exports = function (response, asArray, isLogging) {
             resp += ' ';
         }
 
+        if (node && node.buffer && !Buffer.isBuffer(node)) {
+            // mongodb binary
+            node = node.buffer;
+        }
+
         if (Array.isArray(node)) {
             lastType = 'LIST';
             resp += '(';
@@ -26,16 +31,16 @@ module.exports = function (response, asArray, isLogging) {
             return;
         }
 
-        if (!node && typeof node !== 'string' && typeof node !== 'number') {
+        if (!node && typeof node !== 'string' && typeof node !== 'number' && !Buffer.isBuffer(node)) {
             resp += 'NIL';
             return;
         }
 
-        if (typeof node === 'string') {
+        if (typeof node === 'string' || Buffer.isBuffer(node)) {
             if (isLogging && node.length > 20) {
                 resp += '"(* ' + node.length + 'B string *)"';
             } else {
-                resp += JSON.stringify(node);
+                resp += JSON.stringify(node.toString('binary'));
             }
             return;
         }
@@ -63,7 +68,7 @@ module.exports = function (response, asArray, isLogging) {
                         resp += '{' + node.value.length + '}\r\n';
                     }
                     respParts.push(resp);
-                    resp = node.value || '';
+                    resp = (node.value || '').toString('binary');
                 }
                 break;
 
@@ -76,7 +81,7 @@ module.exports = function (response, asArray, isLogging) {
                 break;
             case 'TEXT':
             case 'SEQUENCE':
-                resp += node.value || '';
+                resp += (node.value || '').toString('binary');
                 break;
 
             case 'NUMBER':
@@ -85,7 +90,7 @@ module.exports = function (response, asArray, isLogging) {
 
             case 'ATOM':
             case 'SECTION':
-                val = node.value || '';
+                val = (node.value || '').toString('binary');
 
                 if (imapFormalSyntax.verify(val.charAt(0) === '\\' ? val.substr(1) : val, imapFormalSyntax['ATOM-CHAR']()) >= 0) {
                     val = JSON.stringify(val);

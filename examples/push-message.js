@@ -15,7 +15,8 @@ const nodemailer = require('nodemailer');
 const transporter = nodemailer.createTransport({
     host: 'localhost',
     port: config.smtp.port,
-    logger: false
+    logger: false,
+    debug: false
 });
 
 transporter.sendMail({

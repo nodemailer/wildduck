@@ -18,7 +18,7 @@ module.exports = {
 
     handler(command, callback) {
 
-        let mailbox = command.attributes[0] && command.attributes[0].value || '';
+        let mailbox = Buffer.from(command.attributes[0] && command.attributes[0].value || '', 'binary').toString();
         let query = command.attributes[1] && command.attributes[1];
 
         let statusElements = ['MESSAGES', 'RECENT', 'UIDNEXT', 'UIDVALIDITY', 'UNSEEN', 'HIGHESTMODSEQ'];

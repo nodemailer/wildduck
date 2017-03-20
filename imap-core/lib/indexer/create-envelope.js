@@ -1,5 +1,8 @@
 'use strict';
 
+const libmime = require('libmime');
+const punycode = require('punycode');
+
 // This module converts message structure into an ENVELOPE object
 
 /**
@@ -9,9 +12,19 @@
  * @return {Object} ENVELOPE compatible object
  */
 module.exports = function (header) {
+
+    let subject = Array.isArray(header.subject) ? header.subject.reverse().filter(line => line.trim()) : header.subject;
+    subject = Buffer.from(subject || '', 'binary').toString();
+
+    try {
+        subject = Buffer.from(libmime.decodeWords(subject).trim());
+    } catch (E) {
+        // failed to parse subject, keep as is (most probably an unknown charset is used)
+    }
+
     return [
         header.date || null,
-        toUtf8(header.subject || ''),
+        subject,
         processAddress(header.from),
         processAddress(header.sender, header.from),
         processAddress(header['reply-to'], header.from),
@@ -41,23 +54,49 @@ function processAddress(arr, defaults) {
     let result = [];
     arr.forEach(addr => {
         if (!addr.group) {
+            let name = addr.name || null;
+            let user = (addr.address || '').split('@').shift() || null;
+            let domain = (addr.address || '').split('@').pop() || null;
+
+            if (name) {
+                try {
+                    name = Buffer.from(libmime.decodeWords(name));
+                } catch (E) {
+                    // failed to parse
+                }
+            }
+
+            if (user) {
+                try {
+                    user = Buffer.from(libmime.decodeWords(user));
+                } catch (E) {
+                    // failed to parse
+                }
+            }
+
+            if (domain) {
+                domain = Buffer.from(punycode.toUnicode(domain));
+            }
+
             result.push([
-                toUtf8(addr.name) || null, null, toUtf8(addr.address || '').split('@').shift() || null, toUtf8(addr.address || '').split('@').pop() || null
+                name, null, user, domain
             ]);
         } else {
             // Handle group syntax
-            result.push([null, null, addr.name || '', null]);
+            let name = addr.name || '';
+            if (name) {
+                try {
+                    name = Buffer.from(libmime.decodeWords(name));
+                } catch (E) {
+                    // failed to parse
+                }
+            }
+
+            result.push([null, null, name, null]);
             result = result.concat(processAddress(addr.group) || []);
             result.push([null, null, null, null]);
         }
     });
 
     return result;
-}
-
-function toUtf8(value) {
-    if (value && typeof value === 'string') {
-        value = Buffer.from(value, 'binary').toString();
-    }
-    return value;
 }

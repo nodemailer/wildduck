@@ -7,22 +7,22 @@ let lmtp = require('./lmtp');
 let smtp = require('./smtp');
 let api = require('./api');
 
-imap((err, imap) => {
+imap(err => {
     if (err) {
         log.error('App', 'Failed to start IMAP server');
         return process.exit(1);
     }
-    lmtp(imap, err => {
+    lmtp(err => {
         if (err) {
             log.error('App', 'Failed to start LMTP server');
             return process.exit(1);
         }
-        smtp(imap, err => {
+        smtp(err => {
             if (err) {
                 log.error('App', 'Failed to start SMTP server');
                 return process.exit(1);
             }
-            api(imap, err => {
+            api(err => {
                 if (err) {
                     log.error('App', 'Failed to start API server');
                     return process.exit(1);
