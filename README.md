@@ -2,13 +2,13 @@
 
 ![](https://cldup.com/qlZnwOz0na.jpg)
 
-Wild Duck is an IMAP server built with Node.js, MongoDB and Redis. Node.js runs the application, MongoDB is used as the mail store and Redis is used for ephemeral actions like publish/subscribe and caching.
+Wild Duck is a distributed IMAP server built with Node.js, MongoDB and Redis. Node.js runs the application, MongoDB is used as the mail store and Redis is used for ephemeral actions like publish/subscribe, locking and caching.
 
 > **NB!** Wild Duck is currently in **beta**. You should not use it in production.
 
 ## Goals of the Project
 
-1. Build a scalable IMAP server that uses clustered database instead of single machine file system as mail store
+1. Build a scalable and distributed IMAP server that uses clustered database instead of single machine file system as mail store
 2. Push notifications. Your application (eg. a webmail client) should be able to request changes (new and deleted messages, flag changes) to be pushed to client instead of using IMAP to fetch stuff from the server
 3. Provide Gmail-like features like pushing sent messages automatically to Sent Mail folder or notifying about messages moved to Junk folder so these could be marked as spam
 
@@ -36,7 +36,7 @@ Yes, it does. You can run the server and get a working IMAP server for mail stor
 
 ### What are the killer features?
 
-1. Start as many instances as you want. You can start multiple Wild Duck instances in different machines and as long as they share the same MongoDB and Redis settings, users can connect to any instances. This is very different from more traditional IMAP servers where a single user always needs to connect (or be proxied) to the same IMAP server. Wild Duck keeps all required state information in MongoDB, so it does not matter which IMAP instance you use.
+1. Start as many instances as you want. You can start multiple Wild Duck instances in different machines and as long as they share the same MongoDB and Redis settings, users can connect to any instances. This is very different from the traditional IMAP servers where a single user always needs to connect (or be proxied) to the same IMAP server. Wild Duck keeps all required state information in MongoDB, so it does not matter which IMAP instance you use.
 2. Super easy to tweak. The entire codebase is pure JavaScript, so there's nothing to compile or anything platform specific. If you need to tweak something then change the code, restart the app and you're ready to go. If it works on one machine then most probably it works in every other machine as well.
 3. Works almost on any OS including Windows. At least if you get MongoDB and Redis ([Windows fork](https://github.com/MSOpenTech/redis)) running first.
 4. Focus on internationalization, ie. supporting email addresses with non-ascii characters
@@ -45,7 +45,7 @@ Yes, it does. You can run the server and get a working IMAP server for mail stor
 
 Yes, historically it has been considered a bad practice to store emails in a database. And for a good reason. The data model of relational databases like MySQL does not work well with tree like structures (email mime tree) or large blobs (email source).
 
-Notice the word "relational"? In fact document stores like MongoDB work very well with emails. Document store is great for storing tree-like structures and while GridFS is not as good as "real" object storage, it is good enough for storing the raw parts of the message.
+Notice the word "relational"? In fact document stores like MongoDB work very well with emails. Document store is great for storing tree-like structures and while GridFS is not as good as "real" object storage, it is good enough for storing the raw parts of the message. Additionally there's nothing too GridFS specific, so (at least in theory) it could be replaced with any object store.
 
 ### Is the server scalable?
 
@@ -69,7 +69,7 @@ Actual update data (information about new and deleted messages, flag updates and
 2. Maybe allow some kind of message manipulation through plugins? This would allow to turn Wild Duck for example into an encrypted mail server – mail data would be encrypted using users public key before storing it to DB and decrypted with users private key whenever the user logs in and FETCHes or SEARCHes messages. Private key would be protected by users password. For the user the encryption layer would be invisible while guaranteeing that if the user is currently not logged in then there would be no way to read the messages as the private key is locked.
 3. Add quota handling. Every time a user gets a new message added to storage, the quota counter should increase. If only a single quota root would be used per account then implementing rfc2087 should be fairly easy. What is not so easy is keeping count on copied and deleted messages (there's a great technique for this described in the [mail.ru blog](https://team.mail.ru/efficient-storage-how-we-went-down-from-50-pb-to-32-pb/)).
 
-The problem with quota counters is that the actions (*store message + increment counter for mailbox* or *delete message + decerement counter for mailbox*) are not transactional, so if something fails, the counter might end up in an invalid state. An easy fix would be to use fake transactions - set up a transaction with mailbox and counter data by storing a transaction entry, then process required actions and finally remove the transaction entry. If something fails and transaction is not completed, then the mailbox would be marked for reindexing which would mean that the mailbox quota is entirely re-calculcated and quota counters are reset.
+The problem with quota counters is that the actions (*store message + increment counter for mailbox* or *delete message + decrement counter for mailbox*) are not transactional, so if something fails, the counter might end up in an invalid state. A possible fix would be to use fake transactions - set up a transaction with mailbox and counter data by storing a transaction entry, then process required actions and finally remove the transaction entry. If something fails and transaction is not completed, then the mailbox would be marked for reindexing which would mean that the mailbox quota is entirely re-calculated and quota counters are reset.
 
 ## Usage
 
