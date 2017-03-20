@@ -1,0 +1,103 @@
+[{
+    "collection": "users",
+    "indexes": [{
+        "name": "users",
+        "key": {
+            "username": 1
+        }
+    }]
+}, {
+    "collection": "mailboxes",
+    "indexes": [{
+        "name": "user_mailboxes",
+        "key": {
+            "username": 1
+        }
+    }, {
+        "name": "user_subscribed",
+        "key": {
+            "username": 1,
+            "subscribed": 1
+        }
+    }, {
+        "name": "find_by_user",
+        "key": {
+            "username": 1,
+            "path": 1
+        }
+    }]
+}, {
+    "collection": "messages",
+    "indexes": [{
+        "name": "mailbox_messages",
+        "key": {
+            "mailbox": 1
+        }
+    }, {
+        "name": "mailbox_uid_modseq",
+        "key": {
+            "mailbox": 1,
+            "uid": 1,
+            "modseq": 1
+        }
+    }, {
+        "name": "mailbox_flags",
+        "key": {
+            "mailbox": 1,
+            "flags": 1
+        }
+    }, {
+        "name": "by_modseq",
+        "key": {
+            "modseq": 1
+        }
+    }, {
+        "name": "by_flags",
+        "key": {
+            "flags": 1
+        }
+    }, {
+        "name": "by_internaldate",
+        "key": {
+            "internaldate": 1
+        }
+    }, {
+        "name": "by_headerdate",
+        "key": {
+            "headerdate": 1
+        }
+    }, {
+        "name": "by_size",
+        "key": {
+            "size": 1
+        }
+    }, {
+        "name": "by_uid",
+        "key": {
+            "uid": 1
+        }
+    }]
+}, {
+    "collection": "attachment.files",
+    "indexes": [{
+        "name": "related_messages",
+        "key": {
+            "metadata.messages": 1
+        }
+    }]
+}, {
+    "collection": "journal",
+    "indexes": [{
+        "name": "mailbox_modseq",
+        "key": {
+            "mailbox": 1,
+            "modseq": 1
+        }
+    }, {
+        "name": "autoexpire",
+        "expireAfterSeconds": "21600",
+        "key": {
+            "created": 1
+        }
+    }]
+}]

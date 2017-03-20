@@ -14,6 +14,7 @@ const ObjectID = require('mongodb').ObjectID;
 const Indexer = require('./imap-core/lib/indexer/indexer');
 const fs = require('fs');
 const RedFour = require('redfour');
+const setupIndexes = require('./indexes.json');
 
 // Setup server
 const serverOptions = {
@@ -1279,38 +1280,54 @@ server.addToMailbox = (username, path, meta, date, flags, raw, callback) => {
 module.exports = done => {
     MongoClient.connect(config.mongo, (err, db) => {
         if (err) {
-            server.logger.error('Queue', 'Could not initialize MongoDB: %s', err.message);
+            server.logger.error('Could not initialize MongoDB: %s', err.message);
             return;
         }
 
         database = db;
 
-        server.indexer = new Indexer({
-            database
-        });
 
-        // setup notification system for updates
-        server.notifier = new ImapNotifier({
-            database
-        });
+        let start = () => {
 
-        let started = false;
 
-        server.on('error', err => {
-            if (!started) {
+            server.indexer = new Indexer({
+                database
+            });
+
+            // setup notification system for updates
+            server.notifier = new ImapNotifier({
+                database
+            });
+
+            let started = false;
+
+            server.on('error', err => {
+                if (!started) {
+                    started = true;
+                    return done(err);
+                }
+                log.error('IMAP', err);
+            });
+
+            // start listening
+            server.listen(config.imap.port, config.imap.host, () => {
+                if (started) {
+                    return server.close();
+                }
                 started = true;
-                return done(err);
-            }
-            log.error('IMAP', err);
-        });
+                done(null, server);
+            });
+        };
 
-        // start listening
-        server.listen(config.imap.port, config.imap.host, () => {
-            if (started) {
-                return server.close();
+        let indexpos = 0;
+        let ensureIndexes = () => {
+            if (indexpos >= setupIndexes.length) {
+                log.info('mongo', 'Setup indexes for %s collections', setupIndexes.length);
+                return start();
             }
-            started = true;
-            done(null, server);
-        });
+            let index = setupIndexes[indexpos++];
+            database.collection(index.collection).createIndexes(index.indexes, ensureIndexes);
+        };
+        ensureIndexes();
     });
 };
