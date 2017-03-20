@@ -94,23 +94,7 @@ $ npm install --production
 
 You can either modify the default [config file](./config/default.js) or alternatively generate an environment related config file that gets merged with the default values. Read about the config module [here](https://www.npmjs.com/package/config)
 
-### Step 4. Add indexes
-
-Run the [index queries](./indexes.js) in MongoDB (optional, the app would work without it as indexes only become relevant once you have more than few messages stored)
-
-There's a helper script that you can run from the command line to add/updated indexes in the database provided by the configuration file
-
-```
-$ npm run indexes
-```
-
-Or if you want to use mongo settings from environment related config file, eg from `production.js`, run the following
-
-```
-$ NODE_ENV=production npm run indexes
-```
-
-### Step 5. Run the server
+### Step 4. Run the server
 
 To use the default config file, run the following
 

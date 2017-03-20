@@ -2,10 +2,9 @@
   "name": "wildduck",
   "version": "1.0.4",
   "description": "IMAP server built with Node.js and MongoDB",
-  "main": "index.js",
+  "main": "server.js",
   "scripts": {
-    "test": "grunt",
-    "indexes": "mongo `node ./bin/mongo.js` indexes.js"
+    "test": "grunt"
   },
   "keywords": [],
   "author": "Andris Reinman",
