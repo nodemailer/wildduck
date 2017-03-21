@@ -118,7 +118,7 @@ class Indexer {
         let res = new PassThrough();
         let first = true;
         let root = true;
-        let remainder = '';
+        let remainder = false;
 
         // make sure that mixed body + mime gets rebuilt correctly
         let append = (data, force) => {
@@ -126,10 +126,21 @@ class Indexer {
                 data = data.join('\r\n');
             }
             if (remainder || data || force) {
-                res.write(Buffer.from((first ? '' : '\r\n') + (remainder || '') + (data || ''), 'binary'));
-                first = false;
+                if (!first) {
+                    res.write('\r\n');
+                } else {
+                    first = false;
+                }
+
+                if (remainder && remainder.length) {
+                    res.write(remainder);
+                }
+
+                if (data) {
+                    res.write(Buffer.from(data, 'binary'));
+                }
             }
-            remainder = '';
+            remainder = false;
         };
 
         let walk = (node, next) => {
@@ -139,8 +150,13 @@ class Indexer {
             }
 
             root = false;
-
-            remainder = node.body || '';
+            if (node.body && node.body.buffer) {
+                remainder = node.body.buffer;
+            } else if (typeof node.body === 'string') {
+                remainder = Buffer.from(node.body, 'binary');
+            } else {
+                remainder = node.body;
+            }
 
             let finalize = () => {
                 if (node.boundary) {
@@ -305,7 +321,7 @@ class Indexer {
                     return continueProcessing();
                 });
 
-                store.end(Buffer.from(node.body, 'binary'));
+                store.end(node.body);
             } else {
                 continueProcessing();
             }

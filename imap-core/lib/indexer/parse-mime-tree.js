@@ -59,7 +59,7 @@ class MIMEParser {
                     if (this._node.parentBoundary && (line === '--' + this._node.parentBoundary || line === '--' + this._node.parentBoundary + '--')) {
 
                         if (this._node.parsedHeader['content-type'].value === 'message/rfc822') {
-                            this._node.message = module.exports(this._node.body.join(''));
+                            this._node.message = parse(this._node.body.join(''));
                         }
 
                         if (line === '--' + this._node.parentBoundary) {
@@ -108,12 +108,12 @@ class MIMEParser {
     finalizeTree() {
         let walker = node => {
             if (node.body) {
-                let lineCount = node.body.length;
-                node.body = node.body.join('').
-                // ensure proper line endings
-                replace(/\r?\n/g, '\r\n');
-                node.size = (node.body || '').length;
-                node.lineCount = lineCount;
+                node.lineCount = node.body.length;
+                node.body = Buffer.from(
+                    node.body.join('').
+                    // ensure proper line endings
+                    replace(/\r?\n/g, '\r\n'), 'binary');
+                node.size = node.body.length;
             }
             node.childNodes.forEach(walker);
 
@@ -281,7 +281,7 @@ class MIMEParser {
     }
 }
 
-module.exports = function (rfc822) {
+function parse(rfc822) {
     let parser = new MIMEParser(rfc822);
     let response;
 
@@ -290,4 +290,6 @@ module.exports = function (rfc822) {
 
     response = parser.tree.childNodes[0] || false;
     return response;
-};
+}
+
+module.exports = parse;
