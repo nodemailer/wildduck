@@ -44,22 +44,22 @@ const server = new SMTPServer({
 
     // Validate RCPT TO envelope address. Example allows all addresses that do not start with 'deny'
     // If this method is not set, all addresses are allowed
-    onRcptTo(address, session, callback) {
-        let recipient = tools.normalizeAddress(address.address);
-        let username = recipient.replace(/\+[^@]*@/, '@');
+    onRcptTo(rcpt, session, callback) {
+        let originalRecipient = tools.normalizeAddress(rcpt.address);
+        let recipient = originalRecipient.replace(/\+[^@]*@/, '@');
 
-        if (session.users && session.users.has(username)) {
+        if (session.users && session.users.has(recipient)) {
             return callback();
         }
 
-        database.collection('users').findOne({
-            username
-        }, (err, user) => {
+        database.collection('addresses').findOne({
+            address: recipient
+        }, (err, address) => {
             if (err) {
                 log.error('SMTP', err);
                 return callback(new Error('Database error'));
             }
-            if (!user) {
+            if (!address) {
                 return callback(new Error('Unknown recipient'));
             }
 
@@ -67,7 +67,10 @@ const server = new SMTPServer({
                 session.users = new Map();
             }
 
-            session.users.set(username, recipient);
+            session.users.set(recipient, {
+                recipient: originalRecipient,
+                user: address.user
+            });
 
             callback();
         });
@@ -111,22 +114,22 @@ const server = new SMTPServer({
                     return callback(null, 'Message queued as ' + hash.digest('hex').toUpperCase());
                 }
 
-                let username = users[stored][0];
-                let recipient = users[stored][1];
+                let recipient = users[stored][0];
+                let rcptData = users[stored][1] || {};
                 stored++;
 
                 // add Delivered-To
-                let header = Buffer.from('Delivered-To: ' + username + '\r\n');
+                let header = Buffer.from('Delivered-To: ' + recipient + '\r\n');
                 chunks.unshift(header);
                 chunklen += header.length;
 
                 messageHandler.add({
-                    username,
+                    user: rcptData.user,
                     path: 'INBOX',
                     meta: {
                         source: 'LMTP',
                         from: tools.normalizeAddress(session.envelope.mailFrom && session.envelope.mailFrom.address || ''),
-                        to: recipient,
+                        to: rcptData.recipient,
                         origin: session.remoteAddress,
                         originhost: session.clientHostname,
                         transhost: session.hostNameAppearsAs,

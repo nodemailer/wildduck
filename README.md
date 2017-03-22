@@ -69,20 +69,20 @@ Actual update data (information about new and deleted messages, flag updates and
 2. Maybe allow some kind of message manipulation through plugins? This would allow to turn Wild Duck for example into an encrypted mail server – mail data would be encrypted using users public key before storing it to DB and decrypted with users private key whenever the user logs in and FETCHes or SEARCHes messages. Private key would be protected by users password. For the user the encryption layer would be invisible while guaranteeing that if the user is currently not logged in then there would be no way to read the messages as the private key is locked.
 3. Add quota handling. Every time a user gets a new message added to storage, the quota counter should increase. If only a single quota root would be used per account then implementing rfc2087 should be fairly easy. What is not so easy is keeping count on copied and deleted messages (there's a great technique for this described in the [mail.ru blog](https://team.mail.ru/efficient-storage-how-we-went-down-from-50-pb-to-32-pb/)).
 
-The problem with quota counters is that the actions (*store message + increment counter for mailbox* or *delete message + decrement counter for mailbox*) are not transactional, so if something fails, the counter might end up in an invalid state. A possible fix would be to use fake transactions - set up a transaction with mailbox and counter data by storing a transaction entry, then process required actions and finally remove the transaction entry. If something fails and transaction is not completed, then the mailbox would be marked for reindexing which would mean that the mailbox quota is entirely re-calculated and quota counters are reset.
+The problem with quota counters is that the actions (_store message + increment counter for mailbox_ or _delete message + decrement counter for mailbox_) are not transactional, so if something fails, the counter might end up in an invalid state. A possible fix would be to use fake transactions - set up a transaction with mailbox and counter data by storing a transaction entry, then process required actions and finally remove the transaction entry. If something fails and transaction is not completed, then the mailbox would be marked for reindexing which would mean that the mailbox quota is entirely re-calculated and quota counters are reset.
 
 ## Usage
 
 Assuming you have MongoDB and Redis running somewhere.
 
-### Step 1. Get the code from github
+### Step 1\. Get the code from github
 
 ```
 $ git clone git://github.com/wildduck-email/wildduck.git
 $ cd wildduck
 ```
 
-### Step 2. Install dependencies
+### Step 2\. Install dependencies
 
 Install dependencies from npm
 
@@ -90,11 +90,11 @@ Install dependencies from npm
 $ npm install --production
 ```
 
-### Step 3. Modify config
+### Step 3\. Modify config
 
 You can either modify the default [config file](./config/default.js) or alternatively generate an environment related config file that gets merged with the default values. Read about the config module [here](https://www.npmjs.com/package/config)
 
-### Step 4. Run the server
+### Step 4\. Run the server
 
 To use the default config file, run the following
 
@@ -108,19 +108,21 @@ Or if you want to use environment related config file, eg from `production.js`, 
 NODE_ENV=production npm start
 ```
 
-### Step 5. Create an user account
+### Step 5\. Create an user account
 
 See see [below](#create-user) for details about creating new user accounts
 
-## Create user
+## Manage user
 
-Users can be created with HTTP requests
+Users can be managed with HTTP requests against Wild Duck API
 
 ### POST /user/create
 
+Creates a new user. Even though you can use internationalized addresses, it would probably be better to create an ASCII email address as username and add the internationalized address as an alias. otherwise you might get into compatibility issues with email clients that do not support unicode usernames for logging in.
+
 Arguments
 
-- **username** is an email address of the user. Username can not contain + as plus is used to mark recipient labels
+- **username** is an email address of the user. Username can not contain + as plus is used to mark recipient labels. Unicode is allowed both in user part and the domain part of the address.
 - **password** is the password for the user
 
 **Example**
@@ -129,6 +131,36 @@ Arguments
 curl -XPOST "http://localhost:8080/user/create" -H 'content-type: application/json' -d '{
     "username": "username@example.com",
     "password": "secretpass"
+}'
+```
+
+The response for successful operation should look like this:
+
+```json
+{
+    "success": true,
+    "id": "58d28b91d3e6af19d013315e",
+    "username": "username@example.com"
+}
+```
+
+After you have created an user you can use these credentials to log in to the IMAP server. Additionally the LMTP and SMTP servers starts accepting mail for this email address.
+
+### POST /user/alias/create
+
+Creates a new alias for an existing user. You can use internationalized email addresses like _андрис@уайлддак.орг_ for aliases
+
+Arguments
+
+- **user** is the user ID
+- **alias** is the email address to use as an alias for this user
+
+**Example**
+
+```
+curl -XPOST "http://localhost:8080/user/alias/create" -H 'content-type: application/json' -d '{
+    "user": "58d28b91d3e6af19d013315e",
+    "alias": "alias@example.com"
 }'
 ```
 

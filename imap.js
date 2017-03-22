@@ -14,6 +14,7 @@ const Indexer = require('./imap-core/lib/indexer/indexer');
 const fs = require('fs');
 const setupIndexes = require('./indexes.json');
 const MessageHandler = require('./lib/message-handler');
+const tools = require('./lib/tools');
 
 // Setup server
 const serverOptions = {
@@ -43,7 +44,7 @@ let database;
 let messageHandler;
 
 server.onAuth = function (login, session, callback) {
-    let username = (login.username || '').toString().trim();
+    let username = tools.normalizeAddress((login.username || '').toString().trim());
 
     database.collection('users').findOne({
         username
@@ -59,70 +60,14 @@ server.onAuth = function (login, session, callback) {
             return callback();
         }
 
-        let ensureInitial = next => {
-            let collection = database.collection('mailboxes');
-            collection.findOne({
-                username,
-                path: 'INBOX'
-            }, (err, mailbox) => {
-                if (err) {
-                    return callback(err);
-                }
-                if (mailbox) {
-                    return next();
-                }
-
-                let uidValidity = Math.floor(Date.now() / 1000);
-
-                collection.insertMany([{
-                    username,
-                    path: 'INBOX',
-                    uidValidity,
-                    uidNext: 1,
-                    modifyIndex: 0,
-                    subscribed: true
-                }, {
-                    username,
-                    path: 'Sent Mail',
-                    specialUse: '\\Sent',
-                    uidValidity,
-                    uidNext: 1,
-                    modifyIndex: 0,
-                    subscribed: true
-                }, {
-                    username,
-                    path: 'Trash',
-                    specialUse: '\\Trash',
-                    uidValidity,
-                    uidNext: 1,
-                    modifyIndex: 0,
-                    subscribed: true
-                }, {
-                    username: login.username,
-                    path: 'Junk',
-                    specialUse: '\\Junk',
-                    uidValidity,
-                    uidNext: 1,
-                    modifyIndex: 0,
-                    subscribed: true
-                }], {
-                    w: 1,
-                    ordered: false
-                }, err => {
-                    if (err) {
-                        return callback(err);
-                    }
-                    return next();
-                });
-            });
-        };
-
-        ensureInitial(() => callback(null, {
+        callback(null, {
             user: {
+                id: user._id,
                 username
             }
-        }));
+        });
     });
+
 };
 
 // LIST "" "*"
@@ -130,11 +75,8 @@ server.onAuth = function (login, session, callback) {
 // folders is either an Array or a Map
 server.onList = function (query, session, callback) {
     this.logger.debug('[%s] LIST for "%s"', session.id, query);
-
-    let username = session.user.username;
-
     database.collection('mailboxes').find({
-        username
+        user: session.user.id
     }).toArray(callback);
 };
 
@@ -143,11 +85,8 @@ server.onList = function (query, session, callback) {
 // folders is either an Array or a Map
 server.onLsub = function (query, session, callback) {
     this.logger.debug('[%s] LSUB for "%s"', session.id, query);
-
-    let username = session.user.username;
-
     database.collection('mailboxes').find({
-        username,
+        user: session.user.id,
         subscribed: true
     }).toArray(callback);
 };
@@ -155,11 +94,8 @@ server.onLsub = function (query, session, callback) {
 // SUBSCRIBE "path/to/mailbox"
 server.onSubscribe = function (path, session, callback) {
     this.logger.debug('[%s] SUBSCRIBE to "%s"', session.id, path);
-
-    let username = session.user.username;
-
     database.collection('mailboxes').findOneAndUpdate({
-        username,
+        user: session.user.id,
         path
     }, {
         $set: {
@@ -182,11 +118,8 @@ server.onSubscribe = function (path, session, callback) {
 // UNSUBSCRIBE "path/to/mailbox"
 server.onUnsubscribe = function (path, session, callback) {
     this.logger.debug('[%s] UNSUBSCRIBE from "%s"', session.id, path);
-
-    let username = session.user.username;
-
     database.collection('mailboxes').findOneAndUpdate({
-        username,
+        user: session.user.id,
         path
     }, {
         $set: {
@@ -209,11 +142,8 @@ server.onUnsubscribe = function (path, session, callback) {
 // CREATE "path/to/mailbox"
 server.onCreate = function (path, session, callback) {
     this.logger.debug('[%s] CREATE "%s"', session.id, path);
-
-    let username = session.user.username;
-
     database.collection('mailboxes').findOne({
-        username,
+        user: session.user.id,
         path
     }, (err, mailbox) => {
         if (err) {
@@ -224,7 +154,7 @@ server.onCreate = function (path, session, callback) {
         }
 
         mailbox = {
-            username,
+            user: session.user.id,
             path,
             uidValidity: Math.floor(Date.now() / 1000),
             uidNext: 1,
@@ -245,11 +175,8 @@ server.onCreate = function (path, session, callback) {
 // NB! RENAME affects child and hierarchy mailboxes as well, this example does not do this
 server.onRename = function (path, newname, session, callback) {
     this.logger.debug('[%s] RENAME "%s" to "%s"', session.id, path, newname);
-
-    let username = session.user.username;
-
     database.collection('mailboxes').findOne({
-        username,
+        user: session.user.id,
         path: newname
     }, (err, mailbox) => {
         if (err) {
@@ -260,7 +187,7 @@ server.onRename = function (path, newname, session, callback) {
         }
 
         database.collection('mailboxes').findOneAndUpdate({
-            username,
+            user: session.user.id,
             path
         }, {
             $set: {
@@ -284,11 +211,8 @@ server.onRename = function (path, newname, session, callback) {
 // DELETE "path/to/mailbox"
 server.onDelete = function (path, session, callback) {
     this.logger.debug('[%s] DELETE "%s"', session.id, path);
-
-    let username = session.user.username;
-
     database.collection('mailboxes').findOne({
-        username,
+        user: session.user.id,
         path
     }, (err, mailbox) => {
         if (err) {
@@ -332,11 +256,8 @@ server.onDelete = function (path, session, callback) {
 // SELECT/EXAMINE
 server.onOpen = function (path, session, callback) {
     this.logger.debug('[%s] Opening "%s"', session.id, path);
-
-    let username = session.user.username;
-
     database.collection('mailboxes').findOne({
-        username,
+        user: session.user.id,
         path
     }, (err, mailbox) => {
         if (err) {
@@ -365,11 +286,8 @@ server.onOpen = function (path, session, callback) {
 // STATUS (X Y X)
 server.onStatus = function (path, session, callback) {
     this.logger.debug('[%s] Requested status for "%s"', session.id, path);
-
-    let username = session.user.username;
-
     database.collection('mailboxes').findOne({
-        username,
+        user: session.user.id,
         path
     }, (err, mailbox) => {
         if (err) {
@@ -410,15 +328,12 @@ server.onStatus = function (path, session, callback) {
 // APPEND mailbox (flags) date message
 server.onAppend = function (path, flags, date, raw, session, callback) {
     this.logger.debug('[%s] Appending message to "%s"', session.id, path);
-
-    let username = session.user.username;
-
     messageHandler.add({
-        username: session.user.username,
+        user: session.user.id,
         path,
         meta: {
             source: 'IMAP',
-            user: username,
+            to: session.user.username,
             time: Date.now()
         },
         date,
@@ -438,11 +353,8 @@ server.onAppend = function (path, flags, date, raw, session, callback) {
 // STORE / UID STORE, updates flags for selected UIDs
 server.onStore = function (path, update, session, callback) {
     this.logger.debug('[%s] Updating messages in "%s"', session.id, path);
-
-    let username = session.user.username;
-
     database.collection('mailboxes').findOne({
-        username,
+        user: session.user.id,
         path
     }, (err, mailbox) => {
         if (err) {
@@ -470,13 +382,13 @@ server.onStore = function (path, update, session, callback) {
             if (notifyEntries.length) {
                 let entries = notifyEntries;
                 notifyEntries = [];
-                setImmediate(() => this.notifier.addEntries(username, path, entries, () => {
-                    this.notifier.fire(username, path);
+                setImmediate(() => this.notifier.addEntries(session.user.id, path, entries, () => {
+                    this.notifier.fire(session.user.id, path);
                     return callback(...args);
                 }));
                 return;
             }
-            this.notifier.fire(username, path);
+            this.notifier.fire(session.user.id, path);
             return callback(...args);
         };
 
@@ -565,7 +477,7 @@ server.onStore = function (path, update, session, callback) {
                         if (notifyEntries.length > 100) {
                             let entries = notifyEntries;
                             notifyEntries = [];
-                            setImmediate(() => this.notifier.addEntries(username, path, entries, processNext));
+                            setImmediate(() => this.notifier.addEntries(session.user.id, path, entries, processNext));
                             return;
                         } else {
                             setImmediate(() => processNext());
@@ -586,11 +498,8 @@ server.onStore = function (path, update, session, callback) {
 // EXPUNGE deletes all messages in selected mailbox marked with \Delete
 server.onExpunge = function (path, update, session, callback) {
     this.logger.debug('[%s] Deleting messages from "%s"', session.id, path);
-
-    let username = session.user.username;
-
     database.collection('mailboxes').findOne({
-        username,
+        user: session.user.id,
         path
     }, (err, mailbox) => {
         if (err) {
@@ -617,7 +526,7 @@ server.onExpunge = function (path, update, session, callback) {
                 }
                 if (!message) {
                     return cursor.close(() => {
-                        this.notifier.fire(username, path);
+                        this.notifier.fire(session.user.id, path);
 
                         // delete all attachments that do not have any active links to message objects
                         database.collection('attachments.files').deleteMany({
@@ -659,7 +568,7 @@ server.onExpunge = function (path, update, session, callback) {
                         if (err) {
                             // ignore as we don't really care if we have orphans or not
                         }
-                        this.notifier.addEntries(username, path, {
+                        this.notifier.addEntries(session.user.id, path, {
                             command: 'EXPUNGE',
                             ignore: session.id,
                             uid: message.uid,
@@ -677,11 +586,8 @@ server.onExpunge = function (path, update, session, callback) {
 // COPY / UID COPY sequence mailbox
 server.onCopy = function (path, update, session, callback) {
     this.logger.debug('[%s] Copying messages from "%s" to "%s"', session.id, path, update.destination);
-
-    let username = session.user.username;
-
     database.collection('mailboxes').findOne({
-        username,
+        user: session.user.id,
         path
     }, (err, mailbox) => {
         if (err) {
@@ -692,7 +598,7 @@ server.onCopy = function (path, update, session, callback) {
         }
 
         database.collection('mailboxes').findOne({
-            username,
+            user: session.user.id,
             path: update.destination
         }, (err, target) => {
             if (err) {
@@ -718,7 +624,7 @@ server.onCopy = function (path, update, session, callback) {
                     }
                     if (!message) {
                         return cursor.close(() => {
-                            this.notifier.fire(username, target.path);
+                            this.notifier.fire(session.user.id, target.path);
                             return callback(null, true, {
                                 uidValidity: target.uidValidity,
                                 sourceUid,
@@ -779,7 +685,7 @@ server.onCopy = function (path, update, session, callback) {
                                 if (err) {
                                     // should we care about this error?
                                 }
-                                this.notifier.addEntries(username, target.path, {
+                                this.notifier.addEntries(session.user.id, target.path, {
                                     command: 'EXISTS',
                                     uid: message.uid,
                                     message: message._id
@@ -799,11 +705,8 @@ server.onCopy = function (path, update, session, callback) {
 // sends results to socket
 server.onFetch = function (path, options, session, callback) {
     this.logger.debug('[%s] Requested FETCH for "%s"', session.id, path);
-
-    let username = session.user.username;
-
     database.collection('mailboxes').findOne({
-        username,
+        user: session.user.id,
         path
     }, (err, mailbox) => {
         if (err) {
@@ -851,7 +754,7 @@ server.onFetch = function (path, options, session, callback) {
                 }
                 if (!message) {
                     return cursor.close(() => {
-                        this.notifier.fire(username, path);
+                        this.notifier.fire(session.user.id, path);
                         return callback(null, true);
                     });
                 }
@@ -893,7 +796,7 @@ server.onFetch = function (path, options, session, callback) {
                         if (err) {
                             return cursor.close(() => callback(err));
                         }
-                        this.notifier.addEntries(username, path, {
+                        this.notifier.addEntries(session.user.id, path, {
                             command: 'FETCH',
                             ignore: session.id,
                             uid: message.uid,
@@ -916,11 +819,8 @@ server.onFetch = function (path, options, session, callback) {
  * by MongoDB and then do the final filtering on the client side. This allows
  */
 server.onSearch = function (path, options, session, callback) {
-
-    let username = session.user.username;
-
     database.collection('mailboxes').findOne({
-        username,
+        user: session.user.id,
         path
     }, (err, mailbox) => {
         if (err) {

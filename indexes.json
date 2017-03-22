@@ -6,25 +6,45 @@
             "username": 1
         },
         "unique": true
+    }, {
+        "name": "show_new",
+        "key": {
+            "created": -1
+        }
+    }]
+}, {
+    "collection": "addresses",
+    "indexes": [{
+        "name": "address",
+        "key": {
+            "address": 1
+        },
+        "unique": true
+    }, {
+        "name": "user",
+        "key": {
+            "user": 1
+        }
     }]
 }, {
     "collection": "mailboxes",
     "indexes": [{
-        "name": "user_mailboxes",
+        "name": "find_by_user",
         "key": {
-            "username": 1
+            "user": 1,
+            "path": 1
         }
     }, {
         "name": "user_subscribed",
         "key": {
-            "username": 1,
+            "user": 1,
             "subscribed": 1
         }
     }, {
-        "name": "find_by_user",
+        "name": "find_by_type",
         "key": {
-            "username": 1,
-            "path": 1
+            "user": 1,
+            "specialUse": 1
         }
     }]
 }, {
