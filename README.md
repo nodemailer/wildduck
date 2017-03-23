@@ -26,7 +26,7 @@ Wild Duck IMAP server supports the following IMAP standards:
 - **SPECIAL-USE**
 - **ID**
 - **AUTHENTICATE PLAIN** and **SASL-IR**
-- **UTF8=ACCEPT** – this also means that Wild Duck natively supports unicode email usernames
+- **UTF8=ACCEPT** – this also means that Wild Duck natively supports unicode email usernames. For example <андрис@уайлддак.орг> is a valid email address that is hosted by a test instance of Wild Duck
 
 ## FAQ
 
