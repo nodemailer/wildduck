@@ -118,18 +118,18 @@ Users can be managed with HTTP requests against Wild Duck API
 
 ### POST /user/create
 
-Creates a new user. Even though you can use internationalized addresses, it would probably be better to create an ASCII email address as username and add the internationalized address as an alias. otherwise you might get into compatibility issues with email clients that do not support unicode usernames for logging in.
+Creates a new user.
 
 Arguments
 
-- **username** is an email address of the user. Username can not contain + as plus is used to mark recipient labels. Unicode is allowed both in user part and the domain part of the address.
+- **username** is the username of the user. This is not an email address but authentication username, use only letters and numbers
 - **password** is the password for the user
 
 **Example**
 
 ```
 curl -XPOST "http://localhost:8080/user/create" -H 'content-type: application/json' -d '{
-    "username": "username@example.com",
+    "username": "testuser",
     "password": "secretpass"
 }'
 ```
@@ -139,28 +139,27 @@ The response for successful operation should look like this:
 ```json
 {
     "success": true,
-    "id": "58d28b91d3e6af19d013315e",
-    "username": "username@example.com"
+    "username": "testuser"
 }
 ```
 
-After you have created an user you can use these credentials to log in to the IMAP server. Additionally the LMTP and SMTP servers starts accepting mail for this email address.
+After you have created an user you can use these credentials to log in to the IMAP server. To be able to receive mail for that user you need to register an email address.
 
-### POST /user/alias/create
+### POST /user/address/create
 
-Creates a new alias for an existing user. You can use internationalized email addresses like _андрис@уайлддак.орг_ for aliases
+Creates a new email address alias for an existing user. You can use internationalized email addresses like _андрис@уайлддак.орг_.
 
 Arguments
 
-- **user** is the user ID
-- **alias** is the email address to use as an alias for this user
+- **username** is the username
+- **address** is the email address to use as an alias for this user
 
 **Example**
 
 ```
-curl -XPOST "http://localhost:8080/user/alias/create" -H 'content-type: application/json' -d '{
-    "user": "58d28b91d3e6af19d013315e",
-    "alias": "alias@example.com"
+curl -XPOST "http://localhost:8080/user/address/create" -H 'content-type: application/json' -d '{
+    "username": "testuser",
+    "address": "user@example.com"
 }'
 ```
 
@@ -169,12 +168,12 @@ The response for successful operation should look like this:
 ```json
 {
     "success": true,
-    "id": "58bd6815dddb5ac5063d3590",
-    "username": "username@example.com"
+    "username": "testuser",
+    "address": "user@example.com"
 }
 ```
 
-After you have created an user you can use these credentials to log in to the IMAP server. Additionally the LMTP and SMTP servers starts accepting mail for this email address.
+After you have registered a new address then LMTP and SMTP maildrop servers start accepting mail for it and store the messages to the users mailbox.
 
 ## Testing
 

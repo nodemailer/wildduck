@@ -8,7 +8,6 @@ const MongoClient = mongodb.MongoClient;
 const Joi = require('joi');
 const bcrypt = require('bcryptjs');
 const tools = require('./lib/tools');
-const ObjectID = require('mongodb').ObjectID;
 
 let database;
 
@@ -23,14 +22,12 @@ server.use(restify.bodyParser({
 
 server.post('/user/create', (req, res, next) => {
     const schema = Joi.object().keys({
-        username: Joi.string().email().required(),
+        username: Joi.string().alphanum().lowercase().min(3).max(30).required(),
         password: Joi.string().min(3).max(100).required()
     });
 
-    let username = req.params.username;
-
     const result = Joi.validate({
-        username: username.replace(/[\u0080-\uFFFF]/g, 'x'),
+        username: req.params.username,
         password: req.params.password
     }, schema, {
         abortEarly: false,
@@ -45,19 +42,12 @@ server.post('/user/create', (req, res, next) => {
         return next();
     }
 
-    username = tools.normalizeAddress(username);
+    let username = result.value.username;
     let password = result.value.password;
-
-    if (username.indexOf('+') >= 0) {
-        res.json({
-            error: 'Username can not contain +'
-        });
-        return next();
-    }
 
     database.collection('users').findOne({
         username
-    }, (err, user) => {
+    }, (err, userData) => {
         if (err) {
             res.json({
                 error: 'MongoDB Error: ' + err.message,
@@ -65,7 +55,7 @@ server.post('/user/create', (req, res, next) => {
             });
             return next();
         }
-        if (user) {
+        if (userData) {
             res.json({
                 error: 'This username already exists',
                 username
@@ -73,31 +63,61 @@ server.post('/user/create', (req, res, next) => {
             return next();
         }
 
-        database.collection('addresses').findOne({
-            address: username
-        }, (err, address) => {
+        // Insert
+        let hash = bcrypt.hashSync(password, 11);
+        database.collection('users').insertOne({
+            username,
+            password: hash,
+            address: false,
+            created: new Date()
+        }, (err, result) => {
             if (err) {
                 res.json({
                     error: 'MongoDB Error: ' + err.message,
-                    address: username
-                });
-                return next();
-            }
-            if (address) {
-                res.json({
-                    error: 'This email address already exists',
-                    address: username
+                    username
                 });
                 return next();
             }
 
-            // Insert
-            let hash = bcrypt.hashSync(password, 11);
-            database.collection('users').insertOne({
-                username,
-                password: hash,
-                created: new Date()
-            }, (err, result) => {
+            let user = result.insertedId;
+
+            // create folders for user
+            let uidValidity = Math.floor(Date.now() / 1000);
+            database.collection('mailboxes').insertMany([{
+                user,
+                path: 'INBOX',
+                uidValidity,
+                uidNext: 1,
+                modifyIndex: 0,
+                subscribed: true
+            }, {
+                user,
+                path: 'Sent Mail',
+                specialUse: '\\Sent',
+                uidValidity,
+                uidNext: 1,
+                modifyIndex: 0,
+                subscribed: true
+            }, {
+                user,
+                path: 'Trash',
+                specialUse: '\\Trash',
+                uidValidity,
+                uidNext: 1,
+                modifyIndex: 0,
+                subscribed: true
+            }, {
+                user,
+                path: 'Junk',
+                specialUse: '\\Junk',
+                uidValidity,
+                uidNext: 1,
+                modifyIndex: 0,
+                subscribed: true
+            }], {
+                w: 1,
+                ordered: false
+            }, err => {
                 if (err) {
                     res.json({
                         error: 'MongoDB Error: ' + err.message,
@@ -106,93 +126,32 @@ server.post('/user/create', (req, res, next) => {
                     return next();
                 }
 
-                let userId = result.insertedId;
-
-                // insert address to email address registry
-                database.collection('addresses').insertOne({
-                    user: userId,
-                    address: username,
-                    created: new Date()
-                }, err => {
-                    if (err) {
-                        res.json({
-                            error: 'MongoDB Error: ' + err.message,
-                            username
-                        });
-                        return next();
-                    }
-
-                    // create folders for user
-                    let uidValidity = Math.floor(Date.now() / 1000);
-                    database.collection('mailboxes').insertMany([{
-                        user: userId,
-                        path: 'INBOX',
-                        uidValidity,
-                        uidNext: 1,
-                        modifyIndex: 0,
-                        subscribed: true
-                    }, {
-                        user: userId,
-                        path: 'Sent Mail',
-                        specialUse: '\\Sent',
-                        uidValidity,
-                        uidNext: 1,
-                        modifyIndex: 0,
-                        subscribed: true
-                    }, {
-                        user: userId,
-                        path: 'Trash',
-                        specialUse: '\\Trash',
-                        uidValidity,
-                        uidNext: 1,
-                        modifyIndex: 0,
-                        subscribed: true
-                    }, {
-                        user: userId,
-                        path: 'Junk',
-                        specialUse: '\\Junk',
-                        uidValidity,
-                        uidNext: 1,
-                        modifyIndex: 0,
-                        subscribed: true
-                    }], {
-                        w: 1,
-                        ordered: false
-                    }, err => {
-                        if (err) {
-                            res.json({
-                                error: 'MongoDB Error: ' + err.message,
-                                username
-                            });
-                            return next();
-                        }
-
-                        res.json({
-                            success: true,
-                            id: userId,
-                            username
-                        });
-
-                        return next();
-                    });
+                res.json({
+                    success: true,
+                    username
                 });
+
+                return next();
             });
         });
     });
 });
 
-server.post('/user/alias/create', (req, res, next) => {
+server.post('/user/address/create', (req, res, next) => {
     const schema = Joi.object().keys({
-        user: Joi.string().hex().length(24).required(),
-        alias: Joi.string().email().required()
+        username: Joi.string().alphanum().lowercase().min(3).max(30).required(),
+        address: Joi.string().email().required(),
+        main: Joi.boolean().truthy(['Y', 'true', 'yes', 1]).optional()
     });
 
-    let userId = req.params.user;
-    let alias = req.params.alias;
+    let username = req.params.username;
+    let address = req.params.address;
+    let main = req.params.main;
 
     const result = Joi.validate({
-        user: userId,
-        alias: alias.replace(/[\u0080-\uFFFF]/g, 'x')
+        username,
+        address: (address || '').replace(/[\u0080-\uFFFF]/g, 'x'),
+        main
     }, schema, {
         abortEarly: false,
         convert: true,
@@ -206,10 +165,11 @@ server.post('/user/alias/create', (req, res, next) => {
         return next();
     }
 
-    userId = new ObjectID(userId);
-    alias = tools.normalizeAddress(alias);
+    username = result.value.username;
+    address = tools.normalizeAddress(address);
+    main = result.value.main;
 
-    if (alias.indexOf('+') >= 0) {
+    if (address.indexOf('+') >= 0) {
         res.json({
             error: 'Address can not contain +'
         });
@@ -217,63 +177,78 @@ server.post('/user/alias/create', (req, res, next) => {
     }
 
     database.collection('users').findOne({
-        _id: userId
-    }, (err, user) => {
+        username
+    }, (err, userData) => {
         if (err) {
             res.json({
                 error: 'MongoDB Error: ' + err.message,
-                user: userId.toString()
+                username
             });
             return next();
         }
-        if (!user) {
+        if (!userData) {
             res.json({
                 error: 'This user does not exist',
-                user: userId.toString()
+                username
             });
             return next();
         }
 
         database.collection('addresses').findOne({
-            address: alias
-        }, (err, address) => {
+            address
+        }, (err, addressData) => {
             if (err) {
                 res.json({
                     error: 'MongoDB Error: ' + err.message,
-                    address: alias
+                    username,
+                    address
                 });
                 return next();
             }
-            if (address) {
+            if (addressData) {
                 res.json({
                     error: 'This email address already exists',
-                    address: alias
+                    username,
+                    address
                 });
                 return next();
             }
-
 
             // insert alias address to email address registry
             database.collection('addresses').insertOne({
-                user: userId,
-                address: alias,
+                user: userData._id,
+                address,
                 created: new Date()
-            }, (err, result) => {
+            }, err => {
                 if (err) {
                     res.json({
                         error: 'MongoDB Error: ' + err.message,
-                        address: alias
+                        address
                     });
                     return next();
                 }
 
-                res.json({
-                    success: true,
-                    id: result.insertedId,
-                    alias
-                });
+                let done = () => {
+                    res.json({
+                        success: true,
+                        username,
+                        address
+                    });
+                    return next();
+                };
 
-                return next();
+                if (!userData.address || main) {
+                    // register this address as the default address for that user
+                    return database.collection('users').findOneAndUpdate({
+                        _id: userData._id
+                    }, {
+                        $set: {
+                            address
+                        }
+                    }, {}, done);
+                }
+
+                done();
             });
         });
     });
