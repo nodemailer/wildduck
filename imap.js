@@ -14,7 +14,6 @@ const Indexer = require('./imap-core/lib/indexer/indexer');
 const fs = require('fs');
 const setupIndexes = require('./indexes.json');
 const MessageHandler = require('./lib/message-handler');
-const tools = require('./lib/tools');
 
 // Setup server
 const serverOptions = {
@@ -44,7 +43,7 @@ let database;
 let messageHandler;
 
 server.onAuth = function (login, session, callback) {
-    let username = tools.normalizeAddress((login.username || '').toString().trim());
+    let username = (login.username || '').toString().trim();
 
     database.collection('users').findOne({
         username
@@ -759,6 +758,11 @@ server.onFetch = function (path, options, session, callback) {
                     });
                 }
 
+                let markAsSeen = options.markAsSeen && !message.flags.includes('\\Seen');
+                if (markAsSeen) {
+                    message.flags.unshift('\\Seen');
+                }
+
                 let stream = imapHandler.compileStream(session.formatResponse('FETCH', message.uid, {
                     query: options.query,
                     values: session.getQueryResponse(options.query, message, {
@@ -782,9 +786,11 @@ server.onFetch = function (path, options, session, callback) {
                         return processNext();
                     }
 
-                    this.logger.debug('[%s] UPDATE FLAGS for "%s"', session.id, message.uid);
+                    if (!markAsSeen) {
+                        return processNext();
+                    }
 
-                    message.flags.unshift('\\Seen');
+                    this.logger.debug('[%s] UPDATE FLAGS for "%s"', session.id, message.uid);
 
                     database.collection('messages').findOneAndUpdate({
                         _id: message._id
