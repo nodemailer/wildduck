@@ -67,9 +67,7 @@ Actual update data (information about new and deleted messages, flag updates and
 
 1. Add interoperability with current servers, for example by fetching authentication data from MySQL
 2. Maybe allow some kind of message manipulation through plugins? This would allow to turn Wild Duck for example into an encrypted mail server – mail data would be encrypted using users public key before storing it to DB and decrypted with users private key whenever the user logs in and FETCHes or SEARCHes messages. Private key would be protected by users password. For the user the encryption layer would be invisible while guaranteeing that if the user is currently not logged in then there would be no way to read the messages as the private key is locked.
-3. Add quota handling. Every time a user gets a new message added to storage, the quota counter should increase. If only a single quota root would be used per account then implementing rfc2087 should be fairly easy. What is not so easy is keeping count on copied and deleted messages (there's a great technique for this described in the [mail.ru blog](https://team.mail.ru/efficient-storage-how-we-went-down-from-50-pb-to-32-pb/)).
-
-The problem with quota counters is that the actions (_store message + increment counter for mailbox_ or _delete message + decrement counter for mailbox_) are not transactional, so if something fails, the counter might end up in an invalid state. A possible fix would be to use fake transactions - set up a transaction with mailbox and counter data by storing a transaction entry, then process required actions and finally remove the transaction entry. If something fails and transaction is not completed, then the mailbox would be marked for reindexing which would mean that the mailbox quota is entirely re-calculated and quota counters are reset.
+3. Add proper quota handling. Every time a user gets a new message added to storage, the quota counter should increase. If only a single quota root would be used per account then implementing rfc2087 should be fairly easy. Currently Wild Duck keeps a count on storage used by an user but this is not exposed to the client.
 
 ## Usage
 
@@ -124,6 +122,7 @@ Arguments
 
 - **username** is the username of the user. This is not an email address but authentication username, use only letters and numbers
 - **password** is the password for the user
+- **storage** (optional) is the maximum storage in bytes allowed for this user
 
 **Example**
 

@@ -158,6 +158,8 @@ server.onCreate = function (path, session, callback) {
             uidValidity: Math.floor(Date.now() / 1000),
             uidNext: 1,
             modifyIndex: 0,
+            storageUsed: 0,
+            messages: 0,
             subscribed: true
         };
 
@@ -231,21 +233,30 @@ server.onDelete = function (path, session, callback) {
                 return callback(err);
             }
 
-            database.collection('journal').deleteMany({
+            database.collection('messages').deleteMany({
                 mailbox: mailbox._id
             }, err => {
                 if (err) {
                     return callback(err);
                 }
 
-                database.collection('messages').deleteMany({
-                    mailbox: mailbox._id
-                }, err => {
-                    if (err) {
-                        return callback(err);
+                // decrement quota counters
+                database.collection('users').findOneAndUpdate({
+                    _id: mailbox.user
+                }, {
+                    $inc: {
+                        storageUsed: -Number(mailbox.storageUsed) || 0,
+                        messages: -Number(mailbox.messages) || 0
                     }
-
-                    callback(null, true);
+                }, () => {
+                    database.collection('journal').deleteMany({
+                        mailbox: mailbox._id
+                    }, err => {
+                        if (err) {
+                            return callback(err);
+                        }
+                        callback(null, true);
+                    });
                 });
             });
         });
@@ -327,25 +338,41 @@ server.onStatus = function (path, session, callback) {
 // APPEND mailbox (flags) date message
 server.onAppend = function (path, flags, date, raw, session, callback) {
     this.logger.debug('[%s] Appending message to "%s"', session.id, path);
-    messageHandler.add({
-        user: session.user.id,
-        path,
-        meta: {
-            source: 'IMAP',
-            to: session.user.username,
-            time: Date.now()
-        },
-        date,
-        flags,
-        raw
-    }, (err, status, data) => {
+
+    database.collection('users').findOne({
+        _id: session.user.id
+    }, (err, user) => {
         if (err) {
-            if (err.imapResponse) {
-                return callback(null, err.imapResponse);
-            }
             return callback(err);
         }
-        callback(null, status, data);
+        if (!user) {
+            return callback(new Error('User not found'));
+        }
+
+        if (user.storage && user.storageUsed + raw.length > user.storage) {
+            return callback(false, 'OVERQUOTA');
+        }
+
+        messageHandler.add({
+            user: session.user.id,
+            path,
+            meta: {
+                source: 'IMAP',
+                to: session.user.username,
+                time: Date.now()
+            },
+            date,
+            flags,
+            raw
+        }, (err, status, data) => {
+            if (err) {
+                if (err.imapResponse) {
+                    return callback(null, err.imapResponse);
+                }
+                return callback(err);
+            }
+            callback(null, status, data);
+        });
     });
 };
 
@@ -513,31 +540,61 @@ server.onExpunge = function (path, update, session, callback) {
             flags: '\\Deleted'
         }).project({
             _id: true,
-            uid: true
+            uid: true,
+            size: true
         }).sort([
             ['uid', 1]
         ]);
 
+        let deletedMessages = 0;
+        let deletedStorage = 0;
+
+        let updateQuota = next => {
+            if (!deletedMessages) {
+                return next();
+            }
+
+            database.collection('mailboxes').findOneAndUpdate({
+                _id: mailbox._id
+            }, {
+                $inc: {
+                    storageUsed: -deletedStorage,
+                    messages: -deletedMessages
+                }
+            }, () => {
+                database.collection('users').findOneAndUpdate({
+                    _id: mailbox.user
+                }, {
+                    $inc: {
+                        storageUsed: -deletedStorage,
+                        messages: -deletedMessages
+                    }
+                }, next);
+            });
+        };
+
         let processNext = () => {
             cursor.next((err, message) => {
                 if (err) {
-                    return callback(err);
+                    return updateQuota(() => callback(err));
                 }
                 if (!message) {
                     return cursor.close(() => {
-                        this.notifier.fire(session.user.id, path);
+                        updateQuota(() => {
+                            this.notifier.fire(session.user.id, path);
 
-                        // delete all attachments that do not have any active links to message objects
-                        database.collection('attachments.files').deleteMany({
-                            'metadata.messages': {
-                                $size: 0
-                            }
-                        }, err => {
-                            if (err) {
-                                // ignore as we don't really care if we have orphans or not
-                            }
+                            // delete all attachments that do not have any active links to message objects
+                            database.collection('attachments.files').deleteMany({
+                                'metadata.messages': {
+                                    $size: 0
+                                }
+                            }, err => {
+                                if (err) {
+                                    // ignore as we don't really care if we have orphans or not
+                                }
 
-                            return callback(null, true);
+                                return callback(null, true);
+                            });
                         });
                     });
                 }
@@ -550,8 +607,11 @@ server.onExpunge = function (path, update, session, callback) {
                     _id: message._id
                 }, err => {
                     if (err) {
-                        return cursor.close(() => callback(err));
+                        return updateQuota(() => cursor.close(() => callback(err)));
                     }
+
+                    deletedMessages++;
+                    deletedStorage += Number(message.size) || 0;
 
                     // remove link to message from attachments (if any exist)
                     database.collection('attachments.files').updateMany({
@@ -614,20 +674,48 @@ server.onCopy = function (path, update, session, callback) {
                 }
             }); // no projection as we need to copy the entire message
 
+            let copiedMessages = 0;
+            let copiedStorage = 0;
+
+            let updateQuota = next => {
+                if (!copiedMessages) {
+                    return next();
+                }
+                database.collection('mailboxes').findOneAndUpdate({
+                    _id: target._id
+                }, {
+                    $inc: {
+                        storageUsed: copiedStorage,
+                        messages: copiedMessages
+                    }
+                }, () => {
+                    database.collection('users').findOneAndUpdate({
+                        _id: mailbox.user
+                    }, {
+                        $inc: {
+                            storageUsed: copiedStorage,
+                            messages: copiedMessages
+                        }
+                    }, next);
+                });
+            };
+
             let sourceUid = [];
             let destinationUid = [];
             let processNext = () => {
                 cursor.next((err, message) => {
                     if (err) {
-                        return callback(err);
+                        return updateQuota(() => callback(err));
                     }
                     if (!message) {
                         return cursor.close(() => {
-                            this.notifier.fire(session.user.id, target.path);
-                            return callback(null, true, {
-                                uidValidity: target.uidValidity,
-                                sourceUid,
-                                destinationUid
+                            updateQuota(() => {
+                                this.notifier.fire(session.user.id, target.path);
+                                return callback(null, true, {
+                                    uidValidity: target.uidValidity,
+                                    sourceUid,
+                                    destinationUid
+                                });
                             });
                         });
                     }
@@ -645,12 +733,12 @@ server.onCopy = function (path, update, session, callback) {
                         uidNext: true
                     }, (err, item) => {
                         if (err) {
-                            return callback(err);
+                            return updateQuota(() => callback(err));
                         }
 
                         if (!item || !item.value) {
                             // was not able to acquire a lock
-                            return callback(null, 'TRYCREATE');
+                            return updateQuota(() => callback(null, 'TRYCREATE'));
                         }
 
                         let uidNext = item.value.uidNext;
@@ -667,8 +755,11 @@ server.onCopy = function (path, update, session, callback) {
 
                         database.collection('messages').insertOne(message, err => {
                             if (err) {
-                                return callback(err);
+                                return updateQuota(() => callback(err));
                             }
+
+                            copiedMessages++;
+                            copiedStorage += Number(message.size) || 0;
 
                             // remove link to message from attachments (if any exist)
                             database.collection('attachments.files').updateMany({

@@ -23,7 +23,8 @@ server.use(restify.bodyParser({
 server.post('/user/create', (req, res, next) => {
     const schema = Joi.object().keys({
         username: Joi.string().alphanum().lowercase().min(3).max(30).required(),
-        password: Joi.string().min(3).max(100).required()
+        password: Joi.string().min(3).max(100).required(),
+        storage: Joi.number().default(0)
     });
 
     const result = Joi.validate({
@@ -44,6 +45,7 @@ server.post('/user/create', (req, res, next) => {
 
     let username = result.value.username;
     let password = result.value.password;
+    let storage = result.value.storage;
 
     database.collection('users').findOne({
         username
@@ -69,6 +71,9 @@ server.post('/user/create', (req, res, next) => {
             username,
             password: hash,
             address: false,
+            storageUsed: 0,
+            messages: 0,
+            storage,
             created: new Date()
         }, (err, result) => {
             if (err) {
@@ -89,6 +94,8 @@ server.post('/user/create', (req, res, next) => {
                 uidValidity,
                 uidNext: 1,
                 modifyIndex: 0,
+                storageUsed: 0,
+                messages: 0,
                 subscribed: true
             }, {
                 user,
@@ -97,6 +104,8 @@ server.post('/user/create', (req, res, next) => {
                 uidValidity,
                 uidNext: 1,
                 modifyIndex: 0,
+                storageUsed: 0,
+                messages: 0,
                 subscribed: true
             }, {
                 user,
@@ -105,6 +114,8 @@ server.post('/user/create', (req, res, next) => {
                 uidValidity,
                 uidNext: 1,
                 modifyIndex: 0,
+                storageUsed: 0,
+                messages: 0,
                 subscribed: true
             }, {
                 user,
@@ -113,6 +124,8 @@ server.post('/user/create', (req, res, next) => {
                 uidValidity,
                 uidNext: 1,
                 modifyIndex: 0,
+                storageUsed: 0,
+                messages: 0,
                 subscribed: true
             }], {
                 w: 1,

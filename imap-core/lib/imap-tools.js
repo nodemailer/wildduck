@@ -468,6 +468,8 @@ module.exports.formatInternalDate = function (date) {
  */
 module.exports.getQueryResponse = function (query, message, options) {
 
+    options = options || {};
+
     // for optimization purposes try to use cached mimeTree etc. if available
     // If these values are missing then generate these when first time required
     // So if the query is for (UID FLAGS) then mimeTree is never generated

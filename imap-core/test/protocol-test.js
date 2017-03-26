@@ -21,6 +21,8 @@ describe('IMAP Protocol integration tests', function () {
             logger: false // remove to print IMAP traffic to console
         });
 
+        server.acceptUTF8Enabled = false;
+
         server.listen(function () {
             port = server.server.address().port;
             done();
