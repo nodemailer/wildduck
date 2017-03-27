@@ -71,7 +71,7 @@ const server = new SMTPServer({
                     log.error('SMTP', err);
                     return callback(new Error('Database error'));
                 }
-                if (user) {
+                if (!user) {
                     return callback(new Error('Unknown recipient'));
                 }
 
