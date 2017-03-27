@@ -16,8 +16,8 @@ Wild Duck is a distributed IMAP server built with Node.js, MongoDB and Redis. No
 
 Here's a list of Email/IMAP servers that use database for storing email messages
 
-* [DBMail](http://www.dbmail.org/)
-* [Archiveopteryx](http://archiveopteryx.org/)
+- [DBMail](http://www.dbmail.org/)
+- [Archiveopteryx](http://archiveopteryx.org/)
 
 ## Supported features
 
@@ -49,6 +49,7 @@ Yes, it does. You can run the server and get a working IMAP server for mail stor
 2. Super easy to tweak. The entire codebase is pure JavaScript, so there's nothing to compile or anything platform specific. If you need to tweak something then change the code, restart the app and you're ready to go. If it works on one machine then most probably it works in every other machine as well.
 3. Works almost on any OS including Windows. At least if you get MongoDB and Redis ([Windows fork](https://github.com/MSOpenTech/redis)) running first.
 4. Focus on internationalization, ie. supporting email addresses with non-ascii characters
+5. `+`-labels: _андрис+ööö@уайлддак.орг_ is delivered to _андрис@уайлддак.орг_
 
 ### Isn't it bad to use a database as a mail store?
 
@@ -161,9 +162,9 @@ Arguments
 
 - **username** is the username
 - **address** is the email address to use as an alias for this user
-- **main** (either *true* or *false*, defaults to *false*) indicates that this is the default address for that user
+- **main** (either _true_ or _false_, defaults to _false_) indicates that this is the default address for that user
 
-First added address becomes *main* by default
+First added address becomes _main_ by default
 
 **Example**
 
