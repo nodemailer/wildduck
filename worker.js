@@ -3,33 +3,39 @@
 let config = require('config');
 let log = require('npmlog');
 let imap = require('./imap');
-let lmtp = require('./lmtp');
 let smtp = require('./smtp');
 let api = require('./api');
+let db = require('./lib/db');
 
-imap(err => {
+// Initialize database connection
+db.connect(err => {
     if (err) {
-        log.error('App', 'Failed to start IMAP server');
+        log.error('Db', 'Failed to setup database connection');
         return process.exit(1);
     }
-    lmtp(err => {
+    // Start IMAP server
+    imap(err => {
         if (err) {
-            log.error('App', 'Failed to start LMTP server');
+            log.error('App', 'Failed to start IMAP server');
             return process.exit(1);
         }
+        // Start SMTP maildrop server
         smtp(err => {
             if (err) {
                 log.error('App', 'Failed to start SMTP server');
                 return process.exit(1);
             }
+
+            // Start HTTP API server
             api(err => {
                 if (err) {
                     log.error('App', 'Failed to start API server');
                     return process.exit(1);
                 }
+
                 log.info('App', 'All servers started, ready to process some mail');
 
-                // downgrade user if needed
+                // downgrade user and group if needed
                 if (config.group) {
                     try {
                         process.setgid(config.group);

@@ -3,15 +3,16 @@
 const config = require('config');
 const log = require('npmlog');
 const SMTPServer = require('smtp-server').SMTPServer;
-const mongodb = require('mongodb');
-const MongoClient = mongodb.MongoClient;
 const crypto = require('crypto');
 const tools = require('./lib/tools');
 const MessageHandler = require('./lib/message-handler');
 const os = require('os');
+const db = require('./lib/db');
+
+const maxStorage = config.imap.maxStorage * 1024 * 1024;
+const maxMessageSize = config.smtp.maxMB * 1024 * 1024;
 
 let messageHandler;
-let database;
 
 const server = new SMTPServer({
 
@@ -40,7 +41,7 @@ const server = new SMTPServer({
     disabledCommands: ['AUTH', 'STARTTLS'],
 
     // Accept messages up to 10 MB
-    size: config.smtp.maxMB * 1024 * 1024,
+    size: maxMessageSize,
 
     // Validate RCPT TO envelope address. Example allows all addresses that do not start with 'deny'
     // If this method is not set, all addresses are allowed
@@ -52,7 +53,7 @@ const server = new SMTPServer({
             return callback();
         }
 
-        database.collection('addresses').findOne({
+        db.database.collection('addresses').findOne({
             address: recipient
         }, (err, address) => {
             if (err) {
@@ -63,16 +64,41 @@ const server = new SMTPServer({
                 return callback(new Error('Unknown recipient'));
             }
 
-            if (!session.users) {
-                session.users = new Map();
-            }
+            db.database.collection('users').findOne({
+                _id: address.user
+            }, (err, user) => {
+                if (err) {
+                    log.error('SMTP', err);
+                    return callback(new Error('Database error'));
+                }
+                if (user) {
+                    return callback(new Error('Unknown recipient'));
+                }
 
-            session.users.set(recipient, {
-                recipient: originalRecipient,
-                user: address.user
+                if (!session.users) {
+                    session.users = new Map();
+                }
+
+                let storageAvailable = (Number(user.quota || 0) || maxStorage) - Number(user.storageUsed || 0);
+
+                if (Number(session.envelope.mailFrom.args.SIZE) > storageAvailable) {
+                    err = new Error('Insufficient channel storage: ' + originalRecipient);
+                    err.responseCode = 452;
+                    return callback(err);
+                }
+
+                session.users.set(recipient, {
+                    recipient: originalRecipient,
+                    user: address.user,
+                    storageAvailable
+                });
+
+                if (!session.maxAllowedStorage || session.maxAllowedStorage > storageAvailable) {
+                    session.maxAllowedStorage = storageAvailable;
+                }
+
+                callback();
             });
-
-            callback();
         });
     },
 
@@ -81,11 +107,14 @@ const server = new SMTPServer({
         let chunks = [];
         let chunklen = 0;
         let hash = crypto.createHash('md5');
+
         stream.on('readable', () => {
             let chunk;
             while ((chunk = stream.read()) !== null) {
-                chunks.push(chunk);
-                chunklen += chunk.length;
+                if (chunklen < maxMessageSize) {
+                    chunks.push(chunk);
+                    chunklen += chunk.length;
+                }
                 hash.update(chunk);
             }
         });
@@ -97,14 +126,24 @@ const server = new SMTPServer({
 
         stream.once('end', () => {
             let err;
+
+            // too large message
             if (stream.sizeExceeded) {
                 err = new Error('Error: message exceeds fixed maximum message size ' + config.smtp.maxMB + ' MB');
                 err.responseCode = 552;
                 return callback(err);
             }
 
+            // no recipients defined
             if (!session.users || !session.users.size) {
                 return callback(new Error('Nowhere to save the mail to'));
+            }
+
+            // there was at least one recipient with less than required storage available
+            if (chunklen > session.maxAllowedStorage) {
+                err = new Error('Error: Insufficient channel storage');
+                err.responseCode = 452;
+                return callback(err);
             }
 
             let queueId = hash.digest('hex').toUpperCase();
@@ -166,31 +205,25 @@ module.exports = done => {
     if (!config.smtp.enabled) {
         return setImmediate(() => done(null, false));
     }
-    MongoClient.connect(config.mongo, (err, mongo) => {
-        if (err) {
-            log.error('SMTP', 'Could not initialize MongoDB: %s', err.message);
-            return;
-        }
-        database = mongo;
-        messageHandler = new MessageHandler(database);
 
-        let started = false;
+    messageHandler = new MessageHandler(db.database);
 
-        server.on('error', err => {
-            if (!started) {
-                started = true;
-                return done(err);
-            }
-            log.error('SMTP', err);
-        });
+    let started = false;
 
-        server.listen(config.smtp.port, config.smtp.host, () => {
-            if (started) {
-                return server.close();
-            }
+    server.on('error', err => {
+        if (!started) {
             started = true;
-            done(null, server);
-        });
+            return done(err);
+        }
+        log.error('SMTP', err);
+    });
+
+    server.listen(config.smtp.port, config.smtp.host, () => {
+        if (started) {
+            return server.close();
+        }
+        started = true;
+        done(null, server);
     });
 };
 

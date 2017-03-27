@@ -33,7 +33,9 @@ module.exports = {
         //cert: '/path/to/server/cert.pem'
         secure: true,
         // Max size for messages uploaded via APPEND
-        maxMB: 5
+        maxMB: 5,
+        // default quota storage in MB (can be overriden per user)
+        maxStorage: 100
     },
 
     lmtp: {

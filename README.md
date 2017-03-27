@@ -12,6 +12,13 @@ Wild Duck is a distributed IMAP server built with Node.js, MongoDB and Redis. No
 2. Push notifications. Your application (eg. a webmail client) should be able to request changes (new and deleted messages, flag changes) to be pushed to client instead of using IMAP to fetch stuff from the server
 3. Provide Gmail-like features like pushing sent messages automatically to Sent Mail folder or notifying about messages moved to Junk folder so these could be marked as spam
 
+## Similar alterntives
+
+Here's a list of Email/IMAP servers that use database for storing email messages
+
+* [DBMail](http://www.dbmail.org/)
+* [Archiveopteryx](http://archiveopteryx.org/)
+
 ## Supported features
 
 Wild Duck IMAP server supports the following IMAP standards:
@@ -26,13 +33,15 @@ Wild Duck IMAP server supports the following IMAP standards:
 - **SPECIAL-USE**
 - **ID**
 - **AUTHENTICATE PLAIN** and **SASL-IR**
-- **UTF8=ACCEPT** – this also means that Wild Duck natively supports unicode email usernames. For example <андрис@уайлддак.орг> is a valid email address that is hosted by a test instance of Wild Duck
+- **APPENDLIMIT** (RFC7889) – maximum global allowed message size is advertised in CAPABILITY listing
+- **UTF8=ACCEPT** (RFC6855) – this also means that Wild Duck natively supports unicode email usernames. For example <андрис@уайлддак.орг> is a valid email address that is hosted by a test instance of Wild Duck
+- **QUOTA** (RFC2087) – Quota size is global for an account, using a single quota root. Be aware that quota size does not mean actual byte storage in disk, it is calculated as the sum of the rfc822 sources of stored messages. Actual disk usage is larger as there's a lot of database overhead per every message.
 
 ## FAQ
 
 ### Does it work?
 
-Yes, it does. You can run the server and get a working IMAP server for mail store, LMTP and/or SMTP servers for pushing messages to the mail store and HTTP API server to create new users. All handled by Node.js and MongoDB, no additional dependencies needed.
+Yes, it does. You can run the server and get a working IMAP server for mail store, SMTP server for pushing messages to the mail store and HTTP API server to create new users. All handled by Node.js, MongoDB and Redis, no additional dependencies needed.
 
 ### What are the killer features?
 
@@ -122,14 +131,14 @@ Arguments
 
 - **username** is the username of the user. This is not an email address but authentication username, use only letters and numbers
 - **password** is the password for the user
-- **storage** (optional) is the maximum storage in bytes allowed for this user
+- **quota** (optional) is the maximum storage in bytes allowed for this user. If not set then the default value is used
 
 **Example**
 
 ```
 curl -XPOST "http://localhost:8080/user/create" -H 'content-type: application/json' -d '{
-    "username": "testuser",
-    "password": "secretpass"
+  "username": "testuser",
+  "password": "secretpass"
 }'
 ```
 
@@ -137,8 +146,8 @@ The response for successful operation should look like this:
 
 ```json
 {
-    "success": true,
-    "username": "testuser"
+  "success": true,
+  "username": "testuser"
 }
 ```
 
@@ -152,13 +161,16 @@ Arguments
 
 - **username** is the username
 - **address** is the email address to use as an alias for this user
+- **main** (either *true* or *false*, defaults to *false*) indicates that this is the default address for that user
+
+First added address becomes *main* by default
 
 **Example**
 
 ```
 curl -XPOST "http://localhost:8080/user/address/create" -H 'content-type: application/json' -d '{
-    "username": "testuser",
-    "address": "user@example.com"
+  "username": "testuser",
+  "address": "user@example.com"
 }'
 ```
 
@@ -166,13 +178,178 @@ The response for successful operation should look like this:
 
 ```json
 {
-    "success": true,
-    "username": "testuser",
-    "address": "user@example.com"
+  "success": true,
+  "username": "testuser",
+  "address": "user@example.com"
 }
 ```
 
-After you have registered a new address then LMTP and SMTP maildrop servers start accepting mail for it and store the messages to the users mailbox.
+After you have registered a new address then SMTP maildrop server starts accepting mail for it and store the messages to the users mailbox.
+
+### POST /user/quota
+
+Updates maximum allowed quota for an user
+
+Arguments
+
+- **username** is the username of the user to modify
+- **quota** (optional) is the maximum storage in bytes allowed for this user. If not set or zero then the default value is used
+
+**Example**
+
+```
+curl -XPOST "http://localhost:8080/user/quota" -H 'content-type: application/json' -d '{
+  "username": "testuser",
+  "quota": 1234567
+}'
+```
+
+The response for successful operation should look like this:
+
+```json
+{
+  "success": true,
+  "username": "testuser",
+  "previousQuota": 0,
+  "quota": 1234567
+}
+```
+
+Quota changes apply immediately.
+
+### POST /user/password
+
+Updates password for an user
+
+Arguments
+
+- **username** is the username of the user to modify
+- **password** is the new password for the user
+
+**Example**
+
+```
+curl -XPOST "http://localhost:8080/user/password" -H 'content-type: application/json' -d '{
+  "username": "testuser",
+  "password": "newpass"
+}'
+```
+
+The response for successful operation should look like this:
+
+```json
+{
+  "success": true,
+  "username": "testuser"
+}
+```
+
+Password change applies immediately.
+
+### GET /user
+
+Returns user information including quota usage and registered addresses
+
+Arguments
+
+- **username** is the username of the user to modify
+
+**Example**
+
+```
+curl "http://localhost:8080/user?username=testuser"
+```
+
+The response for successful operation should look like this:
+
+```json
+{
+  "success": true,
+  "username": "testuser",
+  "quota": 1234567,
+  "storageUsed": 1822,
+  "addresses": [
+    {
+      "id": "58d8fccb645b0deb23d6c37d",
+      "address": "user@example.com",
+      "main": true,
+      "created": "2017-03-27T11:51:39.639Z"
+    }
+  ]
+}
+```
+
+### GET /user/mailboxes
+
+Returns all mailbox names for the user
+
+Arguments
+
+- **username** is the username of the user to modify
+
+**Example**
+
+```
+curl "http://localhost:8080/user/mailboxes?username=testuser"
+```
+
+The response for successful operation should look like this:
+
+```json
+{
+  "success": true,
+  "username": "testuser",
+  "mailboxes": [
+    {
+      "id": "58d8f2ae240366dfd5d8049c",
+      "path": "INBOX",
+      "special": "Inbox",
+      "messages": 100
+    },
+    {
+      "id": "58d8f2ae240366dfd5d8049d",
+      "path": "Sent Mail",
+      "special": "Sent",
+      "messages": 45
+    },
+    {
+      "id": "58d8f2ae240366dfd5d8049f",
+      "path": "Junk",
+      "special": "Junk",
+      "messages": 10
+    },
+    {
+      "id": "58d8f2ae240366dfd5d8049e",
+      "path": "Trash",
+      "special": "Trash",
+      "messages": 11
+    }
+  ]
+}
+```
+
+### DELETE /message
+
+Deletes a message from a mailbox.
+
+Arguments
+
+- **id** is the MongoDB _id as a string for a message
+
+**Example**
+
+```
+curl "http://localhost:8080/message?id=58d8299c5195c38e77c2daa5"
+```
+
+The response for successful operation should look like this:
+
+```json
+{
+  "success": true,
+  "id": "58d8299c5195c38e77c2daa5"
+}
+```
 
 ## Testing
 

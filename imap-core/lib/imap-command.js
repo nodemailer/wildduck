@@ -40,7 +40,10 @@ let commands = new Map([
     ['UID FETCH', require('./commands/fetch')],
     ['SEARCH', require('./commands/search')],
     ['UID SEARCH', require('./commands/search')],
-    ['ENABLE', require('./commands/enable')]
+    ['ENABLE', require('./commands/enable')],
+    ['GETQUOTAROOT', require('./commands/getquotaroot')],
+    ['SETQUOTA', require('./commands/setquota')],
+    ['GETQUOTA', require('./commands/getquota')]
     /*eslint-enable global-require*/
 ]);
 
@@ -81,16 +84,31 @@ class IMAPCommand {
         }
 
         if (command.literal) {
+
+            // check if the literal size is in acceptable bounds
+            if (isNaN(command.expecting) || isNaN(command.expecting) < 0 || command.expecting > Number.MAX_SAFE_INTEGER) {
+                this.connection.send(this.tag + ' BAD Invalid literal size');
+                return callback(new Error('Literal too big'));
+            }
+
+            let maxAllowed = Math.max(Number(this.connection._server.options.maxMessage) || 0, MAX_MESSAGE_SIZE);
             if (
                 // Allow large literals for selected commands only
-                (['APPEND'].indexOf(this.command) < 0 && command.expecting > 1024) ||
+                (!['APPEND'].includes(this.command) && command.expecting > 1024) ||
                 // Deny all literals bigger than maxMessage
-                command.expecting > Math.max(Number(this.connection._server.options.maxMessage) || 0, MAX_MESSAGE_SIZE)) {
+                command.expecting > maxAllowed) {
 
                 this.connection._server.logger.debug('[%s] C:', this.connection.id, this.payload);
 
                 this.payload = ''; // reset payload
-                this.connection.send(this.tag + ' NO Literal too big');
+
+                if (command.expecting > maxAllowed) {
+                    // APPENDLIMIT response for too large messages
+                    this.connection.send(this.tag + ' BAD [TOOBIG] Literal too large');
+                } else {
+                    this.connection.send(this.tag + ' NO Literal too large');
+                }
+
                 return callback(new Error('Literal too big'));
             }
 
@@ -126,8 +144,6 @@ class IMAPCommand {
             if (err) {
                 return next(err);
             }
-
-
 
             // check if the payload needs to be directod to a preset handler
             if (typeof this.connection._nextHandler === 'function') {

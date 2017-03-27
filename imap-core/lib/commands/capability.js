@@ -28,6 +28,11 @@ module.exports = {
             capabilities.push('ENABLE');
             capabilities.push('CONDSTORE');
             capabilities.push('UTF8=ACCEPT');
+            capabilities.push('QUOTA');
+
+            if (this._server.options.maxMessage) {
+                capabilities.push('APPENDLIMIT=' + this._server.options.maxMessage);
+            }
         }
 
         capabilities.sort((a, b) => a.localeCompare(b));
