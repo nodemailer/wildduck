@@ -21,9 +21,8 @@ const transporter = nodemailer.createTransport({
     debug: false
 });
 
-
 let sent = 0;
-let total = 1;
+let total = 10000;
 let startTime = Date.now();
 
 function send() {
@@ -75,10 +74,14 @@ function send() {
         if (sent >= total) {
             console.log('Sent %s messages in %s s', sent, (Date.now() - startTime) / 1000);
             return transporter.close();
+        }else {
+            send();
         }
     });
 }
-
+send();
+/*
 for (let i = 0; i < total; i++) {
     send();
 }
+*/

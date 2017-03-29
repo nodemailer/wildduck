@@ -55,6 +55,11 @@
             "mailbox": 1
         }
     }, {
+        "name": "user_messages",
+        "key": {
+            "user": 1
+        }
+    }, {
         "name": "mailbox_uid_modseq",
         "key": {
             "mailbox": 1,

@@ -30,6 +30,8 @@ module.exports = {
             capabilities.push('UTF8=ACCEPT');
             capabilities.push('QUOTA');
 
+            // capabilities.push('MOVE');
+
             if (this._server.options.maxMessage) {
                 capabilities.push('APPENDLIMIT=' + this._server.options.maxMessage);
             }

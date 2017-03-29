@@ -1,6 +1,6 @@
 {
   "name": "wildduck",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "IMAP server built with Node.js and MongoDB",
   "main": "server.js",
   "scripts": {
@@ -16,11 +16,9 @@
     "grunt-cli": "^1.2.0",
     "grunt-eslint": "^19.0.0",
     "grunt-mocha-test": "^0.13.2",
-    "mocha": "^3.2.0",
-    "nodemailer": "^3.1.8"
+    "mocha": "^3.2.0"
   },
   "dependencies": {
-    "addressparser": "^1.0.1",
     "bcryptjs": "^2.4.3",
     "clone": "^2.1.1",
     "config": "^1.25.1",
@@ -30,7 +28,7 @@
     "libmime": "^3.1.0",
     "mailparser": "^2.0.2",
     "mongodb": "^2.2.25",
-    "nodemailer-fetch": "^2.1.0",
+    "nodemailer": "^3.1.8",
     "npmlog": "^4.0.2",
     "redfour": "^1.0.0",
     "redis": "^2.7.1",

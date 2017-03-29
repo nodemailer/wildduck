@@ -82,7 +82,6 @@ server.post('/user/create', (req, res, next) => {
             password: hash,
             address: false,
             storageUsed: 0,
-            messages: 0,
             quota,
             created: new Date()
         }, (err, result) => {
@@ -104,8 +103,6 @@ server.post('/user/create', (req, res, next) => {
                 uidValidity,
                 uidNext: 1,
                 modifyIndex: 0,
-                storageUsed: 0,
-                messages: 0,
                 subscribed: true
             }, {
                 user,
@@ -114,8 +111,6 @@ server.post('/user/create', (req, res, next) => {
                 uidValidity,
                 uidNext: 1,
                 modifyIndex: 0,
-                storageUsed: 0,
-                messages: 0,
                 subscribed: true
             }, {
                 user,
@@ -124,8 +119,6 @@ server.post('/user/create', (req, res, next) => {
                 uidValidity,
                 uidNext: 1,
                 modifyIndex: 0,
-                storageUsed: 0,
-                messages: 0,
                 subscribed: true
             }, {
                 user,
@@ -134,8 +127,6 @@ server.post('/user/create', (req, res, next) => {
                 uidValidity,
                 uidNext: 1,
                 modifyIndex: 0,
-                storageUsed: 0,
-                messages: 0,
                 subscribed: true
             }], {
                 w: 1,
@@ -339,6 +330,117 @@ server.post('/user/quota', (req, res, next) => {
     });
 });
 
+server.post('/user/quota/reset', (req, res, next) => {
+    res.charSet('utf-8');
+
+    const schema = Joi.object().keys({
+        username: Joi.string().alphanum().lowercase().min(3).max(30).required()
+    });
+
+    const result = Joi.validate({
+        username: req.params.username
+    }, schema, {
+        abortEarly: false,
+        convert: true,
+        allowUnknown: true
+    });
+
+    if (result.error) {
+        res.json({
+            error: result.error.message
+        });
+        return next();
+    }
+
+    let username = result.value.username;
+
+    db.database.collection('users').findOne({
+        username
+    }, (err, user) => {
+        if (err) {
+            res.json({
+                error: 'MongoDB Error: ' + err.message,
+                username
+            });
+            return next();
+        }
+
+        if (!user) {
+            res.json({
+                error: 'This user does not exist',
+                username
+            });
+            return next();
+        }
+
+
+        // calculate mailbox size by aggregating the size's of all messages
+        db.database.collection('messages').aggregate([{
+            $match: {
+                user: user._id
+            }
+        }, {
+            $group: {
+                _id: {
+                    user: '$user'
+                },
+                storageUsed: {
+                    $sum: '$size'
+                }
+            }
+        }], {
+            cursor: {
+                batchSize: 1
+            }
+        }).toArray((err, result) => {
+            if (err) {
+                res.json({
+                    error: 'MongoDB Error: ' + err.message,
+                    username
+                });
+                return next();
+            }
+
+            let storageUsed = result && result[0] && result[0].storageUsed || 0;
+
+            // update quota counter
+            db.database.collection('users').findOneAndUpdate({
+                _id: user._id
+            }, {
+                $set: {
+                    storageUsed: Number(storageUsed) || 0
+                }
+            }, {
+                returnOriginal: false
+            }, (err, result) => {
+                if (err) {
+                    res.json({
+                        error: 'MongoDB Error: ' + err.message,
+                        username
+                    });
+                    return next();
+                }
+
+                if (!result || !result.value) {
+                    res.json({
+                        error: 'This user does not exist',
+                        username
+                    });
+                    return next();
+                }
+
+                res.json({
+                    success: true,
+                    username,
+                    previousStorageUsed: Number(result.value.storageUsed) || 0,
+                    storageUsed: user.storageUsed
+                });
+                return next();
+            });
+        });
+    });
+});
+
 server.post('/user/password', (req, res, next) => {
     res.charSet('utf-8');
 
@@ -531,30 +633,33 @@ server.get('/user/mailboxes', (req, res, next) => {
                 mailboxes = [];
             }
 
+            let priority = {
+                Inbox: 1,
+                Sent: 2,
+                Junk: 3,
+                Trash: 4
+            };
+
             res.json({
                 success: true,
                 username,
                 mailboxes: mailboxes.map(mailbox => ({
                     id: mailbox._id.toString(),
                     path: mailbox.path,
-                    special: mailbox.path === 'INBOX' ? 'Inbox' : (mailbox.specialUse ? mailbox.specialUse.replace(/^\\/, '') : false),
-                    messages: mailbox.messages
+                    special: mailbox.path === 'INBOX' ? 'Inbox' : (mailbox.specialUse ? mailbox.specialUse.replace(/^\\/, '') : false)
                 })).sort((a, b) => {
                     if (a.special && !b.special) {
                         return -1;
                     }
+
                     if (b.special && !a.special) {
                         return 1;
                     }
-                    let priority = {
-                        Inbox: 1,
-                        Sent: 2,
-                        Junk: 3,
-                        Trash: 4
-                    };
+
                     if (a.special && b.special) {
                         return (priority[a.special] || 5) - (priority[b.special] || 5);
                     }
+
                     return a.path.localeCompare(b.path);
                 })
             });

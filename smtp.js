@@ -43,13 +43,23 @@ const server = new SMTPServer({
     // Accept messages up to 10 MB
     size: maxMessageSize,
 
+    onMailFrom(address, session, callback) {
+
+        // reset session entries
+        session.users = new Map();
+        session.maxAllowedStorage = maxStorage;
+
+        // accept sender address
+        return callback();
+    },
+
     // Validate RCPT TO envelope address. Example allows all addresses that do not start with 'deny'
     // If this method is not set, all addresses are allowed
     onRcptTo(rcpt, session, callback) {
         let originalRecipient = tools.normalizeAddress(rcpt.address);
         let recipient = originalRecipient.replace(/\+[^@]*@/, '@');
 
-        if (session.users && session.users.has(recipient)) {
+        if (session.users.has(recipient)) {
             return callback();
         }
 

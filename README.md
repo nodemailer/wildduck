@@ -41,7 +41,7 @@ Wild Duck IMAP server supports the following IMAP standards:
 
 ### Does it work?
 
-Yes, it does. You can run the server and get a working IMAP server for mail store, SMTP server for pushing messages to the mail store and HTTP API server to create new users. All handled by Node.js, MongoDB and Redis, no additional dependencies needed.
+Yes, it does. You can run the server and get a working IMAP server for mail store, SMTP server for pushing messages to the mail store and HTTP API server to create new users. All handled by Node.js, MongoDB and Redis, no additional dependencies needed. The IMAP server hosting уайлддак.орг uses a MongoDB replica set of 3 hosts.
 
 ### What are the killer features?
 
@@ -216,6 +216,35 @@ The response for successful operation should look like this:
 ```
 
 Quota changes apply immediately.
+
+### POST /user/quota/reset
+
+Recalculates used storage for an user. Use this when it seems that quota counters for an user do not match with reality.
+
+Arguments
+
+- **username** is the username of the user to check
+
+**Example**
+
+```
+curl -XPOST "http://localhost:8080/user/quota/reset" -H 'content-type: application/json' -d '{
+  "username": "testuser"
+}'
+```
+
+The response for successful operation should look like this:
+
+```json
+{
+  "success": true,
+  "username": "testuser",
+  "previousStorageUsed": 1000,
+  "storageUsed": 800
+}
+```
+
+Be aware though that this method is not atomic and should be done only if quota counters are way off.
 
 ### POST /user/password
 

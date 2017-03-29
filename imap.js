@@ -157,8 +157,6 @@ server.onCreate = function (path, session, callback) {
             uidValidity: Math.floor(Date.now() / 1000),
             uidNext: 1,
             modifyIndex: 0,
-            storageUsed: 0,
-            messages: 0,
             subscribed: true
         };
 
@@ -239,23 +237,54 @@ server.onDelete = function (path, session, callback) {
                     return callback(err);
                 }
 
-                // decrement quota counters
-                db.database.collection('users').findOneAndUpdate({
-                    _id: mailbox.user
-                }, {
-                    $inc: {
-                        storageUsed: -Number(mailbox.storageUsed) || 0,
-                        messages: -Number(mailbox.messages) || 0
-                    }
-                }, () => {
-                    db.database.collection('journal').deleteMany({
+                // calculate mailbox size by aggregating the size's of all messages
+                db.database.collection('messages').aggregate([{
+                    $match: {
                         mailbox: mailbox._id
-                    }, err => {
-                        if (err) {
-                            return callback(err);
+                    }
+                }, {
+                    $group: {
+                        _id: {
+                            mailbox: '$mailbox'
+                        },
+                        storageUsed: {
+                            $sum: '$size'
                         }
-                        callback(null, true);
-                    });
+                    }
+                }], {
+                    cursor: {
+                        batchSize: 1
+                    }
+                }).toArray((err, res) => {
+                    if (err) {
+                        return callback(err);
+                    }
+
+                    let storageUsed = res && res[0] && res[0].storageUsed || 0;
+
+                    let done = () => {
+                        db.database.collection('journal').deleteMany({
+                            mailbox: mailbox._id
+                        }, err => {
+                            if (err) {
+                                return callback(err);
+                            }
+                            callback(null, true);
+                        });
+                    };
+
+                    if (!storageUsed) {
+                        return done();
+                    }
+
+                    // decrement quota counters
+                    db.database.collection('users').findOneAndUpdate({
+                        _id: mailbox.user
+                    }, {
+                        $inc: {
+                            storageUsed: -Number(storageUsed) || 0
+                        }
+                    }, done);
                 });
             });
         });
@@ -553,23 +582,13 @@ server.onExpunge = function (path, update, session, callback) {
                 return next();
             }
 
-            db.database.collection('mailboxes').findOneAndUpdate({
-                _id: mailbox._id
+            db.database.collection('users').findOneAndUpdate({
+                _id: mailbox.user
             }, {
                 $inc: {
-                    storageUsed: -deletedStorage,
-                    messages: -deletedMessages
+                    storageUsed: -deletedStorage
                 }
-            }, () => {
-                db.database.collection('users').findOneAndUpdate({
-                    _id: mailbox.user
-                }, {
-                    $inc: {
-                        storageUsed: -deletedStorage,
-                        messages: -deletedMessages
-                    }
-                }, next);
-            });
+            }, next);
         };
 
         let processNext = () => {
@@ -680,23 +699,13 @@ server.onCopy = function (path, update, session, callback) {
                 if (!copiedMessages) {
                     return next();
                 }
-                db.database.collection('mailboxes').findOneAndUpdate({
-                    _id: target._id
+                db.database.collection('users').findOneAndUpdate({
+                    _id: mailbox.user
                 }, {
                     $inc: {
-                        storageUsed: copiedStorage,
-                        messages: copiedMessages
+                        storageUsed: copiedStorage
                     }
-                }, () => {
-                    db.database.collection('users').findOneAndUpdate({
-                        _id: mailbox.user
-                    }, {
-                        $inc: {
-                            storageUsed: copiedStorage,
-                            messages: copiedMessages
-                        }
-                    }, next);
-                });
+                }, next);
             };
 
             let sourceUid = [];

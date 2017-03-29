@@ -36,6 +36,8 @@ let commands = new Map([
     ['UNSELECT', require('./commands/unselect')],
     ['COPY', require('./commands/copy')],
     ['UID COPY', require('./commands/copy')],
+    ['MOVE', require('./commands/move')],
+    ['UID MOVE', require('./commands/move')],
     ['FETCH', require('./commands/fetch')],
     ['UID FETCH', require('./commands/fetch')],
     ['SEARCH', require('./commands/search')],

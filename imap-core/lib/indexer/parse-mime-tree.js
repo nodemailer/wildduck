@@ -1,6 +1,6 @@
 'use strict';
 
-let addressparser = require('addressparser');
+let addressparser = require('nodemailer/lib/addressparser');
 
 /**
  * Parses a RFC822 message into a structured object (JSON compatible)
