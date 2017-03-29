@@ -549,7 +549,6 @@ server.onStore = function (path, update, session, callback) {
 };
 
 // EXPUNGE deletes all messages in selected mailbox marked with \Delete
-// EXPUNGE deletes all messages in selected mailbox marked with \Delete
 server.onExpunge = function (path, update, session, callback) {
     this.logger.debug('[%s] Deleting messages from "%s"', session.id, path);
     db.database.collection('mailboxes').findOne({
@@ -690,7 +689,9 @@ server.onCopy = function (path, update, session, callback) {
                 uid: {
                     $in: update.messages
                 }
-            }); // no projection as we need to copy the entire message
+            }).sort([
+                ['uid', 1]
+            ]); // no projection as we need to copy the entire message
 
             let copiedMessages = 0;
             let copiedStorage = 0;
@@ -796,6 +797,136 @@ server.onCopy = function (path, update, session, callback) {
 
             processNext();
 
+        });
+    });
+};
+
+// MOVE / UID MOVE sequence mailbox
+server.onMove = function (path, update, session, callback) {
+    this.logger.debug('[%s] Moving messages from "%s" to "%s"', session.id, path, update.destination);
+    db.database.collection('mailboxes').findOne({
+        user: session.user.id,
+        path
+    }, (err, mailbox) => {
+        if (err) {
+            return callback(err);
+        }
+        if (!mailbox) {
+            return callback(null, 'NONEXISTENT');
+        }
+
+        db.database.collection('mailboxes').findOne({
+            user: session.user.id,
+            path: update.destination
+        }, (err, target) => {
+            if (err) {
+                return callback(err);
+            }
+            if (!target) {
+                return callback(null, 'TRYCREATE');
+            }
+
+            let cursor = db.database.collection('messages').find({
+                mailbox: mailbox._id,
+                uid: {
+                    $in: update.messages
+                }
+            }).project({
+                uid: 1
+            }).sort([
+                ['uid', 1]
+            ]);
+
+            let sourceUid = [];
+            let destinationUid = [];
+
+            let processNext = () => {
+                cursor.next((err, message) => {
+                    if (err) {
+                        return callback(err);
+                    }
+                    if (!message) {
+                        return cursor.close(() => {
+                            db.database.collection('mailboxes').findOneAndUpdate({
+                                _id: mailbox._id
+                            }, {
+                                $inc: {
+                                    // increase the mailbox modification index
+                                    // to indicate that something happened
+                                    modifyIndex: 1
+                                }
+                            }, {
+                                uidNext: true
+                            }, () => {
+                                this.notifier.fire(session.user.id, target.path);
+                                return callback(null, true, {
+                                    uidValidity: target.uidValidity,
+                                    sourceUid,
+                                    destinationUid
+                                });
+                            });
+                        });
+                    }
+
+                    sourceUid.unshift(message.uid);
+                    db.database.collection('mailboxes').findOneAndUpdate({
+                        _id: target._id
+                    }, {
+                        $inc: {
+                            uidNext: 1
+                        }
+                    }, {
+                        uidNext: true
+                    }, (err, item) => {
+                        if (err) {
+                            return callback(err);
+                        }
+
+                        if (!item || !item.value) {
+                            // was not able to acquire a lock
+                            return callback(null, 'TRYCREATE');
+                        }
+
+                        let uidNext = item.value.uidNext;
+                        destinationUid.unshift(uidNext);
+
+                        // update message, change mailbox from old to new one
+                        db.database.collection('messages').findOneAndUpdate({
+                            _id: message._id
+                        }, {
+                            $set: {
+                                mailbox: target._id,
+                                // new mailbox means new UID
+                                uid: uidNext,
+                                // this will be changed later by the notification system
+                                modseq: 0
+                            }
+                        }, err => {
+                            if (err) {
+                                return callback(err);
+                            }
+
+                            session.writeStream.write(session.formatResponse('EXPUNGE', message.uid));
+
+                            // mark messages as deleted from old mailbox
+                            this.notifier.addEntries(session.user.id, path, {
+                                command: 'EXPUNGE',
+                                ignore: session.id,
+                                uid: message.uid
+                            }, () => {
+                                // mark messages as added to old mailbox
+                                this.notifier.addEntries(session.user.id, target.path, {
+                                    command: 'EXISTS',
+                                    uid: uidNext,
+                                    message: message._id
+                                }, processNext);
+                            });
+                        });
+                    });
+                });
+            };
+
+            processNext();
         });
     });
 };

@@ -32,6 +32,7 @@ Wild Duck IMAP server supports the following IMAP standards:
 - **UIDPLUS**
 - **SPECIAL-USE**
 - **ID**
+- **MOVE** (RFC6851)
 - **AUTHENTICATE PLAIN** and **SASL-IR**
 - **APPENDLIMIT** (RFC7889) – maximum global allowed message size is advertised in CAPABILITY listing
 - **UTF8=ACCEPT** (RFC6855) – this also means that Wild Duck natively supports unicode email usernames. For example <андрис@уайлддак.орг> is a valid email address that is hosted by a test instance of Wild Duck

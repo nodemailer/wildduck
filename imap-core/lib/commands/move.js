@@ -1,7 +1,6 @@
 'use strict';
 
 let imapTools = require('../imap-tools');
-let imapHandler = require('../handler/imap-handler');
 
 module.exports = {
     state: 'Selected',
@@ -48,27 +47,12 @@ module.exports = {
                 return callback(err);
             }
 
-            let code = typeof success === 'string' ? success.toUpperCase() : false;
-
-            if (success === true) {
-                this.send(imapHandler.compiler({
-                    tag: '*',
-                    command: 'OK',
-                    attributes: [{
-                        type: 'SECTION',
-                        section: [{
-                            type: 'TEXT',
-                            value: 'COPYUID ' + info.uidValidity + ' ' + imapTools.packMessageRange(info.sourceUid) + ' ' + imapTools.packMessageRange(info.destinationUid)
-                        }]
-                    }]
-                }));
-            }
+            let code = typeof success === 'string' ? success.toUpperCase() : 'COPYUID ' + info.uidValidity + ' ' + imapTools.packMessageRange(info.sourceUid) + ' ' + imapTools.packMessageRange(info.destinationUid);
 
             callback(null, {
                 response: success === true ? 'OK' : 'NO',
                 code
             });
-
         });
     }
 };
