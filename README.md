@@ -9,8 +9,9 @@ Wild Duck is a distributed IMAP server built with Node.js, MongoDB and Redis. No
 ## Goals of the Project
 
 1. Build a scalable and distributed IMAP server that uses clustered database instead of single machine file system as mail store
-2. Push notifications. Your application (eg. a webmail client) should be able to request changes (new and deleted messages, flag changes) to be pushed to client instead of using IMAP to fetch stuff from the server
+2. Allow using internationalized email addresses
 3. Provide Gmail-like features like pushing sent messages automatically to Sent Mail folder or notifying about messages moved to Junk folder so these could be marked as spam
+4. Add push notifications. Your application (eg. a webmail client) should be able to request changes (new and deleted messages, flag changes) to be pushed to client instead of using IMAP to fetch stuff from the server
 
 ## Similar alterntives
 
@@ -23,7 +24,7 @@ Here's a list of Email/IMAP servers that use database for storing email messages
 
 Wild Duck IMAP server supports the following IMAP standards:
 
-- The entire **IMAP4rev1** suite with some minor differences from the spec. Intentionally missing is the `\Recent` flag as it does not provide any real value, only makes things more complicated. RENAME works a bit differently than spec describes.
+- The entire **IMAP4rev1** suite with some minor differences from the spec. See below for [IMAP Protocol Differences] for a complete list
 - **IDLE** – notfies about new and deleted messages and also about flag updates
 - **CONDSTORE** and **ENABLE** – supports most of the spec, except metadata stuff which is ignored
 - **STARTTLS**
@@ -36,7 +37,7 @@ Wild Duck IMAP server supports the following IMAP standards:
 - **AUTHENTICATE PLAIN** and **SASL-IR**
 - **APPENDLIMIT** (RFC7889) – maximum global allowed message size is advertised in CAPABILITY listing
 - **UTF8=ACCEPT** (RFC6855) – this also means that Wild Duck natively supports unicode email usernames. For example <андрис@уайлддак.орг> is a valid email address that is hosted by a test instance of Wild Duck
-- **QUOTA** (RFC2087) – Quota size is global for an account, using a single quota root. Be aware that quota size does not mean actual byte storage in disk, it is calculated as the sum of the rfc822 sources of stored messages. Actual disk usage is larger as there's a lot of database overhead per every message.
+- **QUOTA** (RFC2087) – Quota size is global for an account, using a single quota root. Be aware that quota size does not mean actual byte storage in disk, it is calculated as the sum of the rfc822 sources of stored messages. Actual disk usage is larger as there are database overhead per every message.
 
 ## FAQ
 
@@ -65,6 +66,7 @@ Not yet exactly. Even though on some parts Wild Duck is already fast, there are 
 1. Optimize SEARCH queries to use MongoDB queries. Currently only simple stuff (flag, internaldate, not flag, modseq) is included in query and more complex comparisons are handled by the application but this means that too much data must be loaded from database (unless it is a very simple query like "SEARCH UNSEEN" that is already optimized)
 2. Optimize FETCH queries to load only partial data for BODY subparts
 3. Parse incoming message into the mime tree as a stream. Currently the entire message is buffered in memory before being parsed.
+4. CPU usage seems a bit too high, there is probably a ton of profiling to do
 
 ### How does it work?
 
@@ -380,6 +382,29 @@ The response for successful operation should look like this:
   "id": "58d8299c5195c38e77c2daa5"
 }
 ```
+
+## IMAP Protocol Differences
+
+This is a list of known differences from the IMAP specification. Listed differences are either intentional or are bugs that became features.
+
+1. `\Recent` flags is not implemented and most probably never will be (RFC3501 2.3.2.)
+2. `RENAME` does not touch subfolders which is against the spec (RFC3501 6.3.5\. _If the name has inferior hierarchical names, then the inferior hierarchical names MUST also be renamed._). Wild Duck stores all folders using flat hierarchy, the "/" separator is fake and only used for listing mailboxes
+3. Unsolicited `FLAGS` responses (RFC3501 7.2.6.) and `PERMANENTFLAGS` are not sent (except for as part of `SELECT` and `EXAMINE` responses). Wild Duck notifies about flag updates only with unsolicited FETCH updates.
+4. Wild Duck responds with `NO` for `STORE` if matching messages were deleted in another session
+5. `CHARSET` argument for the `SEARCH` command is ignored (RFC3501 6.4.4.)
+6. Metadata arguments for `SEARCH MODSEQ` are ignored (RFC7162 3.1.5.). You can define `<entry-name>` and `<entry-type-req>` values but these are not used for anything
+7. What happens when FETCH is called for messages that were deleted in another session? (_Not sure, need to check_)
+
+Any other differences are most probably real bugs and unintentional.
+
+## Future considerations for IMAP extensions
+
+Wild Duck does not plan to be the most feature-rich IMAP client in the world. Most IMAP extensions are useless because there aren't too many clients that are able to benefit from these extensions. There are a few extensions though that would make sense to be added to Wild Duck
+
+1. The IMAP COMPRESS Extension (RFC4978)
+2. IMAP4 non-synchronizing literals, LITERAL- (RFC7888). Synchronized literals are needed for APPEND to check mailbox quota, small values could go with the non-synchronizing version.
+3. LIST-STATUS (RFC5819)
+4. _What else?_ (definitely not NOTIFY nor QRESYNC)
 
 ## Testing
 

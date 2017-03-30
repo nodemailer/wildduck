@@ -163,13 +163,10 @@ class MIMEParser {
                 key = (value.shift() || '').trim().toLowerCase();
                 value = value.join(':').trim();
 
-                // MongoDB does not allow keys with dots to be used
-                // In case of headers we probably do not care about such headers anyway,
-                // so it should be safe to modify.
-                // Maybe these headers should be filtered out entirely?
-                key = key.replace(/\./g, '_');
-                if (!key) {
-                    key = '_';
+                // Do not touch headers that have strange looking keys, keep these
+                // only in the unparsed array
+                if (/^[a-zA-Z0-9\-\*]/.test(key) || key.length >= 100) {
+                    continue;
                 }
 
                 if (key in this._node.parsedHeader) {
@@ -245,6 +242,12 @@ class MIMEParser {
             value = part.split('=');
             key = (value.shift() || '').trim().toLowerCase();
             value = value.join('=').replace(/^['"\s]*|['"\s]*$/g, '');
+
+            // Do not touch headers that have strange looking keys, keep these
+            // only in the unparsed array
+            if (/^[a-zA-Z0-9\-\*]/.test(key) || key.length >= 100) {
+                return;
+            }
 
             // This regex allows for an optional trailing asterisk, for headers
             // which are encoded with lang/charset info as well as a continuation.

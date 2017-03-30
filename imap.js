@@ -14,6 +14,7 @@ const fs = require('fs');
 const setupIndexes = require('./indexes.json');
 const MessageHandler = require('./lib/message-handler');
 const db = require('./lib/db');
+const packageData = require('./package.json');
 
 // Setup server
 const serverOptions = {
@@ -21,7 +22,9 @@ const serverOptions = {
     ignoreSTARTTLS: config.imap.ignoreSTARTTLS,
 
     id: {
-        name: 'Wild Duck IMAP Server'
+        name: 'Wild Duck IMAP Server',
+        version: packageData.version,
+        vendor: 'Kreata'
     },
 
     logger: {
