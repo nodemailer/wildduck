@@ -163,6 +163,15 @@ class MIMEParser {
                 key = (value.shift() || '').trim().toLowerCase();
                 value = value.join(':').trim();
 
+                // MongoDB does not allow keys with dots to be used
+                // In case of headers we probably do not care about such headers anyway,
+                // so it should be safe to modify.
+                // Maybe these headers should be filtered out entirely?
+                key = key.replace(/\./g, '_');
+                if (!key) {
+                    key = '_';
+                }
+
                 if (key in this._node.parsedHeader) {
                     if (Array.isArray(this._node.parsedHeader[key])) {
                         this._node.parsedHeader[key].unshift(value);
