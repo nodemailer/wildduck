@@ -17,14 +17,18 @@ const db = require('./lib/db');
 // Setup server
 const serverOptions = {
     secure: config.imap.secure,
+    ignoreSTARTTLS: config.imap.ignoreSTARTTLS,
+
     id: {
         name: 'Wild Duck IMAP Server'
     },
+
     logger: {
         info: log.silly.bind(log, 'IMAP'),
         debug: log.silly.bind(log, 'IMAP'),
         error: log.error.bind(log, 'IMAP')
     },
+    
     maxMessage: config.imap.maxMB * 1024 * 1024,
     maxStorage: config.imap.maxStorage * 1024 * 1024
 };
