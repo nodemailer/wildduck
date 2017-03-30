@@ -22,7 +22,7 @@ const transporter = nodemailer.createTransport({
 });
 
 let sent = 0;
-let total = 5;
+let total = 1;
 let startTime = Date.now();
 
 function send() {
