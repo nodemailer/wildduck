@@ -103,7 +103,8 @@ server.post('/user/create', (req, res, next) => {
                 uidValidity,
                 uidNext: 1,
                 modifyIndex: 0,
-                subscribed: true
+                subscribed: true,
+                flags: []
             }, {
                 user,
                 path: 'Sent Mail',
@@ -111,7 +112,8 @@ server.post('/user/create', (req, res, next) => {
                 uidValidity,
                 uidNext: 1,
                 modifyIndex: 0,
-                subscribed: true
+                subscribed: true,
+                flags: []
             }, {
                 user,
                 path: 'Trash',
@@ -119,7 +121,8 @@ server.post('/user/create', (req, res, next) => {
                 uidValidity,
                 uidNext: 1,
                 modifyIndex: 0,
-                subscribed: true
+                subscribed: true,
+                flags: []
             }, {
                 user,
                 path: 'Junk',
@@ -127,7 +130,8 @@ server.post('/user/create', (req, res, next) => {
                 uidValidity,
                 uidNext: 1,
                 modifyIndex: 0,
-                subscribed: true
+                subscribed: true,
+                flags: []
             }], {
                 w: 1,
                 ordered: false

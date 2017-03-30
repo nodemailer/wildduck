@@ -476,7 +476,7 @@ class IMAPConnection extends EventEmitter {
             }
         }
 
-        if (existsResponse) {
+        if (existsResponse && !changed) {
             // send cached EXISTS response
             this.writeStream.write(existsResponse);
             existsResponse = false;

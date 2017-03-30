@@ -5,6 +5,7 @@ const utf7 = require('utf7').imap;
 const libmime = require('libmime');
 const punycode = require('punycode');
 
+module.exports.systemFlagsFormatted = ['\\Answered', '\\Flagged', '\\Draft', '\\Deleted', '\\Seen'];
 module.exports.systemFlags = ['\\answered', '\\flagged', '\\draft', '\\deleted', '\\seen'];
 
 module.exports.fetchSchema = {

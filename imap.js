@@ -9,6 +9,7 @@ const imapHandler = IMAPServerModule.imapHandler;
 const bcrypt = require('bcryptjs');
 const ObjectID = require('mongodb').ObjectID;
 const Indexer = require('./imap-core/lib/indexer/indexer');
+const imapTools = require('./imap-core/lib/imap-tools');
 const fs = require('fs');
 const setupIndexes = require('./indexes.json');
 const MessageHandler = require('./lib/message-handler');
@@ -28,7 +29,7 @@ const serverOptions = {
         debug: log.silly.bind(log, 'IMAP'),
         error: log.error.bind(log, 'IMAP')
     },
-    
+
     maxMessage: config.imap.maxMB * 1024 * 1024,
     maxStorage: config.imap.maxStorage * 1024 * 1024
 };
@@ -161,7 +162,8 @@ server.onCreate = function (path, session, callback) {
             uidValidity: Math.floor(Date.now() / 1000),
             uidNext: 1,
             modifyIndex: 0,
-            subscribed: true
+            subscribed: true,
+            flags: []
         };
 
         db.database.collection('mailboxes').insertOne(mailbox, err => {
@@ -422,6 +424,9 @@ server.onStore = function (path, update, session, callback) {
             return callback(null, 'NONEXISTENT');
         }
 
+        let mailboxFlags = imapTools.systemFlags.concat(mailbox.flags || []).map(flag => flag.trim().toLowerCase());
+        let newFlags = [];
+
         let cursor = db.database.collection('messages').find({
             mailbox: mailbox._id,
             uid: {
@@ -509,6 +514,13 @@ server.onStore = function (path, update, session, callback) {
                         break;
                 }
 
+                message.flags.forEach(flag => {
+                    // limit mailbox flags by 100
+                    if (!mailboxFlags.includes(flag.trim().toLowerCase()) && mailboxFlags.length + newFlags.length < 100) {
+                        newFlags.push(flag);
+                    }
+                });
+
                 if (!update.silent) {
                     session.writeStream.write(session.formatResponse('FETCH', message.uid, {
                         uid: update.isUid ? message.uid : false,
@@ -516,35 +528,53 @@ server.onStore = function (path, update, session, callback) {
                     }));
                 }
 
-                if (updated) {
-                    db.database.collection('messages').findOneAndUpdate({
-                        _id: message._id
-                    }, flagsupdate, {}, err => {
-                        if (err) {
-                            return cursor.close(() => done(err));
-                        }
+                let updateMailboxFlags = next => {
+                    if (!newFlags.length) {
+                        return next();
+                    }
 
-                        notifyEntries.push({
-                            command: 'FETCH',
-                            ignore: session.id,
-                            uid: message.uid,
-                            flags: message.flags,
-                            message: message._id
+                    // found some new flags not yet set for mailbox
+                    return db.database.collection('mailboxes').findOneAndUpdate({
+                        _id: mailbox._id
+                    }, {
+                        $addToSet: {
+                            flags: {
+                                $each: newFlags
+                            }
+                        }
+                    }, {}, next);
+                };
+
+                updateMailboxFlags(() => {
+                    if (updated) {
+                        db.database.collection('messages').findOneAndUpdate({
+                            _id: message._id
+                        }, flagsupdate, {}, err => {
+                            if (err) {
+                                return cursor.close(() => done(err));
+                            }
+
+                            notifyEntries.push({
+                                command: 'FETCH',
+                                ignore: session.id,
+                                uid: message.uid,
+                                flags: message.flags,
+                                message: message._id
+                            });
+
+                            if (notifyEntries.length > 100) {
+                                let entries = notifyEntries;
+                                notifyEntries = [];
+                                setImmediate(() => this.notifier.addEntries(session.user.id, path, entries, processNext));
+                                return;
+                            } else {
+                                setImmediate(() => processNext());
+                            }
                         });
-
-                        if (notifyEntries.length > 100) {
-                            let entries = notifyEntries;
-                            notifyEntries = [];
-                            setImmediate(() => this.notifier.addEntries(session.user.id, path, entries, processNext));
-                            return;
-                        } else {
-                            setImmediate(() => processNext());
-                        }
-                    });
-                } else {
-                    processNext();
-                }
-
+                    } else {
+                        processNext();
+                    }
+                });
             });
         };
 

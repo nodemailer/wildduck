@@ -74,27 +74,17 @@ module.exports = {
             };
             this.state = 'Selected';
 
+            let flagList = imapTools.systemFlagsFormatted.concat(folder.flags || []);
+
             // * FLAGS (\Answered \Flagged \Draft \Deleted \Seen)
             this.send(imapHandler.compiler({
                 tag: '*',
                 command: 'FLAGS',
                 attributes: [
-                    [{
+                    flagList.map(flag => ({
                         type: 'atom',
-                        value: '\\Answered'
-                    }, {
-                        type: 'atom',
-                        value: '\\Flagged'
-                    }, {
-                        type: 'atom',
-                        value: '\\Draft'
-                    }, {
-                        type: 'atom',
-                        value: '\\Deleted'
-                    }, {
-                        type: 'atom',
-                        value: '\\Seen'
-                    }]
+                        value: flag
+                    }))
                 ]
             }));
 
@@ -110,25 +100,13 @@ module.exports = {
                             type: 'atom',
                             value: 'PERMANENTFLAGS'
                         },
-                        [{
+                        flagList.map(flag => ({
                             type: 'atom',
-                            value: '\\Answered'
-                        }, {
-                            type: 'atom',
-                            value: '\\Flagged'
-                        }, {
-                            type: 'atom',
-                            value: '\\Draft'
-                        }, {
-                            type: 'atom',
-                            value: '\\Deleted'
-                        }, {
-                            type: 'atom',
-                            value: '\\Seen'
-                        }, {
+                            value: flag
+                        })).concat({
                             type: 'text',
                             value: '\\*'
-                        }]
+                        })
                     ]
                 }, {
                     type: 'text',

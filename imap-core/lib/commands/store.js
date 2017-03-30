@@ -95,7 +95,7 @@ module.exports = {
 
         for (let i = flags.length - 1; i >= 0; i--) {
             if (flags[i].charAt(0) === '\\') {
-                if (imapTools.systemFlags.indexOf(flags[i].toLowerCase()) < 0) {
+                if (!imapTools.systemFlags.includes(flags[i].toLowerCase())) {
                     return callback(new Error('Invalid system flag argument for STORE'));
                 } else {
                     // fix flag case
