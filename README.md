@@ -59,6 +59,8 @@ Yes, historically it has been considered a bad practice to store emails in a dat
 
 Notice the word "relational"? In fact document stores like MongoDB work very well with emails. Document store is great for storing tree-like structures and while GridFS is not as good as "real" object storage, it is good enough for storing the raw parts of the message. Additionally there's nothing too GridFS specific, so (at least in theory) it could be replaced with any object store.
 
+You can see an example mail entry [here](https://gist.github.com/andris9/520d530bcc126768ce5e09e774be8c2e). Lines [184-217](https://gist.github.com/andris9/520d530bcc126768ce5e09e774be8c2e#file-entry-js-L184-L217) demonstrate a node that has its body missing as it was big enough to be moved to GridStore and not be included with the main entry.
+
 ### Is the server scalable?
 
 Not yet exactly. Even though on some parts Wild Duck is already fast, there are still some important improvements that need to be done:
