@@ -24,7 +24,7 @@ Here's a list of Email/IMAP servers that use database for storing email messages
 
 Wild Duck IMAP server supports the following IMAP standards:
 
-- The entire **IMAP4rev1** suite with some minor differences from the spec. See below for [IMAP Protocol Differences] for a complete list
+- The entire **IMAP4rev1** suite with some minor differences from the spec. See below for [IMAP Protocol Differences](#imap-protocol-differences) for a complete list
 - **IDLE** – notfies about new and deleted messages and also about flag updates
 - **CONDSTORE** and **ENABLE** – supports most of the spec, except metadata stuff which is ignored
 - **STARTTLS**
