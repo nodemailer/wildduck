@@ -39,6 +39,8 @@ Wild Duck IMAP server supports the following IMAP standards:
 - **UTF8=ACCEPT** (RFC6855) – this also means that Wild Duck natively supports unicode email usernames. For example <андрис@уайлддак.орг> is a valid email address that is hosted by a test instance of Wild Duck
 - **QUOTA** (RFC2087) – Quota size is global for an account, using a single quota root. Be aware that quota size does not mean actual byte storage in disk, it is calculated as the sum of the rfc822 sources of stored messages. Actual disk usage is larger as there are database overhead per every message.
 
+Wild Duck more or less passes the [ImapTest](https://www.imapwiki.org/ImapTest/TestFeatures). Common errors that arise in the test are unknown labels (Wild Duck doesn't send unsolicited FLAGS updates) and NO for STORE (messages deleted in one session can not be updated in another).
+
 ## FAQ
 
 ### Does it work?
