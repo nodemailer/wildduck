@@ -13,6 +13,7 @@ Wild Duck is a distributed IMAP server built with Node.js, MongoDB and Redis. No
 3. Provide Gmail-like features like pushing sent messages automatically to Sent Mail folder or notifying about messages moved to Junk folder so these could be marked as spam
 4. Add push notifications. Your application (eg. a webmail client) should be able to request changes (new and deleted messages, flag changes) to be pushed to client instead of using IMAP to fetch stuff from the server
 
+
 ## Similar alterntives
 
 Here's a list of Email/IMAP servers that use database for storing email messages
