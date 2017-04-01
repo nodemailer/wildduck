@@ -102,6 +102,12 @@
         "key": {
             "uid": 1
         }
+    }, {
+        "name": "by_headers",
+        "key": {
+            "headers.key": 1,
+            "headers.value": 1
+        }
     }]
 }, {
     "collection": "attachment.files",

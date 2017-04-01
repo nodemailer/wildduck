@@ -246,6 +246,7 @@ class Indexer {
      * @return {Object} Parsed mime tree
      */
     storeAttachments(messageId, mimeTree, sizeLimit, callback) {
+        mimeTree.attachments = [];
         let walk = (node, next) => {
 
             let continueProcessing = () => {
@@ -306,6 +307,16 @@ class Indexer {
                         transferEncoding
                     }
                 });
+
+                if (!['text/plain', 'text/html'].includes(contentType) || disposition === 'attachment') {
+                    mimeTree.attachments.push({
+                        id: attachmentId,
+                        fileName,
+                        contentType,
+                        disposition,
+                        transferEncoding
+                    });
+                }
 
                 store.once('error', err => {
                     if (returned) {

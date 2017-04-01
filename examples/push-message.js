@@ -3,6 +3,7 @@
 'use strict';
 
 const recipient = process.argv[2];
+const total = Number(process.argv[3]) || 1;
 
 if (!recipient) {
     console.error('Usage: node example.com username@exmaple.com'); // eslint-disable-line no-console
@@ -22,7 +23,6 @@ const transporter = nodemailer.createTransport({
 });
 
 let sent = 0;
-let total = 1;
 let startTime = Date.now();
 
 function send() {
@@ -74,7 +74,7 @@ function send() {
         if (sent >= total) {
             console.log('Sent %s messages in %s s', sent, (Date.now() - startTime) / 1000);
             return transporter.close();
-        }else {
+        } else {
             send();
         }
     });

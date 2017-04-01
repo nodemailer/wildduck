@@ -1213,6 +1213,22 @@ server.onSearch = function (path, options, session, callback) {
                             });
                         }
                         break;
+                    case 'header':
+                        {
+                            if (!query.$and) {
+                                query.$and = [];
+                            }
+                            query.$and.push(term.value ? {
+                                'headers.key': term.header,
+                                'headers.value': {
+                                    // FIXME: this does not match unicode symbols for whatever reason
+                                    $regex: Buffer.from(term.value, 'binary').toString().replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')
+                                }
+                            } : {
+                                'headers.key': term.header
+                            });
+                        }
+                        break;
                     case 'not':
                         [].concat(term.value || []).forEach(term => {
                             switch (term.key) {

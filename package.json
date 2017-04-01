@@ -26,7 +26,6 @@
     "joi": "^10.3.4",
     "libbase64": "^0.1.0",
     "libmime": "^3.1.0",
-    "mailparser": "^2.0.2",
     "mongodb": "^2.2.25",
     "nodemailer": "^3.1.8",
     "npmlog": "^4.0.2",
