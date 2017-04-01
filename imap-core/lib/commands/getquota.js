@@ -28,7 +28,7 @@ module.exports = {
                 return callback(err);
             }
 
-            if (typeof quota === 'string') {
+            if (typeof data === 'string') {
                 return callback(null, {
                     response: 'NO',
                     code: data.toUpperCase()
