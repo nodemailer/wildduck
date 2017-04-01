@@ -13,7 +13,6 @@ Wild Duck is a distributed IMAP server built with Node.js, MongoDB and Redis. No
 3. Provide Gmail-like features like pushing sent messages automatically to Sent Mail folder or notifying about messages moved to Junk folder so these could be marked as spam
 4. Add push notifications. Your application (eg. a webmail client) should be able to request changes (new and deleted messages, flag changes) to be pushed to client instead of using IMAP to fetch stuff from the server
 
-
 ## Similar alterntives
 
 Here's a list of Email/IMAP servers that use database for storing email messages
@@ -39,6 +38,8 @@ Wild Duck IMAP server supports the following IMAP standards:
 - **APPENDLIMIT** (RFC7889) – maximum global allowed message size is advertised in CAPABILITY listing
 - **UTF8=ACCEPT** (RFC6855) – this also means that Wild Duck natively supports unicode email usernames. For example <андрис@уайлддак.орг> is a valid email address that is hosted by a test instance of Wild Duck
 - **QUOTA** (RFC2087) – Quota size is global for an account, using a single quota root. Be aware that quota size does not mean actual byte storage in disk, it is calculated as the sum of the rfc822 sources of stored messages. Actual disk usage is larger as there are database overhead per every message.
+
+> **NB** The master branch of Wild Duck does not perform SEARCH TEXT and SEARCH BODY right now. Use a tagged version to get fully functional SEARCH
 
 Wild Duck more or less passes the [ImapTest](https://www.imapwiki.org/ImapTest/TestFeatures). Common errors that arise in the test are unknown labels (Wild Duck doesn't send unsolicited FLAGS updates) and NO for STORE (messages deleted in one session can not be updated in another).
 

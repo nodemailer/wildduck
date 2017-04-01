@@ -1160,29 +1160,78 @@ server.onSearch = function (path, options, session, callback) {
         // prepare query
 
         let query = {
-            mailbox: mailbox._id
+            mailbox: mailbox._id,
+            $and: []
         };
 
         let projection = {
             uid: true,
-            internaldate: true,
-            headerdate: true,
-            flags: true,
+            //internaldate: true,
+            //headerdate: true,
+            //flags: true,
             modseq: true
         };
 
-        if (options.terms.includes('body') || options.terms.includes('text') || options.terms.includes('header')) {
-            projection.mimeTree = true;
-        }
+        //if (options.terms.includes('body') || options.terms.includes('text') || options.terms.includes('header')) {
+        //    projection.mimeTree = true;
+        //}
 
-        if (!options.terms.includes('all')) {
-            options.query.forEach(term => {
+        //if (!options.terms.includes('all')) {
+
+        let hasAll = false;
+        let walkQuery = (parent, ne, node) => {
+            if (hasAll) {
+                return;
+            }
+            node.forEach(term => {
                 switch (term.key) {
-                    case 'modseq':
-                        query.modseq = {
-                            $gte: term.value
-                        };
+                    case 'all':
+                        if (!ne) {
+                            hasAll = true;
+                            query = {};
+                        }
                         break;
+
+                    case 'not':
+                        walkQuery(parent, !ne, [].concat(term.value || []));
+                        break;
+
+                    case 'or':
+                        {
+                            let $or = [];
+                            parent.push({
+                                $or
+                            });
+
+                            [].concat(term.value || []).forEach(entry => {
+                                walkQuery($or, false, [].concat(entry || []));
+                            });
+
+                            break;
+                        }
+
+                    case 'text':
+                        // TODO: search over full content
+                        parent.push({
+                            size: -1
+                        });
+                        break;
+
+                    case 'body':
+                        // TODO: search over body text
+                        parent.push({
+                            size: -1
+                        });
+                        break;
+
+                    case 'modseq':
+                        parent.push({
+                            modseq: {
+                                [!ne ? '$gte' : '$lt']: term.value
+                            }
+                        });
+                        break;
+
                     case 'uid':
                         if (Array.isArray(term.value)) {
                             if (!term.value.length) {
@@ -1192,33 +1241,41 @@ server.onSearch = function (path, options, session, callback) {
                                     highestModseq: 0
                                 });
                             }
-                            query.uid = {
-                                $in: term.value
-                            };
+                            parent.push({
+                                uid: {
+                                    [!ne ? '$in' : '$nin']: term.value
+                                }
+                            });
                         } else {
-                            query.uid = term.value;
-                        }
-                        break;
-                    case 'flag':
-                        {
-                            let entry = term.exists ? term.value : {
-                                $ne: term.value
-                            };
-
-                            if (!query.$and) {
-                                query.$and = [];
-                            }
-                            query.$and.push({
-                                flags: entry
+                            parent.push({
+                                uid: {
+                                    [!ne ? '$eq' : '$ne']: term.value
+                                }
                             });
                         }
                         break;
+
+                    case 'flag':
+                        {
+                            if (term.exists) {
+                                parent.push({
+                                    flags: {
+                                        [!ne ? '$eq' : '$ne']: term.value
+                                    }
+                                });
+                            } else {
+                                parent.push({
+                                    flags: {
+                                        [!ne ? '$ne' : '$eq']: term.value
+                                    }
+                                });
+                            }
+                        }
+                        break;
+
                     case 'header':
                         {
-                            if (!query.$and) {
-                                query.$and = [];
-                            }
-                            query.$and.push(term.value ? {
+                            let entry = term.value ? {
                                 'headers.key': term.header,
                                 'headers.value': {
                                     // FIXME: this does not match unicode symbols for whatever reason
@@ -1226,29 +1283,17 @@ server.onSearch = function (path, options, session, callback) {
                                 }
                             } : {
                                 'headers.key': term.header
-                            });
+                            };
+                            if (!ne) {
+                                parent.push(entry);
+                            } else {
+                                parent.push({
+                                    $not: entry
+                                });
+                            }
                         }
                         break;
-                    case 'not':
-                        [].concat(term.value || []).forEach(term => {
-                            switch (term.key) {
-                                case 'flag':
-                                    {
-                                        let entry = !term.exists ? term.value : {
-                                            $ne: term.value
-                                        };
 
-                                        if (!query.$and) {
-                                            query.$and = [];
-                                        }
-                                        query.$and.push({
-                                            flags: entry
-                                        });
-                                    }
-                                    break;
-                            }
-                        });
-                        break;
                     case 'internaldate':
                         {
                             let op = false;
@@ -1275,14 +1320,20 @@ server.onSearch = function (path, options, session, callback) {
                                 [op]: value
                             };
 
-                            if (!query.$and) {
-                                query.$and = [];
-                            }
-                            query.$and.push({
+                            entry = {
                                 internaldate: entry
-                            });
+                            };
+
+                            if (!ne) {
+                                parent.push(entry);
+                            } else {
+                                parent.push({
+                                    $not: entry
+                                });
+                            }
                         }
                         break;
+
                     case 'headerdate':
                         {
                             let op = false;
@@ -1309,14 +1360,20 @@ server.onSearch = function (path, options, session, callback) {
                                 [op]: value
                             };
 
-                            if (!query.$and) {
-                                query.$and = [];
-                            }
-                            query.$and.push({
+                            entry = {
                                 headerdate: entry
-                            });
+                            };
+
+                            if (!ne) {
+                                parent.push(entry);
+                            } else {
+                                parent.push({
+                                    $not: entry
+                                });
+                            }
                         }
                         break;
+
                     case 'size':
                         {
                             let op = '$eq';
@@ -1335,22 +1392,32 @@ server.onSearch = function (path, options, session, callback) {
                                     op = '$gte';
                                     break;
                             }
+
                             let entry = {
                                 [op]: value
                             };
 
-                            if (!query.$and) {
-                                query.$and = [];
-                            }
-
-                            query.$and.push({
+                            entry = {
                                 size: entry
-                            });
+                            };
+
+                            if (!ne) {
+                                parent.push(entry);
+                            } else {
+                                parent.push({
+                                    $not: entry
+                                });
+                            }
                         }
                         break;
                 }
             });
-        }
+        };
+
+        walkQuery(query.$and, false, options.query);
+        //}
+
+        this.logger.info('SEARCH %s', JSON.stringify(query));
 
         let cursor = db.database.collection('messages').find(query).
         project(projection).
@@ -1364,7 +1431,8 @@ server.onSearch = function (path, options, session, callback) {
         let processNext = () => {
             cursor.next((err, message) => {
                 if (err) {
-                    return callback(err);
+                    this.logger.error('SEARCHFAIL %s error="%s"', JSON.stringify(query), err.message);
+                    return callback(new Error('Can not make requested search query'));
                 }
                 if (!message) {
                     return cursor.close(() => callback(null, {
@@ -1373,25 +1441,26 @@ server.onSearch = function (path, options, session, callback) {
                     }));
                 }
 
-                if (message.raw) {
-                    message.raw = message.raw.toString();
+                //if (message.raw) {
+                //    message.raw = message.raw.toString();
+                //}
+
+                //session.matchSearchQuery(message, options.query, (err, match) => {
+                //    if (err) {
+                //        return cursor.close(() => callback(err));
+                //    }
+
+                //if (match && highestModseq < message.modseq) {
+                if (highestModseq < message.modseq) {
+                    highestModseq = message.modseq;
                 }
 
-                session.matchSearchQuery(message, options.query, (err, match) => {
-                    if (err) {
-                        return cursor.close(() => callback(err));
-                    }
+                //if (match) {
+                uidList.push(message.uid);
+                //}
 
-                    if (match && highestModseq < message.modseq) {
-                        highestModseq = message.modseq;
-                    }
-
-                    if (match) {
-                        uidList.push(message.uid);
-                    }
-
-                    processNext();
-                });
+                processNext();
+                //});
             });
         };
 
@@ -1478,7 +1547,7 @@ module.exports = done => {
                 started = true;
                 return done(err);
             }
-            log.error('IMAP', err);
+            server.logger.error(err);
         });
 
         // start listening
@@ -1494,7 +1563,7 @@ module.exports = done => {
     let indexpos = 0;
     let ensureIndexes = () => {
         if (indexpos >= setupIndexes.length) {
-            log.info('mongo', 'Setup indexes for %s collections', setupIndexes.length);
+            server.logger.info('Setup indexes for %s collections', setupIndexes.length);
             return start();
         }
         let index = setupIndexes[indexpos++];
