@@ -1,10 +1,11 @@
 'use strict';
 
-let IMAPServerModule = require('../index.js');
-let IMAPServer = IMAPServerModule.IMAPServer;
-let MemoryNotifier = IMAPServerModule.MemoryNotifier;
-let fs = require('fs');
-let imapHandler = require('../lib/handler/imap-handler');
+const IMAPServerModule = require('../index.js');
+const IMAPServer = IMAPServerModule.IMAPServer;
+const MemoryNotifier = require('./memory-notifier.js');
+const fs = require('fs');
+const parseMimeTree = require('../lib/indexer/parse-mime-tree');
+const imapHandler = require('../lib/handler/imap-handler');
 
 module.exports = function (options) {
 
@@ -22,19 +23,19 @@ module.exports = function (options) {
             flags: [],
             modseq: 100,
             internaldate: new Date('14-Sep-2013 21:22:28 -0300'),
-            raw: new Buffer('from: sender@example.com\r\nto: to@example.com\r\ncc: cc@example.com\r\nsubject: test\r\n\r\nzzzz')
+            mimeTree: parseMimeTree(new Buffer('from: sender@example.com\r\nto: to@example.com\r\ncc: cc@example.com\r\nsubject: test\r\n\r\nzzzz'))
         }, {
             uid: 49,
             flags: ['\\Seen'],
             internaldate: new Date(),
             modseq: 5000,
-            raw: fs.readFileSync(__dirname + '/fixtures/ryan_finnie_mime_torture.eml')
+            mimeTree: parseMimeTree(fs.readFileSync(__dirname + '/fixtures/ryan_finnie_mime_torture.eml'))
         }, {
             uid: 50,
             flags: ['\\Seen'],
             modseq: 45,
             internaldate: new Date(),
-            raw: 'MIME-Version: 1.0\r\n' +
+            mimeTree: parseMimeTree('MIME-Version: 1.0\r\n' +
                 'From: andris@kreata.ee\r\n' +
                 'To: andris@tr.ee\r\n' +
                 'Content-Type: multipart/mixed;\r\n' +
@@ -65,13 +66,13 @@ module.exports = function (options) {
                 'Content-Transfer-Encoding: quoted-printable\r\n' +
                 '\r\n' +
                 '<b>Hello world 3!</b>\r\n' +
-                '------mailcomposer-?=_1-1328088797399--'
+                '------mailcomposer-?=_1-1328088797399--')
         }, {
             uid: 52,
             flags: [],
             modseq: 4,
             internaldate: new Date(),
-            raw: 'from: sender@example.com\r\nto: to@example.com\r\ncc: cc@example.com\r\nsubject: test\r\n\r\nHello World!'
+            mimeTree: parseMimeTree('from: sender@example.com\r\nto: to@example.com\r\ncc: cc@example.com\r\nsubject: test\r\n\r\nHello World!')
         }, {
             uid: 53,
             flags: [],
@@ -286,7 +287,7 @@ module.exports = function (options) {
             uid: folder.uidNext++,
             modseq: ++folder.modifyIndex,
             date: date && new Date(date) || new Date(),
-            raw,
+            mimeTree: parseMimeTree(raw),
             flags
         };
 

@@ -1,6 +1,6 @@
 {
   "name": "wildduck",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "description": "IMAP server built with Node.js and MongoDB",
   "main": "server.js",
   "scripts": {
@@ -23,7 +23,7 @@
     "clone": "^2.1.1",
     "config": "^1.25.1",
     "grid-fs": "^1.0.1",
-    "joi": "^10.2.2",
+    "joi": "^10.3.4",
     "libbase64": "^0.1.0",
     "libmime": "^3.1.0",
     "mailparser": "^2.0.2",

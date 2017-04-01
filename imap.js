@@ -413,6 +413,45 @@ server.onAppend = function (path, flags, date, raw, session, callback) {
     });
 };
 
+server.updateMailboxFlags = function (mailbox, update, callback) {
+    if (update.action === 'remove') {
+        // we didn't add any new flags, so there's nothing to update
+        return callback();
+    }
+
+    let mailboxFlags = imapTools.systemFlags.concat(mailbox.flags || []).map(flag => flag.trim().toLowerCase());
+    let newFlags = [];
+
+    // find flags that are not listed with mailbox
+    update.value.forEach(flag => {
+        // limit mailbox flags by 100
+        if (mailboxFlags.length + newFlags.length >= 100) {
+            return;
+        }
+        // if mailbox does not have such flag, then add it
+        if (!mailboxFlags.includes(flag.toLowerCase().trim())) {
+            newFlags.push(flag);
+        }
+    });
+
+    // nothing new found
+    if (!newFlags.length) {
+        return callback();
+    }
+
+    // found some new flags not yet set for mailbox
+    // FIXME: Should we send unsolicited FLAGS and PERMANENTFLAGS notifications?
+    return db.database.collection('mailboxes').findOneAndUpdate({
+        _id: mailbox._id
+    }, {
+        $addToSet: {
+            flags: {
+                $each: newFlags
+            }
+        }
+    }, {}, callback);
+};
+
 // STORE / UID STORE, updates flags for selected UIDs
 server.onStore = function (path, update, session, callback) {
     this.logger.debug('[%s] Updating messages in "%s"', session.id, path);
@@ -426,9 +465,6 @@ server.onStore = function (path, update, session, callback) {
         if (!mailbox) {
             return callback(null, 'NONEXISTENT');
         }
-
-        let mailboxFlags = imapTools.systemFlags.concat(mailbox.flags || []).map(flag => flag.trim().toLowerCase());
-        let newFlags = [];
 
         let cursor = db.database.collection('messages').find({
             mailbox: mailbox._id,
@@ -450,14 +486,25 @@ server.onStore = function (path, update, session, callback) {
                 notifyEntries = [];
                 setImmediate(() => this.notifier.addEntries(session.user.id, path, entries, () => {
                     this.notifier.fire(session.user.id, path);
-                    return callback(...args);
+                    if (args[0]) { // first argument is an error
+                        return callback(...args);
+                    } else {
+                        server.updateMailboxFlags(mailbox, update, () => callback(...args));
+                    }
                 }));
                 return;
             }
             this.notifier.fire(session.user.id, path);
-            return callback(...args);
+            if (args[0]) { // first argument is an error
+                return callback(...args);
+            } else {
+                server.updateMailboxFlags(mailbox, update, () => callback(...args));
+            }
         };
 
+        // We have to process all messages one by one instead of just calling an update
+        // for all messages as we need to know which messages were exactly modified,
+        // otherwise we can't send flag update notifications and modify modseq values
         let processNext = () => {
             cursor.next((err, message) => {
                 if (err) {
@@ -467,117 +514,124 @@ server.onStore = function (path, update, session, callback) {
                     return cursor.close(() => done(null, true));
                 }
 
-                let flagsupdate = {};
+                let flagsupdate = false; // query object for updates
+
                 let updated = false;
+                let existingFlags = message.flags.map(flag => flag.toLowerCase().trim());
                 switch (update.action) {
                     case 'set':
                         // check if update set matches current or is different
-                        if (message.flags.length !== update.value.length || update.value.filter(flag => message.flags.indexOf(flag) < 0).length) {
+                        if (
+                            // if length does not match
+                            existingFlags.length !== update.value.length ||
+                            // or a new flag was found
+                            update.value.filter(flag => !existingFlags.includes(flag.toLowerCase().trim())).length
+                        ) {
                             updated = true;
                         }
+
                         message.flags = [].concat(update.value);
+
                         // set flags
-                        flagsupdate.$set = {
-                            flags: message.flags
-                        };
+                        if (updated) {
+                            flagsupdate = {
+                                $set: {
+                                    flags: message.flags
+                                }
+                            };
+                        }
                         break;
 
                     case 'add':
-                        message.flags = message.flags.concat(update.value.filter(flag => {
-                            if (message.flags.indexOf(flag) < 0) {
-                                updated = true;
-                                return true;
-                            }
-                            return false;
-                        }));
+                        {
+                            let newFlags = [];
+                            message.flags = message.flags.concat(update.value.filter(flag => {
+                                if (!existingFlags.includes(flag.toLowerCase().trim())) {
+                                    updated = true;
+                                    newFlags.push(flag);
+                                    return true;
+                                }
+                                return false;
+                            }));
 
-                        // add flags
-                        flagsupdate.$addToSet = {
-                            flags: {
-                                $each: update.value
+                            // add flags
+                            if (updated) {
+                                flagsupdate = {
+                                    $addToSet: {
+                                        flags: {
+                                            $each: newFlags
+                                        }
+                                    }
+                                };
                             }
-                        };
-                        break;
+                            break;
+                        }
 
                     case 'remove':
-                        message.flags = message.flags.filter(flag => {
-                            if (update.value.indexOf(flag) < 0) {
-                                return true;
-                            }
-                            updated = true;
-                            return false;
-                        });
+                        {
+                            // We need to use the case of existing flags when removing
+                            let oldFlags = [];
+                            let flagsUpdates = update.value.map(flag => flag.toLowerCase().trim());
+                            message.flags = message.flags.filter(flag => {
+                                if (!flagsUpdates.includes(flag.toLowerCase().trim())) {
+                                    return true;
+                                }
+                                oldFlags.push(flag);
+                                updated = true;
+                                return false;
+                            });
 
-                        // remove flags
-                        flagsupdate.$pull = {
-                            flags: {
-                                $in: update.value
+                            // remove flags
+                            if (updated) {
+                                flagsupdate = {
+                                    $pull: {
+                                        flags: {
+                                            $in: oldFlags
+                                        }
+                                    }
+                                };
                             }
-                        };
-                        break;
+                            break;
+                        }
                 }
 
-                message.flags.forEach(flag => {
-                    // limit mailbox flags by 100
-                    if (!mailboxFlags.includes(flag.trim().toLowerCase()) && mailboxFlags.length + newFlags.length < 100) {
-                        newFlags.push(flag);
-                    }
-                });
-
                 if (!update.silent) {
+                    // print updated state of the message
                     session.writeStream.write(session.formatResponse('FETCH', message.uid, {
                         uid: update.isUid ? message.uid : false,
                         flags: message.flags
                     }));
                 }
 
-                let updateMailboxFlags = next => {
-                    if (!newFlags.length) {
-                        return next();
-                    }
-
-                    // found some new flags not yet set for mailbox
-                    return db.database.collection('mailboxes').findOneAndUpdate({
-                        _id: mailbox._id
-                    }, {
-                        $addToSet: {
-                            flags: {
-                                $each: newFlags
-                            }
+                if (updated) {
+                    db.database.collection('messages').findOneAndUpdate({
+                        _id: message._id
+                    }, flagsupdate, {}, err => {
+                        if (err) {
+                            return cursor.close(() => done(err));
                         }
-                    }, {}, next);
-                };
 
-                updateMailboxFlags(() => {
-                    if (updated) {
-                        db.database.collection('messages').findOneAndUpdate({
-                            _id: message._id
-                        }, flagsupdate, {}, err => {
-                            if (err) {
-                                return cursor.close(() => done(err));
-                            }
-
-                            notifyEntries.push({
-                                command: 'FETCH',
-                                ignore: session.id,
-                                uid: message.uid,
-                                flags: message.flags,
-                                message: message._id
-                            });
-
-                            if (notifyEntries.length > 100) {
-                                let entries = notifyEntries;
-                                notifyEntries = [];
-                                setImmediate(() => this.notifier.addEntries(session.user.id, path, entries, processNext));
-                                return;
-                            } else {
-                                setImmediate(() => processNext());
-                            }
+                        notifyEntries.push({
+                            command: 'FETCH',
+                            ignore: session.id,
+                            uid: message.uid,
+                            flags: message.flags,
+                            message: message._id
                         });
-                    } else {
-                        processNext();
-                    }
-                });
+
+                        if (notifyEntries.length > 100) {
+                            // emit notifications in batches of 100
+                            let entries = notifyEntries;
+                            notifyEntries = [];
+                            setImmediate(() => this.notifier.addEntries(session.user.id, path, entries, processNext));
+                            return;
+                        } else {
+                            setImmediate(() => processNext());
+                        }
+                    });
+                } else {
+                    processNext();
+                }
             });
         };
 

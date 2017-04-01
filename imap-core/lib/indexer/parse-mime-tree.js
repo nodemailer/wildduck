@@ -165,7 +165,7 @@ class MIMEParser {
 
                 // Do not touch headers that have strange looking keys, keep these
                 // only in the unparsed array
-                if (/^[a-zA-Z0-9\-\*]/.test(key) || key.length >= 100) {
+                if (/[^a-zA-Z0-9\-\*]/.test(key) || key.length >= 100) {
                     continue;
                 }
 
@@ -245,7 +245,7 @@ class MIMEParser {
 
             // Do not touch headers that have strange looking keys, keep these
             // only in the unparsed array
-            if (/^[a-zA-Z0-9\-\*]/.test(key) || key.length >= 100) {
+            if (/[^a-zA-Z0-9\-\*]/.test(key) || key.length >= 100) {
                 return;
             }
 
