@@ -239,37 +239,37 @@ server.onDelete = function (path, session, callback) {
                 return callback(err);
             }
 
-            db.database.collection('messages').deleteMany({
-                mailbox: mailbox._id
-            }, err => {
+            // calculate mailbox size by aggregating the size's of all messages
+            db.database.collection('messages').aggregate([{
+                $match: {
+                    mailbox: mailbox._id
+                }
+            }, {
+                $group: {
+                    _id: {
+                        mailbox: '$mailbox'
+                    },
+                    storageUsed: {
+                        $sum: '$size'
+                    }
+                }
+            }], {
+                cursor: {
+                    batchSize: 1
+                }
+            }).toArray((err, res) => {
                 if (err) {
                     return callback(err);
                 }
 
-                // calculate mailbox size by aggregating the size's of all messages
-                db.database.collection('messages').aggregate([{
-                    $match: {
-                        mailbox: mailbox._id
-                    }
-                }, {
-                    $group: {
-                        _id: {
-                            mailbox: '$mailbox'
-                        },
-                        storageUsed: {
-                            $sum: '$size'
-                        }
-                    }
-                }], {
-                    cursor: {
-                        batchSize: 1
-                    }
-                }).toArray((err, res) => {
+                let storageUsed = res && res[0] && res[0].storageUsed || 0;
+
+                db.database.collection('messages').deleteMany({
+                    mailbox: mailbox._id
+                }, err => {
                     if (err) {
                         return callback(err);
                     }
-
-                    let storageUsed = res && res[0] && res[0].storageUsed || 0;
 
                     let done = () => {
                         db.database.collection('journal').deleteMany({

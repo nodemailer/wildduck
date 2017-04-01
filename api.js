@@ -436,8 +436,8 @@ server.post('/user/quota/reset', (req, res, next) => {
                 res.json({
                     success: true,
                     username,
-                    previousStorageUsed: Number(result.value.storageUsed) || 0,
-                    storageUsed: user.storageUsed
+                    previousStorageUsed: user.storageUsed,
+                    storageUsed: Number(result.value.storageUsed) || 0
                 });
                 return next();
             });
