@@ -12,6 +12,9 @@ const LengthLimiter = require('../length-limiter');
 const ObjectID = require('mongodb').ObjectID;
 const GridFs = require('grid-fs');
 const libmime = require('libmime');
+const libqp = require('libqp');
+const libbase64 = require('libbase64');
+const iconv = require('iconv-lite');
 
 class Indexer {
 
@@ -240,13 +243,15 @@ class Indexer {
     }
 
     /**
-     * Parses structured MIME tree from a rfc822 message source
-     *
-     * @param  {String|Buffer} rfc822 E-mail message as 'binary'-string or Buffer
-     * @return {Object} Parsed mime tree
+     * Stores attachments to GridStore, decode text/plain and text/html parts
      */
-    storeAttachments(messageId, mimeTree, sizeLimit, callback) {
-        mimeTree.attachments = [];
+    processContent(messageId, mimeTree, sizeLimit, callback) {
+        let response = {
+            attachments: [],
+            text: '',
+            html: ''
+        };
+
         let walk = (node, next) => {
 
             let continueProcessing = () => {
@@ -265,20 +270,66 @@ class Indexer {
                 }
             };
 
-            let contentType = (node.parsedHeader['content-type'] && node.parsedHeader['content-type'].value || 'application/octet-stream').toLowerCase().trim();
-            let disposition = (node.parsedHeader['content-disposition'] && node.parsedHeader['content-disposition'].value || '').toLowerCase().trim() || false;
+            let flowed = false;
+            let delSp = false;
+
+            let parsedContentType = node.parsedHeader['content-type'];
+            let parsedDisposition = node.parsedHeader['content-disposition'];
+            let transferEncoding = (node.parsedHeader['content-transfer-encoding'] || '7bit').toLowerCase().trim();
+
+            let contentType = (parsedContentType && parsedContentType.value || (node.rootNode ? 'text/plain' : 'application/octet-stream')).toLowerCase().trim();
+
+            if (parsedContentType && parsedContentType.params.format && parsedContentType.params.format.toLowerCase().trim() === 'flowed') {
+                flowed = true;
+                if (parsedContentType.params.delsp && parsedContentType.params.delsp.toLowerCase().trim() === 'yes') {
+                    delSp = true;
+                }
+            }
+
+            let disposition = (parsedDisposition && parsedDisposition.value || '').toLowerCase().trim() || false;
 
             let curSizeLimit = sizeLimit;
 
             // If the current node is HTML or Plaintext then allow larger content included in the mime tree
+            // Also decode text value
             if (['text/plain', 'text/html'].includes(contentType) && (!disposition || disposition === 'inline')) {
                 curSizeLimit = Math.max(sizeLimit, 200 * 1024);
+                if (node.body && node.body.length) {
+                    let charset = parsedContentType.params.charset || 'windows-1257';
+                    let textContent = node.body;
+
+                    if (transferEncoding === 'base64') {
+                        textContent = libbase64.decode(textContent.toString());
+                    } else if (transferEncoding === 'base64') {
+                        textContent = libqp.decode(textContent.toString());
+                    }
+
+                    if (!['ascii', 'usascii', 'utf8'].includes(charset.replace(/[^a-z0-9]+/g, '').trim().toLowerCase())) {
+                        try {
+                            textContent = iconv.decode(textContent, charset);
+                        } catch (E) {
+                            // do not decode charset
+                        }
+                    }
+
+                    if (flowed) {
+                        textContent = libmime.decodeFlowed(textContent.toString(), delSp);
+                    } else {
+                        textContent = textContent.toString();
+                    }
+
+                    let subType = contentType.split('/').pop();
+                    if (!response[subType]) {
+                        response[subType] = textContent;
+                    } else {
+                        response[subType] += '\n' + textContent;
+                    }
+                }
             }
 
             if (node.body && node.size > curSizeLimit) {
                 let attachmentId = new ObjectID();
 
-                let transferEncoding = node.parsedHeader['content-transfer-encoding'] || '7bit';
                 let fileName = (node.parsedHeader['content-disposition'] && node.parsedHeader['content-disposition'].params && node.parsedHeader['content-disposition'].params.filename) || (node.parsedHeader['content-type'] && node.parsedHeader['content-type'].params && node.parsedHeader['content-type'].params.name) || false;
 
                 if (fileName) {
@@ -309,7 +360,7 @@ class Indexer {
                 });
 
                 if (!['text/plain', 'text/html'].includes(contentType) || disposition === 'attachment') {
-                    mimeTree.attachments.push({
+                    response.attachments.push({
                         id: attachmentId,
                         fileName,
                         contentType,
@@ -343,7 +394,12 @@ class Indexer {
                 continueProcessing();
             }
         };
-        walk(mimeTree, callback);
+        walk(mimeTree, err => {
+            if (err) {
+                return callback(err);
+            }
+            callback(null, response);
+        });
     }
 
     /**

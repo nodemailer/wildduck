@@ -21,6 +21,7 @@ class MIMEParser {
         this.rawBody = '';
 
         this.tree = {
+            rootNode: true,
             childNodes: []
         };
         this._node = this.createNode(this.tree);
