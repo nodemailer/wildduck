@@ -1,4 +1,4 @@
-# Mail Agent, Wild Duck
+# Agent Wild Duck
 
 ![](https://cldup.com/qlZnwOz0na.jpg)
 
