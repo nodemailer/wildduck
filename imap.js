@@ -1188,7 +1188,9 @@ server.onSearch = function (path, options, session, callback) {
                     case 'all':
                         if (!ne) {
                             hasAll = true;
-                            query = {};
+                            query = {
+                                mailbox: mailbox._id
+                            };
                         }
                         break;
 
