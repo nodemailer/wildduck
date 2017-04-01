@@ -1277,22 +1277,23 @@ server.onSearch = function (path, options, session, callback) {
 
                     case 'header':
                         {
+                            // FIXME: this does not match unicode symbols for whatever reason
+                            let regex = Buffer.from(term.value, 'binary').toString().replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
                             let entry = term.value ? {
                                 'headers.key': term.header,
-                                'headers.value': {
-                                    // FIXME: this does not match unicode symbols for whatever reason
-                                    $regex: Buffer.from(term.value, 'binary').toString().replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')
+                                'headers.value': !ne ? {
+                                    regex
+                                } : {
+                                    $not: {
+                                        regex
+                                    }
                                 }
                             } : {
-                                'headers.key': term.header
+                                'headers.key': !ne ? term.header : {
+                                    $ne: term.header
+                                }
                             };
-                            if (!ne) {
-                                parent.push(entry);
-                            } else {
-                                parent.push({
-                                    $not: entry
-                                });
-                            }
+                            parent.push(entry);
                         }
                         break;
 
@@ -1323,16 +1324,12 @@ server.onSearch = function (path, options, session, callback) {
                             };
 
                             entry = {
-                                internaldate: entry
+                                internaldate: !ne ? entry : {
+                                    $not: entry
+                                }
                             };
 
-                            if (!ne) {
-                                parent.push(entry);
-                            } else {
-                                parent.push({
-                                    $not: entry
-                                });
-                            }
+                            parent.push(entry);
                         }
                         break;
 
@@ -1363,16 +1360,12 @@ server.onSearch = function (path, options, session, callback) {
                             };
 
                             entry = {
-                                headerdate: entry
+                                headerdate: !ne ? entry : {
+                                    $not: entry
+                                }
                             };
 
-                            if (!ne) {
-                                parent.push(entry);
-                            } else {
-                                parent.push({
-                                    $not: entry
-                                });
-                            }
+                            parent.push(entry);
                         }
                         break;
 
@@ -1400,16 +1393,12 @@ server.onSearch = function (path, options, session, callback) {
                             };
 
                             entry = {
-                                size: entry
+                                size: !ne ? entry : {
+                                    $not: entry
+                                }
                             };
 
-                            if (!ne) {
-                                parent.push(entry);
-                            } else {
-                                parent.push({
-                                    $not: entry
-                                });
-                            }
+                            parent.push(entry);
                         }
                         break;
                 }
