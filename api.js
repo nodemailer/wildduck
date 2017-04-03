@@ -784,14 +784,16 @@ server.get('/mailbox/:id', (req, res, next) => {
 
             let newest = entry.uid;
 
-            db.database.collection('messages').find(query, {
-                uid: true,
-                mailbox: true,
-                internaldate: true,
-                headers: true,
-                hasAttachments: true,
-                intro: true
-            }).sort(sort).limit(size).toArray((err, messages) => {
+            db.database.collection('messages').findOne({
+                mailbox: mailbox._id
+            }, {
+                fields: {
+                    uid: true
+                },
+                sort: {
+                    uid: 1
+                }
+            }, (err, entry) => {
                 if (err) {
                     res.json({
                         error: 'MongoDB Error: ' + err.message,
@@ -800,54 +802,80 @@ server.get('/mailbox/:id', (req, res, next) => {
                     return next();
                 }
 
-                if (reverse) {
-                    messages = messages.reverse();
+                if (!entry) {
+                    res.json({
+                        error: 'Unexpected result'
+                    });
+                    return next();
                 }
 
-                let nextPage = false;
-                let prevPage = false;
+                let oldest = entry.uid;
 
-                if (messages.length) {
-                    if (after || before) {
-                        prevPage = messages[0].uid;
-                        if (prevPage >= newest) {
-                            prevPage = false;
-                        }
-                    }
-                    if (messages.length >= size) {
-                        nextPage = messages[messages.length - 1].uid;
-                        if (nextPage <= 0) {
-                            nextPage = false;
-                        }
-                    }
-                }
-
-                res.json({
-                    success: true,
-                    mailbox: {
-                        id: mailbox._id,
-                        path: mailbox.path
-                    },
-                    next: nextPage ? '/mailbox/' + id + '?before=' + nextPage + '&size=' + size : false,
-                    prev: prevPage ? '/mailbox/' + id + '?after=' + prevPage + '&size=' + size : false,
-                    messages: messages.map(message => {
-                        let response = {
-                            id: message._id,
-                            date: message.internaldate,
-                            hasAttachments: message.hasAttachments,
-                            intro: message.intro
-                        };
-
-                        message.headers.forEach(entry => {
-                            if (['subject', 'from', 'to', 'cc', 'bcc'].includes(entry.key)) {
-                                response[entry.key] = entry.value;
-                            }
+                db.database.collection('messages').find(query, {
+                    uid: true,
+                    mailbox: true,
+                    internaldate: true,
+                    headers: true,
+                    hasAttachments: true,
+                    intro: true
+                }).sort(sort).limit(size).toArray((err, messages) => {
+                    if (err) {
+                        res.json({
+                            error: 'MongoDB Error: ' + err.message,
+                            id
                         });
-                        return response;
-                    })
-                });
+                        return next();
+                    }
 
-                return next();
+                    if (reverse) {
+                        messages = messages.reverse();
+                    }
+
+                    let nextPage = false;
+                    let prevPage = false;
+
+                    if (messages.length) {
+                        if (after || before) {
+                            prevPage = messages[0].uid;
+                            if (prevPage >= newest) {
+                                prevPage = false;
+                            }
+                        }
+                        if (messages.length >= size) {
+                            nextPage = messages[messages.length - 1].uid;
+                            if (nextPage < oldest) {
+                                nextPage = false;
+                            }
+                        }
+                    }
+
+                    res.json({
+                        success: true,
+                        mailbox: {
+                            id: mailbox._id,
+                            path: mailbox.path
+                        },
+                        next: nextPage ? '/mailbox/' + id + '?before=' + nextPage + '&size=' + size : false,
+                        prev: prevPage ? '/mailbox/' + id + '?after=' + prevPage + '&size=' + size : false,
+                        messages: messages.map(message => {
+                            let response = {
+                                id: message._id,
+                                date: message.internaldate,
+                                hasAttachments: message.hasAttachments,
+                                intro: message.intro
+                            };
+
+                            message.headers.forEach(entry => {
+                                if (['subject', 'from', 'to', 'cc', 'bcc'].includes(entry.key)) {
+                                    response[entry.key] = entry.value;
+                                }
+                            });
+                            return response;
+                        })
+                    });
+
+                    return next();
+                });
             });
         });
     });
