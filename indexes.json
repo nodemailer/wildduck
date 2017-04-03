@@ -67,6 +67,12 @@
             "modseq": 1
         }
     }, {
+        "name": "newer_first",
+        "key": {
+            "mailbox": 1,
+            "uid": -1
+        }
+    }, {
         "name": "mailbox_flags",
         "key": {
             "mailbox": 1,
@@ -103,12 +109,6 @@
             "size": 1
         }
     }, {
-        "name": "by_uid",
-        "key": {
-            "mailbox": 1,
-            "uid": 1
-        }
-    }, {
         "name": "by_headers",
         "key": {
             "mailbox": 1,
@@ -116,7 +116,7 @@
             "headers.value": 1
         }
     }, {
-        "name": "bhas_attachments",
+        "name": "has_attachments",
         "key": {
             "mailbox": 1,
             "hasAttachments": 1

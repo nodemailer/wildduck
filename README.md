@@ -11,7 +11,7 @@ Wild Duck is a distributed IMAP server built with Node.js, MongoDB and Redis. No
 1. Build a scalable and distributed IMAP server that uses clustered database instead of single machine file system as mail store
 2. Allow using internationalized email addresses
 3. Provide Gmail-like features like pushing sent messages automatically to Sent Mail folder or notifying about messages moved to Junk folder so these could be marked as spam
-4. Add push notifications. Your application (eg. a webmail client) should be able to request changes (new and deleted messages, flag changes) to be pushed to client instead of using IMAP to fetch stuff from the server
+4. Provide parsed mailbox and message data over HTTP. This should make creating webmail interfaces super easy, no need to parse RFC822 messages to get text content or attachments
 
 ## Similar alterntives
 
@@ -56,6 +56,7 @@ Yes, it does. You can run the server and get a working IMAP server for mail stor
 3. Works almost on any OS including Windows. At least if you get MongoDB and Redis ([Windows fork](https://github.com/MSOpenTech/redis)) running first.
 4. Focus on internationalization, ie. supporting email addresses with non-ascii characters
 5. `+`-labels: _андрис+ööö@уайлддак.орг_ is delivered to _андрис@уайлддак.орг_
+6. Access messages both using IMAP and HTTP API. The latter serves parsed data, so no need to fetch RFC822 messages and parse out html, plaintext content or attachments. It is super easy to create a webmail interface on top of this.
 
 ### Isn't it bad to use a database as a mail store?
 
@@ -126,11 +127,16 @@ NODE_ENV=production npm start
 
 ### Step 5\. Create an user account
 
-See see [below](#create-user) for details about creating new user accounts
+See see [below](#http-api) for details about creating new user accounts
 
-## Manage user
+## HTTP API
 
-Users can be managed with HTTP requests against Wild Duck API
+Users, mailboxes and messages can be managed with HTTP requests against Wild Duck API
+
+TODO:
+
+1. Expose counters (seen/unseen messages, message count in mailbox etc.)
+2. Search messages
 
 ### POST /user/create
 
@@ -366,18 +372,191 @@ The response for successful operation should look like this:
 }
 ```
 
-### DELETE /message
+### GET /mailbox/:id
 
-Deletes a message from a mailbox.
+List messages in a mailbox.
 
-Arguments
+Parameters
+
+- **id** is the mailbox ID
+- **size** is optional number to limit the length of the messages array (defaults to 20)
+- **before** is an optional paging number (see *next* in response)
+- **after** is an optional paging number (see *prev* in response)
+
+Response includes the following fields
+
+  * **mailbox** is an object that lists some metadata about the current mailbox
+    * **id** is the mailbox ID
+    * **path** is the folder path
+  * **next** is an URL fragment for retrieving the next page (or false if there are no more pages)
+  * **prev** is an URL fragment for retrieving the previous page (or false if it is the first page)
+  * **messages** is an array of messages in the mailbox
+    * **id** is the message ID
+    * **date** is the date when this message was received
+    * **hasAttachments** is a boolean that indicates if this messages has attachments or not
+    * **intro** includes the first 256 characters from the message
+    * **subject** is the message title
+    * **from** is the From: field
+    * **to** is the To: field
+    * **cc** is the Cc: field
+    * **bcc** is the Bcc: field
+
+The response for successful listing should look like this:
+
+```json
+{
+  "success": true,
+  "mailbox": {
+    "id": "58dbf87fcff690a8c30470c7",
+    "path": "INBOX"
+  },
+  "next": "/mailbox/58dbf87fcff690a8c30470c7?before=34&size=20",
+  "prev": false,
+  "messages": [
+    {
+      "id": "58e25243ab71621c3890417e",
+      "date": "2017-04-03T13:46:44.226Z",
+      "hasAttachments": true,
+      "intro": "Welcome to Ryan Finnie's MIME torture test. This message was designed to introduce a couple of the newer features of MIME-aware MUAs, features that have come around since the days of the original MIME torture test. Just to be clear, this message SUPPLEMENT…",
+      "subject": "ryan finnie's mime torture test v1.0",
+      "from": "ryan finnie <rfinnie@domain.dom>",
+      "to": "bob@domain.dom"
+    }
+  ]
+}
+```
+
+### GET /message/:id
+
+Retrieves message information
+
+Parameters
 
 - **id** is the MongoDB _id as a string for a message
+- **mailbox** is optional Mailbox id. Use this to verify that the message is located at this mailbox
 
 **Example**
 
 ```
-curl "http://localhost:8080/message?id=58d8299c5195c38e77c2daa5"
+curl "http://localhost:8080/message/58d8299c5195c38e77c2daa5"
+```
+
+Response message includes the following fields
+
+- **id** is the id of the message
+- **headers** is an array that lists all headers of the message. A header is an object:
+
+  - **key** is the lowercase key of the header
+  - **value** is the header value in unicode (all encoded values are decoded to utf-8)
+
+- **date** is the receive date (not header Date: field)
+
+- **mailbox** is the id of the mailbox this messages belongs to
+- **flags** is an array of IMAP flags for this message
+- **text** is the plaintext version of the message (derived from html if not present in message source)
+- **html** is the HTML version of the message (derived from plaintext if not present in message source)
+- **attachments** is an array of attachment objects. Attachments can be shared between messages.
+
+  - **id** is the id of the attachment
+  - **fileName** is the name of the attachment. Autogenerated from Content-Type if not set in source
+  - **contentType** is the MIME type of the message
+  - **disposition** defines Content-Disposition and is either 'inline', 'attachment' or _false_
+  - **transferEncoding** defines Content-Transfer-Encoding
+  - **related** is a boolean value that states if the attachment should be hidden (_true_) or not. _Related_ attachments are usually embedded images
+  - **sizeKb** is the approximate size of the attachment in kilobytes
+
+#### Embedded images
+
+HTML content has embedded images linked with the following URL structure:
+
+    attachment:MESSAGE_ID/ATTACHMENT_ID
+
+For example:
+
+    <img src="attachment:aaaaaa/bbbbbb">
+
+To fetch the actual attachment contents for this image, use the following url:
+
+    http://localhost:8080/message/aaaaaa/attachment/bbbbbb
+
+#### Example response
+
+The response for successful operation should look like this:
+
+```json
+{
+  "success": true,
+  "message": {
+    "id": "58d8299c5195c38e77c2daa5",
+    "mailbox": "58dbf87fcff690a8c30470c7",
+    "headers": [
+      {
+        "key": "delivered-to",
+        "value": "andris@addrgw.com"
+      }
+    ],
+    "date": "2017-04-03T10:34:43.007Z",
+    "flags": ["\\Seen"],
+    "text": "Hello world!",
+    "html": "<p>Hello world!</p>",
+    "attachments": [
+      {
+        "id": "58e2254289cccb742fd6c015",
+        "fileName": "image.png",
+        "contentType": "image/png",
+        "disposition": "attachment",
+        "transferEncoding": "base64",
+        "related": true,
+        "sizeKb": 1
+      }
+    ]
+  }
+}
+```
+
+### GET /message/:mid/attachment/:aid
+
+Retrieves an attachment of the message
+
+Parameters
+
+- **mid** is the message ID
+- **aid** is the attachment ID
+
+**Example**
+
+```
+curl "http://localhost:8080/message/58d8299c5195c38e77c2daa5/attachment/58e2254289cccb742fd6c015"
+```
+
+### GET /message/:id/raw
+
+Retrieves RFC822 source of the message
+
+Parameters
+
+- **id** is the MongoDB _id as a string for a message
+- **mailbox** is optional Mailbox id. Use this to verify that the message is located at this mailbox
+
+**Example**
+
+```
+curl "http://localhost:8080/message/58d8299c5195c38e77c2daa5/raw"
+```
+
+### DELETE /message/:id
+
+Deletes a message from a mailbox.
+
+Parameters
+
+- **id** is the MongoDB _id as a string for a message
+- **mailbox** is an optional Mailbox id. Use this to verify that the message to be deleted is located at this mailbox
+
+**Example**
+
+```
+curl -XDELETE "http://localhost:8080/message/58d8299c5195c38e77c2daa5"
 ```
 
 The response for successful operation should look like this:
@@ -385,7 +564,9 @@ The response for successful operation should look like this:
 ```json
 {
   "success": true,
-  "id": "58d8299c5195c38e77c2daa5"
+  "message":{
+    "id": "58d8299c5195c38e77c2daa5"
+  }
 }
 ```
 

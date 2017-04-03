@@ -9,6 +9,8 @@ const tools = require('./lib/tools');
 const MessageHandler = require('./lib/message-handler');
 const db = require('./lib/db');
 const ObjectID = require('mongodb').ObjectID;
+const libqp = require('libqp');
+const libbase64 = require('libbase64');
 
 const server = restify.createServer({
     name: 'Wild Duck API',
@@ -673,15 +675,23 @@ server.get('/user/mailboxes', (req, res, next) => {
     });
 });
 
-server.del('/message', (req, res, next) => {
+// FIXME: if listing a page after the last one then there is no prev URL
+// Probably should detect the last page the same way the first one is detected
+server.get('/mailbox/:id', (req, res, next) => {
     res.charSet('utf-8');
 
     const schema = Joi.object().keys({
-        id: Joi.string().hex().lowercase().length(24).required()
+        id: Joi.string().hex().lowercase().length(24).required(),
+        before: Joi.number().default(0),
+        after: Joi.number().default(0),
+        size: Joi.number().min(1).max(50).default(20)
     });
 
     const result = Joi.validate({
-        id: req.params.id
+        id: req.params.id,
+        before: req.params.before,
+        after: req.params.after,
+        size: req.params.size
     }, schema, {
         abortEarly: false,
         convert: true,
@@ -696,8 +706,13 @@ server.del('/message', (req, res, next) => {
     }
 
     let id = result.value.id;
+    let before = result.value.before;
+    let after = result.value.after;
+    let size = result.value.size;
 
-    messageHandler.del(id, (err, success) => {
+    db.database.collection('mailboxes').findOne({
+        _id: new ObjectID(id)
+    }, (err, mailbox) => {
         if (err) {
             res.json({
                 error: 'MongoDB Error: ' + err.message,
@@ -705,12 +720,136 @@ server.del('/message', (req, res, next) => {
             });
             return next();
         }
+        if (!mailbox) {
+            res.json({
+                error: 'This mailbox does not exist',
+                id
+            });
+            return next();
+        }
 
-        res.json({
-            success,
-            id
+        let query = {
+            mailbox: mailbox._id
+        };
+        let reverse = false;
+        let sort = {
+            uid: -1
+        };
+
+        if (req.params.before) {
+            query.uid = {
+                $lt: before
+            };
+        } else if (req.params.after) {
+            query.uid = {
+                $gt: after
+            };
+            sort = {
+                uid: 1
+            };
+            reverse = true;
+        }
+
+        db.database.collection('messages').findOne({
+            mailbox: mailbox._id
+        }, {
+            fields: {
+                uid: true
+            },
+            sort: {
+                uid: -1
+            }
+        }, (err, entry) => {
+            if (err) {
+                res.json({
+                    error: 'MongoDB Error: ' + err.message,
+                    id
+                });
+                return next();
+            }
+
+            if (!entry) {
+                res.json({
+                    success: true,
+                    mailbox: {
+                        id: mailbox._id,
+                        path: mailbox.path
+                    },
+                    next: false,
+                    prev: false,
+                    messages: []
+                });
+                return next();
+            }
+
+            let newest = entry.uid;
+
+            db.database.collection('messages').find(query, {
+                uid: true,
+                mailbox: true,
+                internaldate: true,
+                headers: true,
+                hasAttachments: true,
+                intro: true
+            }).sort(sort).limit(size).toArray((err, messages) => {
+                if (err) {
+                    res.json({
+                        error: 'MongoDB Error: ' + err.message,
+                        id
+                    });
+                    return next();
+                }
+
+                if (reverse) {
+                    messages = messages.reverse();
+                }
+
+                let nextPage = false;
+                let prevPage = false;
+
+                if (messages.length) {
+                    if (after || before) {
+                        prevPage = messages[0].uid;
+                        if (prevPage >= newest) {
+                            prevPage = false;
+                        }
+                    }
+                    if (messages.length >= size) {
+                        nextPage = messages[messages.length - 1].uid;
+                        if (nextPage <= 0) {
+                            nextPage = false;
+                        }
+                    }
+                }
+
+                res.json({
+                    success: true,
+                    mailbox: {
+                        id: mailbox._id,
+                        path: mailbox.path
+                    },
+                    next: nextPage ? '/mailbox/' + id + '?before=' + nextPage + '&size=' + size : false,
+                    prev: prevPage ? '/mailbox/' + id + '?after=' + prevPage + '&size=' + size : false,
+                    messages: messages.map(message => {
+                        let response = {
+                            id: message._id,
+                            date: message.internaldate,
+                            hasAttachments: message.hasAttachments,
+                            intro: message.intro
+                        };
+
+                        message.headers.forEach(entry => {
+                            if (['subject', 'from', 'to', 'cc', 'bcc'].includes(entry.key)) {
+                                response[entry.key] = entry.value;
+                            }
+                        });
+                        return response;
+                    })
+                });
+
+                return next();
+            });
         });
-        return next();
     });
 });
 
@@ -787,6 +926,197 @@ server.get('/message/:id', (req, res, next) => {
             }
         });
 
+        return next();
+    });
+});
+
+server.get('/message/:id/raw', (req, res, next) => {
+    res.charSet('utf-8');
+
+    const schema = Joi.object().keys({
+        id: Joi.string().hex().lowercase().length(24).required(),
+        mailbox: Joi.string().hex().lowercase().length(24).optional()
+    });
+
+    const result = Joi.validate({
+        id: req.params.id,
+        mailbox: req.params.mailbox
+    }, schema, {
+        abortEarly: false,
+        convert: true,
+        allowUnknown: true
+    });
+
+    if (result.error) {
+        res.json({
+            error: result.error.message
+        });
+        return next();
+    }
+
+    let id = result.value.id;
+    let mailbox = result.value.mailbox;
+
+    let query = {
+        _id: new ObjectID(id)
+    };
+
+    if (mailbox) {
+        query.mailbox = new ObjectID(mailbox);
+    }
+
+    db.database.collection('messages').findOne(query, {
+        mimeTree: true,
+        size: true
+    }, (err, message) => {
+        if (err) {
+            res.json({
+                error: 'MongoDB Error: ' + err.message,
+                id
+            });
+            return next();
+        }
+        if (!message) {
+            res.json({
+                error: 'This message does not exist',
+                id
+            });
+            return next();
+        }
+
+        let response = messageHandler.indexer.rebuild(message.mimeTree);
+        if (!response || response.type !== 'stream' || !response.value) {
+            res.json({
+                error: 'Can not fetch message',
+                id
+            });
+            return next();
+        }
+
+        res.writeHead(200, {
+            'Content-Type': 'message/rfc822'
+        });
+        response.value.pipe(res);
+    });
+});
+
+server.get('/message/:message/attachment/:attachment', (req, res, next) => {
+    res.charSet('utf-8');
+
+    const schema = Joi.object().keys({
+        message: Joi.string().hex().lowercase().length(24).required(),
+        attachment: Joi.string().hex().lowercase().length(24).required()
+    });
+
+    const result = Joi.validate({
+        message: req.params.message,
+        attachment: req.params.attachment
+    }, schema, {
+        abortEarly: false,
+        convert: true,
+        allowUnknown: true
+    });
+
+    if (result.error) {
+        res.json({
+            error: result.error.message
+        });
+        return next();
+    }
+
+    let message = result.value.message;
+    let attachment = result.value.attachment;
+
+    let query = {
+        _id: new ObjectID(attachment),
+        'metadata.messages': new ObjectID(message)
+    };
+
+    db.database.collection('attachments.files').findOne(query, (err, messageData) => {
+        if (err) {
+            res.json({
+                error: 'MongoDB Error: ' + err.message,
+                attachment,
+                message
+            });
+            return next();
+        }
+        if (!messageData) {
+            res.json({
+                error: 'This message does not exist',
+                attachment,
+                message
+            });
+            return next();
+        }
+
+        res.writeHead(200, {
+            'Content-Type': messageData.metadata.contentType
+        });
+
+        let attachmentStream = messageHandler.indexer.gridstore.createReadStream(messageData._id);
+
+        attachmentStream.once('error', err => res.emit('error', err));
+
+        if (messageData.metadata.transferEncoding === 'base64') {
+            attachmentStream.pipe(new libbase64.Decoder()).pipe(res);
+        } else if (messageData.metadata.transferEncoding === 'quoted-printable') {
+            attachmentStream.pipe(new libqp.Decoder()).pipe(res);
+        } else {
+            attachmentStream.pipe(res);
+        }
+
+    });
+});
+
+server.del('/message/:id', (req, res, next) => {
+    res.charSet('utf-8');
+
+    const schema = Joi.object().keys({
+        id: Joi.string().hex().lowercase().length(24).required(),
+        mailbox: Joi.string().hex().lowercase().length(24).optional()
+    });
+
+    const result = Joi.validate({
+        id: req.params.id,
+        mailbox: req.params.mailbox
+    }, schema, {
+        abortEarly: false,
+        convert: true,
+        allowUnknown: true
+    });
+
+    if (result.error) {
+        res.json({
+            error: result.error.message
+        });
+        return next();
+    }
+
+    let id = result.value.id;
+    let mailbox = result.value.mailbox;
+
+    let query = {
+        _id: new ObjectID(id)
+    };
+
+    if (mailbox) {
+        query.mailbox = new ObjectID(mailbox);
+    }
+
+    messageHandler.del(query, (err, success) => {
+        if (err) {
+            res.json({
+                error: 'MongoDB Error: ' + err.message,
+                id
+            });
+            return next();
+        }
+
+        res.json({
+            success,
+            id
+        });
         return next();
     });
 });

@@ -301,10 +301,12 @@ class Indexer {
             }
 
             let disposition = (parsedDisposition && parsedDisposition.value || '').toLowerCase().trim() || false;
+            let isInlineText = false;
 
             // If the current node is HTML or Plaintext then allow larger content included in the mime tree
             // Also decode text/html value
-            if (['text/plain', 'text/html'].includes(contentType) && (!disposition || disposition === 'inline')) {
+            if (['text/plain', 'text/html', 'text/rfc822-headers', 'message/delivery-status'].includes(contentType) && (!disposition || disposition === 'inline')) {
+                isInlineText = true;
                 if (node.body && node.body.length) {
                     let charset = parsedContentType.params.charset || 'windows-1257';
                     let content = node.body;
@@ -329,7 +331,12 @@ class Indexer {
                         content = content.toString();
                     }
 
-                    if (contentType === 'text/plain') {
+                    if (contentType === 'text/html') {
+                        htmlContent.push(content.trim());
+                        if (!alternative) {
+                            textContent.push(htmlToText.fromString(content).trim());
+                        }
+                    } else {
                         textContent.push(content.trim());
                         if (!alternative) {
                             htmlContent.push(marked(content, {
@@ -340,17 +347,12 @@ class Indexer {
                                 smartypants: true
                             }).trim());
                         }
-                    } else if (contentType === 'text/html') {
-                        htmlContent.push(content.trim());
-                        if (!alternative) {
-                            textContent.push(htmlToText.fromString(content).trim());
-                        }
                     }
                 }
             }
 
             // remove attachments and very large text nodes from the mime tree
-            if (node.body && (node.size > 300 * 1024 || disposition === 'attachment')) {
+            if (node.body && (!isInlineText || node.size > 300 * 1024)) {
                 let attachmentId = new ObjectID();
 
                 let fileName = (node.parsedHeader['content-disposition'] && node.parsedHeader['content-disposition'].params && node.parsedHeader['content-disposition'].params.filename) || (node.parsedHeader['content-type'] && node.parsedHeader['content-type'].params && node.parsedHeader['content-type'].params.name) || false;
@@ -390,7 +392,8 @@ class Indexer {
                     }
                 });
 
-                if (!['text/plain', 'text/html'].includes(contentType) || disposition === 'attachment') {
+                // do not include text content, multipart elements and embedded messages in the attachment list
+                if (!isInlineText && contentType.split('/')[0] !== 'multipart' && !(contentType === 'message/rfc822' && (!disposition || disposition === 'inline'))) {
                     // list in the attachments array
                     response.attachments.push({
                         id: attachmentId,
