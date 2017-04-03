@@ -75,38 +75,51 @@
     }, {
         "name": "by_modseq",
         "key": {
+            "mailbox": 1,
             "modseq": 1
         }
     }, {
         "name": "by_flags",
         "key": {
+            "mailbox": 1,
             "flags": 1
         }
     }, {
         "name": "by_internaldate",
         "key": {
+            "mailbox": 1,
             "internaldate": 1
         }
     }, {
         "name": "by_headerdate",
         "key": {
+            "mailbox": 1,
             "headerdate": 1
         }
     }, {
         "name": "by_size",
         "key": {
+            "mailbox": 1,
             "size": 1
         }
     }, {
         "name": "by_uid",
         "key": {
+            "mailbox": 1,
             "uid": 1
         }
     }, {
         "name": "by_headers",
         "key": {
+            "mailbox": 1,
             "headers.key": 1,
             "headers.value": 1
+        }
+    }, {
+        "name": "bhas_attachments",
+        "key": {
+            "mailbox": 1,
+            "hasAttachments": 1
         }
     }]
 }, {

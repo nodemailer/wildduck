@@ -12,6 +12,12 @@ const LengthLimiter = require('../length-limiter');
 const ObjectID = require('mongodb').ObjectID;
 const GridFs = require('grid-fs');
 const libmime = require('libmime');
+const libqp = require('libqp');
+const libbase64 = require('libbase64');
+const iconv = require('iconv-lite');
+const marked = require('marked');
+const htmlToText = require('html-to-text');
+const crypto = require('crypto');
 
 class Indexer {
 
@@ -242,12 +248,24 @@ class Indexer {
     /**
      * Stores attachments to GridStore, decode text/plain and text/html parts
      */
-    processContent(messageId, mimeTree, sizeLimit, callback) {
-        let attachments = [];
+    processContent(messageId, mimeTree, callback) {
+        let response = {
+            attachments: [],
+            text: '',
+            html: ''
+        };
 
-        let walk = (node, next) => {
+        let htmlContent = [];
+        let textContent = [];
+        let cidMap = new Map();
+
+        let walk = (node, alternative, related, next) => {
 
             let continueProcessing = () => {
+                if (node.message) {
+                    node = node.message;
+                }
+
                 if (Array.isArray(node.childNodes)) {
                     let pos = 0;
                     let processChildNode = () => {
@@ -255,7 +273,7 @@ class Indexer {
                             return next();
                         }
                         let childNode = node.childNodes[pos++];
-                        walk(childNode, processChildNode);
+                        walk(childNode, alternative, related, processChildNode);
                     };
                     setImmediate(processChildNode);
                 } else {
@@ -263,26 +281,80 @@ class Indexer {
                 }
             };
 
+            let flowed = false;
+            let delSp = false;
+
             let parsedContentType = node.parsedHeader['content-type'];
             let parsedDisposition = node.parsedHeader['content-disposition'];
             let transferEncoding = (node.parsedHeader['content-transfer-encoding'] || '7bit').toLowerCase().trim();
 
             let contentType = (parsedContentType && parsedContentType.value || (node.rootNode ? 'text/plain' : 'application/octet-stream')).toLowerCase().trim();
 
-            let disposition = (parsedDisposition && parsedDisposition.value || '').toLowerCase().trim() || false;
+            alternative = alternative || contentType === 'multipart/alternative';
+            related = related || contentType === 'multipart/related';
 
-            let curSizeLimit = sizeLimit;
-
-            // If the current node is HTML or Plaintext then allow larger content included in the mime tree
-            // Also decode text value
-            if (['text/plain', 'text/html'].includes(contentType) && (!disposition || disposition === 'inline')) {
-                curSizeLimit = Math.max(sizeLimit, 200 * 1024);
+            if (parsedContentType && parsedContentType.params.format && parsedContentType.params.format.toLowerCase().trim() === 'flowed') {
+                flowed = true;
+                if (parsedContentType.params.delsp && parsedContentType.params.delsp.toLowerCase().trim() === 'yes') {
+                    delSp = true;
+                }
             }
 
-            if (node.body && node.size > curSizeLimit) {
+            let disposition = (parsedDisposition && parsedDisposition.value || '').toLowerCase().trim() || false;
+
+            // If the current node is HTML or Plaintext then allow larger content included in the mime tree
+            // Also decode text/html value
+            if (['text/plain', 'text/html'].includes(contentType) && (!disposition || disposition === 'inline')) {
+                if (node.body && node.body.length) {
+                    let charset = parsedContentType.params.charset || 'windows-1257';
+                    let content = node.body;
+
+                    if (transferEncoding === 'base64') {
+                        content = libbase64.decode(content.toString());
+                    } else if (transferEncoding === 'quoted-printable') {
+                        content = libqp.decode(content.toString());
+                    }
+
+                    if (!['ascii', 'usascii', 'utf8'].includes(charset.replace(/[^a-z0-9]+/g, '').trim().toLowerCase())) {
+                        try {
+                            content = iconv.decode(content, charset);
+                        } catch (E) {
+                            // do not decode charset
+                        }
+                    }
+
+                    if (flowed) {
+                        content = libmime.decodeFlowed(content.toString(), delSp);
+                    } else {
+                        content = content.toString();
+                    }
+
+                    if (contentType === 'text/plain') {
+                        textContent.push(content.trim());
+                        if (!alternative) {
+                            htmlContent.push(marked(content, {
+                                breaks: true,
+                                sanitize: true,
+                                gfm: true,
+                                tables: true,
+                                smartypants: true
+                            }).trim());
+                        }
+                    } else if (contentType === 'text/html') {
+                        htmlContent.push(content.trim());
+                        if (!alternative) {
+                            textContent.push(htmlToText.fromString(content).trim());
+                        }
+                    }
+                }
+            }
+
+            // remove attachments and very large text nodes from the mime tree
+            if (node.body && (node.size > 300 * 1024 || disposition === 'attachment')) {
                 let attachmentId = new ObjectID();
 
                 let fileName = (node.parsedHeader['content-disposition'] && node.parsedHeader['content-disposition'].params && node.parsedHeader['content-disposition'].params.filename) || (node.parsedHeader['content-type'] && node.parsedHeader['content-type'].params && node.parsedHeader['content-type'].params.name) || false;
+                let contentId = (node.parsedHeader['content-id'] || '').toString().replace(/<|>/g, '').trim();
 
                 if (fileName) {
                     try {
@@ -290,7 +362,14 @@ class Indexer {
                     } catch (E) {
                         // failed to parse filename, keep as is (most probably an unknown charset is used)
                     }
+                } else {
+                    fileName = (crypto.randomBytes(4).toString('hex') + '.' + libmime.detectExtension(contentType));
                 }
+
+                cidMap.set(contentId, {
+                    id: attachmentId,
+                    fileName
+                });
 
                 let returned = false;
                 let store = this.gridstore.createWriteStream(attachmentId, {
@@ -312,12 +391,16 @@ class Indexer {
                 });
 
                 if (!['text/plain', 'text/html'].includes(contentType) || disposition === 'attachment') {
-                    attachments.push({
+                    // list in the attachments array
+                    response.attachments.push({
                         id: attachmentId,
                         fileName,
                         contentType,
                         disposition,
-                        transferEncoding
+                        transferEncoding,
+                        related,
+                        // approximite size in kilobytes
+                        sizeKb: Math.ceil((transferEncoding === 'base64' ? this.expectedB64Size(node.size) : node.size) / 1024)
                     });
                 }
 
@@ -346,12 +429,34 @@ class Indexer {
                 continueProcessing();
             }
         };
-        walk(mimeTree, err => {
+        walk(mimeTree, false, false, err => {
             if (err) {
                 return callback(err);
             }
-            callback(null, attachments);
+
+            let updateCidLinks = str => str.replace(/\bcid:([^\s"']+)/g, (match, cid) => {
+                if (cidMap.has(cid)) {
+                    let attachment = cidMap.get(cid);
+                    return 'attachment:' + messageId + '/' + attachment.id.toString();
+                }
+                return match;
+            });
+
+            response.html = htmlContent.filter(str => str.trim()).map(updateCidLinks).join('\n').trim();
+            response.text = textContent.filter(str => str.trim()).map(updateCidLinks).join('\n').trim();
+
+            callback(null, response);
         });
+    }
+
+    expectedB64Size(b64size) {
+        b64size = Number(b64size) || 0;
+        if (!b64size || b64size <= 0) {
+            return 0;
+        }
+
+        let newlines = Math.floor(b64size / 78);
+        return Math.ceil((b64size - newlines * 2) / 4 * 3);
     }
 
     /**

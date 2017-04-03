@@ -8,6 +8,7 @@ const bcrypt = require('bcryptjs');
 const tools = require('./lib/tools');
 const MessageHandler = require('./lib/message-handler');
 const db = require('./lib/db');
+const ObjectID = require('mongodb').ObjectID;
 
 const server = restify.createServer({
     name: 'Wild Duck API',
@@ -711,7 +712,83 @@ server.del('/message', (req, res, next) => {
         });
         return next();
     });
+});
 
+server.get('/message/:id', (req, res, next) => {
+    res.charSet('utf-8');
+
+    const schema = Joi.object().keys({
+        id: Joi.string().hex().lowercase().length(24).required(),
+        mailbox: Joi.string().hex().lowercase().length(24).optional()
+    });
+
+    const result = Joi.validate({
+        id: req.params.id,
+        mailbox: req.params.mailbox
+    }, schema, {
+        abortEarly: false,
+        convert: true,
+        allowUnknown: true
+    });
+
+    if (result.error) {
+        res.json({
+            error: result.error.message
+        });
+        return next();
+    }
+
+    let id = result.value.id;
+    let mailbox = result.value.mailbox;
+
+    let query = {
+        _id: new ObjectID(id)
+    };
+
+    if (mailbox) {
+        query.mailbox = new ObjectID(mailbox);
+    }
+
+    db.database.collection('messages').findOne(query, {
+        mailbox: true,
+        headers: true,
+        html: true,
+        text: true,
+        attachments: true,
+        internaldate: true,
+        flags: true
+    }, (err, message) => {
+        if (err) {
+            res.json({
+                error: 'MongoDB Error: ' + err.message,
+                id
+            });
+            return next();
+        }
+        if (!message) {
+            res.json({
+                error: 'This message does not exist',
+                id
+            });
+            return next();
+        }
+
+        res.json({
+            success: true,
+            message: {
+                id,
+                mailbox: message.mailbox,
+                headers: message.headers,
+                date: message.internaldate,
+                flags: message.flags,
+                text: message.text,
+                html: message.html,
+                attachments: message.attachments
+            }
+        });
+
+        return next();
+    });
 });
 
 module.exports = done => {

@@ -32,11 +32,12 @@ function send() {
             from: 'andris@kreata.ee',
             to: [recipient]
         },
-        from: 'andris@kreata.ee',
-        to: recipient,
+
+        from: 'Kärbes 🐧 <andris@kreata.ee>',
+        to: 'Ämblik 🦉 <' + recipient + '>, andmekala@hot.ee, Müriaad Polüteism <müriaad@müriaad-polüteism.dev>',
         subject: 'Test ööö message [' + Date.now() + ']',
-        text: 'Hello world! Current time is ' + new Date().toString() + ' <img src="cid:note@example.com"/>',
-        html: '<p>Hello world! Current time is <em>' + new Date().toString() + '</em></p>',
+        text: 'Hello world! Current time is ' + new Date().toString(),
+        html: '<p>Hello world! Current time is <em>' + new Date().toString() + '</em> <img src="cid:note@example.com"/> <img src="http://www.neti.ee/img/neti-logo-2015-1.png"></p>',
         attachments: [
 
             // attachment as plaintext
