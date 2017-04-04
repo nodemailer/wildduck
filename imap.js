@@ -1179,8 +1179,9 @@ server.onSearch = function (path, options, session, callback) {
         //if (!options.terms.includes('all')) {
 
         let hasAll = false;
+        let nothing = false;
         let walkQuery = (parent, ne, node) => {
-            if (hasAll) {
+            if (hasAll || nothing) {
                 return;
             }
             node.forEach(term => {
@@ -1212,18 +1213,19 @@ server.onSearch = function (path, options, session, callback) {
                             break;
                         }
 
-                    case 'text':
-                        // TODO: search over full content
-                        parent.push({
-                            size: -1
-                        });
-                        break;
-
-                    case 'body':
-                        // TODO: search over body text
-                        parent.push({
-                            size: -1
-                        });
+                    case 'text': // search over entire email
+                    case 'body': // search over email body
+                        if (term.value && !ne) {
+                            parent.push({
+                                // fulltext can not be in $not section
+                                $text: {
+                                    $search: term.value
+                                }
+                            });
+                        } else {
+                            // can not search by text
+                            nothing = true;
+                        }
                         break;
 
                     case 'modseq':
@@ -1280,12 +1282,18 @@ server.onSearch = function (path, options, session, callback) {
                             // FIXME: this does not match unicode symbols for whatever reason
                             let regex = Buffer.from(term.value, 'binary').toString().replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
                             let entry = term.value ? {
-                                'headers.key': term.header,
-                                'headers.value': !ne ? {
-                                    regex
-                                } : {
-                                    $not: {
-                                        regex
+                                headers: {
+                                    $elemMatch: {
+                                        key: term.header,
+                                        value: !ne ? {
+                                            $regex: regex,
+                                            $options: 'i'
+                                        } : {
+                                            $not: {
+                                                $regex: regex,
+                                                $options: 'i'
+                                            }
+                                        }
                                     }
                                 }
                             } : {
@@ -1409,6 +1417,14 @@ server.onSearch = function (path, options, session, callback) {
         //}
 
         this.logger.info('SEARCH %s', JSON.stringify(query));
+
+        if (nothing) {
+            // reject immediatelly
+            return callback(null, {
+                uidList: [],
+                highestModseq: 0
+            });
+        }
 
         let cursor = db.database.collection('messages').find(query).
         project(projection).

@@ -39,8 +39,6 @@ Wild Duck IMAP server supports the following IMAP standards:
 - **UTF8=ACCEPT** (RFC6855) – this also means that Wild Duck natively supports unicode email usernames. For example <андрис@уайлддак.орг> is a valid email address that is hosted by a test instance of Wild Duck
 - **QUOTA** (RFC2087) – Quota size is global for an account, using a single quota root. Be aware that quota size does not mean actual byte storage in disk, it is calculated as the sum of the rfc822 sources of stored messages. Actual disk usage is larger as there are database overhead per every message.
 
-> **NB** The master branch of Wild Duck does not perform SEARCH TEXT and SEARCH BODY right now. Use a tagged version to get fully functional SEARCH
-
 Wild Duck more or less passes the [ImapTest](https://www.imapwiki.org/ImapTest/TestFeatures). Common errors that arise in the test are unknown labels (Wild Duck doesn't send unsolicited FLAGS updates) and NO for STORE (messages deleted in one session can not be updated in another).
 
 ## FAQ
@@ -137,6 +135,7 @@ TODO:
 
 1. Expose counters (seen/unseen messages, message count in mailbox etc.)
 2. Search messages
+3. Expose journal updates through WebSocket or similar
 
 ### POST /user/create
 
@@ -580,7 +579,8 @@ This is a list of known differences from the IMAP specification. Listed differen
 4. Wild Duck responds with `NO` for `STORE` if matching messages were deleted in another session
 5. `CHARSET` argument for the `SEARCH` command is ignored (RFC3501 6.4.4.)
 6. Metadata arguments for `SEARCH MODSEQ` are ignored (RFC7162 3.1.5.). You can define `<entry-name>` and `<entry-type-req>` values but these are not used for anything
-7. What happens when FETCH is called for messages that were deleted in another session? (_Not sure, need to check_)
+7. `SEARCH TEXT` and `SEARCH BODY` both use MongoDB [$text index](https://docs.mongodb.com/v3.4/reference/operator/query/text/) against decoded plaintext version of the message. RFC3501 assumes that it should be a string match either against full message (`TEXT`) or body section (`BODY`).
+8. What happens when FETCH is called for messages that were deleted in another session? (_Not sure, need to check_)
 
 Any other differences are most probably real bugs and unintentional.
 

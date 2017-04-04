@@ -85,12 +85,6 @@
             "modseq": 1
         }
     }, {
-        "name": "by_flags",
-        "key": {
-            "mailbox": 1,
-            "flags": 1
-        }
-    }, {
         "name": "by_internaldate",
         "key": {
             "mailbox": 1,
@@ -120,6 +114,12 @@
         "key": {
             "mailbox": 1,
             "hasAttachments": 1
+        }
+    }, {
+        "name": "fulltext",
+        "key": {
+            "mailbox": 1,
+            "text": "text"
         }
     }]
 }, {
