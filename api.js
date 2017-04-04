@@ -732,9 +732,10 @@ server.get('/mailbox/:id', (req, res, next) => {
             mailbox: mailbox._id
         };
         let reverse = false;
-        let sort = {
-            uid: -1
-        };
+        let sort = [
+            ['mailbox', 1],
+            ['uid', -1]
+        ];
 
         if (req.params.before) {
             query.uid = {
@@ -744,9 +745,10 @@ server.get('/mailbox/:id', (req, res, next) => {
             query.uid = {
                 $gt: after
             };
-            sort = {
-                uid: 1
-            };
+            sort = [
+                ['mailbox', 1],
+                ['uid', 1]
+            ];
             reverse = true;
         }
 
@@ -756,9 +758,10 @@ server.get('/mailbox/:id', (req, res, next) => {
             fields: {
                 uid: true
             },
-            sort: {
-                uid: -1
-            }
+            sort: [
+                ['mailbox', 1],
+                ['uid', -1]
+            ]
         }, (err, entry) => {
             if (err) {
                 res.json({
@@ -790,9 +793,10 @@ server.get('/mailbox/:id', (req, res, next) => {
                 fields: {
                     uid: true
                 },
-                sort: {
-                    uid: 1
-                }
+                sort: [
+                    ['mailbox', 1],
+                    ['uid', 1]
+                ]
             }, (err, entry) => {
                 if (err) {
                     res.json({

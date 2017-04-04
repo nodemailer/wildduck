@@ -319,6 +319,7 @@ server.onOpen = function (path, session, callback) {
         }).project({
             uid: true
         }).sort([
+            ['mailbox', 1],
             ['uid', 1]
         ]).toArray((err, messages) => {
             if (err) {
@@ -476,6 +477,7 @@ server.onStore = function (path, update, session, callback) {
             uid: true,
             flags: true
         }).sort([
+            ['mailbox', 1],
             ['uid', 1]
         ]);
 
@@ -661,6 +663,7 @@ server.onExpunge = function (path, update, session, callback) {
             uid: true,
             size: true
         }).sort([
+            ['mailbox', 1],
             ['uid', 1]
         ]);
 
@@ -781,6 +784,7 @@ server.onCopy = function (path, update, session, callback) {
                     $in: update.messages
                 }
             }).sort([
+                ['mailbox', 1],
                 ['uid', 1]
             ]); // no projection as we need to copy the entire message
 
@@ -925,6 +929,7 @@ server.onMove = function (path, update, session, callback) {
             }).project({
                 uid: 1
             }).sort([
+                ['mailbox', 1],
                 ['uid', 1]
             ]);
 
@@ -1064,6 +1069,7 @@ server.onFetch = function (path, options, session, callback) {
         }
 
         let cursor = db.database.collection('messages').find(query).project(projection).sort([
+            ['mailbox', 1],
             ['uid', 1]
         ]);
 
@@ -1429,6 +1435,7 @@ server.onSearch = function (path, options, session, callback) {
         let cursor = db.database.collection('messages').find(query).
         project(projection).
         sort([
+            ['mailbox', 1],
             ['uid', 1]
         ]);
 
