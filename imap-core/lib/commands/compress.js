@@ -33,7 +33,7 @@ module.exports = {
             this.compression = true;
 
             this._deflate = zlib.createDeflateRaw();
-            this._inflate = zlib.createDeflateRaw();
+            this._inflate = zlib.createInflateRaw();
 
             this._deflate.once('error', err => {
                 this._socket.emit('error', err);
