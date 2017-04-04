@@ -26,20 +26,20 @@ Here's a list of Email/IMAP servers that use database for storing email messages
 Wild Duck IMAP server supports the following IMAP standards:
 
 - The entire **IMAP4rev1** suite with some minor differences from the spec. See below for [IMAP Protocol Differences](#imap-protocol-differences) for a complete list
-- **IDLE** – notfies about new and deleted messages and also about flag updates
-- **CONDSTORE** and **ENABLE** – supports most of the spec, except metadata stuff which is ignored
-- **STARTTLS**
-- **NAMESPACE** – minimal support, just lists the single user namespace with hierarchy separator
-- **UNSELECT**
-- **UIDPLUS**
-- **SPECIAL-USE**
-- **ID**
-- **MOVE** (RFC6851)
-- **AUTHENTICATE PLAIN** and **SASL-IR**
-- **APPENDLIMIT** (RFC7889) – maximum global allowed message size is advertised in CAPABILITY listing
-- **UTF8=ACCEPT** (RFC6855) – this also means that Wild Duck natively supports unicode email usernames. For example <андрис@уайлддак.орг> is a valid email address that is hosted by a test instance of Wild Duck
-- **QUOTA** (RFC2087) – Quota size is global for an account, using a single quota root. Be aware that quota size does not mean actual byte storage in disk, it is calculated as the sum of the rfc822 sources of stored messages. Actual disk usage is larger as there are database overhead per every message.
-- **COMPRESS=DEFLATE** (RFC4978) – Compress traffic between the client and the server
+- **IDLE** ([RFC2177](https://tools.ietf.org/html/rfc2177)) – notfies about new and deleted messages and also about flag updates
+- **CONDSTORE** ([RFC4551](https://tools.ietf.org/html/rfc4551)) and **ENABLE** ([RFC5161](https://tools.ietf.org/html/rfc5161)) – supports most of the spec, except metadata stuff which is ignored
+- **STARTTLS** ([RFC2595](https://tools.ietf.org/html/rfc2595))
+- **NAMESPACE** ([RFC2342](https://tools.ietf.org/html/rfc2342)) – minimal support, just lists the single user namespace with hierarchy separator
+- **UNSELECT** ([RFC3691](https://tools.ietf.org/html/rfc3691))
+- **UIDPLUS** ([RFC4315](https://tools.ietf.org/html/rfc4315))
+- **SPECIAL-USE** ([RFC6154](https://tools.ietf.org/html/rfc6154))
+- **ID** ([RFC2971](https://tools.ietf.org/html/rfc2971))
+- **MOVE** ([RFC6851](https://tools.ietf.org/html/rfc6851))
+- **AUTHENTICATE PLAIN** ([RFC4959](https://tools.ietf.org/html/rfc4959)) and **SASL-IR**
+- **APPENDLIMIT** ([RFC7889](https://tools.ietf.org/html/rfc7889)) – maximum global allowed message size is advertised in CAPABILITY listing
+- **UTF8=ACCEPT** ([RFC6855](https://tools.ietf.org/html/rfc6855)) – this also means that Wild Duck natively supports unicode email usernames. For example <андрис@уайлддак.орг> is a valid email address that is hosted by a test instance of Wild Duck
+- **QUOTA** ([RFC2087](https://tools.ietf.org/html/rfc2087)) – Quota size is global for an account, using a single quota root. Be aware that quota size does not mean actual byte storage in disk, it is calculated as the sum of the [RFC822](https://tools.ietf.org/html/rfc822) sources of stored messages. Actual disk usage is larger as there are database overhead per every message.
+- **COMPRESS=DEFLATE** ([RFC4978](https://tools.ietf.org/html/rfc4978)) – Compress traffic between the client and the server
 
 Wild Duck more or less passes the [ImapTest](https://www.imapwiki.org/ImapTest/TestFeatures). Common errors that arise in the test are unknown labels (Wild Duck doesn't send unsolicited FLAGS updates) and NO for STORE (messages deleted in one session can not be updated in another).
 
@@ -68,7 +68,7 @@ You can see an example mail entry [here](https://gist.github.com/andris9/520d530
 
 ### Is the server scalable?
 
-Somewhat yes. Even though on some parts Wild Duck is already fast, there are still some important improvements that need to be done:
+Somewhat yes. Even though on some parts Wild Duck is already fast (Wild Duck is successfully tested with mailboxes up to 200K messages), there are still some important improvements that need to be done:
 
 1. Optimize FETCH queries to load only partial data for BODY subparts
 2. Parse incoming message into the mime tree as a stream. Currently the entire message is buffered in memory before being parsed.
@@ -391,7 +391,9 @@ Response includes the following fields
   - **path** is the folder path
 
 - **next** is an URL fragment for retrieving the next page (or false if there are no more pages)
+
 - **prev** is an URL fragment for retrieving the previous page (or false if it is the first page)
+
 - **messages** is an array of messages in the mailbox
 
   - **id** is the message ID
@@ -457,8 +459,11 @@ Response message includes the following fields
 - **mailbox** is the id of the mailbox this messages belongs to
 
 - **flags** is an array of IMAP flags for this message
+
 - **text** is the plaintext version of the message (derived from html if not present in message source)
+
 - **html** is the HTML version of the message (derived from plaintext if not present in message source)
+
 - **attachments** is an array of attachment objects. Attachments can be shared between messages.
 
   - **id** is the id of the attachment
@@ -591,7 +596,7 @@ This is a list of known differences from the IMAP specification. Listed differen
 5. `CHARSET` argument for the `SEARCH` command is ignored (RFC3501 6.4.4.)
 6. Metadata arguments for `SEARCH MODSEQ` are ignored (RFC7162 3.1.5.). You can define `<entry-name>` and `<entry-type-req>` values but these are not used for anything
 7. `SEARCH TEXT` and `SEARCH BODY` both use MongoDB [$text index](https://docs.mongodb.com/v3.4/reference/operator/query/text/) against decoded plaintext version of the message. RFC3501 assumes that it should be a string match either against full message (`TEXT`) or body section (`BODY`).
-8. What happens when FETCH is called for messages that were deleted in another session? (_Not sure, need to check_)
+8. What happens when FETCH is called for messages that were deleted in another session? _Not sure, need to check_
 
 Any other differences are most probably real bugs and unintentional.
 
@@ -599,8 +604,8 @@ Any other differences are most probably real bugs and unintentional.
 
 Wild Duck does not plan to be the most feature-rich IMAP client in the world. Most IMAP extensions are useless because there aren't too many clients that are able to benefit from these extensions. There are a few extensions though that would make sense to be added to Wild Duck
 
-1. IMAP4 non-synchronizing literals, LITERAL- (RFC7888). Synchronized literals are needed for APPEND to check mailbox quota, small values could go with the non-synchronizing version.
-2. LIST-STATUS (RFC5819)
+1. IMAP4 non-synchronizing literals, LITERAL- ([RFC7888](https://tools.ietf.org/html/rfc7888)). Synchronized literals are needed for APPEND to check mailbox quota, small values could go with the non-synchronizing version.
+2. LIST-STATUS ([RFC5819](https://tools.ietf.org/html/rfc5819))
 3. _What else?_ (definitely not NOTIFY nor QRESYNC)
 
 ## Testing
@@ -612,6 +617,10 @@ node examples/push-mail.js username@example.com
 ```
 
 This should "deliver" a new message to the INBOX of _username@example.com_ by using the built-in SMTP maildrop interface. If your email client is connected then you should promptly see the new message.
+
+## Outbound SMTP
+
+Use [ZoneMTA](https://github.com/zone-eu/zone-mta) with the [ZoneMTA-WildDuck](https://github.com/wildduck-email/zonemta-wildduck) plugin. This gives you an outbound SMTP server that uses Wild Duck accounts for authentication.
 
 ## License
 
