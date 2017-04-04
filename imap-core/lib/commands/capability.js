@@ -31,6 +31,7 @@ module.exports = {
             capabilities.push('QUOTA');
 
             capabilities.push('MOVE');
+            capabilities.push('COMPRESS=DEFLATE');
 
             if (this._server.options.maxMessage) {
                 capabilities.push('APPENDLIMIT=' + this._server.options.maxMessage);

@@ -45,7 +45,8 @@ let commands = new Map([
     ['ENABLE', require('./commands/enable')],
     ['GETQUOTAROOT', require('./commands/getquotaroot')],
     ['SETQUOTA', require('./commands/setquota')],
-    ['GETQUOTA', require('./commands/getquota')]
+    ['GETQUOTA', require('./commands/getquota')],
+    ['COMPRESS', require('./commands/compress')]
     /*eslint-enable global-require*/
 ]);
 

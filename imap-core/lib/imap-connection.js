@@ -28,6 +28,10 @@ class IMAPConnection extends EventEmitter {
         // Random session ID, used for logging
         this.id = crypto.randomBytes(9).toString('base64');
 
+        this.compression = false;
+        this._deflate = false;
+        this._inflate = false;
+
         this._server = server;
         this._socket = socket;
 
@@ -118,7 +122,7 @@ class IMAPConnection extends EventEmitter {
      */
     send(payload, callback) {
         if (this._socket && this._socket.writable) {
-            this._socket.write(payload + '\r\n', 'binary', callback);
+            (!this.compression ? this._socket : this._deflate).write(payload + '\r\n', 'binary', callback);
             this._server.logger.debug('[%s] S:', this.id, payload);
         }
     }
@@ -176,6 +180,14 @@ class IMAPConnection extends EventEmitter {
         if (this._dataStream) {
             this._dataStream.unpipe();
             this._dataStream = null;
+        }
+
+        if (this._deflate) {
+            this._deflate = null;
+        }
+
+        if (this._inflate) {
+            this._inflate = null;
         }
 
         if (this._listenerData) {
