@@ -733,7 +733,6 @@ server.get('/mailbox/:id', (req, res, next) => {
         };
         let reverse = false;
         let sort = [
-            ['mailbox', 1],
             ['uid', -1]
         ];
 
@@ -746,7 +745,6 @@ server.get('/mailbox/:id', (req, res, next) => {
                 $gt: after
             };
             sort = [
-                ['mailbox', 1],
                 ['uid', 1]
             ];
             reverse = true;
@@ -759,7 +757,6 @@ server.get('/mailbox/:id', (req, res, next) => {
                 uid: true
             },
             sort: [
-                ['mailbox', 1],
                 ['uid', -1]
             ]
         }, (err, entry) => {
@@ -794,7 +791,6 @@ server.get('/mailbox/:id', (req, res, next) => {
                     uid: true
                 },
                 sort: [
-                    ['mailbox', 1],
                     ['uid', 1]
                 ]
             }, (err, entry) => {

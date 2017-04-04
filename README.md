@@ -13,12 +13,13 @@ Wild Duck is a distributed IMAP server built with Node.js, MongoDB and Redis. No
 3. Provide Gmail-like features like pushing sent messages automatically to Sent Mail folder or notifying about messages moved to Junk folder so these could be marked as spam
 4. Provide parsed mailbox and message data over HTTP. This should make creating webmail interfaces super easy, no need to parse RFC822 messages to get text content or attachments
 
-## Similar alterntives
+## Alterntives
 
 Here's a list of Email/IMAP servers that use database for storing email messages
 
 - [DBMail](http://www.dbmail.org/)
 - [Archiveopteryx](http://archiveopteryx.org/)
+- [ElasticInbox](http://www.elasticinbox.com/)
 
 ## Supported features
 
@@ -66,12 +67,11 @@ You can see an example mail entry [here](https://gist.github.com/andris9/520d530
 
 ### Is the server scalable?
 
-Not yet exactly. Even though on some parts Wild Duck is already fast, there are still some important improvements that need to be done:
+Somewhat yes. Even though on some parts Wild Duck is already fast, there are still some important improvements that need to be done:
 
-1. Optimize SEARCH queries to use MongoDB queries. Currently only simple stuff (flag, internaldate, not flag, modseq) is included in query and more complex comparisons are handled by the application but this means that too much data must be loaded from database (unless it is a very simple query like "SEARCH UNSEEN" that is already optimized)
-2. Optimize FETCH queries to load only partial data for BODY subparts
-3. Parse incoming message into the mime tree as a stream. Currently the entire message is buffered in memory before being parsed.
-4. CPU usage seems a bit too high, there is probably a ton of profiling to do
+1. Optimize FETCH queries to load only partial data for BODY subparts
+2. Parse incoming message into the mime tree as a stream. Currently the entire message is buffered in memory before being parsed.
+3. CPU usage seems a bit too high, there is probably a ton of profiling to do
 
 ### How does it work?
 

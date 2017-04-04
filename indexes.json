@@ -121,6 +121,24 @@
             "mailbox": 1,
             "text": "text"
         }
+    }, {
+        "name": "mailbox_seen_flag",
+        "key": {
+            "mailbox": 1,
+            "seen": 1
+        }
+    }, {
+        "name": "mailbox_deleted_flag",
+        "key": {
+            "mailbox": 1,
+            "deleted": 1
+        }
+    }, {
+        "name": "mailbox_flagged_flag",
+        "key": {
+            "mailbox": 1,
+            "flagged": 1
+        }
     }]
 }, {
     "collection": "attachment.files",

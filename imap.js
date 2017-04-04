@@ -319,7 +319,6 @@ server.onOpen = function (path, session, callback) {
         }).project({
             uid: true
         }).sort([
-            ['mailbox', 1],
             ['uid', 1]
         ]).toArray((err, messages) => {
             if (err) {
@@ -477,7 +476,6 @@ server.onStore = function (path, update, session, callback) {
             uid: true,
             flags: true
         }).sort([
-            ['mailbox', 1],
             ['uid', 1]
         ]);
 
@@ -538,7 +536,11 @@ server.onStore = function (path, update, session, callback) {
                         if (updated) {
                             flagsupdate = {
                                 $set: {
-                                    flags: message.flags
+                                    flags: message.flags,
+
+                                    seen: message.flags.includes('\\Seen'),
+                                    flagged: message.flags.includes('\\Flagged'),
+                                    deleted: message.flags.includes('\\Deleted')
                                 }
                             };
                         }
@@ -565,6 +567,25 @@ server.onStore = function (path, update, session, callback) {
                                         }
                                     }
                                 };
+
+                                if (newFlags.includes('\\Seen') || newFlags.includes('\\Flagged') || newFlags.includes('\\Deleted')) {
+                                    flagsupdate.$set = {};
+                                    if (newFlags.includes('\\Seen')) {
+                                        flagsupdate.$set = {
+                                            seen: true
+                                        };
+                                    }
+                                    if (newFlags.includes('\\Flagged')) {
+                                        flagsupdate.$set = {
+                                            flagged: true
+                                        };
+                                    }
+                                    if (newFlags.includes('\\Deleted')) {
+                                        flagsupdate.$set = {
+                                            deleted: true
+                                        };
+                                    }
+                                }
                             }
                             break;
                         }
@@ -592,6 +613,24 @@ server.onStore = function (path, update, session, callback) {
                                         }
                                     }
                                 };
+                                if (oldFlags.includes('\\Seen') || oldFlags.includes('\\Flagged') || oldFlags.includes('\\Deleted')) {
+                                    flagsupdate.$set = {};
+                                    if (oldFlags.includes('\\Seen')) {
+                                        flagsupdate.$set = {
+                                            seen: false
+                                        };
+                                    }
+                                    if (oldFlags.includes('\\Flagged')) {
+                                        flagsupdate.$set = {
+                                            flagged: false
+                                        };
+                                    }
+                                    if (oldFlags.includes('\\Deleted')) {
+                                        flagsupdate.$set = {
+                                            deleted: false
+                                        };
+                                    }
+                                }
                             }
                             break;
                         }
@@ -663,7 +702,6 @@ server.onExpunge = function (path, update, session, callback) {
             uid: true,
             size: true
         }).sort([
-            ['mailbox', 1],
             ['uid', 1]
         ]);
 
@@ -784,7 +822,6 @@ server.onCopy = function (path, update, session, callback) {
                     $in: update.messages
                 }
             }).sort([
-                ['mailbox', 1],
                 ['uid', 1]
             ]); // no projection as we need to copy the entire message
 
@@ -929,7 +966,6 @@ server.onMove = function (path, update, session, callback) {
             }).project({
                 uid: 1
             }).sort([
-                ['mailbox', 1],
                 ['uid', 1]
             ]);
 
@@ -1069,7 +1105,6 @@ server.onFetch = function (path, options, session, callback) {
         }
 
         let cursor = db.database.collection('messages').find(query).project(projection).sort([
-            ['mailbox', 1],
             ['uid', 1]
         ]);
 
@@ -1253,18 +1288,34 @@ server.onSearch = function (path, options, session, callback) {
 
                     case 'flag':
                         {
-                            if (term.exists) {
-                                parent.push({
-                                    flags: {
-                                        [!ne ? '$eq' : '$ne']: term.value
+                            switch (term.value) {
+                                case '\\Seen':
+                                case '\\Deleted':
+                                case '\\Flagged':
+                                    if (term.exists) {
+                                        parent.push({
+                                            [term.value.toLowerCase().substr(1)]: !ne
+                                        });
+                                    } else {
+                                        parent.push({
+                                            [term.value.toLowerCase().substr(1)]: ne
+                                        });
                                     }
-                                });
-                            } else {
-                                parent.push({
-                                    flags: {
-                                        [!ne ? '$ne' : '$eq']: term.value
+                                    break;
+                                default:
+                                    if (term.exists) {
+                                        parent.push({
+                                            flags: {
+                                                [!ne ? '$eq' : '$ne']: term.value
+                                            }
+                                        });
+                                    } else {
+                                        parent.push({
+                                            flags: {
+                                                [!ne ? '$ne' : '$eq']: term.value
+                                            }
+                                        });
                                     }
-                                });
                             }
                         }
                         break;
@@ -1423,11 +1474,6 @@ server.onSearch = function (path, options, session, callback) {
             uid: true,
             modseq: true
         });
-        /*.
-        sort([
-            ['mailbox', 1],
-            ['uid', 1]
-        ]);*/
 
         let highestModseq = 0;
         let uidList = [];
