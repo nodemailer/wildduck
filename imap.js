@@ -1170,20 +1170,6 @@ server.onSearch = function (path, options, session, callback) {
             $and: []
         };
 
-        let projection = {
-            uid: true,
-            //internaldate: true,
-            //headerdate: true,
-            //flags: true,
-            modseq: true
-        };
-
-        //if (options.terms.includes('body') || options.terms.includes('text') || options.terms.includes('header')) {
-        //    projection.mimeTree = true;
-        //}
-
-        //if (!options.terms.includes('all')) {
-
         let hasAll = false;
         let nothing = false;
         let walkQuery = (parent, ne, node) => {
@@ -1433,11 +1419,15 @@ server.onSearch = function (path, options, session, callback) {
         }
 
         let cursor = db.database.collection('messages').find(query).
-        project(projection).
+        project({
+            uid: true,
+            modseq: true
+        });
+        /*.
         sort([
             ['mailbox', 1],
             ['uid', 1]
-        ]);
+        ]);*/
 
         let highestModseq = 0;
         let uidList = [];
