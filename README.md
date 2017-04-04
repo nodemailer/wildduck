@@ -39,6 +39,7 @@ Wild Duck IMAP server supports the following IMAP standards:
 - **APPENDLIMIT** (RFC7889) – maximum global allowed message size is advertised in CAPABILITY listing
 - **UTF8=ACCEPT** (RFC6855) – this also means that Wild Duck natively supports unicode email usernames. For example <андрис@уайлддак.орг> is a valid email address that is hosted by a test instance of Wild Duck
 - **QUOTA** (RFC2087) – Quota size is global for an account, using a single quota root. Be aware that quota size does not mean actual byte storage in disk, it is calculated as the sum of the rfc822 sources of stored messages. Actual disk usage is larger as there are database overhead per every message.
+- **COMPRESS=DEFLATE** (RFC4978) – Compress traffic between the client and the server
 
 Wild Duck more or less passes the [ImapTest](https://www.imapwiki.org/ImapTest/TestFeatures). Common errors that arise in the test are unknown labels (Wild Duck doesn't send unsolicited FLAGS updates) and NO for STORE (messages deleted in one session can not be updated in another).
 
@@ -379,26 +380,29 @@ Parameters
 
 - **id** is the mailbox ID
 - **size** is optional number to limit the length of the messages array (defaults to 20)
-- **before** is an optional paging number (see *next* in response)
-- **after** is an optional paging number (see *prev* in response)
+- **before** is an optional paging number (see _next_ in response)
+- **after** is an optional paging number (see _prev_ in response)
 
 Response includes the following fields
 
-  * **mailbox** is an object that lists some metadata about the current mailbox
-    * **id** is the mailbox ID
-    * **path** is the folder path
-  * **next** is an URL fragment for retrieving the next page (or false if there are no more pages)
-  * **prev** is an URL fragment for retrieving the previous page (or false if it is the first page)
-  * **messages** is an array of messages in the mailbox
-    * **id** is the message ID
-    * **date** is the date when this message was received
-    * **hasAttachments** is a boolean that indicates if this messages has attachments or not
-    * **intro** includes the first 256 characters from the message
-    * **subject** is the message title
-    * **from** is the From: field
-    * **to** is the To: field
-    * **cc** is the Cc: field
-    * **bcc** is the Bcc: field
+- **mailbox** is an object that lists some metadata about the current mailbox
+
+  - **id** is the mailbox ID
+  - **path** is the folder path
+
+- **next** is an URL fragment for retrieving the next page (or false if there are no more pages)
+- **prev** is an URL fragment for retrieving the previous page (or false if it is the first page)
+- **messages** is an array of messages in the mailbox
+
+  - **id** is the message ID
+  - **date** is the date when this message was received
+  - **hasAttachments** is a boolean that indicates if this messages has attachments or not
+  - **intro** includes the first 256 characters from the message
+  - **subject** is the message title
+  - **from** is the From: field
+  - **to** is the To: field
+  - **cc** is the Cc: field
+  - **bcc** is the Bcc: field
 
 The response for successful listing should look like this:
 
@@ -451,6 +455,7 @@ Response message includes the following fields
 - **date** is the receive date (not header Date: field)
 
 - **mailbox** is the id of the mailbox this messages belongs to
+
 - **flags** is an array of IMAP flags for this message
 - **text** is the plaintext version of the message (derived from html if not present in message source)
 - **html** is the HTML version of the message (derived from plaintext if not present in message source)
@@ -468,15 +473,21 @@ Response message includes the following fields
 
 HTML content has embedded images linked with the following URL structure:
 
-    attachment:MESSAGE_ID/ATTACHMENT_ID
+```
+attachment:MESSAGE_ID/ATTACHMENT_ID
+```
 
 For example:
 
-    <img src="attachment:aaaaaa/bbbbbb">
+```
+<img src="attachment:aaaaaa/bbbbbb">
+```
 
 To fetch the actual attachment contents for this image, use the following url:
 
-    http://localhost:8080/message/aaaaaa/attachment/bbbbbb
+```
+http://localhost:8080/message/aaaaaa/attachment/bbbbbb
+```
 
 #### Example response
 
@@ -588,10 +599,9 @@ Any other differences are most probably real bugs and unintentional.
 
 Wild Duck does not plan to be the most feature-rich IMAP client in the world. Most IMAP extensions are useless because there aren't too many clients that are able to benefit from these extensions. There are a few extensions though that would make sense to be added to Wild Duck
 
-1. The IMAP COMPRESS Extension (RFC4978)
-2. IMAP4 non-synchronizing literals, LITERAL- (RFC7888). Synchronized literals are needed for APPEND to check mailbox quota, small values could go with the non-synchronizing version.
-3. LIST-STATUS (RFC5819)
-4. _What else?_ (definitely not NOTIFY nor QRESYNC)
+1. IMAP4 non-synchronizing literals, LITERAL- (RFC7888). Synchronized literals are needed for APPEND to check mailbox quota, small values could go with the non-synchronizing version.
+2. LIST-STATUS (RFC5819)
+3. _What else?_ (definitely not NOTIFY nor QRESYNC)
 
 ## Testing
 

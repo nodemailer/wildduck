@@ -32,17 +32,34 @@ module.exports = {
         setImmediate(() => {
             this.compression = true;
 
-            this._deflate = zlib.createDeflateRaw();
+            this._deflate = zlib.createDeflateRaw({
+                windowBits: 15
+            });
             this._inflate = zlib.createInflateRaw();
 
             this._deflate.once('error', err => {
-                this._socket.emit('error', err);
+                this._server.logger.debug('[%s] Deflate error %s', this.id, err.message);
+                this.close();
             });
 
-            this._deflate.pipe(this._socket);
+            this._inflate.once('error', err => {
+                this._server.logger.debug('[%s] Inflate error %s', this.id, err.message);
+                this.close();
+            });
 
             this.writeStream.unpipe(this._socket);
-            this.writeStream.pipe(this._deflate);
+            this._deflate.pipe(this._socket);
+            let readNext = () => {
+                let chunk;
+                while ((chunk = this.writeStream.read()) !== null) {
+                    if (this._deflate.write(chunk) === false) {
+                        return this._deflate.once('drain', readNext);
+                    }
+                }
+                // flush data to socket
+                this._deflate.flush();
+            };
+            this.writeStream.on('readable', readNext);
 
             this._socket.unpipe(this._parser);
             this._socket.pipe(this._inflate).pipe(this._parser);
