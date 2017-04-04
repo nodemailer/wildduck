@@ -13,13 +13,13 @@ Wild Duck is a distributed IMAP server built with Node.js, MongoDB and Redis. No
 3. Provide Gmail-like features like pushing sent messages automatically to Sent Mail folder or notifying about messages moved to Junk folder so these could be marked as spam
 4. Provide parsed mailbox and message data over HTTP. This should make creating webmail interfaces super easy, no need to parse RFC822 messages to get text content or attachments
 
-## Alterntives
+## Alternatives
 
-Here's a list of Email/IMAP servers that use database for storing email messages
+Here's a list of email/IMAP servers that use database for storing email messages
 
-- [DBMail](http://www.dbmail.org/)
-- [Archiveopteryx](http://archiveopteryx.org/)
-- [ElasticInbox](http://www.elasticinbox.com/)
+- [DBMail](http://www.dbmail.org/) (IMAP)
+- [Archiveopteryx](http://archiveopteryx.org/) (IMAP)
+- [ElasticInbox](http://www.elasticinbox.com/) (POP3)
 
 ## Supported features
 
