@@ -52,12 +52,14 @@ module.exports = {
             let readNext = () => {
                 let chunk;
                 while ((chunk = this.writeStream.read()) !== null) {
-                    if (this._deflate.write(chunk) === false) {
+                    if (this._deflate && this._deflate.write(chunk) === false) {
                         return this._deflate.once('drain', readNext);
                     }
                 }
                 // flush data to socket
-                this._deflate.flush();
+                if (this._deflate) {
+                    this._deflate.flush();
+                }
             };
             this.writeStream.on('readable', readNext);
 

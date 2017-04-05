@@ -452,17 +452,13 @@ Response message includes the following fields
 - **headers** is an array that lists all headers of the message. A header is an object:
 
   - **key** is the lowercase key of the header
-  - **value** is the header value in unicode (all encoded values are decoded to utf-8)
+  - **value** is the header value in unicode (all encoded values are decoded to utf-8). The value is capped at around 800 characters.
 
 - **date** is the receive date (not header Date: field)
-
 - **mailbox** is the id of the mailbox this messages belongs to
-
 - **flags** is an array of IMAP flags for this message
-
 - **text** is the plaintext version of the message (derived from html if not present in message source)
-
-- **html** is the HTML version of the message (derived from plaintext if not present in message source)
+- **html** is the HTML version of the message (derived from plaintext if not present in message source). It is an array of strings, each array element corresponds to different MIME node and might have its own html header
 
 - **attachments** is an array of attachment objects. Attachments can be shared between messages.
 
@@ -513,7 +509,7 @@ The response for successful operation should look like this:
     "date": "2017-04-03T10:34:43.007Z",
     "flags": ["\\Seen"],
     "text": "Hello world!",
-    "html": "<p>Hello world!</p>",
+    "html": ["<p>Hello world!</p>"],
     "attachments": [
       {
         "id": "58e2254289cccb742fd6c015",

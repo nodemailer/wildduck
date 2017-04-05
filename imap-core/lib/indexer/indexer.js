@@ -252,7 +252,7 @@ class Indexer {
         let response = {
             attachments: [],
             text: '',
-            html: ''
+            html: []
         };
 
         let htmlContent = [];
@@ -445,7 +445,7 @@ class Indexer {
                 return match;
             });
 
-            response.html = htmlContent.filter(str => str.trim()).map(updateCidLinks).join('\n').trim();
+            response.html = htmlContent.filter(str => str.trim()).map(updateCidLinks);
             response.text = textContent.filter(str => str.trim()).map(updateCidLinks).join('\n').trim();
 
             callback(null, response);

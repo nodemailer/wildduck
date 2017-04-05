@@ -20,7 +20,7 @@ class IMAPComposer extends Transform {
 
         if (typeof obj.pipe === 'function') {
             // pipe stream to socket and wait until it finishes before continuing
-            this.connection._server.logger.debug('[%s] S: <pipe message stream to socket>', this.connection.id);
+            this.connection._server.logger.debug('[%s] S: %s<pipe message stream to socket>', this.connection.id, obj.description || '');
             obj.pipe(this.connection[!this.connection.compression ? '_socket' : '_deflate'], {
                 end: false
             });

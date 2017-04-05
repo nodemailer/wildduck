@@ -29,13 +29,14 @@ module.exports = {
     imap: {
         port: 9993,
         host: '127.0.0.1',
+        // If certificate path is not defined, use built-in self-signed certs
         //key: '/path/to/server/key.pem'
         //cert: '/path/to/server/cert.pem'
         secure: true,
         // Max size for messages uploaded via APPEND
         maxMB: 5,
         // default quota storage in MB (can be overriden per user)
-        maxStorage: 100
+        maxStorage: 1000
     },
 
     lmtp: {

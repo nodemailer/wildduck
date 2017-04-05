@@ -102,6 +102,9 @@ module.exports = {
                     flags[i] = flags[i].toLowerCase().replace(/^\\./, c => c.toUpperCase());
                 }
             }
+            if (flags[i].length > 255) {
+                return callback(new Error('Too long value for a flag'));
+            }
         }
 
         // keep only unique flags
