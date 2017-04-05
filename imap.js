@@ -368,9 +368,7 @@ server.onStatus = function (path, session, callback) {
             }
             db.database.collection('messages').find({
                 mailbox: mailbox._id,
-                flags: {
-                    $ne: '\\Seen'
-                }
+                seen: false
             }).count((err, unseen) => {
                 if (err) {
                     return callback(err);
@@ -728,7 +726,7 @@ server.onExpunge = function (path, update, session, callback) {
 
         let cursor = db.database.collection('messages').find({
             mailbox: mailbox._id,
-            flags: '\\Deleted'
+            deleted: true
         }).project({
             _id: true,
             uid: true,
@@ -1131,11 +1129,16 @@ server.onFetch = function (path, options, session, callback) {
         };
 
         if (options.changedSince) {
-            query.modseq = {
-                $gt: options.changedSince
+            query = {
+                mailbox: mailbox._id,
+                modseq: {
+                    $gt: options.changedSince
+                },
+                uid: {
+                    $in: options.messages
+                }
             };
         }
-
 
         let isUpdated = false;
         let updateEntries = [];
@@ -1161,7 +1164,10 @@ server.onFetch = function (path, options, session, callback) {
             return callback(...args);
         };
 
-        let cursor = db.database.collection('messages').find(query).project(projection).sort([
+        let cursor = db.database.collection('messages').
+        find(query).
+        project(projection).
+        sort([
             ['uid', 1]
         ]);
 
@@ -1547,7 +1553,8 @@ server.onSearch = function (path, options, session, callback) {
             });
         }
 
-        let cursor = db.database.collection('messages').find(query).
+        let cursor = db.database.collection('messages').
+        find(query).
         project({
             uid: true,
             modseq: true

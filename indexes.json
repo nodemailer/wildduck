@@ -60,11 +60,17 @@
             "user": 1
         }
     }, {
-        "name": "mailbox_uid_modseq",
+        "name": "mailbox_ui",
         "key": {
             "mailbox": 1,
-            "uid": 1,
-            "modseq": 1
+            "uid": 1
+        }
+    }, {
+        "name": "mailbox_modseq_uid",
+        "key": {
+            "mailbox": 1,
+            "modseq": 1,
+            "uid": 1
         }
     }, {
         "name": "newer_first",
