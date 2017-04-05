@@ -1,6 +1,7 @@
 'use strict';
 
 const log = require('npmlog');
+const util = require('util');
 const config = require('config');
 const IMAPServerModule = require('./imap-core');
 const IMAPServer = IMAPServerModule.IMAPServer;
@@ -1187,6 +1188,7 @@ server.onFetch = function (path, options, session, callback) {
             ['uid', 1]
         ]);
 
+        let rowCount = 0;
         let processNext = () => {
             cursor.next((err, message) => {
                 if (err) {
@@ -1212,6 +1214,8 @@ server.onFetch = function (path, options, session, callback) {
                         acceptUTF8Enabled: session.isUTF8Enabled()
                     })
                 }));
+
+                stream.description = util.format('* FETCH #%s uid=%s size=%sB ', ++rowCount, message.uid, message.size);
 
                 stream.on('error', err => {
                     session.socket.write('INTERNAL ERROR\n');
