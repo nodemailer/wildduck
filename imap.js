@@ -18,7 +18,7 @@ const db = require('./lib/db');
 const packageData = require('./package.json');
 
 // home many modifications to cache before writing
-const BULK_BATCH_SIZE = 1000;
+const BULK_BATCH_SIZE = 150;
 
 // Setup server
 const serverOptions = {
