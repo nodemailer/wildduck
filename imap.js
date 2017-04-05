@@ -480,12 +480,28 @@ server.onStore = function (path, update, session, callback) {
             return callback(null, 'NONEXISTENT');
         }
 
-        let cursor = db.database.collection('messages').find({
+        let query = {
             mailbox: mailbox._id,
             uid: {
                 $in: update.messages
             }
-        }).project({
+        };
+
+        if (update.unchangedSince) {
+            query = {
+                mailbox: mailbox._id,
+                modseq: {
+                    $lte: update.unchangedSince
+                },
+                uid: {
+                    $in: update.messages
+                }
+            };
+        }
+
+        let cursor = db.database.collection('messages').
+        find(query).
+        project({
             _id: true,
             uid: true,
             flags: true
