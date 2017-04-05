@@ -11,10 +11,14 @@ const ObjectID = require('mongodb').ObjectID;
 const Indexer = require('./imap-core/lib/indexer/indexer');
 const imapTools = require('./imap-core/lib/imap-tools');
 const fs = require('fs');
+const rateLimiter = require('rolling-rate-limiter');
 const setupIndexes = require('./indexes.json');
 const MessageHandler = require('./lib/message-handler');
 const db = require('./lib/db');
 const packageData = require('./package.json');
+
+// home many modifications to cache before writing
+const BULK_BATCH_SIZE = 100;
 
 // Setup server
 const serverOptions = {
@@ -52,25 +56,37 @@ let messageHandler;
 server.onAuth = function (login, session, callback) {
     let username = (login.username || '').toString().trim();
 
-    db.database.collection('users').findOne({
-        username
-    }, (err, user) => {
+    // rate limit authentication attempts per username/source IP
+    server.loginLimiter(username + ':' + session.remoteAddress, (err, timeLeft) => {
         if (err) {
             return callback(err);
         }
-        if (!user) {
-            return callback();
+        if (timeLeft) {
+            let err = new Error('Too many logins, try again later');
+            err.response = 'NO';
+            return callback(err);
         }
 
-        if (!bcrypt.compareSync(login.password, user.password)) {
-            return callback();
-        }
-
-        callback(null, {
-            user: {
-                id: user._id,
-                username
+        db.database.collection('users').findOne({
+            username
+        }, (err, user) => {
+            if (err) {
+                return callback(err);
             }
+            if (!user) {
+                return callback();
+            }
+
+            if (!bcrypt.compareSync(login.password, user.password)) {
+                return callback();
+            }
+
+            callback(null, {
+                user: {
+                    id: user._id,
+                    username
+                }
+            });
         });
     });
 
@@ -479,20 +495,26 @@ server.onStore = function (path, update, session, callback) {
             ['uid', 1]
         ]);
 
+        let updateEntries = [];
         let notifyEntries = [];
+
         let done = (...args) => {
-            if (notifyEntries.length) {
-                let entries = notifyEntries;
-                notifyEntries = [];
-                setImmediate(() => this.notifier.addEntries(session.user.id, path, entries, () => {
-                    this.notifier.fire(session.user.id, path);
-                    if (args[0]) { // first argument is an error
-                        return callback(...args);
-                    } else {
-                        server.updateMailboxFlags(mailbox, update, () => callback(...args));
-                    }
-                }));
-                return;
+            if (updateEntries.length) {
+                return db.database.collection('messages').bulkWrite(updateEntries, {
+                    ordered: false,
+                    w: 1
+                }, () => {
+                    updateEntries = [];
+                    this.notifier.addEntries(session.user.id, path, notifyEntries, () => {
+                        notifyEntries = [];
+                        this.notifier.fire(session.user.id, path);
+                        if (args[0]) { // first argument is an error
+                            return callback(...args);
+                        } else {
+                            server.updateMailboxFlags(mailbox, update, () => callback(...args));
+                        }
+                    });
+                });
             }
             this.notifier.fire(session.user.id, path);
             if (args[0]) { // first argument is an error
@@ -537,7 +559,6 @@ server.onStore = function (path, update, session, callback) {
                             flagsupdate = {
                                 $set: {
                                     flags: message.flags,
-
                                     seen: message.flags.includes('\\Seen'),
                                     flagged: message.flags.includes('\\Flagged'),
                                     deleted: message.flags.includes('\\Deleted')
@@ -645,31 +666,42 @@ server.onStore = function (path, update, session, callback) {
                 }
 
                 if (updated) {
-                    db.database.collection('messages').findOneAndUpdate({
-                        _id: message._id
-                    }, flagsupdate, {}, err => {
-                        if (err) {
-                            return cursor.close(() => done(err));
-                        }
-
-                        notifyEntries.push({
-                            command: 'FETCH',
-                            ignore: session.id,
-                            uid: message.uid,
-                            flags: message.flags,
-                            message: message._id
-                        });
-
-                        if (notifyEntries.length > 100) {
-                            // emit notifications in batches of 100
-                            let entries = notifyEntries;
-                            notifyEntries = [];
-                            setImmediate(() => this.notifier.addEntries(session.user.id, path, entries, processNext));
-                            return;
-                        } else {
-                            setImmediate(() => processNext());
+                    updateEntries.push({
+                        updateOne: {
+                            filter: {
+                                _id: message._id
+                            },
+                            update: flagsupdate
                         }
                     });
+
+                    notifyEntries.push({
+                        command: 'FETCH',
+                        ignore: session.id,
+                        uid: message.uid,
+                        flags: message.flags,
+                        message: message._id
+                    });
+
+                    if (updateEntries.length >= BULK_BATCH_SIZE) {
+                        return db.database.collection('messages').bulkWrite(updateEntries, {
+                            ordered: false,
+                            w: 1
+                        }, err => {
+                            updateEntries = [];
+                            if (err) {
+                                return cursor.close(() => done(err));
+                            }
+
+                            this.notifier.addEntries(session.user.id, path, notifyEntries, () => {
+                                notifyEntries = [];
+                                this.notifier.fire(session.user.id, path);
+                                processNext();
+                            });
+                        });
+                    } else {
+                        processNext();
+                    }
                 } else {
                     processNext();
                 }
@@ -863,6 +895,8 @@ server.onCopy = function (path, update, session, callback) {
 
                     let sourceId = message._id;
 
+                    // Copying is not done in bulk to minimize risk of going out of sync with incremental UIDs
+
                     sourceUid.unshift(message.uid);
                     db.database.collection('mailboxes').findOneAndUpdate({
                         _id: target._id
@@ -926,9 +960,7 @@ server.onCopy = function (path, update, session, callback) {
                     });
                 });
             };
-
             processNext();
-
         });
     });
 };
@@ -1104,6 +1136,31 @@ server.onFetch = function (path, options, session, callback) {
             };
         }
 
+
+        let isUpdated = false;
+        let updateEntries = [];
+        let notifyEntries = [];
+
+        let done = (...args) => {
+            if (updateEntries.length) {
+                return db.database.collection('messages').bulkWrite(updateEntries, {
+                    ordered: false,
+                    w: 1
+                }, () => {
+                    updateEntries = [];
+                    this.notifier.addEntries(session.user.id, path, notifyEntries, () => {
+                        notifyEntries = [];
+                        this.notifier.fire(session.user.id, path);
+                        return callback(...args);
+                    });
+                });
+            }
+            if (isUpdated) {
+                this.notifier.fire(session.user.id, path);
+            }
+            return callback(...args);
+        };
+
         let cursor = db.database.collection('messages').find(query).project(projection).sort([
             ['uid', 1]
         ]);
@@ -1111,12 +1168,11 @@ server.onFetch = function (path, options, session, callback) {
         let processNext = () => {
             cursor.next((err, message) => {
                 if (err) {
-                    return callback(err);
+                    return done(err);
                 }
                 if (!message) {
                     return cursor.close(() => {
-                        this.notifier.fire(session.user.id, path);
-                        return callback(null, true);
+                        done(null, true);
                     });
                 }
 
@@ -1138,40 +1194,62 @@ server.onFetch = function (path, options, session, callback) {
                 stream.on('error', err => {
                     session.socket.write('INTERNAL ERROR\n');
                     session.socket.destroy(); // ended up in erroneus state, kill the connection to abort
-                    return cursor.close(() => callback(err));
+                    return cursor.close(() => done(err));
                 });
 
                 // send formatted response to socket
                 session.writeStream.write(stream, () => {
-
-                    if (!options.markAsSeen || message.flags.includes('\\Seen')) {
-                        return processNext();
-                    }
-
                     if (!markAsSeen) {
                         return processNext();
                     }
 
                     this.logger.debug('[%s] UPDATE FLAGS for "%s"', session.id, message.uid);
 
-                    db.database.collection('messages').findOneAndUpdate({
-                        _id: message._id
-                    }, {
-                        $addToSet: {
-                            flags: '\\Seen'
+                    isUpdated = true;
+
+                    updateEntries.push({
+                        updateOne: {
+                            filter: {
+                                _id: message._id
+                            },
+                            update: {
+                                $addToSet: {
+                                    flags: '\\Seen'
+                                },
+                                $set: {
+                                    seen: true
+                                }
+                            }
                         }
-                    }, {}, err => {
-                        if (err) {
-                            return cursor.close(() => callback(err));
-                        }
-                        this.notifier.addEntries(session.user.id, path, {
-                            command: 'FETCH',
-                            ignore: session.id,
-                            uid: message.uid,
-                            flags: message.flags,
-                            message: message._id
-                        }, processNext);
                     });
+
+                    notifyEntries.push({
+                        command: 'FETCH',
+                        ignore: session.id,
+                        uid: message.uid,
+                        flags: message.flags,
+                        message: message._id
+                    });
+
+                    if (updateEntries.length >= BULK_BATCH_SIZE) {
+                        return db.database.collection('messages').bulkWrite(updateEntries, {
+                            ordered: false,
+                            w: 1
+                        }, err => {
+                            updateEntries = [];
+                            if (err) {
+                                return cursor.close(() => done(err));
+                            }
+
+                            this.notifier.addEntries(session.user.id, path, notifyEntries, () => {
+                                notifyEntries = [];
+                                this.notifier.fire(session.user.id, path);
+                                processNext();
+                            });
+                        });
+                    } else {
+                        processNext();
+                    }
                 });
             });
         };
@@ -1491,26 +1569,12 @@ server.onSearch = function (path, options, session, callback) {
                     }));
                 }
 
-                //if (message.raw) {
-                //    message.raw = message.raw.toString();
-                //}
-
-                //session.matchSearchQuery(message, options.query, (err, match) => {
-                //    if (err) {
-                //        return cursor.close(() => callback(err));
-                //    }
-
-                //if (match && highestModseq < message.modseq) {
                 if (highestModseq < message.modseq) {
                     highestModseq = message.modseq;
                 }
 
-                //if (match) {
                 uidList.push(message.uid);
-                //}
-
                 processNext();
-                //});
             });
         };
 
@@ -1588,6 +1652,14 @@ module.exports = done => {
         // setup notification system for updates
         server.notifier = new ImapNotifier({
             database: db.database
+        });
+
+        server.loginLimiter = rateLimiter({
+            redis: db.redis,
+            namespace: 'UserLoginLimiter',
+            // allow 100 login attempts per minute
+            interval: 60 * 1000,
+            maxInInterval: 100
         });
 
         let started = false;

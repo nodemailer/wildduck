@@ -41,6 +41,9 @@ module.exports = {
         }, this.session, (err, response) => {
 
             if (err) {
+                if (err.response) {
+                    return callback(null, err);
+                }
                 this._server.logger.info('[%s] Authentication error for %s using %s\n%s', this.id, username, 'LOGIN', err.message);
                 return callback(err);
             }

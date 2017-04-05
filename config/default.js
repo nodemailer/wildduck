@@ -35,7 +35,7 @@ module.exports = {
         // Max size for messages uploaded via APPEND
         maxMB: 5,
         // default quota storage in MB (can be overriden per user)
-        maxStorage: 100
+        maxStorage: 1000
     },
 
     lmtp: {
