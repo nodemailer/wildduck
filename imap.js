@@ -33,9 +33,18 @@ const serverOptions = {
     },
 
     logger: {
-        info: log.silly.bind(log, 'IMAP'),
-        debug: log.silly.bind(log, 'IMAP'),
-        error: log.error.bind(log, 'IMAP')
+        info(...args) {
+            args.shift();
+            log.info('IMAP', ...args);
+        },
+        debug(...args) {
+            args.shift();
+            log.silly('IMAP', ...args);
+        },
+        error(...args) {
+            args.shift();
+            log.error('IMAP', ...args);
+        }
     },
 
     maxMessage: config.imap.maxMB * 1024 * 1024,
@@ -1696,7 +1705,9 @@ module.exports = done => {
                 started = true;
                 return done(err);
             }
-            server.logger.error(err);
+            server.logger.error({
+                err
+            }, err);
         });
 
         // start listening
@@ -1712,7 +1723,9 @@ module.exports = done => {
     let indexpos = 0;
     let ensureIndexes = () => {
         if (indexpos >= setupIndexes.length) {
-            server.logger.info('Setup indexes for %s collections', setupIndexes.length);
+            server.logger.info({
+                tnx: 'mongo'
+            }, 'Setup indexes for %s collections', setupIndexes.length);
             return start();
         }
         let index = setupIndexes[indexpos++];

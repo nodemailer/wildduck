@@ -53,6 +53,13 @@ module.exports = {
         maxMB: 5
     },
 
+    pop3: {
+        enabled: true,
+        port: 9995,
+        host: '0.0.0.0',
+        secure: true
+    },
+
     api: {
         port: 8080
     }

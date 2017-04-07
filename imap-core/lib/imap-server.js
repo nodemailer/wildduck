@@ -1,12 +1,12 @@
 'use strict';
 
-let net = require('net');
-let tls = require('tls');
-let IMAPConnection = require('./imap-connection').IMAPConnection;
-let tlsOptions = require('./tls-options');
-let EventEmitter = require('events').EventEmitter;
-let util = require('util');
-let clone = require('clone');
+const net = require('net');
+const tls = require('tls');
+const IMAPConnection = require('./imap-connection').IMAPConnection;
+const tlsOptions = require('./tls-options');
+const EventEmitter = require('events').EventEmitter;
+const shared = require('nodemailer/lib/shared');
+const util = require('util');
 
 const CLOSE_TIMEOUT = 1 * 1000; // how much to wait until pending connections are terminated
 
@@ -21,25 +21,16 @@ class IMAPServer extends EventEmitter {
     constructor(options) {
         super();
 
-        this.options = options ? clone(options) : {};
+        this.options = options || {};
 
         // apply TLS defaults if needed
         if (this.options.secure) {
             this.options = tlsOptions(this.options);
         }
 
-        // setup logger
-        if ('logger' in this.options) {
-            // use provided logger or use vanity logger if option is set to false
-            this.logger = this.options.logger || {
-                info: () => false,
-                debug: () => false,
-                error: () => false
-            };
-        } else {
-            // create default console logger
-            this.logger = this._createDefaultLogger();
-        }
+        this.logger = shared.getLogger(this.options, {
+            component: this.options.component || 'pop3-server'
+        });
 
         /**
          * Timeout after close has been called until pending connections are forcibly closed
@@ -86,13 +77,17 @@ class IMAPServer extends EventEmitter {
 
         // close active connections
         if (connections) {
-            this.logger.info('Server closing with %s pending connection%s, waiting %s seconds before terminating', connections, connections !== 1 ? 's' : '', timeout / 1000);
+            this.logger.info({
+                tnx: 'close'
+            }, 'Server closing with %s pending connection%s, waiting %s seconds before terminating', connections, connections !== 1 ? 's' : '', timeout / 1000);
         }
 
         this._closeTimeout = setTimeout(() => {
             connections = this.connections.size;
             if (connections) {
-                this.logger.info('Closing %s pending connection%s to close the server', connections, connections !== 1 ? 's' : '');
+                this.logger.info({
+                    tnx: 'close'
+                }, 'Closing %s pending connection%s to close the server', connections, connections !== 1 ? 's' : '');
 
                 this.connections.forEach(connection => {
                     connection.send('* BYE System shutdown');
@@ -153,6 +148,14 @@ class IMAPServer extends EventEmitter {
     _onListening() {
         let address = this.server.address();
         this.logger.info(
+            //
+            {
+                tnx: 'listen',
+                host: address.address,
+                port: address.port,
+                secure: !!this.options.secure,
+                protocol: 'IMAP'
+            },
             '%sIMAP Server listening on %s:%s',
             this.options.secure ? 'Secure ' : '',
             address.family === 'IPv4' ? address.address : '[' + address.address + ']',
@@ -165,7 +168,9 @@ class IMAPServer extends EventEmitter {
      * @event
      */
     _onClose() {
-        this.logger.info('IMAP Server closed');
+        this.logger.info({
+            tnx: 'closed'
+        }, 'IMAP Server closed');
         this.emit('close');
     }
 
