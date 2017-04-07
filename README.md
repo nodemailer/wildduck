@@ -43,6 +43,19 @@ Wild Duck IMAP server supports the following IMAP standards:
 
 Wild Duck more or less passes the [ImapTest](https://www.imapwiki.org/ImapTest/TestFeatures). Common errors that arise in the test are unknown labels (Wild Duck doesn't send unsolicited `FLAGS` updates even though it does send unsolicited `FETCH FLAGS` updates) and sometimes NO for `STORE` (messages deleted in one session can not be updated in another).
 
+### POP3 Support
+
+POP3 supports the following commands
+
+* **NOOP**
+* **QUIT**
+* **USER**
+* **PASS**
+* **CAPA**
+* **AUTH PLAIN**
+
+> **TODO:** implement missing commands. See also https://support.google.com/a/answer/6089246?hl=en
+
 ## FAQ
 
 ### Does it work?

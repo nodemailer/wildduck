@@ -4,6 +4,8 @@ const config = require('config');
 const log = require('npmlog');
 const POP3Server = require('./lib/pop3-server');
 const fs = require('fs');
+const bcrypt = require('bcryptjs');
+const db = require('./lib/db');
 
 const serverOptions = {
     port: config.pop3.port,
@@ -24,6 +26,29 @@ const serverOptions = {
             args.shift();
             log.error('POP3', ...args);
         }
+    },
+
+    onAuth(auth, session, next) {
+        db.database.collection('users').findOne({
+            username: auth.username
+        }, (err, user) => {
+            if (err) {
+                return next(err);
+            }
+
+            if (!user || !bcrypt.compareSync(auth.password, user.password)) {
+                return next(null, {
+                    message: 'Authentication failed'
+                });
+            }
+
+            next(null, {
+                user: {
+                    id: user._id,
+                    username: user.username
+                }
+            });
+        });
     }
 
 };
