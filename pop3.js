@@ -7,6 +7,8 @@ const fs = require('fs');
 const bcrypt = require('bcryptjs');
 const db = require('./lib/db');
 
+const MAX_MESSAGES = 5000;
+
 const serverOptions = {
     port: config.pop3.port,
     host: config.pop3.host,
@@ -28,29 +30,67 @@ const serverOptions = {
         }
     },
 
-    onAuth(auth, session, next) {
+    onAuth(auth, session, callback) {
         db.database.collection('users').findOne({
             username: auth.username
         }, (err, user) => {
             if (err) {
-                return next(err);
+                return callback(err);
             }
 
             if (!user || !bcrypt.compareSync(auth.password, user.password)) {
-                return next(null, {
+                return callback(null, {
                     message: 'Authentication failed'
                 });
             }
 
-            next(null, {
+            callback(null, {
                 user: {
                     id: user._id,
                     username: user.username
                 }
             });
         });
-    }
+    },
 
+    onListMessages(session, callback) {
+        // only list messages in INBOX
+        db.database.collection('mailboxes').findOne({
+            user: session.user.id,
+            path: 'INBOX'
+        }, (err, mailbox) => {
+
+            if (err) {
+                return callback(err);
+            }
+
+            if (!mailbox) {
+                return callback(new Error('Mailbox not found for user'));
+            }
+
+            db.database.collection('messages').find({
+                mailbox: mailbox._id
+            }).project({
+                uid: true,
+                size: true
+            }).sort([
+                ['uid', -1]
+            ]).limit(MAX_MESSAGES).toArray((err, messages) => {
+                if (err) {
+                    return callback(err);
+                }
+
+                return callback(null, {
+                    messages: messages.map(message => ({
+                        id: message._id.toString(),
+                        size: message.size
+                    })),
+                    count: messages.length,
+                    size: messages.reduce((acc, message) => acc + message.size, 0)
+                });
+            });
+        });
+    }
 };
 
 if (config.pop3.key) {
