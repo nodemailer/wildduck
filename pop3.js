@@ -9,7 +9,7 @@ const MessageHandler = require('./lib/message-handler');
 const ObjectID = require('mongodb').ObjectID;
 const db = require('./lib/db');
 
-const MAX_MESSAGES = 5000;
+const MAX_MESSAGES = 250;
 
 let messageHandler;
 
@@ -72,11 +72,16 @@ const serverOptions = {
                 return callback(new Error('Mailbox not found for user'));
             }
 
+            session.user.mailbox = mailbox._id;
+
             db.database.collection('messages').find({
                 mailbox: mailbox._id
             }).project({
                 uid: true,
-                size: true
+                size: true,
+                // required to decide if we need to update flags after RETR
+                flags: true,
+                seen: true
             }).sort([
                 ['uid', -1]
             ]).limit(MAX_MESSAGES).toArray((err, messages) => {
@@ -87,7 +92,10 @@ const serverOptions = {
                 return callback(null, {
                     messages: messages.map(message => ({
                         id: message._id.toString(),
-                        size: message.size
+                        uid: message.uid,
+                        size: message.size,
+                        flags: message.flags,
+                        seen: message.seen
                     })),
                     count: messages.length,
                     size: messages.reduce((acc, message) => acc + message.size, 0)
@@ -96,8 +104,7 @@ const serverOptions = {
         });
     },
 
-    // FIXME: check how size is calculated. seems to be wrong sometimes
-    onFetchMessage(session, id, callback) {
+    onFetchMessage(id, session, callback) {
         db.database.collection('messages').findOne({
             _id: new ObjectID(id)
         }, {
@@ -118,6 +125,26 @@ const serverOptions = {
 
             callback(null, response.value);
         });
+    },
+
+    onUpdate(update, session, callback) {
+
+        let handleSeen = next => {
+            if (update.seen && update.seen.length) {
+                return markAsSeen(session.user.mailbox, update.seen, next);
+            }
+            next();
+        };
+
+        handleSeen(err => {
+            if (err) {
+                return log.error('POP3', err);
+            }
+            // TODO: delete marked messages
+        });
+
+        // return callback without waiting for the update result
+        setImmediate(callback);
     }
 };
 
@@ -130,6 +157,68 @@ if (config.pop3.cert) {
 }
 
 const server = new POP3Server(serverOptions);
+
+// TODO: mark as seen immediatelly after RETR instead of batching later?
+function markAsSeen(mailbox, messages, callback) {
+    let ids = messages.map(message => new ObjectID(message.id));
+
+    return db.database.collection('mailboxes').findOneAndUpdate({
+        _id: mailbox
+    }, {
+        $inc: {
+            modifyIndex: 1
+        }
+    }, {
+        returnOriginal: false
+    }, (err, item) => {
+        if (err) {
+            return callback(err);
+        }
+
+        let mailboxData = item && item.value;
+        if (!item) {
+            return callback(new Error('Mailbox does not exist'));
+        }
+
+        db.database.collection('messages').updateMany({
+            mailbox,
+            _id: {
+                $in: ids
+            },
+            modseq: {
+                $lt: mailboxData.modifyIndex
+            }
+        }, {
+            $set: {
+                modseq: mailboxData.modifyIndex,
+                seen: true
+            },
+            $addToSet: {
+                flags: '\\Seen'
+            }
+        }, {
+            multi: true,
+            w: 1
+        }, err => {
+            if (err) {
+                return callback(err);
+            }
+            messageHandler.notifier.addEntries(mailboxData, false, messages.map(message => {
+                let result = {
+                    command: 'FETCH',
+                    uid: message.uid,
+                    flags: message.flags.concat('\\Seen'),
+                    message: new ObjectID(message.id),
+                    modseq: mailboxData.modifyIndex
+                };
+                return result;
+            }), () => {
+                messageHandler.notifier.fire(mailboxData.user, mailboxData.path);
+                callback();
+            });
+        });
+    });
+}
 
 module.exports = done => {
     if (!config.pop3.enabled) {
