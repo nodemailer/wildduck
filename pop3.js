@@ -5,9 +5,13 @@ const log = require('npmlog');
 const POP3Server = require('./lib/pop3-server');
 const fs = require('fs');
 const bcrypt = require('bcryptjs');
+const MessageHandler = require('./lib/message-handler');
+const ObjectID = require('mongodb').ObjectID;
 const db = require('./lib/db');
 
 const MAX_MESSAGES = 5000;
+
+let messageHandler;
 
 const serverOptions = {
     port: config.pop3.port,
@@ -90,6 +94,30 @@ const serverOptions = {
                 });
             });
         });
+    },
+
+    // FIXME: check how size is calculated. seems to be wrong sometimes
+    onFetchMessage(session, id, callback) {
+        db.database.collection('messages').findOne({
+            _id: new ObjectID(id)
+        }, {
+            mimeTree: true,
+            size: true
+        }, (err, message) => {
+            if (err) {
+                return callback(err);
+            }
+            if (!message) {
+                return callback(new Error('Message does not exist or is already deleted'));
+            }
+
+            let response = messageHandler.indexer.rebuild(message.mimeTree);
+            if (!response || response.type !== 'stream' || !response.value) {
+                return callback(new Error('Can not fetch message'));
+            }
+
+            callback(null, response.value);
+        });
     }
 };
 
@@ -109,6 +137,8 @@ module.exports = done => {
     }
 
     let started = false;
+
+    messageHandler = new MessageHandler(db.database);
 
     server.on('error', err => {
         if (!started) {
