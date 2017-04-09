@@ -2,13 +2,13 @@
 
 ![](https://cldup.com/qlZnwOz0na.jpg)
 
-Wild Duck is a distributed IMAP server built with Node.js, MongoDB and Redis. Node.js runs the application, MongoDB is used as the mail store and Redis is used for ephemeral actions like publish/subscribe, locking and caching.
+Wild Duck is a distributed IMAP/POP3 server built with Node.js, MongoDB and Redis. Node.js runs the application, MongoDB is used as the mail store and Redis is used for ephemeral actions like publish/subscribe, locking and caching.
 
 > **NB!** Wild Duck is currently in **beta**. You should not use it in production.
 
 ## Goals of the Project
 
-1. Build a scalable and distributed IMAP server that uses clustered database instead of single machine file system as mail store
+1. Build a scalable and distributed IMAP/POP3 server that uses clustered database instead of single machine file system as mail store
 2. Allow using internationalized email addresses
 3. Provide Gmail-like features like pushing sent messages automatically to Sent Mail folder or notifying about messages moved to Junk folder so these could be marked as spam
 4. Provide parsed mailbox and message data over HTTP. This should make creating webmail interfaces super easy, no need to parse RFC822 messages to get text content or attachments
@@ -45,16 +45,27 @@ Wild Duck more or less passes the [ImapTest](https://www.imapwiki.org/ImapTest/T
 
 ### POP3 Support
 
-POP3 supports the following commands
+In addition to the required POP3 commands ([RFC1939](https://tools.ietf.org/html/rfc1939)) Wild Duck supports the following extensions:
 
-* **NOOP**
-* **QUIT**
-* **USER**
-* **PASS**
-* **CAPA**
-* **AUTH PLAIN**
+  * **UIDL**
+  * **USER**
+  * **PASS**
+  * **SASL PLAIN**
+  * **PIPELINING**
 
-> **TODO:** implement missing commands. See also https://support.google.com/a/answer/6089246?hl=en
+Notably missing is the **TOP** extension.
+
+#### LIST
+
+POP3 listing displays the newest 250 messages in INBOX (configurable)
+
+#### RETR
+
+If a messages is downloaded by a client this message gets marked as Seen
+
+#### DELE
+
+If a messages is deleted by a client this message gets marked as Seen and moved to Trash folder
 
 ## FAQ
 

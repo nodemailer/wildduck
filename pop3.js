@@ -84,7 +84,7 @@ const serverOptions = {
                 seen: true
             }).sort([
                 ['uid', -1]
-            ]).limit(MAX_MESSAGES).toArray((err, messages) => {
+            ]).limit(config.pop3.maxMessages || MAX_MESSAGES).toArray((err, messages) => {
                 if (err) {
                     return callback(err);
                 }
@@ -131,16 +131,28 @@ const serverOptions = {
 
         let handleSeen = next => {
             if (update.seen && update.seen.length) {
-                return markAsSeen(session.user.mailbox, update.seen, next);
+                return markAsSeen(session, update.seen, next);
             }
             next();
         };
 
-        handleSeen(err => {
+        let handleDeleted = next => {
+            if (update.deleted && update.deleted.length) {
+                return trashMessages(session, update.deleted, next);
+            }
+            next();
+        };
+
+        handleSeen((err, seenCount) => {
             if (err) {
                 return log.error('POP3', err);
             }
-            // TODO: delete marked messages
+            handleDeleted((err, deleteCount) => {
+                if (err) {
+                    return log.error('POP3', err);
+                }
+                log.info('POP3', '[%s] Deleted %s messages, marked %s messages as seen', session.user.username, deleteCount, seenCount);
+            });
         });
 
         // return callback without waiting for the update result
@@ -158,12 +170,48 @@ if (config.pop3.cert) {
 
 const server = new POP3Server(serverOptions);
 
-// TODO: mark as seen immediatelly after RETR instead of batching later?
-function markAsSeen(mailbox, messages, callback) {
+// move messages to trash
+function trashMessages(session, messages, callback) {
+    // find Trash folder
+    db.database.collection('mailboxes').findOne({
+        user: session.user.id,
+        specialUse: '\\Trash'
+    }, (err, trashMailbox) => {
+        if (err) {
+            return callback(err);
+        }
+
+        if (!trashMailbox) {
+            return callback(new Error('Trash mailbox not found for user'));
+        }
+
+        messageHandler.move({
+            user: session.user.id,
+            // folder to move messages from
+            source: {
+                mailbox: session.user.mailbox
+            },
+            // folder to move messages to
+            destination: trashMailbox,
+            // list of UIDs to move
+            messages: messages.map(message => message.uid),
+
+            // add \Seen flags to deleted messages
+            markAsSeen: true
+        }, (err, success, meta) => {
+            if (err) {
+                return callback(err);
+            }
+            callback(null, success && meta && meta.destinationUid && meta.destinationUid.length || 0);
+        });
+    });
+}
+
+function markAsSeen(session, messages, callback) {
     let ids = messages.map(message => new ObjectID(message.id));
 
     return db.database.collection('mailboxes').findOneAndUpdate({
-        _id: mailbox
+        _id: session.user.mailbox
     }, {
         $inc: {
             modifyIndex: 1
@@ -181,7 +229,7 @@ function markAsSeen(mailbox, messages, callback) {
         }
 
         db.database.collection('messages').updateMany({
-            mailbox,
+            mailbox: mailboxData._id,
             _id: {
                 $in: ids
             },
@@ -214,7 +262,7 @@ function markAsSeen(mailbox, messages, callback) {
                 return result;
             }), () => {
                 messageHandler.notifier.fire(mailboxData.user, mailboxData.path);
-                callback();
+                callback(null, messages.count);
             });
         });
     });
