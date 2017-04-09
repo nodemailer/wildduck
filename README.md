@@ -52,8 +52,7 @@ In addition to the required POP3 commands ([RFC1939](https://tools.ietf.org/html
   * **PASS**
   * **SASL PLAIN**
   * **PIPELINING**
-
-Notably missing is the **TOP** extension as for now there is no mechanism for retrieving first *n* lines of the message.
+  * **TOP**
 
 #### POP3 command behaviors
 

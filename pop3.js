@@ -90,7 +90,11 @@ const serverOptions = {
                 }
 
                 return callback(null, {
-                    messages: messages.map(message => ({
+                    messages: messages.
+                    // showolder first
+                    reverse().
+                    // compose message objects
+                    map(message => ({
                         id: message._id.toString(),
                         uid: message.uid,
                         size: message.size,

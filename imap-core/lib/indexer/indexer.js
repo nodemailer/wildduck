@@ -53,8 +53,7 @@ class Indexer {
                 data = data.join('\r\n');
             }
             if (data || force) {
-                let val = Buffer.from((first ? '' : '\r\n') + (data || ''), 'binary');
-                size += val.length;
+                size += Buffer.byteLength((first ? '' : '\r\n') + (data || ''), 'binary');
                 first = false;
             }
         };
@@ -124,6 +123,8 @@ class Indexer {
         let root = true;
         let remainder = false;
 
+        let aborted = false;
+
         // make sure that mixed body + mime gets rebuilt correctly
         let append = (data, force) => {
             if (Array.isArray(data)) {
@@ -148,6 +149,10 @@ class Indexer {
         };
 
         let walk = (node, next) => {
+
+            if (aborted) {
+                return next();
+            }
 
             if (!textOnly || !root) {
                 append(formatHeaders(node.header).join('\r\n') + '\r\n');
@@ -203,6 +208,10 @@ class Indexer {
                 }
                 let childNode = node.childNodes[pos++];
                 walk(childNode, () => {
+                    if (aborted) {
+                        return next();
+                    }
+
                     if (pos < node.childNodes.length) {
                         append('--' + node.boundary);
                     }
@@ -220,6 +229,11 @@ class Indexer {
         setImmediate(walk.bind(null, mimeTree, () => {
             res.end();
         }));
+
+        // if called then stops resolving rest of the message
+        res.abort = () => {
+            aborted = true;
+        };
 
         return {
             type: 'stream',
