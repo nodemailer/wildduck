@@ -1079,7 +1079,7 @@ server.get('/message/:message/attachment/:attachment', (req, res, next) => {
         }
 
         res.writeHead(200, {
-            'Content-Type': messageData.metadata.contentType
+            'Content-Type': messageData.contentType || 'application/octet-stream'
         });
 
         let attachmentStream = messageHandler.indexer.gridstore.createReadStream(messageData._id);
@@ -1093,7 +1093,6 @@ server.get('/message/:message/attachment/:attachment', (req, res, next) => {
         } else {
             attachmentStream.pipe(res);
         }
-
     });
 });
 

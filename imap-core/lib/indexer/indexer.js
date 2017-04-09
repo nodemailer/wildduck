@@ -371,16 +371,13 @@ class Indexer {
                 let store = this.gridstore.createWriteStream(attachmentId, {
                     fsync: true,
                     content_type: contentType,
+                    // metadata should include only minimally required information, this would allow
+                    // to share attachments between different messages if the content is exactly the same
+                    // even though metadata (filename, content-disposition etc) might not
                     metadata: {
                         // if we copy the same message to other mailboxes then instead
                         // of copying attachments we add a pointer to the new message here
                         messages: [messageId],
-                        // decoded filename to display in a web client or API
-                        fileName,
-                        // content-type for the attachment
-                        contentType,
-                        // is it really an attachment? maybe it's a very long text part?
-                        disposition,
                         // how to decode contents if a webclient or API asks for the attachment
                         transferEncoding
                     }
