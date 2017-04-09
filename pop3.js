@@ -133,14 +133,14 @@ const serverOptions = {
             if (update.seen && update.seen.length) {
                 return markAsSeen(session, update.seen, next);
             }
-            next();
+            next(null, 0);
         };
 
         let handleDeleted = next => {
             if (update.deleted && update.deleted.length) {
                 return trashMessages(session, update.deleted, next);
             }
-            next();
+            next(null, 0);
         };
 
         handleSeen((err, seenCount) => {
@@ -262,7 +262,7 @@ function markAsSeen(session, messages, callback) {
                 return result;
             }), () => {
                 messageHandler.notifier.fire(mailboxData.user, mailboxData.path);
-                callback(null, messages.count);
+                callback(null, messages.length);
             });
         });
     });
