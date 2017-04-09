@@ -61,6 +61,10 @@ Notably missing is the **TOP** extension.
 
 POP3 listing displays the newest 250 messages in INBOX (configurable)
 
+##### UIDL
+
+Wild Duck uses message `_id` value (24 byte hex) as the unique ID. If a message is moved from one mailbox to another then it might *re-appear* in the listing.
+
 ##### RETR
 
 If a messages is downloaded by a client this message gets marked as Seen
