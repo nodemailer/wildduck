@@ -49,8 +49,23 @@ module.exports = {
     smtp: {
         enabled: true,
         port: 2525,
+        // If certificate path is not defined, use built-in self-signed certs for STARTTLS
+        //key: '/path/to/server/key.pem'
+        //cert: '/path/to/server/cert.pem'
         host: '0.0.0.0',
         maxMB: 5
+    },
+
+    pop3: {
+        enabled: true,
+        port: 9995,
+        host: '0.0.0.0',
+        // If certificate path is not defined, use built-in self-signed certs
+        //key: '/path/to/server/key.pem'
+        //cert: '/path/to/server/cert.pem'
+        secure: true,
+        // how many latest messages to list for LIST and UIDL
+        maxMessages: 250
     },
 
     api: {

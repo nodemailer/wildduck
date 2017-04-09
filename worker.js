@@ -3,6 +3,7 @@
 let config = require('config');
 let log = require('npmlog');
 let imap = require('./imap');
+let pop3 = require('./pop3');
 let smtp = require('./smtp');
 let api = require('./api');
 let db = require('./lib/db');
@@ -19,41 +20,48 @@ db.connect(err => {
             log.error('App', 'Failed to start IMAP server');
             return process.exit(1);
         }
-        // Start SMTP maildrop server
-        smtp(err => {
+        // Start POP3 server
+        pop3(err => {
             if (err) {
-                log.error('App', 'Failed to start SMTP server');
+                log.error('App', 'Failed to start POP3 server');
                 return process.exit(1);
             }
-
-            // Start HTTP API server
-            api(err => {
+            // Start SMTP maildrop server
+            smtp(err => {
                 if (err) {
-                    log.error('App', 'Failed to start API server');
+                    log.error('App', 'Failed to start SMTP server');
                     return process.exit(1);
                 }
 
-                log.info('App', 'All servers started, ready to process some mail');
+                // Start HTTP API server
+                api(err => {
+                    if (err) {
+                        log.error('App', 'Failed to start API server');
+                        return process.exit(1);
+                    }
 
-                // downgrade user and group if needed
-                if (config.group) {
-                    try {
-                        process.setgid(config.group);
-                        log.info('App', 'Changed group to "%s" (%s)', config.group, process.getgid());
-                    } catch (E) {
-                        log.error('App', 'Failed to change group to "%s" (%s)', config.group, E.message);
-                        return process.exit(1);
+                    log.info('App', 'All servers started, ready to process some mail');
+
+                    // downgrade user and group if needed
+                    if (config.group) {
+                        try {
+                            process.setgid(config.group);
+                            log.info('App', 'Changed group to "%s" (%s)', config.group, process.getgid());
+                        } catch (E) {
+                            log.error('App', 'Failed to change group to "%s" (%s)', config.group, E.message);
+                            return process.exit(1);
+                        }
                     }
-                }
-                if (config.user) {
-                    try {
-                        process.setuid(config.user);
-                        log.info('App', 'Changed user to "%s" (%s)', config.user, process.getuid());
-                    } catch (E) {
-                        log.error('App', 'Failed to change user to "%s" (%s)', config.user, E.message);
-                        return process.exit(1);
+                    if (config.user) {
+                        try {
+                            process.setuid(config.user);
+                            log.info('App', 'Changed user to "%s" (%s)', config.user, process.getuid());
+                        } catch (E) {
+                            log.error('App', 'Failed to change user to "%s" (%s)', config.user, E.message);
+                            return process.exit(1);
+                        }
                     }
-                }
+                });
             });
         });
     });

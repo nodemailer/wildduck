@@ -2,13 +2,13 @@
 
 ![](https://cldup.com/qlZnwOz0na.jpg)
 
-Wild Duck is a distributed IMAP server built with Node.js, MongoDB and Redis. Node.js runs the application, MongoDB is used as the mail store and Redis is used for ephemeral actions like publish/subscribe, locking and caching.
+Wild Duck is a distributed IMAP/POP3 server built with Node.js, MongoDB and Redis. Node.js runs the application, MongoDB is used as the mail store and Redis is used for ephemeral actions like publish/subscribe, locking and caching.
 
 > **NB!** Wild Duck is currently in **beta**. You should not use it in production.
 
 ## Goals of the Project
 
-1. Build a scalable and distributed IMAP server that uses clustered database instead of single machine file system as mail store
+1. Build a scalable and distributed IMAP/POP3 server that uses clustered database instead of single machine file system as mail store
 2. Allow using internationalized email addresses
 3. Provide Gmail-like features like pushing sent messages automatically to Sent Mail folder or notifying about messages moved to Junk folder so these could be marked as spam
 4. Provide parsed mailbox and message data over HTTP. This should make creating webmail interfaces super easy, no need to parse RFC822 messages to get text content or attachments
@@ -42,6 +42,30 @@ Wild Duck IMAP server supports the following IMAP standards:
 - **COMPRESS=DEFLATE** ([RFC4978](https://tools.ietf.org/html/rfc4978)) – Compress traffic between the client and the server
 
 Wild Duck more or less passes the [ImapTest](https://www.imapwiki.org/ImapTest/TestFeatures). Common errors that arise in the test are unknown labels (Wild Duck doesn't send unsolicited `FLAGS` updates even though it does send unsolicited `FETCH FLAGS` updates) and sometimes NO for `STORE` (messages deleted in one session can not be updated in another).
+
+### POP3 Support
+
+In addition to the required POP3 commands ([RFC1939](https://tools.ietf.org/html/rfc1939)) Wild Duck supports the following extensions:
+
+  * **UIDL**
+  * **USER**
+  * **PASS**
+  * **SASL PLAIN**
+  * **PIPELINING**
+
+Notably missing is the **TOP** extension.
+
+#### LIST
+
+POP3 listing displays the newest 250 messages in INBOX (configurable)
+
+#### RETR
+
+If a messages is downloaded by a client this message gets marked as Seen
+
+#### DELE
+
+If a messages is deleted by a client this message gets marked as Seen and moved to Trash folder
 
 ## FAQ
 

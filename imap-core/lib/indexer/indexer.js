@@ -1,5 +1,3 @@
-/* eslint no-console: 0 */
-
 'use strict';
 
 const stream = require('stream');
@@ -8,7 +6,6 @@ const PassThrough = stream.PassThrough;
 const BodyStructure = require('./body-structure');
 const createEnvelope = require('./create-envelope');
 const parseMimeTree = require('./parse-mime-tree');
-const LengthLimiter = require('../length-limiter');
 const ObjectID = require('mongodb').ObjectID;
 const GridFs = require('grid-fs');
 const libmime = require('libmime');
@@ -56,7 +53,8 @@ class Indexer {
                 data = data.join('\r\n');
             }
             if (data || force) {
-                size += Buffer.from((first ? '' : '\r\n') + (data || ''), 'binary').length;
+                let val = Buffer.from((first ? '' : '\r\n') + (data || ''), 'binary');
+                size += val.length;
                 first = false;
             }
         };
@@ -78,7 +76,7 @@ class Indexer {
 
             root = false;
 
-            if (node.body || node.attachmentId) {
+            if (node.size || node.attachmentId) {
                 append(false, true); // force newline
                 size += node.size;
             }
@@ -184,20 +182,15 @@ class Indexer {
             } else if (node.attachmentId && !skipExternal) {
                 append(false, true); // force newline between header and contents
 
-                let limiter = new LengthLimiter(node.size);
                 let attachmentStream = this.gridstore.createReadStream(node.attachmentId);
 
                 attachmentStream.once('error', err => {
                     res.emit('error', err);
                 });
 
-                limiter.once('error', err => {
-                    res.emit('error', err);
-                });
+                attachmentStream.once('end', () => finalize());
 
-                limiter.once('end', () => finalize());
-
-                attachmentStream.pipe(limiter).pipe(res, {
+                attachmentStream.pipe(res, {
                     end: false
                 });
                 return;

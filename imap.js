@@ -33,9 +33,18 @@ const serverOptions = {
     },
 
     logger: {
-        info: log.silly.bind(log, 'IMAP'),
-        debug: log.silly.bind(log, 'IMAP'),
-        error: log.error.bind(log, 'IMAP')
+        info(...args) {
+            args.shift();
+            log.info('IMAP', ...args);
+        },
+        debug(...args) {
+            args.shift();
+            log.silly('IMAP', ...args);
+        },
+        error(...args) {
+            args.shift();
+            log.error('IMAP', ...args);
+        }
     },
 
     maxMessage: config.imap.maxMB * 1024 * 1024,
@@ -477,6 +486,7 @@ server.onStore = function (path, update, session, callback) {
         if (err) {
             return callback(err);
         }
+
         if (!mailbox) {
             return callback(null, 'NONEXISTENT');
         }
@@ -983,130 +993,30 @@ server.onCopy = function (path, update, session, callback) {
 // MOVE / UID MOVE sequence mailbox
 server.onMove = function (path, update, session, callback) {
     this.logger.debug('[%s] Moving messages from "%s" to "%s"', session.id, path, update.destination);
-    db.database.collection('mailboxes').findOne({
-        user: session.user.id,
-        path
-    }, (err, mailbox) => {
-        if (err) {
-            return callback(err);
-        }
-        if (!mailbox) {
-            return callback(null, 'NONEXISTENT');
-        }
 
-        db.database.collection('mailboxes').findOne({
+    messageHandler.move({
+        user: session.user.id,
+        // folder to move messages from
+        source: {
+            user: session.user.id,
+            path
+        },
+        // folder to move messages to
+        destination: {
             user: session.user.id,
             path: update.destination
-        }, (err, target) => {
-            if (err) {
-                return callback(err);
+        },
+        session,
+        // list of UIDs to move
+        messages: update.messages
+    }, (...args) => {
+        if (args[0]) {
+            if (args[0].imapResponse) {
+                return callback(null, args[0].imapResponse);
             }
-            if (!target) {
-                return callback(null, 'TRYCREATE');
-            }
-
-            let cursor = db.database.collection('messages').find({
-                mailbox: mailbox._id,
-                uid: {
-                    $in: update.messages
-                }
-            }).project({
-                uid: 1
-            }).sort([
-                ['uid', 1]
-            ]);
-
-            let sourceUid = [];
-            let destinationUid = [];
-
-            let processNext = () => {
-                cursor.next((err, message) => {
-                    if (err) {
-                        return callback(err);
-                    }
-                    if (!message) {
-                        return cursor.close(() => {
-                            db.database.collection('mailboxes').findOneAndUpdate({
-                                _id: mailbox._id
-                            }, {
-                                $inc: {
-                                    // increase the mailbox modification index
-                                    // to indicate that something happened
-                                    modifyIndex: 1
-                                }
-                            }, {
-                                uidNext: true
-                            }, () => {
-                                this.notifier.fire(session.user.id, target.path);
-                                return callback(null, true, {
-                                    uidValidity: target.uidValidity,
-                                    sourceUid,
-                                    destinationUid
-                                });
-                            });
-                        });
-                    }
-
-                    sourceUid.unshift(message.uid);
-                    db.database.collection('mailboxes').findOneAndUpdate({
-                        _id: target._id
-                    }, {
-                        $inc: {
-                            uidNext: 1
-                        }
-                    }, {
-                        uidNext: true
-                    }, (err, item) => {
-                        if (err) {
-                            return callback(err);
-                        }
-
-                        if (!item || !item.value) {
-                            // was not able to acquire a lock
-                            return callback(null, 'TRYCREATE');
-                        }
-
-                        let uidNext = item.value.uidNext;
-                        destinationUid.unshift(uidNext);
-
-                        // update message, change mailbox from old to new one
-                        db.database.collection('messages').findOneAndUpdate({
-                            _id: message._id
-                        }, {
-                            $set: {
-                                mailbox: target._id,
-                                // new mailbox means new UID
-                                uid: uidNext,
-                                // this will be changed later by the notification system
-                                modseq: 0
-                            }
-                        }, err => {
-                            if (err) {
-                                return callback(err);
-                            }
-
-                            session.writeStream.write(session.formatResponse('EXPUNGE', message.uid));
-
-                            // mark messages as deleted from old mailbox
-                            this.notifier.addEntries(session.user.id, path, {
-                                command: 'EXPUNGE',
-                                ignore: session.id,
-                                uid: message.uid
-                            }, () => {
-                                // mark messages as added to old mailbox
-                                this.notifier.addEntries(session.user.id, target.path, {
-                                    command: 'EXISTS',
-                                    uid: uidNext,
-                                    message: message._id
-                                }, processNext);
-                            });
-                        });
-                    });
-                });
-            };
-
-            processNext();
-        });
+            return callback(args[0]);
+        }
+        callback(...args);
     });
 };
 
@@ -1696,7 +1606,9 @@ module.exports = done => {
                 started = true;
                 return done(err);
             }
-            server.logger.error(err);
+            server.logger.error({
+                err
+            }, err);
         });
 
         // start listening
@@ -1712,7 +1624,9 @@ module.exports = done => {
     let indexpos = 0;
     let ensureIndexes = () => {
         if (indexpos >= setupIndexes.length) {
-            server.logger.info('Setup indexes for %s collections', setupIndexes.length);
+            server.logger.info({
+                tnx: 'mongo'
+            }, 'Setup indexes for %s collections', setupIndexes.length);
             return start();
         }
         let index = setupIndexes[indexpos++];
