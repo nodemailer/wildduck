@@ -55,15 +55,17 @@ In addition to the required POP3 commands ([RFC1939](https://tools.ietf.org/html
 
 Notably missing is the **TOP** extension.
 
-#### LIST
+#### POP3 command behaviors
+
+##### LIST
 
 POP3 listing displays the newest 250 messages in INBOX (configurable)
 
-#### RETR
+##### RETR
 
 If a messages is downloaded by a client this message gets marked as Seen
 
-#### DELE
+##### DELE
 
 If a messages is deleted by a client this message gets marked as Seen and moved to Trash folder
 
@@ -71,7 +73,7 @@ If a messages is deleted by a client this message gets marked as Seen and moved 
 
 ### Does it work?
 
-Yes, it does. You can run the server and get a working IMAP server for mail store, SMTP server for pushing messages to the mail store and HTTP API server to create new users. All handled by Node.js, MongoDB and Redis, no additional dependencies needed. The IMAP server hosting уайлддак.орг uses a MongoDB replica set of 3 hosts.
+Yes, it does. You can run the server and get working IMAP and POP3 servers for mail store, SMTP server for pushing messages to the mail store and HTTP API server to create new users. All handled by Node.js, MongoDB and Redis, no additional dependencies needed. The IMAP server hosting уайлддак.орг uses a MongoDB replica set of 3 hosts.
 
 ### What are the killer features?
 
