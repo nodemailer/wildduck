@@ -1131,7 +1131,9 @@ server.del('/message/:id', (req, res, next) => {
         query.mailbox = new ObjectID(mailbox);
     }
 
-    messageHandler.del(query, (err, success) => {
+    messageHandler.del({
+        query
+    }, (err, success) => {
         if (err) {
             res.json({
                 error: 'MongoDB Error: ' + err.message,

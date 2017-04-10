@@ -97,10 +97,11 @@
             "internaldate": 1
         }
     }, {
-        "name": "by_headerdate",
+        "name": "by_hdate",
         "key": {
             "mailbox": 1,
-            "headerdate": 1
+            "hdate": 1,
+            "msgid": 1
         }
     }, {
         "name": "by_size",

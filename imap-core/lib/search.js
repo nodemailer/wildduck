@@ -33,8 +33,8 @@ let queryHandlers = {
     // matches message header date
     date(message, query, callback) {
         let date;
-        if (message.headerdate) {
-            date = message.headerdate;
+        if (message.hdate) {
+            date = message.hdate;
         } else {
             let mimeTree = message.mimeTree;
             if (!mimeTree) {

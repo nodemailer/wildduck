@@ -192,14 +192,19 @@ const server = new SMTPServer({
                     },
                     date: false,
                     flags: false,
-                    raw: Buffer.concat(chunks, chunklen)
-                }, err => {
+                    raw: Buffer.concat(chunks, chunklen),
+
+                    // if similar message exists, then skip
+                    skipExisting: true
+                }, (err, inserted) => {
                     // remove Delivered-To
                     chunks.shift();
                     chunklen -= header.length;
 
                     if (err) {
                         log.error('SMTP', err);
+                    } else if (!inserted) {
+                        log.debug('SMTP', 'Message was not inserted');
                     }
 
                     storeNext();

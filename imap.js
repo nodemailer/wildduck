@@ -422,6 +422,7 @@ server.onAppend = function (path, flags, date, raw, session, callback) {
                 to: session.user.username,
                 time: Date.now()
             },
+            session,
             date,
             flags,
             raw
@@ -1425,7 +1426,7 @@ server.onSearch = function (path, options, session, callback) {
                             };
 
                             entry = {
-                                headerdate: !ne ? entry : {
+                                hdate: !ne ? entry : {
                                     $not: entry
                                 }
                             };
