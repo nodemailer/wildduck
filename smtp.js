@@ -6,6 +6,7 @@ const SMTPServer = require('smtp-server').SMTPServer;
 const crypto = require('crypto');
 const tools = require('./lib/tools');
 const MessageHandler = require('./lib/message-handler');
+const MessageSplitter = require('./lib/message-splitter');
 const os = require('os');
 const db = require('./lib/db');
 
@@ -47,7 +48,6 @@ const server = new SMTPServer({
 
         // reset session entries
         session.users = new Map();
-        session.maxAllowedStorage = maxStorage;
 
         // accept sender address
         return callback();
@@ -91,7 +91,7 @@ const server = new SMTPServer({
 
                 let storageAvailable = (Number(user.quota || 0) || maxStorage) - Number(user.storageUsed || 0);
 
-                if (Number(session.envelope.mailFrom.args.SIZE) > storageAvailable) {
+                if (storageAvailable <= 0) {
                     err = new Error('Insufficient channel storage: ' + originalRecipient);
                     err.responseCode = 452;
                     return callback(err);
@@ -99,13 +99,8 @@ const server = new SMTPServer({
 
                 session.users.set(recipient, {
                     recipient: originalRecipient,
-                    user: address.user,
-                    storageAvailable
+                    user: address.user
                 });
-
-                if (!session.maxAllowedStorage || session.maxAllowedStorage > storageAvailable) {
-                    session.maxAllowedStorage = storageAvailable;
-                }
 
                 callback();
             });
@@ -118,9 +113,11 @@ const server = new SMTPServer({
         let chunklen = 0;
         let hash = crypto.createHash('md5');
 
-        stream.on('readable', () => {
+        let splitter = new MessageSplitter();
+
+        splitter.on('readable', () => {
             let chunk;
-            while ((chunk = stream.read()) !== null) {
+            while ((chunk = splitter.read()) !== null) {
                 if (chunklen < maxMessageSize) {
                     chunks.push(chunk);
                     chunklen += chunk.length;
@@ -134,7 +131,7 @@ const server = new SMTPServer({
             callback(new Error('Error reading from stream'));
         });
 
-        stream.once('end', () => {
+        splitter.once('end', () => {
             let err;
 
             // too large message
@@ -149,12 +146,8 @@ const server = new SMTPServer({
                 return callback(new Error('Nowhere to save the mail to'));
             }
 
-            // there was at least one recipient with less than required storage available
-            if (chunklen > session.maxAllowedStorage) {
-                err = new Error('Error: Insufficient channel storage');
-                err.responseCode = 452;
-                return callback(err);
-            }
+            chunks.unshift(splitter.rawHeaders);
+            chunklen += splitter.rawHeaders.length;
 
             let queueId = hash.digest('hex').toUpperCase();
             let users = Array.from(session.users);
@@ -177,9 +170,27 @@ const server = new SMTPServer({
                 chunks.unshift(header);
                 chunklen += header.length;
 
+                let mailboxQueryKey = 'path';
+                let mailboxQueryValue = 'INBOX';
+
+                if (Array.isArray(splitter.headers)) {
+                    for (let i = splitter.headers.length - 1; i >= 0; i--) {
+                        let header = splitter.headers[i];
+
+                        // check if the header is used for detecting spam
+                        if (config.spamHeader && config.spamHeader.toLowerCase() === header.key) {
+                            let value = header.line.substr(header.line.indexOf(':') + 1).trim();
+                            if (/^yes\b/i.test(value)) {
+                                mailboxQueryKey = 'specialUse';
+                                mailboxQueryValue = '\\Junk';
+                            }
+                        }
+                    }
+                }
+
                 messageHandler.add({
                     user: rcptData.user,
-                    path: 'INBOX',
+                    [mailboxQueryKey]: mailboxQueryValue,
                     meta: {
                         source: 'SMTP',
                         from: tools.normalizeAddress(session.envelope.mailFrom && session.envelope.mailFrom.address || ''),
@@ -213,6 +224,8 @@ const server = new SMTPServer({
 
             storeNext();
         });
+
+        stream.pipe(splitter);
     }
 });
 

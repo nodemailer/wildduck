@@ -410,7 +410,7 @@ server.onAppend = function (path, flags, date, raw, session, callback) {
             return callback(new Error('User not found'));
         }
 
-        if (user.quota && user.storageUsed + raw.length > user.quota) {
+        if (user.quota && user.storageUsed > user.quota) {
             return callback(false, 'OVERQUOTA');
         }
 
