@@ -36,7 +36,7 @@ server.post('/user/create', (req, res, next) => {
     const schema = Joi.object().keys({
         username: Joi.string().alphanum().lowercase().min(3).max(30).required(),
         password: Joi.string().min(3).max(100).required(),
-        quota: Joi.number().default(0)
+        quota: Joi.number().default(config.imap.maxStorage * (1024 * 1024))
     });
 
     const result = Joi.validate({
