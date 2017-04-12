@@ -1202,24 +1202,18 @@ server.onSearch = function (path, options, session, callback) {
         // prepare query
 
         let query = {
-            mailbox: mailbox._id,
-            $and: []
+            mailbox: mailbox._id
         };
 
-        let hasAll = false;
-        let nothing = false;
         let walkQuery = (parent, ne, node) => {
-            if (hasAll || nothing) {
-                return;
-            }
             node.forEach(term => {
                 switch (term.key) {
                     case 'all':
-                        if (!ne) {
-                            hasAll = true;
-                            query = {
-                                mailbox: mailbox._id
-                            };
+                        if (ne) {
+                            parent.push({
+                                // should not match anything
+                                _id: -1
+                            });
                         }
                         break;
 
@@ -1230,13 +1224,16 @@ server.onSearch = function (path, options, session, callback) {
                     case 'or':
                         {
                             let $or = [];
-                            parent.push({
-                                $or
-                            });
 
                             [].concat(term.value || []).forEach(entry => {
                                 walkQuery($or, false, [].concat(entry || []));
                             });
+
+                            if ($or.length) {
+                                parent.push({
+                                    $or
+                                });
+                            }
 
                             break;
                         }
@@ -1252,7 +1249,10 @@ server.onSearch = function (path, options, session, callback) {
                             });
                         } else {
                             // can not search by text
-                            nothing = true;
+                            parent.push({
+                                // should not match anything
+                                _id: -1
+                            });
                         }
                         break;
 
@@ -1273,11 +1273,19 @@ server.onSearch = function (path, options, session, callback) {
                                     highestModseq: 0
                                 });
                             }
-                            parent.push({
-                                uid: {
-                                    [!ne ? '$in' : '$nin']: term.value
-                                }
-                            });
+                            if (term.value.length !== session.selected.uidList.length) {
+                                // not 1:*
+                                parent.push({
+                                    uid: {
+                                        [!ne ? '$in' : '$nin']: term.value
+                                    }
+                                });
+                            } else if (ne) {
+                                parent.push({
+                                    // should not match anything
+                                    _id: -1
+                                });
+                            }
                         } else {
                             parent.push({
                                 uid: {
@@ -1457,18 +1465,13 @@ server.onSearch = function (path, options, session, callback) {
             });
         };
 
-        walkQuery(query.$and, false, options.query);
-        //}
+        let $and = [];
+        walkQuery($and, false, options.query);
+        if ($and.length) {
+            query.$and = $and;
+        }
 
         this.logger.info('SEARCH %s', JSON.stringify(query));
-
-        if (nothing) {
-            // reject immediatelly
-            return callback(null, {
-                uidList: [],
-                highestModseq: 0
-            });
-        }
 
         let cursor = db.database.collection('messages').
         find(query).
