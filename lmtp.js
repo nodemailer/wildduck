@@ -1,5 +1,7 @@
 'use strict';
 
+// Simple LMTP server that accepts all messages for valid recipients
+
 const config = require('config');
 const log = require('npmlog');
 const SMTPServer = require('smtp-server').SMTPServer;
