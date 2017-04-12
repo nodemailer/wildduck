@@ -4,7 +4,7 @@ let config = require('config');
 let log = require('npmlog');
 let imap = require('./imap');
 let pop3 = require('./pop3');
-let smtp = require('./smtp');
+let lmtp = require('./lmtp');
 let api = require('./api');
 let db = require('./lib/db');
 
@@ -26,10 +26,10 @@ db.connect(err => {
                 log.error('App', 'Failed to start POP3 server');
                 return process.exit(1);
             }
-            // Start SMTP maildrop server
-            smtp(err => {
+            // Start LMTP maildrop server
+            lmtp(err => {
                 if (err) {
-                    log.error('App', 'Failed to start SMTP server');
+                    log.error('App', 'Failed to start LMTP server');
                     return process.exit(1);
                 }
 

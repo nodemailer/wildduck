@@ -34,13 +34,6 @@ module.exports = {
     },
 
     lmtp: {
-        enabled: false,
-        port: 2424,
-        host: '0.0.0.0',
-        maxMB: 5
-    },
-
-    smtp: {
         enabled: true,
         port: 2525,
         // If certificate path is not defined, use built-in self-signed certs for STARTTLS

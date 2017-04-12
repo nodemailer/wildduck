@@ -3,53 +3,47 @@
 const config = require('config');
 const log = require('npmlog');
 const SMTPServer = require('smtp-server').SMTPServer;
-const crypto = require('crypto');
 const tools = require('./lib/tools');
 const MessageHandler = require('./lib/message-handler');
 const MessageSplitter = require('./lib/message-splitter');
-const os = require('os');
 const db = require('./lib/db');
-
-const maxStorage = config.maxStorage * 1024 * 1024;
-const maxMessageSize = config.smtp.maxMB * 1024 * 1024;
+const fs = require('fs');
 
 let messageHandler;
 
-const server = new SMTPServer({
+const serverOptions = {
+
+    lmtp: true,
 
     // log to console
     logger: {
         info(...args) {
             args.shift();
-            log.info('SMTP', ...args);
+            log.info('LMTP', ...args);
         },
         debug(...args) {
             args.shift();
-            log.silly('SMTP', ...args);
+            log.silly('LMTP', ...args);
         },
         error(...args) {
             args.shift();
-            log.error('SMTP', ...args);
+            log.error('LMTP', ...args);
         }
     },
 
     name: false,
 
     // not required but nice-to-have
-    banner: 'Welcome to Wild Duck Mail Agent',
+    banner: 'Welcome to Wild Duck Mail Server',
 
-    // disable STARTTLS to allow authentication in clear text mode
-    disabledCommands: ['AUTH', 'STARTTLS'],
-
-    // Accept messages up to 10 MB
-    size: maxMessageSize,
+    disabledCommands: ['AUTH'],
 
     onMailFrom(address, session, callback) {
 
         // reset session entries
-        session.users = new Map();
+        session.users = [];
 
-        // accept sender address
+        // accept alls sender addresses
         return callback();
     },
 
@@ -59,15 +53,11 @@ const server = new SMTPServer({
         let originalRecipient = tools.normalizeAddress(rcpt.address);
         let recipient = originalRecipient.replace(/\+[^@]*@/, '@');
 
-        if (session.users.has(recipient)) {
-            return callback();
-        }
-
         db.database.collection('addresses').findOne({
             address: recipient
         }, (err, address) => {
             if (err) {
-                log.error('SMTP', err);
+                log.error('LMTP', err);
                 return callback(new Error('Database error'));
             }
             if (!address) {
@@ -78,7 +68,7 @@ const server = new SMTPServer({
                 _id: address.user
             }, (err, user) => {
                 if (err) {
-                    log.error('SMTP', err);
+                    log.error('LMTP', err);
                     return callback(new Error('Database error'));
                 }
                 if (!user) {
@@ -86,18 +76,10 @@ const server = new SMTPServer({
                 }
 
                 if (!session.users) {
-                    session.users = new Map();
+                    session.users = [];
                 }
 
-                let storageAvailable = (Number(user.quota || 0) || maxStorage) - Number(user.storageUsed || 0);
-
-                if (storageAvailable <= 0) {
-                    err = new Error('Insufficient channel storage: ' + originalRecipient);
-                    err.responseCode = 452;
-                    return callback(err);
-                }
-
-                session.users.set(recipient, {
+                session.users.push({
                     recipient: originalRecipient,
                     user: address.user
                 });
@@ -111,60 +93,48 @@ const server = new SMTPServer({
     onData(stream, session, callback) {
         let chunks = [];
         let chunklen = 0;
-        let hash = crypto.createHash('md5');
 
         let splitter = new MessageSplitter();
 
         splitter.on('readable', () => {
             let chunk;
             while ((chunk = splitter.read()) !== null) {
-                if (chunklen < maxMessageSize) {
-                    chunks.push(chunk);
-                    chunklen += chunk.length;
-                }
-                hash.update(chunk);
+                chunks.push(chunk);
+                chunklen += chunk.length;
             }
         });
 
         stream.once('error', err => {
-            log.error('SMTP', err);
+            log.error('LMTP', err);
             callback(new Error('Error reading from stream'));
         });
 
         splitter.once('end', () => {
-            let err;
-
-            // too large message
-            if (stream.sizeExceeded) {
-                err = new Error('Error: message exceeds fixed maximum message size ' + config.smtp.maxMB + ' MB');
-                err.responseCode = 552;
-                return callback(err);
-            }
-
-            // no recipients defined
-            if (!session.users || !session.users.size) {
-                return callback(new Error('Nowhere to save the mail to'));
-            }
-
             chunks.unshift(splitter.rawHeaders);
             chunklen += splitter.rawHeaders.length;
 
-            let queueId = hash.digest('hex').toUpperCase();
-            let users = Array.from(session.users);
+            let responses = [];
+            let users = session.users;
             let stored = 0;
             let storeNext = () => {
                 if (stored >= users.length) {
-                    return callback(null, 'Message queued as ' + queueId);
+                    return callback(null, responses);
                 }
 
-                let recipient = users[stored][0];
-                let rcptData = users[stored][1] || {};
-                stored++;
+                let rcptData = users[stored++];
+                let recipient = rcptData.recipient;
+                let user = rcptData.user;
+
+                let response = responses.filter(r => r.user === user);
+                if (response.length) {
+                    responses.push(response[0]);
+                    return storeNext();
+                }
 
                 // create Delivered-To and Received headers
                 let header = Buffer.from(
-                    'Delivered-To: ' + recipient + '\r\n' +
-                    'Received: ' + generateReceivedHeader(session, queueId, os.hostname(), recipient) + '\r\n'
+                    'Delivered-To: ' + recipient + '\r\n'
+                    //+ 'Received: ' + generateReceivedHeader(session, queueId, os.hostname(), recipient) + '\r\n'
                 );
 
                 chunks.unshift(header);
@@ -189,12 +159,12 @@ const server = new SMTPServer({
                 }
 
                 messageHandler.add({
-                    user: rcptData.user,
+                    user,
                     [mailboxQueryKey]: mailboxQueryValue,
                     meta: {
-                        source: 'SMTP',
+                        source: 'LMTP',
                         from: tools.normalizeAddress(session.envelope.mailFrom && session.envelope.mailFrom.address || ''),
-                        to: rcptData.recipient,
+                        to: recipient,
                         origin: session.remoteAddress,
                         originhost: session.clientHostname,
                         transhost: session.hostNameAppearsAs,
@@ -207,15 +177,21 @@ const server = new SMTPServer({
 
                     // if similar message exists, then skip
                     skipExisting: true
-                }, (err, inserted) => {
+                }, (err, inserted, info) => {
                     // remove Delivered-To
                     chunks.shift();
                     chunklen -= header.length;
 
                     if (err) {
-                        log.error('SMTP', err);
-                    } else if (!inserted) {
-                        log.debug('SMTP', 'Message was not inserted');
+                        responses.push({
+                            user,
+                            response: err
+                        });
+                    } else {
+                        responses.push({
+                            user,
+                            response: 'Message stored as ' + info.id.toString()
+                        });
                     }
 
                     storeNext();
@@ -227,10 +203,20 @@ const server = new SMTPServer({
 
         stream.pipe(splitter);
     }
-});
+};
+
+if (config.lmtp.key) {
+    serverOptions.key = fs.readFileSync(config.lmtp.key);
+}
+
+if (config.lmtp.cert) {
+    serverOptions.cert = fs.readFileSync(config.lmtp.cert);
+}
+
+const server = new SMTPServer(serverOptions);
 
 module.exports = done => {
-    if (!config.smtp.enabled) {
+    if (!config.lmtp.enabled) {
         return setImmediate(() => done(null, false));
     }
 
@@ -243,10 +229,10 @@ module.exports = done => {
             started = true;
             return done(err);
         }
-        log.error('SMTP', err);
+        log.error('LMTP', err);
     });
 
-    server.listen(config.smtp.port, config.smtp.host, () => {
+    server.listen(config.lmtp.port, config.lmtp.host, () => {
         if (started) {
             return server.close();
         }
@@ -254,7 +240,7 @@ module.exports = done => {
         done(null, server);
     });
 };
-
+/*
 function generateReceivedHeader(session, queueId, hostname, recipient) {
     let origin = session.remoteAddress ? '[' + session.remoteAddress + ']' : '';
     let originhost = session.clientHostname && session.clientHostname.charAt(0) !== '[' ? session.clientHostname : false;
@@ -294,3 +280,4 @@ function generateReceivedHeader(session, queueId, hostname, recipient) {
         ' ' + new Date().toUTCString().replace(/GMT/, '+0000');
     return value;
 }
+*/
