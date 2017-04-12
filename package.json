@@ -35,7 +35,6 @@
     "redfour": "^1.0.0",
     "redis": "^2.7.1",
     "restify": "^4.3.0",
-    "rolling-rate-limiter": "^0.1.5",
     "smtp-server": "^3.0.1",
     "toml": "^2.3.2",
     "utf7": "^1.0.2",

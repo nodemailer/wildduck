@@ -12,7 +12,6 @@ const ObjectID = require('mongodb').ObjectID;
 const Indexer = require('./imap-core/lib/indexer/indexer');
 const imapTools = require('./imap-core/lib/imap-tools');
 const fs = require('fs');
-const rateLimiter = require('rolling-rate-limiter');
 const setupIndexes = require('./indexes.json');
 const MessageHandler = require('./lib/message-handler');
 const db = require('./lib/db');
@@ -66,40 +65,27 @@ let messageHandler;
 server.onAuth = function (login, session, callback) {
     let username = (login.username || '').toString().trim();
 
-    // rate limit authentication attempts per username/source IP
-    server.loginLimiter(username + ':' + session.remoteAddress, (err, timeLeft) => {
+    db.database.collection('users').findOne({
+        username
+    }, (err, user) => {
         if (err) {
             return callback(err);
         }
-        if (timeLeft) {
-            let err = new Error('Too many logins, try again later');
-            err.response = 'NO';
-            return callback(err);
+        if (!user) {
+            return callback();
         }
 
-        db.database.collection('users').findOne({
-            username
-        }, (err, user) => {
-            if (err) {
-                return callback(err);
-            }
-            if (!user) {
-                return callback();
-            }
+        if (!bcrypt.compareSync(login.password, user.password)) {
+            return callback();
+        }
 
-            if (!bcrypt.compareSync(login.password, user.password)) {
-                return callback();
+        callback(null, {
+            user: {
+                id: user._id,
+                username
             }
-
-            callback(null, {
-                user: {
-                    id: user._id,
-                    username
-                }
-            });
         });
     });
-
 };
 
 // LIST "" "*"
@@ -1590,14 +1576,6 @@ module.exports = done => {
         // setup notification system for updates
         server.notifier = new ImapNotifier({
             database: db.database
-        });
-
-        server.loginLimiter = rateLimiter({
-            redis: db.redis,
-            namespace: 'UserLoginLimiter',
-            // allow 100 login attempts per minute
-            interval: 60 * 1000,
-            maxInInterval: 100
         });
 
         let started = false;
