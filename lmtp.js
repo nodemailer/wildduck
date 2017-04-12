@@ -135,7 +135,7 @@ const serverOptions = {
             let stored = 0;
             let storeNext = () => {
                 if (stored >= users.length) {
-                    return callback(null, responses);
+                    return callback(null, responses.map(r => r.response));
                 }
 
                 let rcptData = users[stored++];
