@@ -479,10 +479,7 @@ server.onStore = function (path, update, session, callback) {
         }
 
         let query = {
-            mailbox: mailbox._id,
-            uid: {
-                $in: update.messages
-            }
+            mailbox: mailbox._id
         };
 
         if (update.unchangedSince) {
@@ -490,11 +487,19 @@ server.onStore = function (path, update, session, callback) {
                 mailbox: mailbox._id,
                 modseq: {
                     $lte: update.unchangedSince
-                },
-                uid: {
-                    $in: update.messages
                 }
             };
+        }
+
+        let queryAll = false;
+        if (update.messages.length !== session.selected.uidList.length) {
+            // do not use uid selector for 1:*
+            query.uid = {
+                $in: update.messages
+            };
+        } else {
+            // 1:*
+            queryAll = true;
         }
 
         let cursor = db.database.collection('messages').
@@ -546,6 +551,10 @@ server.onStore = function (path, update, session, callback) {
                 }
                 if (!message) {
                     return cursor.close(() => done(null, true));
+                }
+                if (queryAll && !session.selected.uidList.includes(message.uid)) {
+                    // skip processing messages that we do not know about yet
+                    return processNext();
                 }
 
                 let flagsupdate = false; // query object for updates
@@ -1036,10 +1045,7 @@ server.onFetch = function (path, options, session, callback) {
         }
 
         let query = {
-            mailbox: mailbox._id,
-            uid: {
-                $in: options.messages
-            }
+            mailbox: mailbox._id
         };
 
         if (options.changedSince) {
@@ -1047,11 +1053,19 @@ server.onFetch = function (path, options, session, callback) {
                 mailbox: mailbox._id,
                 modseq: {
                     $gt: options.changedSince
-                },
-                uid: {
-                    $in: options.messages
                 }
             };
+        }
+
+        let queryAll = false;
+        if (options.messages.length !== session.selected.uidList.length) {
+            // do not use uid selector for 1:*
+            query.uid = {
+                $in: options.messages
+            };
+        } else {
+            // 1:*
+            queryAll = true;
         }
 
         let isUpdated = false;
@@ -1095,6 +1109,11 @@ server.onFetch = function (path, options, session, callback) {
                     return cursor.close(() => {
                         done(null, true);
                     });
+                }
+
+                if (queryAll && !session.selected.uidList.includes(message.uid)) {
+                    // skip processing messages that we do not know about yet
+                    return processNext();
                 }
 
                 let markAsSeen = options.markAsSeen && !message.flags.includes('\\Seen');
