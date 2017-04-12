@@ -239,14 +239,18 @@ Updates maximum allowed quota for an user
 Arguments
 
 - **username** is the username of the user to modify
-- **quota** (optional) is the maximum storage in bytes allowed for this user. If not set or zero then the default value is used
+- **quota** (optional) is the maximum storage in bytes allowed for this user
+- **recipients** (optional) is the maximum sending recipients per 24h allowed for this user. Assumes ZoneMTA with [zonemta-wildduck](https://github.com/wildduck-email/zonemta-wildduck) plugin
+
+> At least one limit value must be set
 
 **Example**
 
 ```
 curl -XPOST "http://localhost:8080/user/quota" -H 'content-type: application/json' -d '{
   "username": "testuser",
-  "quota": 1234567
+  "quota": 1234567,
+  "recipients": 500
 }'
 ```
 
@@ -256,8 +260,8 @@ The response for successful operation should look like this:
 {
   "success": true,
   "username": "testuser",
-  "previousQuota": 0,
-  "quota": 1234567
+  "quota": 1234567,
+  "recipients": 500
 }
 ```
 
@@ -343,6 +347,10 @@ The response for successful operation should look like this:
   "username": "testuser",
   "quota": 1234567,
   "storageUsed": 1822,
+  "recipients": 500,
+  "recipientsLimited": false,
+  "recipientsSent": 47,
+  "recipientsTtl": 3392,
   "addresses": [
     {
       "id": "58d8fccb645b0deb23d6c37d",
@@ -353,6 +361,15 @@ The response for successful operation should look like this:
   ]
 }
 ```
+
+Where
+
+  * **recipients** – is the count of maximum recipients for 24 hour period (starts with the first message)
+  * **recipientsLimited** – if *true* then sending is currently disabled as recipient limit has been reached
+  * **recipientsSent** – how many recipients has been used in the current 24 hour period
+  * **recipientsTtl** – seconds until the end of current period
+
+Recipient limits assume that messages are sent using ZoneMTA with [zonemta-wildduck](https://github.com/wildduck-email/zonemta-wildduck) plugin, otherwise the counters are not updated.
 
 ### GET /user/mailboxes
 

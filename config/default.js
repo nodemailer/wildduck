@@ -20,11 +20,7 @@ module.exports = {
 
     mongo: 'mongodb://127.0.0.1:27017/wildduck',
 
-    redis: {
-        host: 'localhost',
-        port: 6379,
-        db: 3
-    },
+    redis: 'redis://127.0.0.1:6379/3',
 
     imap: {
         port: 9993,
@@ -34,9 +30,7 @@ module.exports = {
         //cert: '/path/to/server/cert.pem'
         secure: true,
         // Max size for messages uploaded via APPEND
-        maxMB: 5,
-        // default quota storage in MB (can be overriden per user)
-        maxStorage: 1000
+        maxMB: 5
     },
 
     lmtp: {
@@ -72,5 +66,12 @@ module.exports = {
         port: 8080
     },
 
-    spamHeader: 'X-Rspamd-Spam'
+    // if this header exists and starts with yes then the message is treated as spam
+    spamHeader: 'X-Rspamd-Spams',
+
+    // default quota storage in MB (can be overriden per user)
+    maxStorage: 1000,
+
+    // default smtp recipients for 24h (can be overriden per user)
+    maxRecipients: 2000
 };

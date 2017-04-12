@@ -36,7 +36,7 @@ server.post('/user/create', (req, res, next) => {
     const schema = Joi.object().keys({
         username: Joi.string().alphanum().lowercase().min(3).max(30).required(),
         password: Joi.string().min(3).max(100).required(),
-        quota: Joi.number().default(config.imap.maxStorage * (1024 * 1024))
+        quota: Joi.number().default(config.maxStorage * (1024 * 1024))
     });
 
     const result = Joi.validate({
@@ -282,12 +282,14 @@ server.post('/user/quota', (req, res, next) => {
 
     const schema = Joi.object().keys({
         username: Joi.string().alphanum().lowercase().min(3).max(30).required(),
-        quota: Joi.number().default(0)
+        quota: Joi.number().min(0).optional(),
+        recipients: Joi.number().min(0).max(1000000).optional()
     });
 
     const result = Joi.validate({
         username: req.params.username,
-        quota: req.params.quota
+        quota: req.params.quota,
+        recipients: req.params.recipients
     }, schema, {
         abortEarly: false,
         convert: true,
@@ -303,13 +305,29 @@ server.post('/user/quota', (req, res, next) => {
 
     let username = result.value.username;
     let quota = result.value.quota;
+    let recipients = result.value.recipients;
+
+    let $set = {};
+    if (quota) {
+        $set.quota = quota;
+    }
+    if (recipients) {
+        $set.recipients = recipients;
+    }
+
+    if (!quota && !recipients) {
+        res.json({
+            error: 'Nothing was updated'
+        });
+        return next();
+    }
 
     db.database.collection('users').findOneAndUpdate({
         username
     }, {
-        $set: {
-            quota
-        }
+        $set
+    }, {
+        returnOriginal: false
     }, (err, result) => {
         if (err) {
             res.json({
@@ -330,8 +348,8 @@ server.post('/user/quota', (req, res, next) => {
         res.json({
             success: true,
             username,
-            previousQuota: Number(result.value.quota) || 0,
-            quota
+            quota: Number(result.value.quota) || 0,
+            recipients: Number(result.value.recipients) || 0
         });
         return next();
     });
@@ -566,19 +584,39 @@ server.get('/user', (req, res, next) => {
                 addresses = [];
             }
 
-            res.json({
-                success: true,
-                username,
-                quota: Number(userData.quota) || config.imap.maxStorage * 1024 * 1024,
-                storageUsed: Math.max(Number(userData.storageUsed) || 0, 0),
-                addresses: addresses.map(address => ({
-                    id: address._id.toString(),
-                    address: address.address,
-                    main: address.address === userData.address,
-                    created: address.created
-                }))
+            db.redis.multi().
+            get('wdr:' + userData._id.toString()).
+            ttl('wdr:' + userData._id.toString()).
+            exec((err, result) => {
+                if (err) {
+                    // ignore
+                }
+                let recipients = Number(userData.recipients) || 0;
+                let recipientsSent = Number(result && result[0]) || 0;
+                let recipientsTtl = Number(result && result[1]) || 0;
+
+                res.json({
+                    success: true,
+                    username,
+
+                    quota: Number(userData.quota) || config.maxStorage * 1024 * 1024,
+                    storageUsed: Math.max(Number(userData.storageUsed) || 0, 0),
+
+                    recipients,
+                    recipientsSent,
+
+                    recipientsLimited: recipients ? recipients <= recipientsSent : false,
+                    recipientsTtl: recipientsTtl >= 0 ? recipientsTtl : false,
+
+                    addresses: addresses.map(address => ({
+                        id: address._id.toString(),
+                        address: address.address,
+                        main: address.address === userData.address,
+                        created: address.created
+                    }))
+                });
+                return next();
             });
-            return next();
         });
     });
 });

@@ -48,7 +48,7 @@ const serverOptions = {
     },
 
     maxMessage: config.imap.maxMB * 1024 * 1024,
-    maxStorage: config.imap.maxStorage * 1024 * 1024
+    maxStorage: config.maxStorage * 1024 * 1024
 };
 
 if (config.imap.key) {

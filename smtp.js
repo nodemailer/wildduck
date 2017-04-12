@@ -10,7 +10,7 @@ const MessageSplitter = require('./lib/message-splitter');
 const os = require('os');
 const db = require('./lib/db');
 
-const maxStorage = config.imap.maxStorage * 1024 * 1024;
+const maxStorage = config.maxStorage * 1024 * 1024;
 const maxMessageSize = config.smtp.maxMB * 1024 * 1024;
 
 let messageHandler;
