@@ -113,6 +113,23 @@ const serverOptions = {
             chunks.unshift(splitter.rawHeaders);
             chunklen += splitter.rawHeaders.length;
 
+            let isSpam = false;
+            let spamHeader = config.spamHeader && config.spamHeader.toLowerCase();
+
+            if (Array.isArray(splitter.headers)) {
+                for (let i = splitter.headers.length - 1; i >= 0; i--) {
+                    let header = splitter.headers[i];
+
+                    // check if the header is used for detecting spam
+                    if (spamHeader === header.key) {
+                        let value = header.line.substr(header.line.indexOf(':') + 1).trim();
+                        if (/^yes\b/i.test(value)) {
+                            isSpam = true;
+                        }
+                    }
+                }
+            }
+
             let responses = [];
             let users = session.users;
             let stored = 0;
@@ -143,24 +160,15 @@ const serverOptions = {
                 let mailboxQueryKey = 'path';
                 let mailboxQueryValue = 'INBOX';
 
-                if (Array.isArray(splitter.headers)) {
-                    for (let i = splitter.headers.length - 1; i >= 0; i--) {
-                        let header = splitter.headers[i];
-
-                        // check if the header is used for detecting spam
-                        if (config.spamHeader && config.spamHeader.toLowerCase() === header.key) {
-                            let value = header.line.substr(header.line.indexOf(':') + 1).trim();
-                            if (/^yes\b/i.test(value)) {
-                                mailboxQueryKey = 'specialUse';
-                                mailboxQueryValue = '\\Junk';
-                            }
-                        }
-                    }
+                if (isSpam) {
+                    mailboxQueryKey = 'specialUse';
+                    mailboxQueryValue = '\\Junk';
                 }
 
-                messageHandler.add({
+                let messageOptions = {
                     user,
                     [mailboxQueryKey]: mailboxQueryValue,
+
                     meta: {
                         source: 'LMTP',
                         from: tools.normalizeAddress(session.envelope.mailFrom && session.envelope.mailFrom.address || ''),
@@ -171,28 +179,26 @@ const serverOptions = {
                         transtype: session.transmissionType,
                         time: Date.now()
                     },
+
                     date: false,
                     flags: false,
-                    raw: Buffer.concat(chunks, chunklen),
-
                     // if similar message exists, then skip
                     skipExisting: true
-                }, (err, inserted, info) => {
+                };
+
+                messageOptions.raw = Buffer.concat(chunks, chunklen);
+
+                messageHandler.add(messageOptions, (err, inserted, info) => {
+
                     // remove Delivered-To
                     chunks.shift();
                     chunklen -= header.length;
 
-                    if (err) {
-                        responses.push({
-                            user,
-                            response: err
-                        });
-                    } else {
-                        responses.push({
-                            user,
-                            response: 'Message stored as ' + info.id.toString()
-                        });
-                    }
+                    // push to response list
+                    responses.push({
+                        user,
+                        response: err ? err : 'Message stored as ' + info.id.toString()
+                    });
 
                     storeNext();
                 });

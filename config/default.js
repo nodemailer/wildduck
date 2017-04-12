@@ -60,7 +60,7 @@ module.exports = {
     },
 
     // if this header exists and starts with yes then the message is treated as spam
-    spamHeader: 'X-Rspamd-Spams',
+    spamHeader: 'X-Rspamd-Spam',
 
     // default quota storage in MB (can be overriden per user)
     maxStorage: 1000,
