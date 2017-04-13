@@ -852,7 +852,7 @@ server.get('/mailbox/:id', (req, res, next) => {
                 db.database.collection('messages').find(query, {
                     uid: true,
                     mailbox: true,
-                    internaldate: true,
+                    idate: true,
                     headers: true,
                     hasAttachments: true,
                     intro: true
@@ -898,7 +898,7 @@ server.get('/mailbox/:id', (req, res, next) => {
                         messages: messages.map(message => {
                             let response = {
                                 id: message._id,
-                                date: message.internaldate,
+                                date: message.idate,
                                 hasAttachments: message.hasAttachments,
                                 intro: message.intro
                             };
@@ -960,7 +960,7 @@ server.get('/message/:id', (req, res, next) => {
         html: true,
         text: true,
         attachments: true,
-        internaldate: true,
+        idate: true,
         flags: true
     }, (err, message) => {
         if (err) {
@@ -984,7 +984,7 @@ server.get('/message/:id', (req, res, next) => {
                 id,
                 mailbox: message.mailbox,
                 headers: message.headers,
-                date: message.internaldate,
+                date: message.idate,
                 flags: message.flags,
                 text: message.text,
                 html: message.html,
@@ -1189,6 +1189,10 @@ server.del('/message/:id', (req, res, next) => {
 });
 
 module.exports = done => {
+    if (!config.imap.enabled) {
+        return setImmediate(() => done(null, false));
+    }
+
     let started = false;
 
     messageHandler = new MessageHandler(db.database);

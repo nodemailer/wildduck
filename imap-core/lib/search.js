@@ -21,11 +21,11 @@ let queryHandlers = {
     internaldate(message, query, callback) {
         switch (query.operator) {
             case '<':
-                return callback(null, getShortDate(message.internaldate) < getShortDate(query.value));
+                return callback(null, getShortDate(message.idate) < getShortDate(query.value));
             case '=':
-                return callback(null, getShortDate(message.internaldate) === getShortDate(query.value));
+                return callback(null, getShortDate(message.idate) === getShortDate(query.value));
             case '>=':
-                return callback(null, getShortDate(message.internaldate) >= getShortDate(query.value));
+                return callback(null, getShortDate(message.idate) >= getShortDate(query.value));
         }
         return callback(null, false);
     },
@@ -40,7 +40,7 @@ let queryHandlers = {
             if (!mimeTree) {
                 mimeTree = indexer.parseMimeTree(message.raw);
             }
-            date = mimeTree.parsedHeader.date || message.internaldate;
+            date = mimeTree.parsedHeader.date || message.idate;
         }
 
         switch (query.operator) {

@@ -78,7 +78,7 @@ If a messages is deleted by a client this message gets marked as Seen and moved 
 
 ### Does it work?
 
-Yes, it does. You can run the server and get working IMAP and POP3 servers for mail store, SMTP server for pushing messages to the mail store and HTTP API server to create new users. All handled by Node.js, MongoDB and Redis, no additional dependencies needed. The IMAP server hosting уайлддак.орг uses a MongoDB replica set of 3 hosts.
+Yes, it does. You can run the server and get working IMAP and POP3 servers for mail store, LMTP server for pushing messages to the mail store and HTTP API server to create new users. All handled by Node.js, MongoDB and Redis, no additional dependencies needed. Provided services can be disabled and enabled one by one so, for example you could process just IMAP in one host and LMTP in another.
 
 ### What are the killer features?
 
@@ -230,7 +230,7 @@ The response for successful operation should look like this:
 }
 ```
 
-After you have registered a new address then SMTP maildrop server starts accepting mail for it and store the messages to the users mailbox.
+After you have registered a new address then LMTP maildrop server starts accepting mail for it and store the messages to the users mailbox.
 
 ### POST /user/quota
 
@@ -660,11 +660,15 @@ Create an email account and use your IMAP client to connect to it. To send mail 
 node examples/push-mail.js username@example.com
 ```
 
-This should "deliver" a new message to the INBOX of _username@example.com_ by using the built-in SMTP maildrop interface. If your email client is connected then you should promptly see the new message.
+This should "deliver" a new message to the INBOX of _username@example.com_ by using the built-in LMTP maildrop interface. If your email client is connected then you should promptly see the new message.
 
 ## Outbound SMTP
 
 Use [ZoneMTA](https://github.com/zone-eu/zone-mta) with the [ZoneMTA-WildDuck](https://github.com/wildduck-email/zonemta-wildduck) plugin. This gives you an outbound SMTP server that uses Wild Duck accounts for authentication.
+
+## Outbound SMTP
+
+Use [Haraka](http://haraka.github.io/) with [queue/lmtp](http://haraka.github.io/manual/plugins/queue/lmtp.html) plugin. Wild Duck specific recipient processing plugin coming soon!
 
 ## License
 

@@ -496,10 +496,10 @@ module.exports.getQueryResponse = function (query, message, options) {
                 break;
 
             case 'internaldate':
-                if (!message.internaldate) {
-                    message.internaldate = new Date();
+                if (!message.idate) {
+                    message.idate = new Date();
                 }
-                value = message.internaldate;
+                value = message.idate;
                 break;
 
             case 'bodystructure':

@@ -1033,7 +1033,7 @@ server.onFetch = function (path, options, session, callback) {
         let projection = {
             uid: true,
             modseq: true,
-            internaldate: true,
+            idate: true,
             flags: true,
             envelope: true,
             bodystructure: true,
@@ -1403,7 +1403,7 @@ server.onSearch = function (path, options, session, callback) {
                             };
 
                             entry = {
-                                internaldate: !ne ? entry : {
+                                idate: !ne ? entry : {
                                     $not: entry
                                 }
                             };
@@ -1587,6 +1587,10 @@ server.onGetQuota = function (quotaRoot, session, callback) {
 };
 
 module.exports = done => {
+    if (!config.imap.enabled) {
+        return setImmediate(() => done(null, false));
+    }
+
     let start = () => {
 
         messageHandler = new MessageHandler(db.database);

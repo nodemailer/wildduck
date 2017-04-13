@@ -7,7 +7,6 @@ const log = require('npmlog');
 const SMTPServer = require('smtp-server').SMTPServer;
 const tools = require('./lib/tools');
 const MessageHandler = require('./lib/message-handler');
-const MessageSplitter = require('./lib/message-splitter');
 const db = require('./lib/db');
 const fs = require('fs');
 
@@ -96,11 +95,9 @@ const serverOptions = {
         let chunks = [];
         let chunklen = 0;
 
-        let splitter = new MessageSplitter();
-
-        splitter.on('readable', () => {
+        stream.on('readable', () => {
             let chunk;
-            while ((chunk = splitter.read()) !== null) {
+            while ((chunk = stream.read()) !== null) {
                 chunks.push(chunk);
                 chunklen += chunk.length;
             }
@@ -111,30 +108,16 @@ const serverOptions = {
             callback(new Error('Error reading from stream'));
         });
 
-        splitter.once('end', () => {
-            chunks.unshift(splitter.rawHeaders);
-            chunklen += splitter.rawHeaders.length;
+        stream.once('end', () => {
 
-            let isSpam = false;
             let spamHeader = config.spamHeader && config.spamHeader.toLowerCase();
 
-            if (Array.isArray(splitter.headers)) {
-                for (let i = splitter.headers.length - 1; i >= 0; i--) {
-                    let header = splitter.headers[i];
-
-                    // check if the header is used for detecting spam
-                    if (spamHeader === header.key) {
-                        let value = header.line.substr(header.line.indexOf(':') + 1).trim();
-                        if (/^yes\b/i.test(value)) {
-                            isSpam = true;
-                        }
-                    }
-                }
-            }
+            let isSpam = false;
 
             let responses = [];
             let users = session.users;
             let stored = 0;
+
             let storeNext = () => {
                 if (stored >= users.length) {
                     return callback(null, responses.map(r => r.response));
@@ -159,8 +142,23 @@ const serverOptions = {
                 chunks.unshift(header);
                 chunklen += header.length;
 
+                let prepared = messageHandler.prepareMessage({raw: Buffer.concat(chunks, chunklen)});
+
                 let mailboxQueryKey = 'path';
                 let mailboxQueryValue = 'INBOX';
+
+                // apply filters
+                if (spamHeader) {
+                    for (let i = prepared.headers.length - 1; i >= 0; i--) {
+                        let header = prepared.headers[i];
+                        // check if the header is used for detecting spam
+                        if (spamHeader === header.key) {
+                            if (/^yes\b/i.test(header.value)) {
+                                isSpam = true;
+                            }
+                        }
+                    }
+                }
 
                 if (isSpam) {
                     mailboxQueryKey = 'specialUse';
@@ -170,6 +168,8 @@ const serverOptions = {
                 let messageOptions = {
                     user,
                     [mailboxQueryKey]: mailboxQueryValue,
+
+                    prepared,
 
                     meta: {
                         source: 'LMTP',
@@ -187,8 +187,6 @@ const serverOptions = {
                     // if similar message exists, then skip
                     skipExisting: true
                 };
-
-                messageOptions.raw = Buffer.concat(chunks, chunklen);
 
                 messageHandler.add(messageOptions, (err, inserted, info) => {
 
@@ -208,8 +206,6 @@ const serverOptions = {
 
             storeNext();
         });
-
-        stream.pipe(splitter);
     }
 };
 

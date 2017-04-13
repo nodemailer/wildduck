@@ -22,19 +22,19 @@ module.exports = function (options) {
             uid: 45,
             flags: [],
             modseq: 100,
-            internaldate: new Date('14-Sep-2013 21:22:28 -0300'),
+            idate: new Date('14-Sep-2013 21:22:28 -0300'),
             mimeTree: parseMimeTree(new Buffer('from: sender@example.com\r\nto: to@example.com\r\ncc: cc@example.com\r\nsubject: test\r\n\r\nzzzz'))
         }, {
             uid: 49,
             flags: ['\\Seen'],
-            internaldate: new Date(),
+            idate: new Date(),
             modseq: 5000,
             mimeTree: parseMimeTree(fs.readFileSync(__dirname + '/fixtures/ryan_finnie_mime_torture.eml'))
         }, {
             uid: 50,
             flags: ['\\Seen'],
             modseq: 45,
-            internaldate: new Date(),
+            idate: new Date(),
             mimeTree: parseMimeTree('MIME-Version: 1.0\r\n' +
                 'From: andris@kreata.ee\r\n' +
                 'To: andris@tr.ee\r\n' +
@@ -71,18 +71,18 @@ module.exports = function (options) {
             uid: 52,
             flags: [],
             modseq: 4,
-            internaldate: new Date(),
+            idate: new Date(),
             mimeTree: parseMimeTree('from: sender@example.com\r\nto: to@example.com\r\ncc: cc@example.com\r\nsubject: test\r\n\r\nHello World!')
         }, {
             uid: 53,
             flags: [],
             modseq: 5,
-            internaldate: new Date()
+            idate: new Date()
         }, {
             uid: 60,
             flags: [],
             modseq: 6,
-            internaldate: new Date()
+            idate: new Date()
         }],
         journal: []
     }, {

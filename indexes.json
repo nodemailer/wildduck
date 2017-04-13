@@ -91,10 +91,10 @@
             "modseq": 1
         }
     }, {
-        "name": "by_internaldate",
+        "name": "by_idate",
         "key": {
             "mailbox": 1,
-            "internaldate": 1
+            "idate": 1
         }
     }, {
         "name": "by_hdate",

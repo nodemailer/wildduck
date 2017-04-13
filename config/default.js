@@ -23,6 +23,7 @@ module.exports = {
     redis: 'redis://127.0.0.1:6379/3',
 
     imap: {
+        enabled: true,
         port: 9993,
         host: '127.0.0.1',
         // If certificate path is not defined, use built-in self-signed certs
@@ -56,7 +57,9 @@ module.exports = {
     },
 
     api: {
-        port: 8080
+        enabled: true,
+        port: 8080,
+        host: '0.0.0.0'
     },
 
     // if this header exists and starts with yes then the message is treated as spam
