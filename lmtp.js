@@ -67,6 +67,10 @@ const serverOptions = {
 
             db.database.collection('users').findOne({
                 _id: address.user
+            }, {
+                fields: {
+                    filters: true
+                }
             }, (err, user) => {
                 if (err) {
                     log.error('LMTP', err);
@@ -82,7 +86,7 @@ const serverOptions = {
 
                 session.users.push({
                     recipient: originalRecipient,
-                    user: address.user
+                    user
                 });
 
                 callback();
@@ -142,7 +146,9 @@ const serverOptions = {
                 chunks.unshift(header);
                 chunklen += header.length;
 
-                let prepared = messageHandler.prepareMessage({raw: Buffer.concat(chunks, chunklen)});
+                let prepared = messageHandler.prepareMessage({
+                    raw: Buffer.concat(chunks, chunklen)
+                });
 
                 let mailboxQueryKey = 'path';
                 let mailboxQueryValue = 'INBOX';
@@ -166,7 +172,7 @@ const serverOptions = {
                 }
 
                 let messageOptions = {
-                    user,
+                    user: user && user._id || user,
                     [mailboxQueryKey]: mailboxQueryValue,
 
                     prepared,
