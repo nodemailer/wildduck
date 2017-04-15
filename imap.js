@@ -582,7 +582,8 @@ server.onStore = function (path, update, session, callback) {
                                     flags: message.flags,
                                     seen: message.flags.includes('\\Seen'),
                                     flagged: message.flags.includes('\\Flagged'),
-                                    deleted: message.flags.includes('\\Deleted')
+                                    deleted: message.flags.includes('\\Deleted'),
+                                    draft: message.flags.includes('\\Draft')
                                 }
                             };
                         }
@@ -610,7 +611,7 @@ server.onStore = function (path, update, session, callback) {
                                     }
                                 };
 
-                                if (newFlags.includes('\\Seen') || newFlags.includes('\\Flagged') || newFlags.includes('\\Deleted')) {
+                                if (newFlags.includes('\\Seen') || newFlags.includes('\\Flagged') || newFlags.includes('\\Deleted') || newFlags.includes('\\Draft')) {
                                     flagsupdate.$set = {};
                                     if (newFlags.includes('\\Seen')) {
                                         flagsupdate.$set = {
@@ -625,6 +626,11 @@ server.onStore = function (path, update, session, callback) {
                                     if (newFlags.includes('\\Deleted')) {
                                         flagsupdate.$set = {
                                             deleted: true
+                                        };
+                                    }
+                                    if (newFlags.includes('\\Draft')) {
+                                        flagsupdate.$set = {
+                                            draft: true
                                         };
                                     }
                                 }
@@ -655,7 +661,7 @@ server.onStore = function (path, update, session, callback) {
                                         }
                                     }
                                 };
-                                if (oldFlags.includes('\\Seen') || oldFlags.includes('\\Flagged') || oldFlags.includes('\\Deleted')) {
+                                if (oldFlags.includes('\\Seen') || oldFlags.includes('\\Flagged') || oldFlags.includes('\\Deleted') || oldFlags.includes('\\Draft')) {
                                     flagsupdate.$set = {};
                                     if (oldFlags.includes('\\Seen')) {
                                         flagsupdate.$set = {
@@ -670,6 +676,11 @@ server.onStore = function (path, update, session, callback) {
                                     if (oldFlags.includes('\\Deleted')) {
                                         flagsupdate.$set = {
                                             deleted: false
+                                        };
+                                    }
+                                    if (oldFlags.includes('\\Draft')) {
+                                        flagsupdate.$set = {
+                                            draft: false
                                         };
                                     }
                                 }
@@ -1320,6 +1331,7 @@ server.onSearch = function (path, options, session, callback) {
                                 case '\\Seen':
                                 case '\\Deleted':
                                 case '\\Flagged':
+                                case '\\Draft':
                                     if (term.exists) {
                                         parent.push({
                                             [term.value.toLowerCase().substr(1)]: !ne

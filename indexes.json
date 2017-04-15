@@ -141,6 +141,12 @@
             "flagged": 1
         }
     }, {
+        "name": "mailbox_draft_flag",
+        "key": {
+            "mailbox": 1,
+            "draft": 1
+        }
+    }, {
         "name": "has_attachments",
         "key": {
             "mailbox": 1,
