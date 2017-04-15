@@ -854,7 +854,7 @@ server.get('/mailbox/:id', (req, res, next) => {
                     mailbox: true,
                     idate: true,
                     headers: true,
-                    hasAttachments: true,
+                    ha: true,
                     intro: true
                 }).sort(sort).limit(size).toArray((err, messages) => {
                     if (err) {
@@ -899,7 +899,7 @@ server.get('/mailbox/:id', (req, res, next) => {
                             let response = {
                                 id: message._id,
                                 date: message.idate,
-                                hasAttachments: message.hasAttachments,
+                                ha: message.ha,
                                 intro: message.intro
                             };
 

@@ -446,7 +446,7 @@ Response includes the following fields
 
   - **id** is the message ID
   - **date** is the date when this message was received
-  - **hasAttachments** is a boolean that indicates if this messages has attachments or not
+  - **ha** is a boolean that indicates if this messages has attachments or not
   - **intro** includes the first 256 characters from the message
   - **subject** is the message title
   - **from** is the From: field
@@ -469,7 +469,7 @@ The response for successful listing should look like this:
     {
       "id": "58e25243ab71621c3890417e",
       "date": "2017-04-03T13:46:44.226Z",
-      "hasAttachments": true,
+      "ha": true,
       "intro": "Welcome to Ryan Finnie's MIME torture test. This message was designed to introduce a couple of the newer features of MIME-aware MUAs, features that have come around since the days of the original MIME torture test. Just to be clear, this message SUPPLEMENT…",
       "subject": "ryan finnie's mime torture test v1.0",
       "from": "ryan finnie <rfinnie@domain.dom>",

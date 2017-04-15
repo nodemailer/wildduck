@@ -153,6 +153,49 @@ const serverOptions = {
                 let mailboxQueryKey = 'path';
                 let mailboxQueryValue = 'INBOX';
 
+                let filters = [
+                    // example filter
+                    {
+                        query: {
+                            headers: {
+                                from: 'abc',
+                                to: 'def',
+                                subject: 'ghi'
+                            },
+                            text: 'jkl',
+                            // positive: must have attachments, negative: no attachments
+                            ha: 1,
+                            // positive: larger than size, netaive: smaller than abs(size)
+                            size: 10
+                        },
+                        action: {
+                            // mark message as seen
+                            seen: true,
+                            // mark message as flagged
+                            flag: true,
+                            // set mailbox ID
+                            mailbox: 'aaaaa',
+                            // positive spam, negative ham
+                            spam: 1,
+                            // if true, delete message
+                            delete: false
+                        }
+                    }
+                ].concat(spamHeader ? {
+                    query: {
+                        headers: {
+                            [spamHeader]: 'Yes'
+                        }
+                    },
+                    action: {
+                        spam: true
+                    }
+                } : []);
+
+                let filterResults = checkFilters(prepared, filters);
+
+                // TODO: apply filter result
+
                 // apply filters
                 if (spamHeader) {
                     for (let i = prepared.headers.length - 1; i >= 0; i--) {
@@ -250,44 +293,65 @@ module.exports = done => {
         done(null, server);
     });
 };
-/*
-function generateReceivedHeader(session, queueId, hostname, recipient) {
-    let origin = session.remoteAddress ? '[' + session.remoteAddress + ']' : '';
-    let originhost = session.clientHostname && session.clientHostname.charAt(0) !== '[' ? session.clientHostname : false;
-    origin = [].concat(origin || []).concat(originhost || []);
 
-    if (origin.length > 1) {
-        origin = '(' + origin.join(' ') + ')';
-    } else {
-        origin = origin.join(' ').trim() || 'localhost';
+function checkFilters(prepared, filters) {
+    if (!filters || !filters.length) {
+        return false;
     }
 
-    let value = '' +
-        // from ehlokeyword
-        'from' + (session.hostNameAppearsAs ? ' ' + session.hostNameAppearsAs : '') +
-        // [1.2.3.4]
-        ' ' + origin +
-        (originhost ? '\r\n' : '') +
+    for (let i = 0; i < filters.length; i++) {
+        let filter = filters[i];
 
-        // by smtphost
-        ' by ' + hostname +
+        // prepare filter data
+        let headerFilters = new Map();
+        if (filter.headers) {
+            Object.keys(filter.headers).forEach(key => {
+                headerFilters.set(key, (filter.headers[key] || '').toString().toLowerCase());
+            });
+        }
 
-        // with ESMTP
-        ' with ' + session.transmissionType +
-        // id 12345678
-        ' id ' + queueId +
-        '\r\n' +
+        // check headers
+        if (headerFilters.size) {
+            let headerMatches = new Set();
+            for (let j = prepared.headers.length - 1; j >= 0; j--) {
+                let header = prepared.headers[j];
+                if (headerFilters.has(header.key) && header.value.indexOf(headerFilters.get(header.key)) >= 0) {
+                    headerMatches.add(header.key);
+                }
+            }
+            if (headerMatches.size < headerFilters.size) {
+                // not enough matches
+                continue;
+            }
+        }
 
-        // for <receiver@example.com>
-        ' for <' + recipient + '>' +
-        // (version=TLSv1/SSLv3 cipher=ECDHE-RSA-AES128-GCM-SHA256)
-        (session.tlsOptions ? '\r\n (version=' + session.tlsOptions.version + ' cipher=' + session.tlsOptions.name + ')' : '') +
+        if (filter.ha) {
+            // FIXME: there is no prepared.maildata :(
+            let hasAttachments = prepared.maildata && prepared.maildata.attachments && prepared.maildata.attachments.length;
+            if (hasAttachments && filter.ha < 0) {
+                continue;
+            }
+        }
 
-        ';' +
-        '\r\n' +
+        if (filter.size) {
+            let messageSize = prepared.size;
+            let filterSize = Math.abs(filter.size);
+            // negative value means "less than", positive means "more than"
+            if (filter.size < 0 && messageSize > filterSize) {
+                continue;
+            }
+            if (filter.size > 0 && messageSize < filterSize) {
+                continue;
+            }
+        }
 
-        // Wed, 03 Aug 2016 11:32:07 +0000
-        ' ' + new Date().toUTCString().replace(/GMT/, '+0000');
-    return value;
+        if (filter.text) {
+            // TODO: check against plaintext version of the message
+        }
+
+        // we reached the end of the filter, so this means we have a match
+        return filter.action;
+    }
+
+    return false;
 }
-*/

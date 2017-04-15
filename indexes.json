@@ -147,10 +147,10 @@
             "draft": 1
         }
     }, {
-        "name": "has_attachments",
+        "name": "has_attachment",
         "key": {
             "mailbox": 1,
-            "hasAttachments": 1
+            "ha": 1
         }
     }]
 }, {
