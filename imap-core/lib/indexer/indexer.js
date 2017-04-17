@@ -253,10 +253,11 @@ class Indexer {
     }
 
     /**
-     * Stores attachments to GridStore, decode text/plain and text/html parts
+     * Decode text/plain and text/html parts, separate node bodies from the tree
      */
-    processContent(messageId, mimeTree, callback) {
+    processContent(messageId, mimeTree) {
         let response = {
+            nodes: [],
             attachments: [],
             text: '',
             html: []
@@ -266,28 +267,7 @@ class Indexer {
         let textContent = [];
         let cidMap = new Map();
 
-        let walk = (node, alternative, related, next) => {
-
-            let continueProcessing = () => {
-                if (node.message) {
-                    node = node.message;
-                }
-
-                if (Array.isArray(node.childNodes)) {
-                    let pos = 0;
-                    let processChildNode = () => {
-                        if (pos >= node.childNodes.length) {
-                            return next();
-                        }
-                        let childNode = node.childNodes[pos++];
-                        walk(childNode, alternative, related, processChildNode);
-                    };
-                    setImmediate(processChildNode);
-                } else {
-                    setImmediate(next);
-                }
-            };
-
+        let walk = (node, alternative, related) => {
             let flowed = false;
             let delSp = false;
 
@@ -381,20 +361,24 @@ class Indexer {
                     fileName
                 });
 
-                let returned = false;
-                let store = this.gridstore.createWriteStream(attachmentId, {
-                    fsync: true,
-                    content_type: contentType,
-                    // metadata should include only minimally required information, this would allow
-                    // to share attachments between different messages if the content is exactly the same
-                    // even though metadata (filename, content-disposition etc) might not
-                    metadata: {
-                        // if we copy the same message to other mailboxes then instead
-                        // of copying attachments we add a pointer to the new message here
-                        messages: [messageId],
-                        // how to decode contents if a webclient or API asks for the attachment
-                        transferEncoding
-                    }
+                // push to queue
+                response.nodes.push({
+                    attachmentId,
+                    options: {
+                        fsync: true,
+                        content_type: contentType,
+                        // metadata should include only minimally required information, this would allow
+                        // to share attachments between different messages if the content is exactly the same
+                        // even though metadata (filename, content-disposition etc) might not
+                        metadata: {
+                            // if we copy the same message to other mailboxes then instead
+                            // of copying attachments we add a pointer to the new message here
+                            messages: [messageId],
+                            // how to decode contents if a webclient or API asks for the attachment
+                            transferEncoding
+                        }
+                    },
+                    body: node.body
                 });
 
                 // do not include text content, multipart elements and embedded messages in the attachment list
@@ -412,49 +396,72 @@ class Indexer {
                     });
                 }
 
-                store.once('error', err => {
-                    if (returned) {
-                        return;
-                    }
-                    returned = true;
-                    callback(err);
+                node.body = false;
+                node.attachmentId = attachmentId;
+            }
+
+            // message/rfc822
+            if (node.message) {
+                node = node.message;
+            }
+
+            if (Array.isArray(node.childNodes)) {
+                node.childNodes.forEach(childNode => {
+                    walk(childNode, alternative, related);
                 });
-
-                store.on('close', () => {
-                    if (returned) {
-                        return;
-                    }
-                    returned = true;
-
-                    node.body = false;
-                    node.attachmentId = attachmentId;
-
-                    return continueProcessing();
-                });
-
-                store.end(node.body);
-            } else {
-                continueProcessing();
             }
         };
-        walk(mimeTree, false, false, err => {
-            if (err) {
-                return callback(err);
-            }
 
-            let updateCidLinks = str => str.replace(/\bcid:([^\s"']+)/g, (match, cid) => {
-                if (cidMap.has(cid)) {
-                    let attachment = cidMap.get(cid);
-                    return 'attachment:' + messageId + '/' + attachment.id.toString();
+        walk(mimeTree, false, false);
+
+        let updateCidLinks = str => str.replace(/\bcid:([^\s"']+)/g, (match, cid) => {
+            if (cidMap.has(cid)) {
+                let attachment = cidMap.get(cid);
+                return 'attachment:' + messageId + '/' + attachment.id.toString();
+            }
+            return match;
+        });
+
+        response.html = htmlContent.filter(str => str.trim()).map(updateCidLinks);
+        response.text = textContent.filter(str => str.trim()).map(updateCidLinks).join('\n').trim();
+
+        return response;
+    }
+
+    /**
+     * Stores attachments to GridStore
+     */
+    storeNodeBodies(messageId, nodes, callback) {
+        let pos = 0;
+        let storeNode = () => {
+            if (pos >= nodes.length) {
+                return callback(null, true);
+            }
+            let nodeData = nodes[pos++];
+
+            let returned = false;
+            let store = this.gridstore.createWriteStream(nodeData.attachmentId, nodeData.options);
+
+            store.once('error', err => {
+                if (returned) {
+                    return;
                 }
-                return match;
+                returned = true;
+                callback(err);
             });
 
-            response.html = htmlContent.filter(str => str.trim()).map(updateCidLinks);
-            response.text = textContent.filter(str => str.trim()).map(updateCidLinks).join('\n').trim();
+            store.on('close', () => {
+                if (returned) {
+                    return;
+                }
+                returned = true;
+                return storeNode();
+            });
 
-            callback(null, response);
-        });
+            store.end(nodeData.body);
+        };
+
+        storeNode();
     }
 
     expectedB64Size(b64size) {

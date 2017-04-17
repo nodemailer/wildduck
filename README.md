@@ -629,6 +629,63 @@ The response for successful operation should look like this:
 }
 ```
 
+### Message filtering
+
+Wild Duck has built-in message filtering in LMTP server. This is somewhat similar to Sieve even though the filters are not scripts.
+
+Filters are configuration objects stored in the `filters` array of the users object.
+
+**Example filter**
+
+```javascript
+{
+    // some identifier to be used in logs if filter matches
+    id: 'f1',
+    // query to check messages against
+    query: {
+        // message must match all filter rules for the filter actions to apply
+        // all values are case insensitive
+        headers: {
+            // partial string match against decoded From: header
+            from: 'sender@example.com',
+            // partial string match against decoded To: header
+            to: 'recipient@example.com',
+            // partial string match against decoded Subject: header
+            subject: 'Väga tõrges'
+        },
+
+        // partial string match (case insensitive) against decoded plaintext message
+        text: 'Mõigu ristis oli mis?',
+
+        // positive: must have attachments, negative: no attachments
+        ha: 1,
+
+        // positive: larger than size, negative: smaller than abs(size)
+        size: 10
+    },
+    // what to do if the filter query matches the message
+    action: {
+
+        // mark message as seen
+        seen: true,
+
+        // mark message as flagged
+        flag: true,
+
+        // set mailbox ID
+        mailbox: 'aaaaa', // must be ObjectID!
+
+        // positive spam, negative ham
+        spam: 1,
+
+        // if true, delete message
+        delete: false
+    }
+}
+```
+
+**NB!** If you do not care about an action field then do not set it, otherwise matches from other filters do not apply
+
 ## IMAP Protocol Differences
 
 This is a list of known differences from the IMAP specification. Listed differences are either intentional or are bugs that became features.

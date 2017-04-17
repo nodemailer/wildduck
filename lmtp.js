@@ -116,8 +116,6 @@ const serverOptions = {
 
             let spamHeader = config.spamHeader && config.spamHeader.toLowerCase();
 
-            let isSpam = false;
-
             let responses = [];
             let users = session.users;
             let stored = 0;
@@ -149,76 +147,97 @@ const serverOptions = {
                 let prepared = messageHandler.prepareMessage({
                     raw: Buffer.concat(chunks, chunklen)
                 });
+                let maildata = messageHandler.indexer.processContent(prepared.id, prepared.mimeTree);
 
+                // default flags are empty
+                let flags = [];
+
+                // default mailbox target is INBOX
                 let mailboxQueryKey = 'path';
                 let mailboxQueryValue = 'INBOX';
 
-                let filters = [
-                    // example filter
-                    {
-                        query: {
-                            headers: {
-                                from: 'abc',
-                                to: 'def',
-                                subject: 'ghi'
-                            },
-                            text: 'jkl',
-                            // positive: must have attachments, negative: no attachments
-                            ha: 1,
-                            // positive: larger than size, netaive: smaller than abs(size)
-                            size: 10
-                        },
-                        action: {
-                            // mark message as seen
-                            seen: true,
-                            // mark message as flagged
-                            flag: true,
-                            // set mailbox ID
-                            mailbox: 'aaaaa',
-                            // positive spam, negative ham
-                            spam: 1,
-                            // if true, delete message
-                            delete: false
-                        }
-                    }
-                ].concat(spamHeader ? {
+                let filters = (user.filters || []).concat(spamHeader ? {
+                    id: 'wdspam',
                     query: {
                         headers: {
                             [spamHeader]: 'Yes'
                         }
                     },
                     action: {
+                        // only applies if any other filter does not already mark message as spam or ham
                         spam: true
                     }
                 } : []);
 
-                let filterResults = checkFilters(prepared, filters);
+                let filterActions = new Map();
 
-                // TODO: apply filter result
-
-                // apply filters
-                if (spamHeader) {
-                    for (let i = prepared.headers.length - 1; i >= 0; i--) {
-                        let header = prepared.headers[i];
-                        // check if the header is used for detecting spam
-                        if (spamHeader === header.key) {
-                            if (/^yes\b/i.test(header.value)) {
-                                isSpam = true;
+                filters.
+                // apply all filters to the message
+                map(filter => checkFilter(filter, prepared, maildata)).
+                // remove all unmatched filers
+                filter(filter => filter).
+                // apply filter actions
+                forEach(filter => {
+                    // apply matching filter
+                    if (!filterActions) {
+                        filterActions = filter.action;
+                    } else {
+                        Object.keys(filter.action).forEach(key => {
+                            // if a previous filter already has set a value then do not touch it
+                            if (!filterActions.has(key)) {
+                                filterActions.set(key, filter.action[key]);
                             }
-                        }
+                        });
                     }
+                });
+
+                if (filterActions.has('delete') && filterActions.get('delete')) {
+                    // nothing to do with the message, just continue
+                    responses.push({
+                        user,
+                        response: 'Message dropped by policy as ' + prepared.id.toString()
+                    });
+                    prepared = false;
+                    maildata = false;
+                    return storeNext();
                 }
 
-                if (isSpam) {
-                    mailboxQueryKey = 'specialUse';
-                    mailboxQueryValue = '\\Junk';
-                }
+                // apply filter results to the message
+                filterActions.forEach((value, key) => {
+                    switch (key) {
+                        case 'spam':
+                            if (value > 0) {
+                                // positive value is spam
+                                mailboxQueryKey = 'specialUse';
+                                mailboxQueryValue = '\\Junk';
+                            }
+                            break;
+                        case 'seen':
+                            if (value) {
+                                flags.push('\\Seen');
+                            }
+                            break;
+                        case 'flag':
+                            if (value) {
+                                flags.push('\\Flagged');
+                            }
+                            break;
+                        case 'mailbox':
+                            if (value) {
+                                // positive value is spam
+                                mailboxQueryKey = 'mailbox';
+                                mailboxQueryValue = value;
+                            }
+                            break;
+                    }
+                });
 
                 let messageOptions = {
                     user: user && user._id || user,
                     [mailboxQueryKey]: mailboxQueryValue,
 
                     prepared,
+                    maildata,
 
                     meta: {
                         source: 'LMTP',
@@ -232,7 +251,8 @@ const serverOptions = {
                     },
 
                     date: false,
-                    flags: false,
+                    flags,
+
                     // if similar message exists, then skip
                     skipExisting: true
                 };
@@ -294,64 +314,67 @@ module.exports = done => {
     });
 };
 
-function checkFilters(prepared, filters) {
-    if (!filters || !filters.length) {
+function checkFilter(filter, prepared, maildata) {
+    if (!filter || !filter.query) {
         return false;
     }
 
-    for (let i = 0; i < filters.length; i++) {
-        let filter = filters[i];
+    let query = filter.query;
 
-        // prepare filter data
-        let headerFilters = new Map();
-        if (filter.headers) {
-            Object.keys(filter.headers).forEach(key => {
-                headerFilters.set(key, (filter.headers[key] || '').toString().toLowerCase());
-            });
-        }
-
-        // check headers
-        if (headerFilters.size) {
-            let headerMatches = new Set();
-            for (let j = prepared.headers.length - 1; j >= 0; j--) {
-                let header = prepared.headers[j];
-                if (headerFilters.has(header.key) && header.value.indexOf(headerFilters.get(header.key)) >= 0) {
-                    headerMatches.add(header.key);
-                }
-            }
-            if (headerMatches.size < headerFilters.size) {
-                // not enough matches
-                continue;
-            }
-        }
-
-        if (filter.ha) {
-            // FIXME: there is no prepared.maildata :(
-            let hasAttachments = prepared.maildata && prepared.maildata.attachments && prepared.maildata.attachments.length;
-            if (hasAttachments && filter.ha < 0) {
-                continue;
-            }
-        }
-
-        if (filter.size) {
-            let messageSize = prepared.size;
-            let filterSize = Math.abs(filter.size);
-            // negative value means "less than", positive means "more than"
-            if (filter.size < 0 && messageSize > filterSize) {
-                continue;
-            }
-            if (filter.size > 0 && messageSize < filterSize) {
-                continue;
-            }
-        }
-
-        if (filter.text) {
-            // TODO: check against plaintext version of the message
-        }
-
-        // we reached the end of the filter, so this means we have a match
-        return filter.action;
+    // prepare filter data
+    let headerFilters = new Map();
+    if (query.headers) {
+        Object.keys(query.headers).forEach(key => {
+            headerFilters.set(key, (query.headers[key] || '').toString().toLowerCase());
+        });
     }
 
-    return false;
+    // check headers
+    if (headerFilters.size) {
+        let headerMatches = new Set();
+        for (let j = prepared.headers.length - 1; j >= 0; j--) {
+            let header = prepared.headers[j];
+            if (headerFilters.has(header.key) && header.value.indexOf(headerFilters.get(header.key)) >= 0) {
+                headerMatches.add(header.key);
+            }
+        }
+        if (headerMatches.size < headerFilters.size) {
+            // not enough matches
+            return false;
+        }
+    }
+
+    if (query.ha) {
+        let hasAttachments = maildata.attachments && maildata.attachments.length;
+        // negative ha means no attachmens
+        if (hasAttachments && query.ha < 0) {
+            return false;
+        }
+        // positive ha means attachmens must exist
+        if (!hasAttachments && query.ha > 0) {
+            return false;
+        }
+    }
+
+    if (query.size) {
+        let messageSize = prepared.size;
+        let filterSize = Math.abs(query.size);
+        // negative value means "less than", positive means "more than"
+        if (query.size < 0 && messageSize > filterSize) {
+            return false;
+        }
+        if (query.size > 0 && messageSize < filterSize) {
+            return false;
+        }
+    }
+
+    if (query.text && maildata.text.toLowerCase().indexOf(query.text.toLowerCase()) < 0) {
+        // message plaintext does not match the text field value
+        return false;
+    }
+
+    log.silly('Filter', 'Filter %s matched message %s', filter.id, prepared.id);
+
+    // we reached the end of the filter, so this means we have a match
+    return filter;
 }

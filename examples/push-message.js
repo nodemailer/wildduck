@@ -14,12 +14,14 @@ const config = require('config');
 const nodemailer = require('nodemailer');
 
 const transporter = nodemailer.createTransport({
-    pool: true,
-    maxConnections: 10,
+    lmtp: true,
     host: 'localhost',
-    port: config.smtp.port,
+    port: config.lmtp.port,
     logger: false,
-    debug: false
+    debug: false,
+    tls: {
+        rejectUnauthorized: false
+    }
 });
 
 let sent = 0;
@@ -33,8 +35,13 @@ function send() {
             to: [recipient]
         },
 
+        headers: {
+            // set to Yes to send this message to Junk folder
+            'x-rspamd-spam': 'No'
+        },
+
         from: 'Kärbes 🐧 <andris@kreata.ee>',
-        to: 'Ämblik 🦉 <'+recipient+'>, andmekala@hot.ee, Müriaad Polüteism <müriaad@müriaad-polüteism.org>',
+        to: 'Ämblik 🦉 <' + recipient + '>, andmekala@hot.ee, Müriaad Polüteism <müriaad@müriaad-polüteism.org>',
         subject: 'Test ööö message [' + Date.now() + ']',
         text: 'Hello world! Current time is ' + new Date().toString(),
         html: '<p>Hello world! Current time is <em>' + new Date().toString() + '</em> <img src="cid:note@example.com"/> <img src="http://www.neti.ee/img/neti-logo-2015-1.png"></p>',

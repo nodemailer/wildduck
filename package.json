@@ -30,7 +30,7 @@
     "libqp": "^1.1.0",
     "marked": "^0.3.6",
     "mongodb": "^2.2.25",
-    "nodemailer": "^4.0.0",
+    "nodemailer": "^4.0.1",
     "npmlog": "^4.0.2",
     "redfour": "^1.0.0",
     "redis": "^2.7.1",

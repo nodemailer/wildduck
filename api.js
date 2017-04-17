@@ -86,6 +86,7 @@ server.post('/user/create', (req, res, next) => {
             address: false,
             storageUsed: 0,
             quota,
+            filters: [],
             created: new Date()
         }, (err, result) => {
             if (err) {
