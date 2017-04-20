@@ -7,6 +7,7 @@ const Joi = require('joi');
 const bcrypt = require('bcryptjs');
 const tools = require('./lib/tools');
 const MessageHandler = require('./lib/message-handler');
+const UserHandler = require('./lib/user-handler');
 const db = require('./lib/db');
 const ObjectID = require('mongodb').ObjectID;
 const libqp = require('libqp');
@@ -21,6 +22,7 @@ const server = restify.createServer({
 });
 
 let messageHandler;
+let userHandler;
 
 server.use(restify.queryParser());
 server.use(restify.bodyParser({
@@ -56,106 +58,20 @@ server.post('/user/create', (req, res, next) => {
         return next();
     }
 
-    let username = result.value.username;
-    let password = result.value.password;
-    let quota = result.value.quota;
-
-    db.database.collection('users').findOne({
-        username
-    }, (err, userData) => {
+    userHandler.create(result.value, (err, user) => {
         if (err) {
             res.json({
-                error: 'MongoDB Error: ' + err.message,
-                username
+                error: err.message,
+                username: result.value.username
             });
             return next();
         }
-        if (userData) {
-            res.json({
-                error: 'This username already exists',
-                username
-            });
-            return next();
-        }
-
-        // Insert
-        let hash = bcrypt.hashSync(password, 11);
-        db.database.collection('users').insertOne({
-            username,
-            password: hash,
-            address: false,
-            storageUsed: 0,
-            quota,
-            filters: [],
-            created: new Date()
-        }, (err, result) => {
-            if (err) {
-                res.json({
-                    error: 'MongoDB Error: ' + err.message,
-                    username
-                });
-                return next();
-            }
-
-            let user = result.insertedId;
-
-            // create folders for user
-            let uidValidity = Math.floor(Date.now() / 1000);
-            db.database.collection('mailboxes').insertMany([{
-                user,
-                path: 'INBOX',
-                uidValidity,
-                uidNext: 1,
-                modifyIndex: 0,
-                subscribed: true,
-                flags: []
-            }, {
-                user,
-                path: 'Sent Mail',
-                specialUse: '\\Sent',
-                uidValidity,
-                uidNext: 1,
-                modifyIndex: 0,
-                subscribed: true,
-                flags: []
-            }, {
-                user,
-                path: 'Trash',
-                specialUse: '\\Trash',
-                uidValidity,
-                uidNext: 1,
-                modifyIndex: 0,
-                subscribed: true,
-                flags: []
-            }, {
-                user,
-                path: 'Junk',
-                specialUse: '\\Junk',
-                uidValidity,
-                uidNext: 1,
-                modifyIndex: 0,
-                subscribed: true,
-                flags: []
-            }], {
-                w: 1,
-                ordered: false
-            }, err => {
-                if (err) {
-                    res.json({
-                        error: 'MongoDB Error: ' + err.message,
-                        username
-                    });
-                    return next();
-                }
-
-                res.json({
-                    success: true,
-                    username
-                });
-
-                return next();
-            });
+        res.json({
+            success: !!user,
+            username: result.value.username
         });
+
+        return next();
     });
 });
 
@@ -1197,6 +1113,7 @@ module.exports = done => {
     let started = false;
 
     messageHandler = new MessageHandler(db.database);
+    userHandler = new UserHandler(db.database);
 
     server.on('error', err => {
         if (!started) {
