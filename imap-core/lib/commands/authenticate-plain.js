@@ -71,7 +71,8 @@ function authenticate(connection, token, callback) {
             connection._server.logger.info('[%s] Authentication failed for %s using %s', connection.id, username, 'PLAIN');
             return callback(null, {
                 response: 'NO',
-                message: 'Authentication failure'
+                code: 'AUTHENTICATIONFAILED',
+                message: 'Invalid credentials'
             });
         }
 

@@ -7,13 +7,13 @@ const IMAPServerModule = require('./imap-core');
 const IMAPServer = IMAPServerModule.IMAPServer;
 const ImapNotifier = require('./lib/imap-notifier');
 const imapHandler = IMAPServerModule.imapHandler;
-const bcrypt = require('bcryptjs');
 const ObjectID = require('mongodb').ObjectID;
 const Indexer = require('./imap-core/lib/indexer/indexer');
 const imapTools = require('./imap-core/lib/imap-tools');
 const fs = require('fs');
 const setupIndexes = require('./indexes.json');
 const MessageHandler = require('./lib/message-handler');
+const UserHandler = require('./lib/user-handler');
 const db = require('./lib/db');
 const packageData = require('./package.json');
 
@@ -61,28 +61,28 @@ if (config.imap.cert) {
 const server = new IMAPServer(serverOptions);
 
 let messageHandler;
+let userHandler;
 
 server.onAuth = function (login, session, callback) {
     let username = (login.username || '').toString().trim();
 
-    db.database.collection('users').findOne({
-        username
-    }, (err, user) => {
+    userHandler.authenticate(username, login.password, (err, result) => {
         if (err) {
             return callback(err);
         }
-        if (!user) {
+        if (!result) {
             return callback();
         }
 
-        if (!bcrypt.compareSync(login.password, user.password)) {
+        if (result.scope === 'master' && result.enabled2fa) {
+            // master password not allowed if 2fa is enabled!
             return callback();
         }
 
         callback(null, {
             user: {
-                id: user._id,
-                username
+                id: result.user,
+                username: result.username
             }
         });
     });
@@ -1606,6 +1606,7 @@ module.exports = done => {
     let start = () => {
 
         messageHandler = new MessageHandler(db.database);
+        userHandler = new UserHandler(db.database);
 
         server.indexer = new Indexer({
             database: db.database

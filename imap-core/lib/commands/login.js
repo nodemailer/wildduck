@@ -52,7 +52,8 @@ module.exports = {
                 this._server.logger.info('[%s] Authentication failed for %s using %s', this.id, username, 'LOGIN');
                 return callback(null, {
                     response: 'NO',
-                    message: 'Authentication failure'
+                    code: 'AUTHENTICATIONFAILED',
+                    message: 'Invalid credentials'
                 });
             }
 

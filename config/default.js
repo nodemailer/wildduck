@@ -66,7 +66,7 @@ module.exports = {
     spamHeader: 'X-Rspamd-Spam',
 
     // default quota storage in MB (can be overriden per user)
-    maxStorage: 1000,
+    maxStorage: 1024,
 
     // default smtp recipients for 24h (can be overriden per user)
     maxRecipients: 2000
