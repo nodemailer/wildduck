@@ -4,7 +4,7 @@ const config = require('config');
 const log = require('npmlog');
 const POP3Server = require('./lib/pop3-server');
 const fs = require('fs');
-const bcrypt = require('bcryptjs');
+const UserHandler = require('./lib/user-handler');
 const MessageHandler = require('./lib/message-handler');
 const ObjectID = require('mongodb').ObjectID;
 const db = require('./lib/db');
@@ -12,6 +12,7 @@ const db = require('./lib/db');
 const MAX_MESSAGES = 250;
 
 let messageHandler;
+let userHandler;
 
 const serverOptions = {
     port: config.pop3.port,
@@ -35,23 +36,26 @@ const serverOptions = {
     },
 
     onAuth(auth, session, callback) {
-        db.database.collection('users').findOne({
-            username: auth.username
-        }, (err, user) => {
+        userHandler.authenticate(auth.username, auth.password, {
+            protocol: 'POP3',
+            ip: session.remoteAddress
+        }, (err, result) => {
             if (err) {
                 return callback(err);
             }
+            if (!result) {
+                return callback();
+            }
 
-            if (!user || !bcrypt.compareSync(auth.password, user.password)) {
-                return callback(null, {
-                    message: 'Authentication failed'
-                });
+            if (result.scope === 'master' && result.enabled2fa) {
+                // master password not allowed if 2fa is enabled!
+                return callback();
             }
 
             callback(null, {
                 user: {
-                    id: user._id,
-                    username: user.username
+                    id: result.user,
+                    username: result.username
                 }
             });
         });
@@ -280,6 +284,7 @@ module.exports = done => {
     let started = false;
 
     messageHandler = new MessageHandler(db.database);
+    userHandler = new UserHandler(db.database, db.redis);
 
     server.on('error', err => {
         if (!started) {
