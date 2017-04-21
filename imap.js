@@ -66,7 +66,10 @@ let userHandler;
 server.onAuth = function (login, session, callback) {
     let username = (login.username || '').toString().trim();
 
-    userHandler.authenticate(username, login.password, (err, result) => {
+    userHandler.authenticate(username, login.password, {
+        protocol: 'IMAP',
+        ip: session.remoteAddress
+    }, (err, result) => {
         if (err) {
             return callback(err);
         }
@@ -1606,7 +1609,7 @@ module.exports = done => {
     let start = () => {
 
         messageHandler = new MessageHandler(db.database);
-        userHandler = new UserHandler(db.database);
+        userHandler = new UserHandler(db.database, db.redis);
 
         server.indexer = new Indexer({
             database: db.database

@@ -1113,7 +1113,7 @@ module.exports = done => {
     let started = false;
 
     messageHandler = new MessageHandler(db.database);
-    userHandler = new UserHandler(db.database);
+    userHandler = new UserHandler(db.database, db.redis);
 
     server.on('error', err => {
         if (!started) {
