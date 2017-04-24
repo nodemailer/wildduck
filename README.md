@@ -47,16 +47,16 @@ Wild Duck more or less passes the [ImapTest](https://www.imapwiki.org/ImapTest/T
 
 In addition to the required POP3 commands ([RFC1939](https://tools.ietf.org/html/rfc1939)) Wild Duck supports the following extensions:
 
-  * **UIDL**
-  * **USER**
-  * **PASS**
-  * **SASL PLAIN**
-  * **PIPELINING**
-  * **TOP**
+- **UIDL**
+- **USER**
+- **PASS**
+- **SASL PLAIN**
+- **PIPELINING**
+- **TOP**
 
 #### POP3 command behaviors
 
-All changes to messages like deleting messages or marking messages as seen are stored in storage only in the UPDATE stage (eg. after calling QUIT). Until then the changes are preserved in memory only. This also means that if a message is downloaded but QUIT is not issued then the message does not get marked as *Seen*.
+All changes to messages like deleting messages or marking messages as seen are stored in storage only in the UPDATE stage (eg. after calling QUIT). Until then the changes are preserved in memory only. This also means that if a message is downloaded but QUIT is not issued then the message does not get marked as _Seen_.
 
 ##### LIST
 
@@ -64,11 +64,11 @@ POP3 listing displays the newest 250 messages in INBOX (configurable)
 
 ##### UIDL
 
-Wild Duck uses message `_id` value (24 byte hex) as the unique ID. If a message is moved from one mailbox to another then it might *re-appear* in the listing.
+Wild Duck uses message `_id` value (24 byte hex) as the unique ID. If a message is moved from one mailbox to another then it might _re-appear_ in the listing.
 
 ##### RETR
 
-If a messages is downloaded by a client this message gets marked as *Seen*
+If a messages is downloaded by a client this message gets marked as _Seen_
 
 ##### DELE
 
@@ -364,10 +364,10 @@ The response for successful operation should look like this:
 
 Where
 
-  * **recipients** – is the count of maximum recipients for 24 hour period (starts with the first message)
-  * **recipientsLimited** – if *true* then sending is currently disabled as recipient limit has been reached
-  * **recipientsSent** – how many recipients has been used in the current 24 hour period
-  * **recipientsTtl** – seconds until the end of current period
+- **recipients** – is the count of maximum recipients for 24 hour period (starts with the first message)
+- **recipientsLimited** – if _true_ then sending is currently disabled as recipient limit has been reached
+- **recipientsSent** – how many recipients has been used in the current 24 hour period
+- **recipientsTtl** – seconds until the end of current period
 
 Recipient limits assume that messages are sent using ZoneMTA with [zonemta-wildduck](https://github.com/wildduck-email/zonemta-wildduck) plugin, otherwise the counters are not updated.
 
@@ -503,7 +503,9 @@ Response message includes the following fields
   - **value** is the header value in unicode (all encoded values are decoded to utf-8). The value is capped at around 800 characters.
 
 - **date** is the receive date (not header Date: field)
+
 - **mailbox** is the id of the mailbox this messages belongs to
+
 - **flags** is an array of IMAP flags for this message
 - **text** is the plaintext version of the message (derived from html if not present in message source)
 - **html** is the HTML version of the message (derived from plaintext if not present in message source). It is an array of strings, each array element corresponds to different MIME node and might have its own html header
@@ -639,8 +641,9 @@ Filters are configuration objects stored in the `filters` array of the users obj
 
 ```javascript
 {
-    // some identifier to be used in logs if filter matches
-    id: 'f1',
+    // identifier for this filter
+    id: ObjectId('abcdefghij...'),
+
     // query to check messages against
     query: {
         // message must match all filter rules for the filter actions to apply

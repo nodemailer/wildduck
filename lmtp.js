@@ -169,6 +169,7 @@ const serverOptions = {
                     }
                 } : []);
 
+                let matchingFilters = [];
                 let filterActions = new Map();
 
                 filters.
@@ -178,6 +179,8 @@ const serverOptions = {
                 filter(filter => filter).
                 // apply filter actions
                 forEach(filter => {
+                    matchingFilters.push(filter.id);
+
                     // apply matching filter
                     if (!filterActions) {
                         filterActions = filter.action;
@@ -249,6 +252,8 @@ const serverOptions = {
                         transtype: session.transmissionType,
                         time: Date.now()
                     },
+
+                    filters: matchingFilters,
 
                     date: false,
                     flags,
