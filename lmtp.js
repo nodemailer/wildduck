@@ -8,6 +8,7 @@ const SMTPServer = require('smtp-server').SMTPServer;
 const tools = require('./lib/tools');
 const MessageHandler = require('./lib/message-handler');
 const db = require('./lib/db');
+const forward = require('./lib/forward');
 const fs = require('fs');
 
 let messageHandler;
@@ -115,7 +116,7 @@ const serverOptions = {
         stream.once('end', () => {
 
             let spamHeader = config.spamHeader && config.spamHeader.toLowerCase();
-
+            let sender = tools.normalizeAddress(session.envelope.mailFrom && session.envelope.mailFrom.address || '');
             let responses = [];
             let users = session.users;
             let stored = 0;
@@ -144,8 +145,9 @@ const serverOptions = {
                 chunks.unshift(header);
                 chunklen += header.length;
 
+                let raw = Buffer.concat(chunks, chunklen);
                 let prepared = messageHandler.prepareMessage({
-                    raw: Buffer.concat(chunks, chunklen)
+                    raw
                 });
                 let maildata = messageHandler.indexer.processContent(prepared.id, prepared.mimeTree);
 
@@ -169,6 +171,12 @@ const serverOptions = {
                     }
                 } : []);
 
+                let forwardTargets = new Set();
+                if (user.forward) {
+                    // forward all messages
+                    forwardTargets.add(user.forward);
+                }
+
                 let matchingFilters = [];
                 let filterActions = new Map();
 
@@ -186,6 +194,10 @@ const serverOptions = {
                         filterActions = filter.action;
                     } else {
                         Object.keys(filter.action).forEach(key => {
+                            if (key === 'forward') {
+                                forwardTargets.add(filter.action[key]);
+                                return;
+                            }
                             // if a previous filter already has set a value then do not touch it
                             if (!filterActions.has(key)) {
                                 filterActions.set(key, filter.action[key]);
@@ -193,6 +205,17 @@ const serverOptions = {
                         });
                     }
                 });
+
+                if (forwardTargets.size) {
+                    // messages needs to be forwarded, so store it to outbound queue
+                    forward({
+                        user,
+                        sender,
+                        recipient,
+                        forward: Array.from(forwardTargets),
+                        raw
+                    }, () => false);
+                }
 
                 if (filterActions.has('delete') && filterActions.get('delete')) {
                     // nothing to do with the message, just continue
@@ -244,7 +267,7 @@ const serverOptions = {
 
                     meta: {
                         source: 'LMTP',
-                        from: tools.normalizeAddress(session.envelope.mailFrom && session.envelope.mailFrom.address || ''),
+                        from: sender,
                         to: recipient,
                         origin: session.remoteAddress,
                         originhost: session.clientHostname,

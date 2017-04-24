@@ -62,6 +62,23 @@ module.exports = {
         host: '0.0.0.0'
     },
 
+    // push messages to ZoneMTA queue
+    forwarder: {
+        enabled: true,
+
+        // which ZoneMTA queue to use
+        zone: 'default',
+
+        // MongoDB connection url. Do not set if you want to use main database
+        mongodb: 'mongodb://127.0.0.1:27017/zone-mta',
+
+        // Collection name for GridFS storage
+        gfs: 'mail',
+
+        // Collection name for the queue
+        collection: 'zone-queue'
+    },
+
     // if this header exists and starts with yes then the message is treated as spam
     spamHeader: 'X-Rspamd-Spam',
 

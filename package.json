@@ -37,6 +37,7 @@
     "redfour": "^1.0.0",
     "redis": "^2.7.1",
     "restify": "^4.3.0",
+    "seq-index": "^1.1.0",
     "smtp-server": "^3.0.1",
     "speakeasy": "^2.0.0",
     "toml": "^2.3.2",
