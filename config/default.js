@@ -70,7 +70,7 @@ module.exports = {
         zone: 'default',
 
         // MongoDB connection url. Do not set if you want to use main database
-        mongodb: 'mongodb://127.0.0.1:27017/zone-mta',
+        mongo: 'mongodb://127.0.0.1:27017/zone-mta',
 
         // Collection name for GridFS storage
         gfs: 'mail',

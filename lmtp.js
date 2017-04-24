@@ -206,98 +206,108 @@ const serverOptions = {
                     }
                 });
 
-                if (forwardTargets.size) {
-                    // messages needs to be forwarded, so store it to outbound queue
+                let forwardMessage = done => {
+                    if (!forwardTargets.size) {
+                        return setImmediate(done);
+                    }
                     forward({
                         user,
                         sender,
                         recipient,
                         forward: Array.from(forwardTargets),
-                        raw
-                    }, () => false);
-                }
-
-                if (filterActions.has('delete') && filterActions.get('delete')) {
-                    // nothing to do with the message, just continue
-                    responses.push({
-                        user,
-                        response: 'Message dropped by policy as ' + prepared.id.toString()
-                    });
-                    prepared = false;
-                    maildata = false;
-                    return storeNext();
-                }
-
-                // apply filter results to the message
-                filterActions.forEach((value, key) => {
-                    switch (key) {
-                        case 'spam':
-                            if (value > 0) {
-                                // positive value is spam
-                                mailboxQueryKey = 'specialUse';
-                                mailboxQueryValue = '\\Junk';
-                            }
-                            break;
-                        case 'seen':
-                            if (value) {
-                                flags.push('\\Seen');
-                            }
-                            break;
-                        case 'flag':
-                            if (value) {
-                                flags.push('\\Flagged');
-                            }
-                            break;
-                        case 'mailbox':
-                            if (value) {
-                                // positive value is spam
-                                mailboxQueryKey = 'mailbox';
-                                mailboxQueryValue = value;
-                            }
-                            break;
-                    }
-                });
-
-                let messageOptions = {
-                    user: user && user._id || user,
-                    [mailboxQueryKey]: mailboxQueryValue,
-
-                    prepared,
-                    maildata,
-
-                    meta: {
-                        source: 'LMTP',
-                        from: sender,
-                        to: recipient,
-                        origin: session.remoteAddress,
-                        originhost: session.clientHostname,
-                        transhost: session.hostNameAppearsAs,
-                        transtype: session.transmissionType,
-                        time: Date.now()
-                    },
-
-                    filters: matchingFilters,
-
-                    date: false,
-                    flags,
-
-                    // if similar message exists, then skip
-                    skipExisting: true
+                        chunks
+                    }, done);
                 };
 
-                messageHandler.add(messageOptions, (err, inserted, info) => {
+                forwardMessage((err, id) => {
+                    if (err) {
+                        log.error('LMTP', 'FRWRDFAIL error=%s', err.message);
+                    } else if (id) {
+                        log.silly('LMTP', 'FRWRDOK id=%s', id);
+                    }
 
-                    // remove Delivered-To
-                    chunks.shift();
-                    chunklen -= header.length;
+                    if (filterActions.has('delete') && filterActions.get('delete')) {
+                        // nothing to do with the message, just continue
+                        responses.push({
+                            user,
+                            response: 'Message dropped by policy as ' + prepared.id.toString()
+                        });
+                        prepared = false;
+                        maildata = false;
+                        return storeNext();
+                    }
 
-                    // push to response list
-                    responses.push({
-                        user,
-                        response: err ? err : 'Message stored as ' + info.id.toString()
+                    // apply filter results to the message
+                    filterActions.forEach((value, key) => {
+                        switch (key) {
+                            case 'spam':
+                                if (value > 0) {
+                                    // positive value is spam
+                                    mailboxQueryKey = 'specialUse';
+                                    mailboxQueryValue = '\\Junk';
+                                }
+                                break;
+                            case 'seen':
+                                if (value) {
+                                    flags.push('\\Seen');
+                                }
+                                break;
+                            case 'flag':
+                                if (value) {
+                                    flags.push('\\Flagged');
+                                }
+                                break;
+                            case 'mailbox':
+                                if (value) {
+                                    // positive value is spam
+                                    mailboxQueryKey = 'mailbox';
+                                    mailboxQueryValue = value;
+                                }
+                                break;
+                        }
                     });
 
-                    storeNext();
+                    let messageOptions = {
+                        user: user && user._id || user,
+                        [mailboxQueryKey]: mailboxQueryValue,
+
+                        prepared,
+                        maildata,
+
+                        meta: {
+                            source: 'LMTP',
+                            from: sender,
+                            to: recipient,
+                            origin: session.remoteAddress,
+                            originhost: session.clientHostname,
+                            transhost: session.hostNameAppearsAs,
+                            transtype: session.transmissionType,
+                            time: Date.now()
+                        },
+
+                        filters: matchingFilters,
+
+                        date: false,
+                        flags,
+
+                        // if similar message exists, then skip
+                        skipExisting: true
+                    };
+
+                    messageHandler.add(messageOptions, (err, inserted, info) => {
+
+                        // remove Delivered-To
+                        chunks.shift();
+                        chunklen -= header.length;
+
+                        // push to response list
+                        responses.push({
+                            user,
+                            response: err ? err : 'Message stored as ' + info.id.toString()
+                        });
+
+                        storeNext();
+                    });
                 });
             };
 
