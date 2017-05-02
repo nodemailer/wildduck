@@ -67,11 +67,12 @@ module.exports = {
         host: '0.0.0.0'
     },
 
-    // push messages to ZoneMTA queue
-    forwarder: {
+    // push messages to ZoneMTA queue for delivery
+    sender: {
+        // if false, then no messages are sent
         enabled: true,
 
-        // which ZoneMTA queue to use
+        // which ZoneMTA queue to use by default
         zone: 'default',
 
         // MongoDB connection url. Do not set if you want to use main database

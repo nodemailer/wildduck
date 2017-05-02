@@ -161,7 +161,7 @@ const serverOptions = {
                 let mailboxQueryValue = 'INBOX';
 
                 let filters = (user.filters || []).concat(spamHeader ? {
-                    id: 'wdspam',
+                    id: 'SPAM',
                     query: {
                         headers: {
                             [spamHeader]: 'Yes'
@@ -209,7 +209,8 @@ const serverOptions = {
                         forwardTargets.add(user.forward);
                     }
 
-                    if (!forwardTargets.size) {
+                    // never forward messages marked as spam
+                    if (!forwardTargets.size || filterActions.get('spam')) {
                         return setImmediate(done);
                     }
 
@@ -235,9 +236,9 @@ const serverOptions = {
 
                 forwardMessage((err, id) => {
                     if (err) {
-                        log.error('LMTP', 'FRWRDFAIL error=%s', err.message);
+                        log.error('LMTP', '%s FRWRDFAIL from=%s to=%s target=%s error=%s', prepared.id.toString(), sender, recipient, Array.from(forwardTargets).join(','), err.message);
                     } else if (id) {
-                        log.silly('LMTP', 'FRWRDOK id=%s', id);
+                        log.silly('LMTP', '%s FRWRDOK id=%s from=%s to=%s target=%s', prepared.id.toString(), id, sender, recipient, Array.from(forwardTargets).join(','));
                     }
 
                     if (filterActions.get('delete')) {
