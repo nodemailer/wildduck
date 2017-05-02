@@ -241,6 +241,7 @@ Arguments
 - **username** is the username of the user to modify
 - **quota** (optional) is the maximum storage in bytes allowed for this user
 - **recipients** (optional) is the maximum sending recipients per 24h allowed for this user. Assumes ZoneMTA with [zonemta-wildduck](https://github.com/wildduck-email/zonemta-wildduck) plugin
+- **forwards** (optional) is the maximum forwarded recipients per 24h allowed for this user.
 
 > At least one limit value must be set
 

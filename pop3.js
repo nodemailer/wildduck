@@ -283,7 +283,7 @@ module.exports = done => {
 
     let started = false;
 
-    messageHandler = new MessageHandler(db.database);
+    messageHandler = new MessageHandler(db.database, db.redisConfig);
     userHandler = new UserHandler(db.database, db.redis);
 
     server.on('error', err => {

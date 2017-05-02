@@ -15,10 +15,14 @@ const setupIndexes = require('./indexes.json');
 const MessageHandler = require('./lib/message-handler');
 const UserHandler = require('./lib/user-handler');
 const db = require('./lib/db');
+const RedFour = require('redfour');
 const packageData = require('./package.json');
 
 // home many modifications to cache before writing
 const BULK_BATCH_SIZE = 150;
+
+// how often to clear expired messages
+const GC_INTERVAL = 1 * 60 * 1000;
 
 // Setup server
 const serverOptions = {
@@ -62,6 +66,8 @@ const server = new IMAPServer(serverOptions);
 
 let messageHandler;
 let userHandler;
+let gcTimeout;
+let gcLock;
 
 server.onAuth = function (login, session, callback) {
     let username = (login.username || '').toString().trim();
@@ -958,6 +964,9 @@ server.onCopy = function (path, update, session, callback) {
                         message.mailbox = target._id;
                         message.uid = uidNext;
 
+                        message.exp = ['\\Trash', '\\Junk'].includes(target.specialUse);
+                        message.rdate = new Date();
+
                         if (!message.meta) {
                             message.meta = {};
                         }
@@ -1601,6 +1610,106 @@ server.onGetQuota = function (quotaRoot, session, callback) {
     });
 };
 
+function clearExpiredMessages() {
+    clearTimeout(gcTimeout);
+
+    // First, acquire the lock. This prevents multiple connected clients for deleting the same messages
+    gcLock.acquireLock('gc_expired', 10 * 60 * 1000 /* Lock expires after 10min if not released */ , (err, lock) => {
+        if (err) {
+            server.logger.error({
+                tnx: 'gc',
+                err
+            }, 'Failed to acquire lock error=%s', err.message);
+            gcTimeout = setTimeout(clearExpiredMessages, GC_INTERVAL);
+            gcTimeout.unref();
+            return;
+        } else if (!lock.success) {
+            server.logger.debug({
+                tnx: 'gc'
+            }, 'Failed to acquire lock error=%s', 'Lock already exists');
+            gcTimeout = setTimeout(clearExpiredMessages, GC_INTERVAL);
+            gcTimeout.unref();
+            return;
+        }
+
+        let done = () => {
+            gcLock.releaseLock(lock, err => {
+                if (err) {
+                    server.logger.error({
+                        tnx: 'gc',
+                        err
+                    }, 'Failed to release lock error=%s', err.message);
+                } else {
+                    server.logger.debug({
+                        tnx: 'gc'
+                    }, 'Released lock');
+                }
+                gcTimeout = setTimeout(clearExpiredMessages, GC_INTERVAL);
+                gcTimeout.unref();
+            });
+        };
+
+        let cursor = db.database.collection('messages').find({
+            exp: true,
+            rdate: {
+                $lte: new Date(Date.now() - config.imap.retention * 24 * 3600 * 1000)
+            }
+        }).project({
+            _id: true,
+            mailbox: true,
+            uid: true
+        });
+
+        let deleted = 0;
+        let processNext = () => {
+            cursor.next((err, message) => {
+                if (err) {
+                    return done(err);
+                }
+                if (!message) {
+                    return cursor.close(() => {
+                        // delete all attachments that do not have any active links to message objects
+                        db.database.collection('attachments.files').deleteMany({
+                            'metadata.messages': {
+                                $size: 0
+                            }
+                        }, err => {
+                            if (err) {
+                                // ignore as we don't really care if we have orphans or not
+                            }
+                            server.logger.debug({
+                                tnx: 'gc'
+                            }, 'Deleted %s messages', deleted);
+                            done(null, true);
+                        });
+                    });
+                }
+
+                server.logger.info({
+                    tnx: 'gc',
+                    err
+                }, 'Deleting expired message id=%s', message._id);
+
+                gcTimeout = setTimeout(clearExpiredMessages, GC_INTERVAL);
+
+                messageHandler.del({
+                    message,
+                    skipAttachments: true
+                }, err => {
+                    if (err) {
+                        return cursor.close(() => done(err));
+                    }
+                    deleted++;
+                    processNext();
+                });
+            });
+        };
+
+        processNext();
+
+    });
+}
+
 module.exports = done => {
     if (!config.imap.enabled) {
         return setImmediate(() => done(null, false));
@@ -1608,7 +1717,7 @@ module.exports = done => {
 
     let start = () => {
 
-        messageHandler = new MessageHandler(db.database);
+        messageHandler = new MessageHandler(db.database, db.redisConfig);
         userHandler = new UserHandler(db.database, db.redis);
 
         server.indexer = new Indexer({
@@ -1648,6 +1757,15 @@ module.exports = done => {
             server.logger.info({
                 tnx: 'mongo'
             }, 'Setup indexes for %s collections', setupIndexes.length);
+
+            gcLock = new RedFour({
+                redis: db.redisConfig,
+                namespace: 'wildduck'
+            });
+
+            gcTimeout = setTimeout(clearExpiredMessages, GC_INTERVAL);
+            gcTimeout.unref();
+
             return start();
         }
         let index = setupIndexes[indexpos++];

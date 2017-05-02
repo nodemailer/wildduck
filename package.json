@@ -32,6 +32,7 @@
     "mailsplit": "^4.0.2",
     "marked": "^0.3.6",
     "mongodb": "^2.2.25",
+    "node-redis-scripty": "0.0.5",
     "nodemailer": "^4.0.1",
     "npmlog": "^4.0.2",
     "qrcode": "^0.8.1",

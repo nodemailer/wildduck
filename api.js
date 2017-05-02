@@ -200,13 +200,15 @@ server.post('/user/quota', (req, res, next) => {
     const schema = Joi.object().keys({
         username: Joi.string().alphanum().lowercase().min(3).max(30).required(),
         quota: Joi.number().min(0).optional(),
-        recipients: Joi.number().min(0).max(1000000).optional()
+        recipients: Joi.number().min(0).max(1000000).optional(),
+        forwards: Joi.number().min(0).max(1000000).optional()
     });
 
     const result = Joi.validate({
         username: req.params.username,
         quota: req.params.quota,
-        recipients: req.params.recipients
+        recipients: req.params.recipients,
+        forwards: req.params.forwards
     }, schema, {
         abortEarly: false,
         convert: true,
@@ -223,6 +225,7 @@ server.post('/user/quota', (req, res, next) => {
     let username = result.value.username;
     let quota = result.value.quota;
     let recipients = result.value.recipients;
+    let forwards = result.value.forwards;
 
     let $set = {};
     if (quota) {
@@ -231,8 +234,11 @@ server.post('/user/quota', (req, res, next) => {
     if (recipients) {
         $set.recipients = recipients;
     }
+    if (forwards) {
+        $set.forwards = forwards;
+    }
 
-    if (!quota && !recipients) {
+    if (!quota && !recipients && !forwards) {
         res.json({
             error: 'Nothing was updated'
         });
@@ -266,7 +272,8 @@ server.post('/user/quota', (req, res, next) => {
             success: true,
             username,
             quota: Number(result.value.quota) || 0,
-            recipients: Number(result.value.recipients) || 0
+            recipients: Number(result.value.recipients) || 0,
+            forwards: Number(result.value.forwards) || 0
         });
         return next();
     });
@@ -504,13 +511,20 @@ server.get('/user', (req, res, next) => {
             db.redis.multi().
             get('wdr:' + userData._id.toString()).
             ttl('wdr:' + userData._id.toString()).
+            get('wdf:' + userData._id.toString()).
+            ttl('wdf:' + userData._id.toString()).
             exec((err, result) => {
                 if (err) {
                     // ignore
                 }
                 let recipients = Number(userData.recipients) || 0;
+                let forwards = Number(userData.forwards) || 0;
+
                 let recipientsSent = Number(result && result[0]) || 0;
                 let recipientsTtl = Number(result && result[1]) || 0;
+
+                let forwardsSent = Number(result && result[2]) || 0;
+                let forwardsTtl = Number(result && result[3]) || 0;
 
                 res.json({
                     success: true,
@@ -522,8 +536,14 @@ server.get('/user', (req, res, next) => {
                     recipients,
                     recipientsSent,
 
+                    forwards,
+                    forwardsSent,
+
                     recipientsLimited: recipients ? recipients <= recipientsSent : false,
                     recipientsTtl: recipientsTtl >= 0 ? recipientsTtl : false,
+
+                    forwardsLimited: forwards ? forwards <= forwardsSent : false,
+                    forwardsTtl: forwardsTtl >= 0 ? forwardsTtl : false,
 
                     addresses: addresses.map(address => ({
                         id: address._id.toString(),
@@ -1112,7 +1132,7 @@ module.exports = done => {
 
     let started = false;
 
-    messageHandler = new MessageHandler(db.database);
+    messageHandler = new MessageHandler(db.database, db.redisConfig);
     userHandler = new UserHandler(db.database, db.redis);
 
     server.on('error', err => {

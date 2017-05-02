@@ -70,7 +70,9 @@ const serverOptions = {
                 _id: address.user
             }, {
                 fields: {
-                    filters: true
+                    filters: true,
+                    forwards: true,
+                    forward: true
                 }
             }, (err, user) => {
                 if (err) {
@@ -172,11 +174,6 @@ const serverOptions = {
                 } : []);
 
                 let forwardTargets = new Set();
-                if (user.forward) {
-                    // forward all messages
-                    forwardTargets.add(user.forward);
-                }
-
                 let matchingFilters = [];
                 let filterActions = new Map();
 
@@ -207,16 +204,33 @@ const serverOptions = {
                 });
 
                 let forwardMessage = done => {
+                    if (user.forward && !filterActions.get('delete')) {
+                        // forward to default recipient only if the message is not deleted
+                        forwardTargets.add(user.forward);
+                    }
+
                     if (!forwardTargets.size) {
                         return setImmediate(done);
                     }
-                    forward({
-                        user,
-                        sender,
-                        recipient,
-                        forward: Array.from(forwardTargets),
-                        chunks
-                    }, done);
+
+                    // check limiting counters
+                    messageHandler.counters.ttlcounter('wdf:' + user._id.toString(), forwardTargets.size, user.forwards, (err, result) => {
+                        if (err) {
+                            // failed checks
+                            log.error('LMTP', 'FRWRDFAIL key=%s error=%s', 'wdf:' + user._id.toString(), err.message);
+                        } else if (!result.success) {
+                            log.silly('LMTP', 'FRWRDFAIL key=%s error=%s', 'wdf:' + user._id.toString(), 'Precondition failed');
+                            return done();
+                        }
+
+                        forward({
+                            user,
+                            sender,
+                            recipient,
+                            forward: Array.from(forwardTargets),
+                            chunks
+                        }, done);
+                    });
                 };
 
                 forwardMessage((err, id) => {
@@ -226,7 +240,7 @@ const serverOptions = {
                         log.silly('LMTP', 'FRWRDOK id=%s', id);
                     }
 
-                    if (filterActions.has('delete') && filterActions.get('delete')) {
+                    if (filterActions.get('delete')) {
                         // nothing to do with the message, just continue
                         responses.push({
                             user,
@@ -331,7 +345,7 @@ module.exports = done => {
         return setImmediate(() => done(null, false));
     }
 
-    messageHandler = new MessageHandler(db.database);
+    messageHandler = new MessageHandler(db.database, db.redisConfig);
 
     let started = false;
 

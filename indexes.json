@@ -152,6 +152,13 @@
             "mailbox": 1,
             "ha": 1
         }
+    }, {
+        "name": "retention_time",
+        "expireAfterSeconds": 0,
+        "key": {
+            "exp": 1,
+            "rdate": 1
+        }
     }]
 }, {
     "collection": "attachment.files",
