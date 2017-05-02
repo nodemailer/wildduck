@@ -26,12 +26,17 @@ module.exports = {
         enabled: true,
         port: 9993,
         host: '127.0.0.1',
+
         // If certificate path is not defined, use built-in self-signed certs
         //key: '/path/to/server/key.pem'
         //cert: '/path/to/server/cert.pem'
         secure: true,
+
         // Max size for messages uploaded via APPEND
-        maxMB: 5
+        maxMB: 5,
+
+        // delete messages from Trash and Junk after retention days
+        retention: 30
     },
 
     lmtp: {
@@ -62,6 +67,24 @@ module.exports = {
         host: '0.0.0.0'
     },
 
+    // push messages to ZoneMTA queue for delivery
+    sender: {
+        // if false, then no messages are sent
+        enabled: true,
+
+        // which ZoneMTA queue to use by default
+        zone: 'default',
+
+        // MongoDB connection url. Do not set if you want to use main database
+        mongo: 'mongodb://127.0.0.1:27017/zone-mta',
+
+        // Collection name for GridFS storage
+        gfs: 'mail',
+
+        // Collection name for the queue
+        collection: 'zone-queue'
+    },
+
     // if this header exists and starts with yes then the message is treated as spam
     spamHeader: 'X-Rspamd-Spam',
 
@@ -69,5 +92,8 @@ module.exports = {
     maxStorage: 1024,
 
     // default smtp recipients for 24h (can be overriden per user)
-    maxRecipients: 2000
+    maxRecipients: 2000,
+
+    // default forwarded messages for 24h (can be overriden per user)
+    maxForwards: 2000
 };
