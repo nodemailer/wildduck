@@ -1,6 +1,6 @@
 {
   "name": "wildduck",
-  "version": "1.0.27",
+  "version": "1.0.28",
   "description": "IMAP server built with Node.js and MongoDB",
   "main": "server.js",
   "scripts": {
@@ -31,7 +31,6 @@
     "libmime": "^3.1.0",
     "libqp": "^1.1.0",
     "mailsplit": "^4.0.2",
-    "marked": "^0.3.6",
     "mongodb": "^2.2.26",
     "node-redis-scripty": "0.0.5",
     "nodemailer": "^4.0.1",

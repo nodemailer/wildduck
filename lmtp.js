@@ -242,7 +242,7 @@ const serverOptions = {
                             sender,
                             recipient,
 
-                            forward: forwardTargets.size ? Array.from(forwardTargets): false,
+                            forward: forwardTargets.size ? Array.from(forwardTargets) : false,
                             targetUrl: forwardTargetUrls.size ? Array.from(forwardTargetUrls) : false,
 
                             chunks
@@ -252,9 +252,9 @@ const serverOptions = {
 
                 forwardMessage((err, id) => {
                     if (err) {
-                        log.error('LMTP', '%s FRWRDFAIL from=%s to=%s target=%s error=%s', prepared.id.toString(), sender, recipient, Array.from(forwardTargets).join(','), err.message);
+                        log.error('LMTP', '%s FRWRDFAIL from=%s to=%s target=%s error=%s', prepared.id.toString(), sender, recipient, Array.from(forwardTargets).concat(forwardTargetUrls).join(','), err.message);
                     } else if (id) {
-                        log.silly('LMTP', '%s FRWRDOK id=%s from=%s to=%s target=%s', prepared.id.toString(), id, sender, recipient, Array.from(forwardTargets).join(','));
+                        log.silly('LMTP', '%s FRWRDOK id=%s from=%s to=%s target=%s', prepared.id.toString(), id, sender, recipient, Array.from(forwardTargets).concat(forwardTargetUrls).join(','));
                     }
 
                     if (filterActions.get('delete')) {

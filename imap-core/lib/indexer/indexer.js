@@ -12,7 +12,7 @@ const libmime = require('libmime');
 const libqp = require('libqp');
 const libbase64 = require('libbase64');
 const iconv = require('iconv-lite');
-const marked = require('marked');
+const he = require('he');
 const htmlToText = require('html-to-text');
 const crypto = require('crypto');
 
@@ -327,13 +327,7 @@ class Indexer {
                     } else {
                         textContent.push(content.trim());
                         if (!alternative) {
-                            htmlContent.push(marked(content, {
-                                breaks: true,
-                                sanitize: true,
-                                gfm: true,
-                                tables: true,
-                                smartypants: true
-                            }).trim());
+                            htmlContent.push(textToHtml(content));
                         }
                     }
                 }
@@ -687,6 +681,24 @@ function formatHeaders(headers) {
         headers = [].concat(headers || []);
     }
     return headers;
+}
+
+
+function textToHtml(str) {
+
+    let text = '<p>' + he.
+    // encode special chars
+    encode(
+        str, {
+            useNamedReferences: true
+        }).
+    replace(/\r?\n/g, '\n').trim(). // normalize line endings
+    replace(/[ \t]+$/mg, '').trim(). // trim empty line endings
+    replace(/\n\n+/g, '</p><p>').trim(). // insert <p> to multiple linebreaks
+    replace(/\n/g, '<br/>') + // insert <br> to single linebreaks
+        '</p>';
+
+    return text;
 }
 
 module.exports = Indexer;
