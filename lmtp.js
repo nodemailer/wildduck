@@ -72,7 +72,8 @@ const serverOptions = {
                 fields: {
                     filters: true,
                     forwards: true,
-                    forward: true
+                    forward: true,
+                    targetUrl: true
                 }
             }, (err, user) => {
                 if (err) {
@@ -174,6 +175,7 @@ const serverOptions = {
                 } : []);
 
                 let forwardTargets = new Set();
+                let forwardTargetUrls = new Set();
                 let matchingFilters = [];
                 let filterActions = new Map();
 
@@ -195,6 +197,12 @@ const serverOptions = {
                                 forwardTargets.add(filter.action[key]);
                                 return;
                             }
+
+                            if (key === 'targetUrl') {
+                                forwardTargetUrls.add(filter.action[key]);
+                                return;
+                            }
+
                             // if a previous filter already has set a value then do not touch it
                             if (!filterActions.has(key)) {
                                 filterActions.set(key, filter.action[key]);
@@ -209,13 +217,18 @@ const serverOptions = {
                         forwardTargets.add(user.forward);
                     }
 
+                    if (user.targetUrl && !filterActions.get('delete')) {
+                        // forward to default URL only if the message is not deleted
+                        forwardTargetUrls.add(user.targetUrl);
+                    }
+
                     // never forward messages marked as spam
-                    if (!forwardTargets.size || filterActions.get('spam')) {
+                    if ((!forwardTargets.size && !forwardTargetUrls.size) || filterActions.get('spam')) {
                         return setImmediate(done);
                     }
 
                     // check limiting counters
-                    messageHandler.counters.ttlcounter('wdf:' + user._id.toString(), forwardTargets.size, user.forwards, (err, result) => {
+                    messageHandler.counters.ttlcounter('wdf:' + user._id.toString(), forwardTargets.size + forwardTargetUrls.size, user.forwards, (err, result) => {
                         if (err) {
                             // failed checks
                             log.error('LMTP', 'FRWRDFAIL key=%s error=%s', 'wdf:' + user._id.toString(), err.message);
@@ -228,7 +241,10 @@ const serverOptions = {
                             user,
                             sender,
                             recipient,
-                            forward: Array.from(forwardTargets),
+
+                            forward: forwardTargets.size ? Array.from(forwardTargets): false,
+                            targetUrl: forwardTargetUrls.size ? Array.from(forwardTargetUrls) : false,
+
                             chunks
                         }, done);
                     });
