@@ -593,7 +593,7 @@ describe('Search term match tests', function () {
     describe('INTERNALDATE', function () {
         it('should match <', function (done) {
             matchSearchQuery({
-                internaldate: new Date('1999-01-01')
+                idate: new Date('1999-01-01')
             }, {
                 key: 'internaldate',
                 value: '2001-01-01',
@@ -607,7 +607,7 @@ describe('Search term match tests', function () {
 
         it('should not match <', function (done) {
             matchSearchQuery({
-                internaldate: new Date('1999-01-01')
+                idate: new Date('1999-01-01')
             }, {
                 key: 'internaldate',
                 value: '1998-01-01',
@@ -621,7 +621,7 @@ describe('Search term match tests', function () {
 
         it('should match =', function (done) {
             matchSearchQuery({
-                internaldate: new Date('1999-01-01')
+                idate: new Date('1999-01-01')
             }, {
                 key: 'internaldate',
                 value: '1999-01-01',
@@ -635,7 +635,7 @@ describe('Search term match tests', function () {
 
         it('should not match <', function (done) {
             matchSearchQuery({
-                internaldate: new Date('1999-01-01')
+                idate: new Date('1999-01-01')
             }, {
                 key: 'internaldate',
                 value: '1999-01-02',
@@ -649,7 +649,7 @@ describe('Search term match tests', function () {
 
         it('should match >=', function (done) {
             matchSearchQuery({
-                internaldate: new Date('1999-01-01')
+                idate: new Date('1999-01-01')
             }, {
                 key: 'internaldate',
                 value: '1999-01-01',
@@ -674,7 +674,7 @@ describe('Search term match tests', function () {
 
         it('should not match >=', function (done) {
             matchSearchQuery({
-                internaldate: new Date('1999-01-01')
+                idate: new Date('1999-01-01')
             }, {
                 key: 'internaldate',
                 value: '1999-01-02',

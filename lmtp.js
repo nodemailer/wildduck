@@ -155,7 +155,7 @@ const serverOptions = {
                 let prepared = messageHandler.prepareMessage({
                     raw
                 });
-                let maildata = messageHandler.indexer.processContent(prepared.id, prepared.mimeTree);
+                let maildata = messageHandler.indexer.getMaildata(prepared.id, prepared.mimeTree);
 
                 // default flags are empty
                 let flags = [];

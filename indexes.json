@@ -161,11 +161,17 @@
         }
     }]
 }, {
-    "collection": "attachment.files",
+    "collection": "attachments.files",
     "indexes": [{
-        "name": "related_messages",
+        "name": "attachment_hash",
         "key": {
-            "metadata.messages": 1
+            "metadata.h": 1
+        }
+    }, {
+        "name": "related_attachments",
+        "key": {
+            "metadata.c": 1,
+            "metadata.m": 1
         }
     }]
 }, {

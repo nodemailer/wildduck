@@ -970,6 +970,7 @@ server.get('/message/:id/raw', (req, res, next) => {
 
     db.database.collection('messages').findOne(query, {
         mimeTree: true,
+        map: true,
         size: true
     }, (err, message) => {
         if (err) {
@@ -1008,7 +1009,7 @@ server.get('/message/:message/attachment/:attachment', (req, res, next) => {
 
     const schema = Joi.object().keys({
         message: Joi.string().hex().lowercase().length(24).required(),
-        attachment: Joi.string().hex().lowercase().length(24).required()
+        attachment: Joi.string().regex(/^ATT\d+$/i).uppercase().required()
     });
 
     const result = Joi.validate({
@@ -1027,47 +1028,80 @@ server.get('/message/:message/attachment/:attachment', (req, res, next) => {
         return next();
     }
 
-    let message = result.value.message;
-    let attachment = result.value.attachment;
+    let messageId = result.value.message;
+    let attachmentMid = result.value.attachment;
 
-    let query = {
-        _id: new ObjectID(attachment),
-        'metadata.messages': new ObjectID(message)
-    };
-
-    db.database.collection('attachments.files').findOne(query, (err, messageData) => {
+    db.database.collection('messages').findOne({
+        _id: new ObjectID(messageId)
+    }, {
+        fields: {
+            map: true
+        }
+    }, (err, message) => {
         if (err) {
             res.json({
                 error: 'MongoDB Error: ' + err.message,
-                attachment,
-                message
+                attachment: attachmentMid,
+                message: messageId
             });
             return next();
         }
-        if (!messageData) {
+        if (!message) {
             res.json({
                 error: 'This message does not exist',
-                attachment,
-                message
+                attachment: attachmentMid,
+                message: messageId
             });
             return next();
         }
 
-        res.writeHead(200, {
-            'Content-Type': messageData.contentType || 'application/octet-stream'
-        });
+        let attachmentId = message.map && message.map[attachmentMid];
 
-        let attachmentStream = messageHandler.indexer.gridstore.createReadStream(messageData._id);
-
-        attachmentStream.once('error', err => res.emit('error', err));
-
-        if (messageData.metadata.transferEncoding === 'base64') {
-            attachmentStream.pipe(new libbase64.Decoder()).pipe(res);
-        } else if (messageData.metadata.transferEncoding === 'quoted-printable') {
-            attachmentStream.pipe(new libqp.Decoder()).pipe(res);
-        } else {
-            attachmentStream.pipe(res);
+        if (!attachmentId) {
+            res.json({
+                error: 'This attachment does not exist',
+                attachment: attachmentMid,
+                message: messageId
+            });
+            return next();
         }
+
+        db.database.collection('attachments.files').findOne({
+            _id: new ObjectID(attachmentId)
+        }, (err, messageData) => {
+            if (err) {
+                res.json({
+                    error: 'MongoDB Error: ' + err.message,
+                    attachment: attachmentMid,
+                    message: messageId
+                });
+                return next();
+            }
+            if (!messageData) {
+                res.json({
+                    error: 'This message does not exist',
+                    attachment: attachmentMid,
+                    message: messageId
+                });
+                return next();
+            }
+
+            res.writeHead(200, {
+                'Content-Type': messageData.contentType || 'application/octet-stream'
+            });
+
+            let attachmentStream = messageHandler.indexer.gridstore.openDownloadStream(messageData._id);
+
+            attachmentStream.once('error', err => res.emit('error', err));
+
+            if (messageData.metadata.transferEncoding === 'base64') {
+                attachmentStream.pipe(new libbase64.Decoder()).pipe(res);
+            } else if (messageData.metadata.transferEncoding === 'quoted-printable') {
+                attachmentStream.pipe(new libqp.Decoder()).pipe(res);
+            } else {
+                attachmentStream.pipe(res);
+            }
+        });
     });
 });
 

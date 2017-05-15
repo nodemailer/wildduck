@@ -7,7 +7,7 @@ const BodyStructure = require('./body-structure');
 const createEnvelope = require('./create-envelope');
 const parseMimeTree = require('./parse-mime-tree');
 const ObjectID = require('mongodb').ObjectID;
-const GridFs = require('grid-fs');
+const GridFSBucket = require('mongodb').GridFSBucket;
 const libmime = require('libmime');
 const libqp = require('libqp');
 const libbase64 = require('libbase64');
@@ -24,7 +24,9 @@ class Indexer {
 
         this.database = this.options.database;
         if (this.database) {
-            this.gridstore = new GridFs(this.database, 'attachments');
+            this.gridstore = new GridFSBucket(this.database, {
+                bucketName: 'attachments'
+            });
         }
 
         // create logger
@@ -187,7 +189,7 @@ class Indexer {
             } else if (node.attachmentId && !skipExternal) {
                 append(false, true); // force newline between header and contents
 
-                let attachmentStream = this.gridstore.createReadStream(node.attachmentId);
+                let attachmentStream = this.gridstore.openDownloadStream(node.attachmentId);
 
                 attachmentStream.once('error', err => {
                     res.emit('error', err);
@@ -255,14 +257,21 @@ class Indexer {
     /**
      * Decode text/plain and text/html parts, separate node bodies from the tree
      */
-    processContent(messageId, mimeTree) {
-        let response = {
+    getMaildata(messageId, mimeTree) {
+        let magic = parseInt(crypto.randomBytes(2).toString('hex'), 16);
+        let map = {};
+        let maildata = {
             nodes: [],
             attachments: [],
             text: '',
-            html: []
+            html: [],
+            // magic number to append to increment stored attachment object counter
+            magic,
+            // match ids referenced in document to actual attachment ids
+            map
         };
 
+        let idcount = 0;
         let htmlContent = [];
         let textContent = [];
         let cidMap = new Map();
@@ -335,7 +344,8 @@ class Indexer {
 
             // remove attachments and very large text nodes from the mime tree
             if (!isMultipart && node.body && node.body.length && (!isInlineText || node.size > 300 * 1024)) {
-                let attachmentId = new ObjectID();
+                let attachmentId = 'ATT' + leftPad(++idcount, '0', 5);
+                map[attachmentId] = new ObjectID();
 
                 let fileName = (node.parsedHeader['content-disposition'] && node.parsedHeader['content-disposition'].params && node.parsedHeader['content-disposition'].params.filename) || (node.parsedHeader['content-type'] && node.parsedHeader['content-type'].params && node.parsedHeader['content-type'].params.name) || false;
                 let contentId = (node.parsedHeader['content-id'] || '').toString().replace(/<|>/g, '').trim();
@@ -356,18 +366,19 @@ class Indexer {
                 });
 
                 // push to queue
-                response.nodes.push({
+                maildata.nodes.push({
                     attachmentId,
                     options: {
                         fsync: true,
-                        content_type: contentType,
+                        contentType,
                         // metadata should include only minimally required information, this would allow
                         // to share attachments between different messages if the content is exactly the same
                         // even though metadata (filename, content-disposition etc) might not
                         metadata: {
-                            // if we copy the same message to other mailboxes then instead
-                            // of copying attachments we add a pointer to the new message here
-                            messages: [messageId],
+                            // values to detect if there are messages that reference to this attachment or not
+                            m: maildata.magic,
+                            c: 1,
+
                             // how to decode contents if a webclient or API asks for the attachment
                             transferEncoding
                         }
@@ -378,7 +389,7 @@ class Indexer {
                 // do not include text content, multipart elements and embedded messages in the attachment list
                 if (!isInlineText && !(contentType === 'message/rfc822' && (!disposition || disposition === 'inline'))) {
                     // list in the attachments array
-                    response.attachments.push({
+                    maildata.attachments.push({
                         id: attachmentId,
                         fileName,
                         contentType,
@@ -416,43 +427,93 @@ class Indexer {
             return match;
         });
 
-        response.html = htmlContent.filter(str => str.trim()).map(updateCidLinks);
-        response.text = textContent.filter(str => str.trim()).map(updateCidLinks).join('\n').trim();
+        maildata.html = htmlContent.filter(str => str.trim()).map(updateCidLinks);
+        maildata.text = textContent.filter(str => str.trim()).map(updateCidLinks).join('\n').trim();
 
-        return response;
+        return maildata;
     }
 
     /**
      * Stores attachments to GridStore
      */
-    storeNodeBodies(messageId, nodes, callback) {
+    storeNodeBodies(messageId, maildata, mimeTree, callback) {
         let pos = 0;
+        let nodes = maildata.nodes;
         let storeNode = () => {
             if (pos >= nodes.length) {
-                return callback(null, true);
+
+                // replace attachment IDs with ObjectIDs in the mimeTree
+                let walk = (node, next) => {
+
+                    if (node.attachmentId && maildata.map[node.attachmentId]) {
+                        node.attachmentId = maildata.map[node.attachmentId];
+                    }
+
+                    if (Array.isArray(node.childNodes)) {
+                        let pos = 0;
+                        let processChildNodes = () => {
+                            if (pos >= node.childNodes.length) {
+                                return next();
+                            }
+                            let childNode = node.childNodes[pos++];
+                            walk(childNode, () => processChildNodes());
+                        };
+                        processChildNodes();
+                    } else {
+                        next();
+                    }
+                };
+
+                return walk(mimeTree, () => callback(null, true));
             }
-            let nodeData = nodes[pos++];
 
-            let returned = false;
-            let store = this.gridstore.createWriteStream(nodeData.attachmentId, nodeData.options);
+            let node = nodes[pos++];
 
-            store.once('error', err => {
-                if (returned) {
-                    return;
+            let hash = crypto.createHash('sha256').update(node.body).digest('hex');
+
+            this.database.collection('attachments.files').findOneAndUpdate({
+                'metadata.h': hash
+            }, {
+                $inc: {
+                    'metadata.c': 1,
+                    'metadata.m': maildata.magic
                 }
-                returned = true;
-                callback(err);
-            });
-
-            store.on('close', () => {
-                if (returned) {
-                    return;
+            }, {
+                returnOriginal: false
+            }, (err, result) => {
+                if (err) {
+                    return callback(err);
                 }
-                returned = true;
-                return storeNode();
-            });
 
-            store.end(nodeData.body);
+                if (result && result.value) {
+                    maildata.map[node.attachmentId] = result.value._id;
+                    return storeNode();
+                }
+
+                let returned = false;
+
+                node.options.metadata.h = hash;
+
+                let store = this.gridstore.openUploadStreamWithId(maildata.map[node.attachmentId], null, node.options);
+
+                store.once('error', err => {
+                    if (returned) {
+                        return;
+                    }
+                    returned = true;
+                    callback(err);
+                });
+
+                store.once('finish', () => {
+                    if (returned) {
+                        return;
+                    }
+                    returned = true;
+                    return storeNode();
+                });
+
+                store.end(node.body);
+            });
         };
 
         storeNode();
@@ -699,6 +760,10 @@ function textToHtml(str) {
         '</p>';
 
     return text;
+}
+
+function leftPad(val, chr, len) {
+    return chr.repeat(len - val.toString().length) + val;
 }
 
 module.exports = Indexer;

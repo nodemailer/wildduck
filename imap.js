@@ -773,7 +773,9 @@ server.onExpunge = function (path, update, session, callback) {
         }).project({
             _id: true,
             uid: true,
-            size: true
+            size: true,
+            map: true,
+            magic: true
         }).sort([
             ['uid', 1]
         ]);
@@ -804,19 +806,7 @@ server.onExpunge = function (path, update, session, callback) {
                     return cursor.close(() => {
                         updateQuota(() => {
                             this.notifier.fire(session.user.id, path);
-
-                            // delete all attachments that do not have any active links to message objects
-                            db.database.collection('attachments.files').deleteMany({
-                                'metadata.messages': {
-                                    $size: 0
-                                }
-                            }, err => {
-                                if (err) {
-                                    // ignore as we don't really care if we have orphans or not
-                                }
-
-                                return callback(null, true);
-                            });
+                            return callback(null, true);
                         });
                     });
                 }
@@ -835,12 +825,27 @@ server.onExpunge = function (path, update, session, callback) {
                     deletedMessages++;
                     deletedStorage += Number(message.size) || 0;
 
-                    // remove link to message from attachments (if any exist)
+                    let attachments = Object.keys(message.map || {}).map(key => message.map[key]);
+
+                    if (!attachments.length) {
+                        // not stored attachments
+                        return this.notifier.addEntries(session.user.id, path, {
+                            command: 'EXPUNGE',
+                            ignore: session.id,
+                            uid: message.uid,
+                            message: message._id
+                        }, processNext);
+                    }
+
+                    // remove references to attachments (if any exist)
                     db.database.collection('attachments.files').updateMany({
-                        'metadata.messages': message._id
+                        _id: {
+                            $in: attachments
+                        }
                     }, {
-                        $pull: {
-                            'metadata.messages': message._id
+                        $inc: {
+                            'metadata.c': -1,
+                            'metadata.m': -message.magic
                         }
                     }, {
                         multi: true,
@@ -934,10 +939,7 @@ server.onCopy = function (path, update, session, callback) {
                         });
                     }
 
-                    let sourceId = message._id;
-
                     // Copying is not done in bulk to minimize risk of going out of sync with incremental UIDs
-
                     sourceUid.unshift(message.uid);
                     db.database.collection('mailboxes').findOneAndUpdate({
                         _id: target._id
@@ -980,12 +982,24 @@ server.onCopy = function (path, update, session, callback) {
                             copiedMessages++;
                             copiedStorage += Number(message.size) || 0;
 
-                            // remove link to message from attachments (if any exist)
+                            let attachments = Object.keys(message.map || {}).map(key => message.map[key]);
+                            if (!attachments.length) {
+                                return this.notifier.addEntries(session.user.id, target.path, {
+                                    command: 'EXISTS',
+                                    uid: message.uid,
+                                    message: message._id
+                                }, processNext);
+                            }
+
+                            // update attachments
                             db.database.collection('attachments.files').updateMany({
-                                'metadata.messages': sourceId
+                                _id: {
+                                    $in: attachments
+                                }
                             }, {
-                                $push: {
-                                    'metadata.messages': message._id
+                                $inc: {
+                                    'metadata.c': 1,
+                                    'metadata.m': message.magic
                                 }
                             }, {
                                 multi: true,
@@ -1610,6 +1624,59 @@ server.onGetQuota = function (quotaRoot, session, callback) {
     });
 };
 
+function deleteOrphanedAttachments(callback) {
+    let cursor = db.database.collection('attachments.files').find({
+        'metadata.c': 0,
+        'metadata.m': 0
+    });
+
+    let deleted = 0;
+    let processNext = () => {
+        cursor.next((err, attachment) => {
+            if (err) {
+                return callback(err);
+            }
+            if (!attachment) {
+                return cursor.close(() => {
+                    // delete all attachments that do not have any active links to message objects
+                    callback(null, deleted);
+                });
+            }
+
+            if (!attachment || (attachment.metadata && attachment.metadata.c)) {
+                // skip
+                return processNext();
+            }
+
+            // delete file entry first
+            db.database.collection('attachments.files').deleteOne({
+                _id: attachment._id,
+                // make sure that we do not delete a message that is already re-used
+                'metadata.c': 0,
+                'metadata.m': 0
+            }, (err, result) => {
+                if (err || !result.deletedCount) {
+                    return processNext();
+                }
+
+                // delete data chunks
+                db.database.collection('attachments.chunks').deleteMany({
+                    files_id: attachment._id
+                }, err => {
+                    if (err) {
+                        // ignore as we don't really care if we have orphans or not
+                    }
+
+                    deleted++;
+                    processNext();
+                });
+            });
+        });
+    };
+
+    processNext();
+}
+
 function clearExpiredMessages() {
     clearTimeout(gcTimeout);
 
@@ -1669,14 +1736,7 @@ function clearExpiredMessages() {
                 if (!message) {
                     return cursor.close(() => {
                         // delete all attachments that do not have any active links to message objects
-                        db.database.collection('attachments.files').deleteMany({
-                            'metadata.messages': {
-                                $size: 0
-                            }
-                        }, err => {
-                            if (err) {
-                                // ignore as we don't really care if we have orphans or not
-                            }
+                        deleteOrphanedAttachments(() => {
                             server.logger.debug({
                                 tnx: 'gc'
                             }, 'Deleted %s messages', deleted);
