@@ -88,7 +88,7 @@ Yes, it does. You can run the server and get working IMAP and POP3 servers for m
 4. Focus on internationalization, ie. supporting email addresses with non-ascii characters
 5. `+`-labels: _андрис+ööö@уайлддак.орг_ is delivered to _андрис@уайлддак.орг_
 6. Access messages both using IMAP and HTTP API. The latter serves parsed data, so no need to fetch RFC822 messages and parse out html, plaintext content or attachments. It is super easy to create a webmail interface on top of this.
-7. De-duplication of attachments. If the same attachment is referenced by different messages then only a single copy of the attachment is stored. Attachment is stored in the encoded form (eg. encoded in base64) to not break any signatures so the resulting encoding must match as well.
+7. Deduplication of attachments. If the same attachment is referenced by different messages then only a single copy of the attachment is stored. Attachment is stored in the encoded form (eg. encoded in base64) to not break any signatures so the resulting encoding must match as well.
 
 ### Isn't it bad to use a database as a mail store?
 
