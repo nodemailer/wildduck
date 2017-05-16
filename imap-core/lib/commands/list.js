@@ -133,12 +133,22 @@ module.exports = {
 
         };
 
-        if (!mailbox) {
+        if (!mailbox && !filterSpecialUseFlags) {
             // return delimiter only
-            return listResponse(null, [{
-                path: '/',
-                flags: '\\Noselect'
-            }]);
+            let response = {
+                tag: '*',
+                command: 'LIST',
+                attributes: [
+                    [{
+                        type: 'atom',
+                        value: '\\Noselect'
+                    }], '/', '/'
+                ]
+            };
+            this.send(imapHandler.compiler(response));
+            return callback(null, {
+                response: 'OK'
+            });
         }
 
         // Do folder listing

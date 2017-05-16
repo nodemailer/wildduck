@@ -241,6 +241,26 @@ describe('IMAP Protocol integration tests', function () {
     });
 
     describe('LIST', function () {
+        it('should list delimiter', function (done) {
+            let cmds = [
+                'T1 LOGIN testuser pass',
+                'T2 LIST "" ""',
+                'T3 LOGOUT'
+            ];
+
+            testClient({
+                commands: cmds,
+                secure: true,
+                port
+            }, function (resp) {
+                resp = resp.toString();
+                expect(resp.match(/^\* LIST /mg).length).to.equal(1);
+                expect(resp.indexOf('\r\n* LIST (\\Noselect) "/" "/"\r\n') >= 0).to.be.true;
+                expect(/^T2 OK/m.test(resp)).to.be.true;
+                done();
+            });
+        });
+
         it('should list all mailboxes', function (done) {
             let cmds = [
                 'T1 LOGIN testuser pass',
