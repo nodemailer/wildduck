@@ -26,7 +26,13 @@ module.exports = {
 
         // Check if authentication method is set
         if (typeof this._server.onAuth !== 'function') {
-            this._server.logger.info('[%s] Authentication failed for %s using %s', this.id, username, 'LOGIN');
+            this._server.logger.info({
+                tnx: 'auth',
+                username,
+                method: 'LOGIN',
+                action: 'fail',
+                cid: this.id
+            }, '[%s] Authentication failed for %s using %s', this.id, username, 'LOGIN');
             return callback(null, {
                 response: 'NO',
                 message: 'Authentication not implemented'
@@ -44,12 +50,25 @@ module.exports = {
                 if (err.response) {
                     return callback(null, err);
                 }
-                this._server.logger.info('[%s] Authentication error for %s using %s\n%s', this.id, username, 'LOGIN', err.message);
+                this._server.logger.info({
+                    err,
+                    tnx: 'auth',
+                    username,
+                    method: 'LOGIN',
+                    action: 'fail',
+                    cid: this.id
+                }, '[%s] Authentication error for %s using %s\n%s', this.id, username, 'LOGIN', err.message);
                 return callback(err);
             }
 
             if (!response || !response.user) {
-                this._server.logger.info('[%s] Authentication failed for %s using %s', this.id, username, 'LOGIN');
+                this._server.logger.info({
+                    tnx: 'auth',
+                    username,
+                    method: 'LOGIN',
+                    action: 'fail',
+                    cid: this.id
+                }, '[%s] Authentication failed for %s using %s', this.id, username, 'LOGIN');
                 return callback(null, {
                     response: 'NO',
                     code: 'AUTHENTICATIONFAILED',
@@ -57,7 +76,13 @@ module.exports = {
                 });
             }
 
-            this._server.logger.info('[%s] %s authenticated using %s', this.id, username, 'LOGIN');
+            this._server.logger.info({
+                tnx: 'auth',
+                username,
+                method: 'LOGIN',
+                action: 'success',
+                cid: this.id
+            }, '[%s] %s authenticated using %s', this.id, username, 'LOGIN');
             this.session.user = response.user;
             this.state = 'Authenticated';
 

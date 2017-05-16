@@ -63,7 +63,10 @@ function upgrade(connection) {
         connection._socket = secureSocket;
         connection._upgrading = false;
 
-        connection._server.logger.info('[%s] Connection upgraded to TLS', connection.id);
+        connection._server.logger.info({
+            tnx: 'starttls',
+            cid: connection.id
+        }, '[%s] Connection upgraded to TLS', connection.id);
         connection._socket.pipe(connection._parser);
         connection.writeStream.pipe(connection._socket);
     });

@@ -41,12 +41,18 @@ module.exports = {
                 }
             });
 
-            this._server.logger.info('[%s] Client identification data received', this.id);
+            this._server.logger.info({
+                tnx: 'id',
+                cid: this.id
+            }, '[%s] Client identification data received', this.id);
 
             Object.keys(clientId).
             sort((a, b) => (allowedKeys.indexOf(a) - allowedKeys.indexOf(b))).
             forEach(key => {
-                this._server.logger.info('[%s] %s%s: %s', this.id, key, new Array(maxKeyLen - key.length + 1).join(' '), clientId[key]);
+                this._server.logger.info({
+                    tnx: 'id',
+                    cid: this.id
+                }, '[%s] %s%s: %s', this.id, key, new Array(maxKeyLen - key.length + 1).join(' '), clientId[key]);
             });
         }
 

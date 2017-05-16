@@ -63,12 +63,25 @@ function authenticate(connection, token, callback) {
         password
     }, connection.session, (err, response) => {
         if (err) {
-            connection._server.logger.info('[%s] Authentication error for %s using %s\n%s', connection.id, username, 'PLAIN', err.message);
+            connection._server.logger.info({
+                err,
+                tnx: 'auth',
+                username,
+                method: 'PLAIN',
+                action: 'fail',
+                cid: connection.id
+            }, '[%s] Authentication error for %s using %s\n%s', connection.id, username, 'PLAIN', err.message);
             return callback(err);
         }
 
         if (!response || !response.user) {
-            connection._server.logger.info('[%s] Authentication failed for %s using %s', connection.id, username, 'PLAIN');
+            connection._server.logger.info({
+                tnx: 'auth',
+                username,
+                method: 'PLAIN',
+                action: 'fail',
+                cid: connection.id
+            }, '[%s] Authentication failed for %s using %s', connection.id, username, 'PLAIN');
             return callback(null, {
                 response: 'NO',
                 code: 'AUTHENTICATIONFAILED',
@@ -76,7 +89,13 @@ function authenticate(connection, token, callback) {
             });
         }
 
-        connection._server.logger.info('[%s] %s authenticated using %s', connection.id, username, 'PLAIN');
+        connection._server.logger.info({
+            tnx: 'auth',
+            username,
+            method: 'PLAIN',
+            action: 'success',
+            cid: connection.id
+        }, '[%s] %s authenticated using %s', connection.id, username, 'PLAIN');
         connection.session.user = response.user;
         connection.state = 'Authenticated';
 

@@ -38,12 +38,20 @@ module.exports = {
             this._inflate = zlib.createInflateRaw();
 
             this._deflate.once('error', err => {
-                this._server.logger.debug('[%s] Deflate error %s', this.id, err.message);
+                this._server.logger.debug({
+                    err,
+                    tnx: 'deflate',
+                    cid: this.id
+                }, '[%s] Deflate error %s', this.id, err.message);
                 this.close();
             });
 
             this._inflate.once('error', err => {
-                this._server.logger.debug('[%s] Inflate error %s', this.id, err.message);
+                this._server.logger.debug({
+                    err,
+                    tnx: 'inflate',
+                    cid: this.id
+                }, '[%s] Inflate error %s', this.id, err.message);
                 this.close();
             });
 
@@ -59,6 +67,7 @@ module.exports = {
                         return this._deflate.once('drain', readNext);
                     }
                 }
+
                 // flush data to socket
                 if (this._deflate) {
                     this._deflate.flush();

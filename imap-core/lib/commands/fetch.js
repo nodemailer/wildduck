@@ -221,10 +221,13 @@ module.exports = {
             query.push(item);
         }
 
-        this._server.logger.debug('[%s] FETCH: %s', this.id, JSON.stringify({
+        this._server.logger.debug({
+            tnx: 'fetch',
+            cid: this.id
+        }, '[%s] FETCH: %s', this.id, JSON.stringify({
             metadataOnly: !!metadataOnly,
             markAsSeen: !!markAsSeen,
-            messages:messages.length,
+            messages: messages.length,
             query,
             changedSince,
             isUid
