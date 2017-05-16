@@ -52,7 +52,7 @@ class MemoryNotifier extends EventEmitter {
         let eventName = this._eventName(session.user.username, mailbox);
         this._listeners.addListener(eventName, handler);
 
-        this.logger.debug('New journal listener for %s ("%s:%s")', eventName, session.user.username, mailbox);
+        this.logger.debug('[%s] New journal listener for %s ("%s:%s")', session.id, eventName, session.user.username, mailbox);
     }
 
     /**
@@ -66,7 +66,7 @@ class MemoryNotifier extends EventEmitter {
         let eventName = this._eventName(session.user.username, mailbox);
         this._listeners.removeListener(eventName, handler);
 
-        this.logger.debug('Removed journal listener from %s ("%s:%s")', eventName, session.user.username, mailbox);
+        this.logger.debug('[%s] Removed journal listener from %s ("%s:%s")', session.id, eventName, session.user.username, mailbox);
     }
 
     /**
