@@ -49,7 +49,10 @@ module.exports = {
 
             this.writeStream.unpipe(this._socket);
             this._deflate.pipe(this._socket);
+            let reading = false;
             let readNext = () => {
+                reading = true;
+
                 let chunk;
                 while ((chunk = this.writeStream.read()) !== null) {
                     if (this._deflate && this._deflate.write(chunk) === false) {
@@ -60,8 +63,14 @@ module.exports = {
                 if (this._deflate) {
                     this._deflate.flush();
                 }
+
+                reading = false;
             };
-            this.writeStream.on('readable', readNext);
+            this.writeStream.on('readable', () => {
+                if (!reading) {
+                    readNext();
+                }
+            });
 
             this._socket.unpipe(this._parser);
             this._socket.pipe(this._inflate).pipe(this._parser);

@@ -126,6 +126,10 @@ class IMAPConnection extends EventEmitter {
     send(payload, callback) {
         if (this._socket && this._socket.writable) {
             this[!this.compression ? '_socket' : '_deflate'].write(payload + '\r\n', 'binary', callback);
+            if(this.compression){
+                // make sure we transmit the message immediatelly
+                this._deflate.flush();
+            }
             this._server.logger.debug({
                 tnx: 'send',
                 cid: this.id
