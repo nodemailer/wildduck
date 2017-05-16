@@ -101,7 +101,10 @@ class IMAPCommand {
                 // Deny all literals bigger than maxMessage
                 command.expecting > maxAllowed) {
 
-                this.connection._server.logger.debug('[%s] C:', this.connection.id, this.payload);
+                this.connection._server.logger.debug({
+                    tnx: 'client',
+                    cid: this.connection.id
+                }, '[%s] C:', this.connection.id, this.payload);
 
                 this.payload = ''; // reset payload
 
@@ -150,14 +153,21 @@ class IMAPCommand {
 
             // check if the payload needs to be directod to a preset handler
             if (typeof this.connection._nextHandler === 'function') {
-                this.connection._server.logger.debug('[%s] C: <%s bytes of data>', this.connection.id, this.payload && this.payload.length || 0);
+                this.connection._server.logger.debug({
+                    tnx: 'client',
+                    cid: this.connection.id
+                }, '[%s] C: <%s bytes of data>', this.connection.id, this.payload && this.payload.length || 0);
                 return this.connection._nextHandler(this.payload, next);
             }
 
             try {
                 this.parsed = imapHandler.parser(this.payload);
             } catch (E) {
-                this.connection._server.logger.debug('[%s] C:', this.connection.id, this.payload);
+                this.connection._server.logger.debug({
+                    err: E,
+                    tnx: 'client',
+                    cid: this.connection.id
+                }, '[%s] C:', this.connection.id, this.payload);
                 this.connection.send(this.tag + ' BAD ' + E.message);
                 return next();
             }
@@ -172,7 +182,10 @@ class IMAPCommand {
                 });
             }
 
-            this.connection._server.logger.debug('[%s] C:', this.connection.id, imapHandler.compiler(this.parsed, false, true));
+            this.connection._server.logger.debug({
+                tnx: 'client',
+                cid: this.connection.id
+            }, '[%s] C:', this.connection.id, imapHandler.compiler(this.parsed, false, true));
 
             this.validateCommand(this.parsed, handler, err => {
                 if (err) {
