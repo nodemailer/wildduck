@@ -101,7 +101,10 @@ server.onAuth = function (login, session, callback) {
 // Returns all folders, query is informational
 // folders is either an Array or a Map
 server.onList = function (query, session, callback) {
-    this.logger.debug('[%s] LIST for "%s"', session.id, query);
+    this.logger.debug({
+        tnx: 'list',
+        cid: session.id
+    }, '[%s] LIST for "%s"', session.id, query);
     db.database.collection('mailboxes').find({
         user: session.user.id
     }).toArray(callback);
@@ -111,7 +114,10 @@ server.onList = function (query, session, callback) {
 // Returns all subscribed folders, query is informational
 // folders is either an Array or a Map
 server.onLsub = function (query, session, callback) {
-    this.logger.debug('[%s] LSUB for "%s"', session.id, query);
+    this.logger.debug({
+        tnx: 'lsub',
+        cid: session.id
+    }, '[%s] LSUB for "%s"', session.id, query);
     db.database.collection('mailboxes').find({
         user: session.user.id,
         subscribed: true
@@ -120,7 +126,10 @@ server.onLsub = function (query, session, callback) {
 
 // SUBSCRIBE "path/to/mailbox"
 server.onSubscribe = function (path, session, callback) {
-    this.logger.debug('[%s] SUBSCRIBE to "%s"', session.id, path);
+    this.logger.debug({
+        tnx: 'subscribe',
+        cid: session.id
+    }, '[%s] SUBSCRIBE to "%s"', session.id, path);
     db.database.collection('mailboxes').findOneAndUpdate({
         user: session.user.id,
         path
@@ -144,7 +153,10 @@ server.onSubscribe = function (path, session, callback) {
 
 // UNSUBSCRIBE "path/to/mailbox"
 server.onUnsubscribe = function (path, session, callback) {
-    this.logger.debug('[%s] UNSUBSCRIBE from "%s"', session.id, path);
+    this.logger.debug({
+        tnx: 'unsubscribe',
+        cid: session.id
+    }, '[%s] UNSUBSCRIBE from "%s"', session.id, path);
     db.database.collection('mailboxes').findOneAndUpdate({
         user: session.user.id,
         path
@@ -168,7 +180,10 @@ server.onUnsubscribe = function (path, session, callback) {
 
 // CREATE "path/to/mailbox"
 server.onCreate = function (path, session, callback) {
-    this.logger.debug('[%s] CREATE "%s"', session.id, path);
+    this.logger.debug({
+        tnx: 'create',
+        cid: session.id
+    }, '[%s] CREATE "%s"', session.id, path);
     db.database.collection('mailboxes').findOne({
         user: session.user.id,
         path
@@ -202,7 +217,10 @@ server.onCreate = function (path, session, callback) {
 // RENAME "path/to/mailbox" "new/path"
 // NB! RENAME affects child and hierarchy mailboxes as well, this example does not do this
 server.onRename = function (path, newname, session, callback) {
-    this.logger.debug('[%s] RENAME "%s" to "%s"', session.id, path, newname);
+    this.logger.debug({
+        tnx: 'rename',
+        cid: session.id
+    }, '[%s] RENAME "%s" to "%s"', session.id, path, newname);
     db.database.collection('mailboxes').findOne({
         user: session.user.id,
         path: newname
@@ -238,7 +256,10 @@ server.onRename = function (path, newname, session, callback) {
 
 // DELETE "path/to/mailbox"
 server.onDelete = function (path, session, callback) {
-    this.logger.debug('[%s] DELETE "%s"', session.id, path);
+    this.logger.debug({
+        tnx: 'delete',
+        cid: session.id
+    }, '[%s] DELETE "%s"', session.id, path);
     db.database.collection('mailboxes').findOne({
         user: session.user.id,
         path
@@ -323,7 +344,10 @@ server.onDelete = function (path, session, callback) {
 
 // SELECT/EXAMINE
 server.onOpen = function (path, session, callback) {
-    this.logger.debug('[%s] Opening "%s"', session.id, path);
+    this.logger.debug({
+        tnx: 'open',
+        cid: session.id
+    }, '[%s] Opening "%s"', session.id, path);
     db.database.collection('mailboxes').findOne({
         user: session.user.id,
         path
@@ -353,7 +377,10 @@ server.onOpen = function (path, session, callback) {
 
 // STATUS (X Y X)
 server.onStatus = function (path, session, callback) {
-    this.logger.debug('[%s] Requested status for "%s"', session.id, path);
+    this.logger.debug({
+        tnx: 'status',
+        cid: session.id
+    }, '[%s] Requested status for "%s"', session.id, path);
     db.database.collection('mailboxes').findOne({
         user: session.user.id,
         path
@@ -393,7 +420,10 @@ server.onStatus = function (path, session, callback) {
 
 // APPEND mailbox (flags) date message
 server.onAppend = function (path, flags, date, raw, session, callback) {
-    this.logger.debug('[%s] Appending message to "%s"', session.id, path);
+    this.logger.debug({
+        tnx: 'append',
+        cid: session.id
+    }, '[%s] Appending message to "%s"', session.id, path);
 
     db.database.collection('users').findOne({
         _id: session.user.id
@@ -474,7 +504,10 @@ server.updateMailboxFlags = function (mailbox, update, callback) {
 
 // STORE / UID STORE, updates flags for selected UIDs
 server.onStore = function (path, update, session, callback) {
-    this.logger.debug('[%s] Updating messages in "%s"', session.id, path);
+    this.logger.debug({
+        tnx: 'store',
+        cid: session.id
+    }, '[%s] Updating messages in "%s"', session.id, path);
     db.database.collection('mailboxes').findOne({
         user: session.user.id,
         path
@@ -755,7 +788,10 @@ server.onStore = function (path, update, session, callback) {
 
 // EXPUNGE deletes all messages in selected mailbox marked with \Delete
 server.onExpunge = function (path, update, session, callback) {
-    this.logger.debug('[%s] Deleting messages from "%s"', session.id, path);
+    this.logger.debug({
+        tnx: 'expunge',
+        cid: session.id
+    }, '[%s] Deleting messages from "%s"', session.id, path);
     db.database.collection('mailboxes').findOne({
         user: session.user.id,
         path
@@ -871,7 +907,10 @@ server.onExpunge = function (path, update, session, callback) {
 
 // COPY / UID COPY sequence mailbox
 server.onCopy = function (path, update, session, callback) {
-    this.logger.debug('[%s] Copying messages from "%s" to "%s"', session.id, path, update.destination);
+    this.logger.debug({
+        tnx: 'copy',
+        cid: session.id
+    }, '[%s] Copying messages from "%s" to "%s"', session.id, path, update.destination);
     db.database.collection('mailboxes').findOne({
         user: session.user.id,
         path
@@ -1025,7 +1064,10 @@ server.onCopy = function (path, update, session, callback) {
 
 // MOVE / UID MOVE sequence mailbox
 server.onMove = function (path, update, session, callback) {
-    this.logger.debug('[%s] Moving messages from "%s" to "%s"', session.id, path, update.destination);
+    this.logger.debug({
+        tnx: 'move',
+        cid: session.id
+    }, '[%s] Moving messages from "%s" to "%s"', session.id, path, update.destination);
 
     messageHandler.move({
         user: session.user.id,
@@ -1055,7 +1097,10 @@ server.onMove = function (path, update, session, callback) {
 
 // sends results to socket
 server.onFetch = function (path, options, session, callback) {
-    this.logger.debug('[%s] Requested FETCH for "%s"', session.id, path);
+    this.logger.debug({
+        tnx: 'fetch',
+        cid: session.id
+    }, '[%s] Requested FETCH for "%s"', session.id, path);
     db.database.collection('mailboxes').findOne({
         user: session.user.id,
         path
@@ -1182,7 +1227,10 @@ server.onFetch = function (path, options, session, callback) {
                         return processNext();
                     }
 
-                    this.logger.debug('[%s] UPDATE FLAGS for "%s"', session.id, message.uid);
+                    this.logger.debug({
+                        tnx: 'flags',
+                        cid: session.id
+                    }, '[%s] UPDATE FLAGS for "%s"', session.id, message.uid);
 
                     isUpdated = true;
 
@@ -1528,7 +1576,10 @@ server.onSearch = function (path, options, session, callback) {
             query.$and = $and;
         }
 
-        this.logger.info('SEARCH %s', JSON.stringify(query));
+        this.logger.info({
+            tnx: 'search',
+            cid: session.id
+        }, '[%s] SEARCH %s', session.id, JSON.stringify(query));
 
         let cursor = db.database.collection('messages').
         find(query).
@@ -1543,7 +1594,10 @@ server.onSearch = function (path, options, session, callback) {
         let processNext = () => {
             cursor.next((err, message) => {
                 if (err) {
-                    this.logger.error('SEARCHFAIL %s error="%s"', JSON.stringify(query), err.message);
+                    this.logger.error({
+                        tnx: 'search',
+                        cid: session.id
+                    }, '[%s] SEARCHFAIL %s error="%s"', session.id, JSON.stringify(query), err.message);
                     return callback(new Error('Can not make requested search query'));
                 }
                 if (!message) {
@@ -1567,7 +1621,10 @@ server.onSearch = function (path, options, session, callback) {
 };
 
 server.onGetQuotaRoot = function (path, session, callback) {
-    this.logger.debug('[%s] Requested quota root info for "%s"', session.id, path);
+    this.logger.debug({
+        tnx: 'quota',
+        cid: session.id
+    },'[%s] Requested quota root info for "%s"', session.id, path);
 
     db.database.collection('mailboxes').findOne({
         user: session.user.id,
@@ -1600,7 +1657,10 @@ server.onGetQuotaRoot = function (path, session, callback) {
 };
 
 server.onGetQuota = function (quotaRoot, session, callback) {
-    this.logger.debug('[%s] Requested quota info for "%s"', session.id, quotaRoot);
+    this.logger.debug({
+        tnx: 'quota',
+        cid: session.id
+    },'[%s] Requested quota info for "%s"', session.id, quotaRoot);
 
     if (quotaRoot !== '') {
         return callback(null, 'NONEXISTENT');
