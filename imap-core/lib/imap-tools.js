@@ -256,7 +256,10 @@ module.exports.generateFolderListing = function (folders, skipHierarchy) {
         }
 
         item = {
-            flags: [].concat(folder.flags || []),
+            // flags array is used to store permanentflags
+            //flags: [].concat(folder.flags || []),
+
+            flags: [],
             path
         };
 
