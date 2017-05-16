@@ -1345,12 +1345,11 @@ server.onSearch = function (path, options, session, callback) {
                     case 'text': // search over entire email
                     case 'body': // search over email body
                         if (term.value && !ne) {
-                            parent.push({
-                                // fulltext can not be in $not section
-                                $text: {
-                                    $search: term.value
-                                }
-                            });
+                            // fulltext can only be in the root of the query, not in $not, $or expressions
+                            // https://docs.mongodb.com/v3.4/tutorial/text-search-in-aggregation/#restrictions
+                            query.$text = {
+                                $search: term.value
+                            };
                         } else {
                             // can not search by text
                             parent.push({
@@ -1624,7 +1623,7 @@ server.onGetQuotaRoot = function (path, session, callback) {
     this.logger.debug({
         tnx: 'quota',
         cid: session.id
-    },'[%s] Requested quota root info for "%s"', session.id, path);
+    }, '[%s] Requested quota root info for "%s"', session.id, path);
 
     db.database.collection('mailboxes').findOne({
         user: session.user.id,
@@ -1660,7 +1659,7 @@ server.onGetQuota = function (quotaRoot, session, callback) {
     this.logger.debug({
         tnx: 'quota',
         cid: session.id
-    },'[%s] Requested quota info for "%s"', session.id, quotaRoot);
+    }, '[%s] Requested quota info for "%s"', session.id, quotaRoot);
 
     if (quotaRoot !== '') {
         return callback(null, 'NONEXISTENT');
