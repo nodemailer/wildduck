@@ -41,7 +41,7 @@ module.exports = {
 
     lmtp: {
         enabled: true,
-        port: 2525,
+        port: 2424,
         // If certificate path is not defined, use built-in self-signed certs for STARTTLS
         //key: '/path/to/server/key.pem'
         //cert: '/path/to/server/cert.pem'
