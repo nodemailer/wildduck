@@ -1797,7 +1797,10 @@ function clearExpiredMessages() {
         }).project({
             _id: true,
             mailbox: true,
-            uid: true
+            uid: true,
+            size: true,
+            map: true,
+            magic: true
         });
 
         let deleted = 0;
