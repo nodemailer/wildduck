@@ -179,6 +179,7 @@ Arguments
 - **username** is the username of the user. This is not an email address but authentication username, use only letters and numbers
 - **password** is the password for the user
 - **quota** (optional) is the maximum storage in bytes allowed for this user. If not set then the default value is used
+- **retention** (optional) is the default retention time in ms for mailboxes. Messages in Trash and Junk folders have a maximum retention time of 30 days.
 
 **Example**
 

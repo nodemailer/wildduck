@@ -195,21 +195,34 @@ server.onCreate = function (path, session, callback) {
             return callback(null, 'ALREADYEXISTS');
         }
 
-        mailbox = {
-            user: session.user.id,
-            path,
-            uidValidity: Math.floor(Date.now() / 1000),
-            uidNext: 1,
-            modifyIndex: 0,
-            subscribed: true,
-            flags: []
-        };
-
-        db.database.collection('mailboxes').insertOne(mailbox, err => {
+        db.database.collection('users').findOne({
+            _id: session.user.id
+        }, {
+            fields: {
+                retention: true
+            }
+        }, (err, user) => {
             if (err) {
                 return callback(err);
             }
-            return callback(null, true);
+
+            mailbox = {
+                user: session.user.id,
+                path,
+                uidValidity: Math.floor(Date.now() / 1000),
+                uidNext: 1,
+                modifyIndex: 0,
+                subscribed: true,
+                flags: [],
+                retention: user.retention
+            };
+
+            db.database.collection('mailboxes').insertOne(mailbox, err => {
+                if (err) {
+                    return callback(err);
+                }
+                return callback(null, true);
+            });
         });
     });
 };
@@ -1005,8 +1018,9 @@ server.onCopy = function (path, update, session, callback) {
                         message.mailbox = target._id;
                         message.uid = uidNext;
 
-                        message.exp = ['\\Trash', '\\Junk'].includes(target.specialUse);
-                        message.rdate = new Date();
+                        // retention settings
+                        message.exp = !!target.retention;
+                        message.rdate = Date.now() + (target.retention || 0);
 
                         if (!message.meta) {
                             message.meta = {};
@@ -1778,7 +1792,7 @@ function clearExpiredMessages() {
         let cursor = db.database.collection('messages').find({
             exp: true,
             rdate: {
-                $lte: new Date(Date.now() - config.imap.retention * 24 * 3600 * 1000)
+                $lte: Date.now()
             }
         }).project({
             _id: true,

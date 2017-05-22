@@ -1,5 +1,7 @@
 'use strict';
 
+const os = require('os');
+
 module.exports = {
     log: {
         level: 'silly'
@@ -95,5 +97,7 @@ module.exports = {
     maxRecipients: 2000,
 
     // default forwarded messages for 24h (can be overriden per user)
-    maxForwards: 2000
+    maxForwards: 2000,
+
+    emailDomain: os.hostname()
 };
