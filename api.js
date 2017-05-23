@@ -1113,7 +1113,7 @@ server.get('/attachment/:attachment', (req, res, next) => {
     });
 
     const result = Joi.validate({
-        attachment: req.params.message
+        attachment: req.params.attachment
     }, schema, {
         abortEarly: false,
         convert: true,
