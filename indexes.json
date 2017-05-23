@@ -60,7 +60,7 @@
             "user": 1
         }
     }, {
-        "name": "mailbox_ui",
+        "name": "mailbox_uid",
         "key": {
             "mailbox": 1,
             "uid": 1
