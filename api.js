@@ -1105,6 +1105,66 @@ server.get('/message/:message/attachment/:attachment', (req, res, next) => {
     });
 });
 
+server.get('/attachment/:attachment', (req, res, next) => {
+    res.charSet('utf-8');
+
+    const schema = Joi.object().keys({
+        attachment: Joi.string().hex().lowercase().length(24).required()
+    });
+
+    const result = Joi.validate({
+        attachment: req.params.message
+    }, schema, {
+        abortEarly: false,
+        convert: true,
+        allowUnknown: true
+    });
+
+    if (result.error) {
+        res.json({
+            error: result.error.message
+        });
+        return next();
+    }
+
+    let attachmentId = result.value.attachment;
+
+    db.database.collection('attachments.files').findOne({
+        _id: new ObjectID(attachmentId)
+    }, (err, messageData) => {
+        if (err) {
+            res.json({
+                error: 'MongoDB Error: ' + err.message,
+                attachment: attachmentId
+            });
+            return next();
+        }
+        if (!messageData) {
+            res.json({
+                error: 'This message does not exist',
+                attachment: attachmentId
+            });
+            return next();
+        }
+
+        res.writeHead(200, {
+            'Content-Type': messageData.contentType || 'application/octet-stream'
+        });
+
+        let attachmentStream = messageHandler.indexer.gridstore.openDownloadStream(messageData._id);
+
+        attachmentStream.once('error', err => res.emit('error', err));
+
+        if (messageData.metadata.transferEncoding === 'base64') {
+            attachmentStream.pipe(new libbase64.Decoder()).pipe(res);
+        } else if (messageData.metadata.transferEncoding === 'quoted-printable') {
+            attachmentStream.pipe(new libqp.Decoder()).pipe(res);
+        } else {
+            attachmentStream.pipe(res);
+        }
+    });
+});
+
 server.del('/message/:id', (req, res, next) => {
     res.charSet('utf-8');
 
