@@ -15,6 +15,12 @@ const iconv = require('iconv-lite');
 const he = require('he');
 const htmlToText = require('html-to-text');
 const crypto = require('crypto');
+let cryptoAsync;
+try {
+    cryptoAsync = require('@ronomon/crypto-async'); // eslint-disable-line global-require
+} catch (E) {
+    // ignore
+}
 
 class Indexer {
 
@@ -469,50 +475,54 @@ class Indexer {
 
             let node = nodes[pos++];
 
-            let hash = crypto.createHash('sha256').update(node.body).digest('hex');
-
-            this.database.collection('attachments.files').findOneAndUpdate({
-                'metadata.h': hash
-            }, {
-                $inc: {
-                    'metadata.c': 1,
-                    'metadata.m': maildata.magic
-                }
-            }, {
-                returnOriginal: false
-            }, (err, result) => {
+            calculateHash(node.body, (err, hash) => {
                 if (err) {
                     return callback(err);
                 }
 
-                if (result && result.value) {
-                    maildata.map[node.attachmentId] = result.value._id;
-                    return storeNode();
-                }
-
-                let returned = false;
-
-                node.options.metadata.h = hash;
-
-                let store = this.gridstore.openUploadStreamWithId(maildata.map[node.attachmentId], null, node.options);
-
-                store.once('error', err => {
-                    if (returned) {
-                        return;
+                this.database.collection('attachments.files').findOneAndUpdate({
+                    'metadata.h': hash
+                }, {
+                    $inc: {
+                        'metadata.c': 1,
+                        'metadata.m': maildata.magic
                     }
-                    returned = true;
-                    callback(err);
-                });
-
-                store.once('finish', () => {
-                    if (returned) {
-                        return;
+                }, {
+                    returnOriginal: false
+                }, (err, result) => {
+                    if (err) {
+                        return callback(err);
                     }
-                    returned = true;
-                    return storeNode();
-                });
 
-                store.end(node.body);
+                    if (result && result.value) {
+                        maildata.map[node.attachmentId] = result.value._id;
+                        return storeNode();
+                    }
+
+                    let returned = false;
+
+                    node.options.metadata.h = hash;
+
+                    let store = this.gridstore.openUploadStreamWithId(maildata.map[node.attachmentId], null, node.options);
+
+                    store.once('error', err => {
+                        if (returned) {
+                            return;
+                        }
+                        returned = true;
+                        callback(err);
+                    });
+
+                    store.once('finish', () => {
+                        if (returned) {
+                            return;
+                        }
+                        returned = true;
+                        return storeNode();
+                    });
+
+                    store.end(node.body);
+                });
             });
         };
 
@@ -764,6 +774,22 @@ function textToHtml(str) {
 
 function leftPad(val, chr, len) {
     return chr.repeat(len - val.toString().length) + val;
+}
+
+function calculateHash(input, callback) {
+    let algo = 'sha256';
+
+    if (!cryptoAsync) {
+        setImmediate(() => callback(null, crypto.createHash(algo).update(input).digest('hex')));
+        return;
+    }
+
+    cryptoAsync.hash(algo, input, (err, hash) => {
+        if (err) {
+            return callback(err);
+        }
+        return callback(null, hash.toString('hex'));
+    });
 }
 
 module.exports = Indexer;

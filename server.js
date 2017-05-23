@@ -2,6 +2,8 @@
 
 'use strict';
 
+process.env.UV_THREADPOOL_SIZE = 128;
+
 let config = require('config');
 let log = require('npmlog');
 let packageData = require('./package.json');
