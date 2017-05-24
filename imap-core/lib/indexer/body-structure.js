@@ -38,7 +38,7 @@ class BodyStructure {
                 case 'text':
                     return this.processTextNode(node, options);
                 case 'message':
-                    if (node.parsedHeader['content-type'].subtype === 'rfc822' && !/attachment/i.test(node.parsedHeader['content-disposition'])) {
+                    if (node.parsedHeader['content-type'].subtype === 'rfc822') {
                         if (!options.attachmentRFC822) {
                             return this.processRFC822Node(node, options);
                         }

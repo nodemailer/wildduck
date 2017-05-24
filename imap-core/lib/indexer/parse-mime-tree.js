@@ -107,8 +107,22 @@ class MIMEParser {
      * from the tree (circular references prohibit conversion to JSON)
      */
     finalizeTree() {
+
+        if (this._node.state === 'header') {
+            this.processNodeHeader();
+            this.processContentType();
+        }
+
+        if (this.tree.parsedHeader && this.tree.parsedHeader['content-type'].value === 'message/rfc822') {
+            this.tree.message = parse(this.tree.body.join(''));
+        }
+
         let walker = node => {
             if (node.body) {
+                if (node.parentNode === this.tree && node.parsedHeader['content-type'].value === 'message/rfc822') {
+                    node.message = parse(node.body.join(''));
+                }
+
                 node.lineCount = node.body.length;
                 node.body = Buffer.from(
                     node.body.join('').
