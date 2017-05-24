@@ -1764,9 +1764,6 @@ function clearExpiredMessages() {
             gcTimeout.unref();
             return;
         } else if (!lock.success) {
-            server.logger.debug({
-                tnx: 'gc'
-            }, 'Failed to acquire lock error=%s', 'Lock already exists');
             gcTimeout = setTimeout(clearExpiredMessages, GC_INTERVAL);
             gcTimeout.unref();
             return;
@@ -1779,10 +1776,6 @@ function clearExpiredMessages() {
                         tnx: 'gc',
                         err
                     }, 'Failed to release lock error=%s', err.message);
-                } else {
-                    server.logger.debug({
-                        tnx: 'gc'
-                    }, 'Released lock');
                 }
                 gcTimeout = setTimeout(clearExpiredMessages, GC_INTERVAL);
                 gcTimeout.unref();

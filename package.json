@@ -16,7 +16,7 @@
     "grunt-cli": "^1.2.0",
     "grunt-eslint": "^19.0.0",
     "grunt-mocha-test": "^0.13.2",
-    "mocha": "^3.4.1"
+    "mocha": "^3.4.2"
   },
   "dependencies": {
     "addressparser": "^1.0.1",
@@ -34,7 +34,7 @@
     "node-redis-scripty": "0.0.5",
     "nodemailer": "^4.0.1",
     "npmlog": "^4.1.0",
-    "qrcode": "^0.8.1",
+    "qrcode": "^0.8.2",
     "redfour": "^1.0.0",
     "redis": "^2.7.1",
     "restify": "^4.3.0",
