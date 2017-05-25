@@ -1003,12 +1003,16 @@ server.onCopy = function (path, update, session, callback) {
                         uidNext: true
                     }, (err, item) => {
                         if (err) {
-                            return updateQuota(() => callback(err));
+                            return cursor.close(() => {
+                                updateQuota(() => callback(err));
+                            });
                         }
 
                         if (!item || !item.value) {
                             // was not able to acquire a lock
-                            return updateQuota(() => callback(null, 'TRYCREATE'));
+                            return cursor.close(() => {
+                                updateQuota(() => callback(null, 'TRYCREATE'));
+                            });
                         }
 
                         let uidNext = item.value.uidNext;
@@ -1029,7 +1033,9 @@ server.onCopy = function (path, update, session, callback) {
 
                         db.database.collection('messages').insertOne(message, err => {
                             if (err) {
-                                return updateQuota(() => callback(err));
+                                return cursor.close(() => {
+                                    updateQuota(() => callback(err));
+                                });
                             }
 
                             copiedMessages++;
