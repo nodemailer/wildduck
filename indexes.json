@@ -154,7 +154,6 @@
         }
     }, {
         "name": "retention_time",
-        "expireAfterSeconds": 0,
         "key": {
             "exp": 1,
             "rdate": 1
@@ -184,7 +183,7 @@
         }
     }, {
         "name": "autoexpire",
-        "expireAfterSeconds": "21600",
+        "expireAfterSeconds": 21600,
         "key": {
             "created": 1
         }

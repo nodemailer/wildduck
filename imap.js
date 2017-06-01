@@ -69,67 +69,93 @@ let userHandler;
 let gcTimeout;
 let gcLock;
 
-server.onAuth = function (login, session, callback) {
+server.onAuth = function(login, session, callback) {
     let username = (login.username || '').toString().trim();
 
-    userHandler.authenticate(username, login.password, {
-        protocol: 'IMAP',
-        ip: session.remoteAddress
-    }, (err, result) => {
-        if (err) {
-            return callback(err);
-        }
-        if (!result) {
-            return callback();
-        }
-
-        if (result.scope === 'master' && result.enabled2fa) {
-            // master password not allowed if 2fa is enabled!
-            return callback();
-        }
-
-        callback(null, {
-            user: {
-                id: result.user,
-                username: result.username
+    userHandler.authenticate(
+        username,
+        login.password,
+        {
+            protocol: 'IMAP',
+            ip: session.remoteAddress
+        },
+        (err, result) => {
+            if (err) {
+                return callback(err);
             }
-        });
-    });
+            if (!result) {
+                return callback();
+            }
+
+            if (result.scope === 'master' && result.enabled2fa) {
+                // master password not allowed if 2fa is enabled!
+                return callback();
+            }
+
+            callback(null, {
+                user: {
+                    id: result.user,
+                    username: result.username
+                }
+            });
+        }
+    );
 };
 
 // LIST "" "*"
 // Returns all folders, query is informational
 // folders is either an Array or a Map
-server.onList = function (query, session, callback) {
-    this.logger.debug({
-        tnx: 'list',
-        cid: session.id
-    }, '[%s] LIST for "%s"', session.id, query);
-    db.database.collection('mailboxes').find({
-        user: session.user.id
-    }).toArray(callback);
+server.onList = function(query, session, callback) {
+    this.logger.debug(
+        {
+            tnx: 'list',
+            cid: session.id
+        },
+        '[%s] LIST for "%s"',
+        session.id,
+        query
+    );
+    db.database
+        .collection('mailboxes')
+        .find({
+            user: session.user.id
+        })
+        .toArray(callback);
 };
 
 // LSUB "" "*"
 // Returns all subscribed folders, query is informational
 // folders is either an Array or a Map
-server.onLsub = function (query, session, callback) {
-    this.logger.debug({
-        tnx: 'lsub',
-        cid: session.id
-    }, '[%s] LSUB for "%s"', session.id, query);
-    db.database.collection('mailboxes').find({
-        user: session.user.id,
-        subscribed: true
-    }).toArray(callback);
+server.onLsub = function(query, session, callback) {
+    this.logger.debug(
+        {
+            tnx: 'lsub',
+            cid: session.id
+        },
+        '[%s] LSUB for "%s"',
+        session.id,
+        query
+    );
+    db.database
+        .collection('mailboxes')
+        .find({
+            user: session.user.id,
+            subscribed: true
+        })
+        .toArray(callback);
 };
 
 // SUBSCRIBE "path/to/mailbox"
-server.onSubscribe = function (path, session, callback) {
-    this.logger.debug({
-        tnx: 'subscribe',
-        cid: session.id
-    }, '[%s] SUBSCRIBE to "%s"', session.id, path);
+server.onSubscribe = function(path, session, callback) {
+    this.logger.debug(
+        {
+            tnx: 'subscribe',
+            cid: session.id
+        },
+        '[%s] SUBSCRIBE to "%s"',
+        session.id,
+        path
+    );
     db.database.collection('mailboxes').findOneAndUpdate({
         user: session.user.id,
         path
@@ -152,11 +178,16 @@ server.onSubscribe = function (path, session, callback) {
 };
 
 // UNSUBSCRIBE "path/to/mailbox"
-server.onUnsubscribe = function (path, session, callback) {
-    this.logger.debug({
-        tnx: 'unsubscribe',
-        cid: session.id
-    }, '[%s] UNSUBSCRIBE from "%s"', session.id, path);
+server.onUnsubscribe = function(path, session, callback) {
+    this.logger.debug(
+        {
+            tnx: 'unsubscribe',
+            cid: session.id
+        },
+        '[%s] UNSUBSCRIBE from "%s"',
+        session.id,
+        path
+    );
     db.database.collection('mailboxes').findOneAndUpdate({
         user: session.user.id,
         path
@@ -179,11 +210,16 @@ server.onUnsubscribe = function (path, session, callback) {
 };
 
 // CREATE "path/to/mailbox"
-server.onCreate = function (path, session, callback) {
-    this.logger.debug({
-        tnx: 'create',
-        cid: session.id
-    }, '[%s] CREATE "%s"', session.id, path);
+server.onCreate = function(path, session, callback) {
+    this.logger.debug(
+        {
+            tnx: 'create',
+            cid: session.id
+        },
+        '[%s] CREATE "%s"',
+        session.id,
+        path
+    );
     db.database.collection('mailboxes').findOne({
         user: session.user.id,
         path
@@ -229,11 +265,17 @@ server.onCreate = function (path, session, callback) {
 
 // RENAME "path/to/mailbox" "new/path"
 // NB! RENAME affects child and hierarchy mailboxes as well, this example does not do this
-server.onRename = function (path, newname, session, callback) {
-    this.logger.debug({
-        tnx: 'rename',
-        cid: session.id
-    }, '[%s] RENAME "%s" to "%s"', session.id, path, newname);
+server.onRename = function(path, newname, session, callback) {
+    this.logger.debug(
+        {
+            tnx: 'rename',
+            cid: session.id
+        },
+        '[%s] RENAME "%s" to "%s"',
+        session.id,
+        path,
+        newname
+    );
     db.database.collection('mailboxes').findOne({
         user: session.user.id,
         path: newname
@@ -268,11 +310,16 @@ server.onRename = function (path, newname, session, callback) {
 };
 
 // DELETE "path/to/mailbox"
-server.onDelete = function (path, session, callback) {
-    this.logger.debug({
-        tnx: 'delete',
-        cid: session.id
-    }, '[%s] DELETE "%s"', session.id, path);
+server.onDelete = function(path, session, callback) {
+    this.logger.debug(
+        {
+            tnx: 'delete',
+            cid: session.id
+        },
+        '[%s] DELETE "%s"',
+        session.id,
+        path
+    );
     db.database.collection('mailboxes').findOne({
         user: session.user.id,
         path
@@ -295,72 +342,90 @@ server.onDelete = function (path, session, callback) {
             }
 
             // calculate mailbox size by aggregating the size's of all messages
-            db.database.collection('messages').aggregate([{
-                $match: {
-                    mailbox: mailbox._id
-                }
-            }, {
-                $group: {
-                    _id: {
-                        mailbox: '$mailbox'
+            db.database
+                .collection('messages')
+                .aggregate(
+                [
+                    {
+                        $match: {
+                            mailbox: mailbox._id
+                        }
                     },
-                    storageUsed: {
-                        $sum: '$size'
+                    {
+                        $group: {
+                            _id: {
+                                mailbox: '$mailbox'
+                            },
+                            storageUsed: {
+                                $sum: '$size'
+                            }
+                        }
+                    }
+                ],
+                {
+                    cursor: {
+                        batchSize: 1
                     }
                 }
-            }], {
-                cursor: {
-                    batchSize: 1
-                }
-            }).toArray((err, res) => {
-                if (err) {
-                    return callback(err);
-                }
-
-                let storageUsed = res && res[0] && res[0].storageUsed || 0;
-
-                db.database.collection('messages').deleteMany({
-                    mailbox: mailbox._id
-                }, err => {
+                )
+                .toArray((err, res) => {
                     if (err) {
                         return callback(err);
                     }
 
-                    let done = () => {
-                        db.database.collection('journal').deleteMany({
-                            mailbox: mailbox._id
-                        }, err => {
-                            if (err) {
-                                return callback(err);
-                            }
-                            callback(null, true);
-                        });
-                    };
+                    let storageUsed = (res && res[0] && res[0].storageUsed) || 0;
 
-                    if (!storageUsed) {
-                        return done();
-                    }
-
-                    // decrement quota counters
-                    db.database.collection('users').findOneAndUpdate({
-                        _id: mailbox.user
-                    }, {
-                        $inc: {
-                            storageUsed: -Number(storageUsed) || 0
+                    db.database.collection('messages').deleteMany({
+                        mailbox: mailbox._id
+                    }, err => {
+                        if (err) {
+                            return callback(err);
                         }
-                    }, done);
+
+                        let done = () => {
+                            db.database.collection('journal').deleteMany({
+                                mailbox: mailbox._id
+                            }, err => {
+                                if (err) {
+                                    return callback(err);
+                                }
+                                callback(null, true);
+                            });
+                        };
+
+                        if (!storageUsed) {
+                            return done();
+                        }
+
+                        // decrement quota counters
+                        db.database.collection('users').findOneAndUpdate(
+                            {
+                                _id: mailbox.user
+                            },
+                            {
+                                $inc: {
+                                    storageUsed: -Number(storageUsed) || 0
+                                }
+                            },
+                            done
+                        );
+                    });
                 });
-            });
         });
     });
 };
 
 // SELECT/EXAMINE
-server.onOpen = function (path, session, callback) {
-    this.logger.debug({
-        tnx: 'open',
-        cid: session.id
-    }, '[%s] Opening "%s"', session.id, path);
+server.onOpen = function(path, session, callback) {
+    this.logger.debug(
+        {
+            tnx: 'open',
+            cid: session.id
+        },
+        '[%s] Opening "%s"',
+        session.id,
+        path
+    );
     db.database.collection('mailboxes').findOne({
         user: session.user.id,
         path
@@ -372,28 +437,36 @@ server.onOpen = function (path, session, callback) {
             return callback(null, 'NONEXISTENT');
         }
 
-        db.database.collection('messages').find({
-            mailbox: mailbox._id
-        }).project({
-            uid: true
-        }).sort([
-            ['uid', 1]
-        ]).toArray((err, messages) => {
-            if (err) {
-                return callback(err);
-            }
-            mailbox.uidList = messages.map(message => message.uid);
-            callback(null, mailbox);
-        });
+        db.database
+            .collection('messages')
+            .find({
+                mailbox: mailbox._id
+            })
+            .project({
+                uid: true
+            })
+            .sort([['uid', 1]])
+            .toArray((err, messages) => {
+                if (err) {
+                    return callback(err);
+                }
+                mailbox.uidList = messages.map(message => message.uid);
+                callback(null, mailbox);
+            });
     });
 };
 
 // STATUS (X Y X)
-server.onStatus = function (path, session, callback) {
-    this.logger.debug({
-        tnx: 'status',
-        cid: session.id
-    }, '[%s] Requested status for "%s"', session.id, path);
+server.onStatus = function(path, session, callback) {
+    this.logger.debug(
+        {
+            tnx: 'status',
+            cid: session.id
+        },
+        '[%s] Requested status for "%s"',
+        session.id,
+        path
+    );
     db.database.collection('mailboxes').findOne({
         user: session.user.id,
         path
@@ -405,38 +478,48 @@ server.onStatus = function (path, session, callback) {
             return callback(null, 'NONEXISTENT');
         }
 
-        db.database.collection('messages').find({
-            mailbox: mailbox._id
-        }).count((err, total) => {
-            if (err) {
-                return callback(err);
-            }
-            db.database.collection('messages').find({
-                mailbox: mailbox._id,
-                seen: false
-            }).count((err, unseen) => {
+        db.database
+            .collection('messages')
+            .find({
+                mailbox: mailbox._id
+            })
+            .count((err, total) => {
                 if (err) {
                     return callback(err);
                 }
+                db.database
+                    .collection('messages')
+                    .find({
+                        mailbox: mailbox._id,
+                        seen: false
+                    })
+                    .count((err, unseen) => {
+                        if (err) {
+                            return callback(err);
+                        }
 
-                return callback(null, {
-                    messages: total,
-                    uidNext: mailbox.uidNext,
-                    uidValidity: mailbox.uidValidity,
-                    unseen
-                });
+                        return callback(null, {
+                            messages: total,
+                            uidNext: mailbox.uidNext,
+                            uidValidity: mailbox.uidValidity,
+                            unseen
+                        });
+                    });
             });
-        });
-
     });
 };
 
 // APPEND mailbox (flags) date message
-server.onAppend = function (path, flags, date, raw, session, callback) {
-    this.logger.debug({
-        tnx: 'append',
-        cid: session.id
-    }, '[%s] Appending message to "%s"', session.id, path);
+server.onAppend = function(path, flags, date, raw, session, callback) {
+    this.logger.debug(
+        {
+            tnx: 'append',
+            cid: session.id
+        },
+        '[%s] Appending message to "%s"',
+        session.id,
+        path
+    );
 
     db.database.collection('users').findOne({
         _id: session.user.id
@@ -452,31 +535,34 @@ server.onAppend = function (path, flags, date, raw, session, callback) {
             return callback(false, 'OVERQUOTA');
         }
 
-        messageHandler.add({
-            user: session.user.id,
-            path,
-            meta: {
-                source: 'IMAP',
-                to: session.user.username,
-                time: Date.now()
+        messageHandler.add(
+            {
+                user: session.user.id,
+                path,
+                meta: {
+                    source: 'IMAP',
+                    to: session.user.username,
+                    time: Date.now()
+                },
+                session,
+                date,
+                flags,
+                raw
             },
-            session,
-            date,
-            flags,
-            raw
-        }, (err, status, data) => {
-            if (err) {
-                if (err.imapResponse) {
-                    return callback(null, err.imapResponse);
+            (err, status, data) => {
+                if (err) {
+                    if (err.imapResponse) {
+                        return callback(null, err.imapResponse);
+                    }
+                    return callback(err);
                 }
-                return callback(err);
+                callback(null, status, data);
             }
-            callback(null, status, data);
-        });
+        );
     });
 };
 
-server.updateMailboxFlags = function (mailbox, update, callback) {
+server.updateMailboxFlags = function(mailbox, update, callback) {
     if (update.action === 'remove') {
         // we didn't add any new flags, so there's nothing to update
         return callback();
@@ -504,23 +590,33 @@ server.updateMailboxFlags = function (mailbox, update, callback) {
 
     // found some new flags not yet set for mailbox
     // FIXME: Should we send unsolicited FLAGS and PERMANENTFLAGS notifications? Probably not
-    return db.database.collection('mailboxes').findOneAndUpdate({
-        _id: mailbox._id
-    }, {
-        $addToSet: {
-            flags: {
-                $each: newFlags
+    return db.database.collection('mailboxes').findOneAndUpdate(
+        {
+            _id: mailbox._id
+        },
+        {
+            $addToSet: {
+                flags: {
+                    $each: newFlags
+                }
             }
-        }
-    }, {}, callback);
+        },
+        {},
+        callback
+    );
 };
 
 // STORE / UID STORE, updates flags for selected UIDs
-server.onStore = function (path, update, session, callback) {
-    this.logger.debug({
-        tnx: 'store',
-        cid: session.id
-    }, '[%s] Updating messages in "%s"', session.id, path);
+server.onStore = function(path, update, session, callback) {
+    this.logger.debug(
+        {
+            tnx: 'store',
+            cid: session.id
+        },
+        '[%s] Updating messages in "%s"',
+        session.id,
+        path
+    );
     db.database.collection('mailboxes').findOne({
         user: session.user.id,
         path
@@ -557,15 +653,15 @@ server.onStore = function (path, update, session, callback) {
             queryAll = true;
         }
 
-        let cursor = db.database.collection('messages').
-        find(query).
-        project({
-            _id: true,
-            uid: true,
-            flags: true
-        }).sort([
-            ['uid', 1]
-        ]);
+        let cursor = db.database
+            .collection('messages')
+            .find(query)
+            .project({
+                _id: true,
+                uid: true,
+                flags: true
+            })
+            .sort([['uid', 1]]);
 
         let updateEntries = [];
         let notifyEntries = [];
@@ -580,7 +676,8 @@ server.onStore = function (path, update, session, callback) {
                     this.notifier.addEntries(session.user.id, path, notifyEntries, () => {
                         notifyEntries = [];
                         this.notifier.fire(session.user.id, path);
-                        if (args[0]) { // first argument is an error
+                        if (args[0]) {
+                            // first argument is an error
                             return callback(...args);
                         } else {
                             server.updateMailboxFlags(mailbox, update, () => callback(...args));
@@ -589,7 +686,8 @@ server.onStore = function (path, update, session, callback) {
                 });
             }
             this.notifier.fire(session.user.id, path);
-            if (args[0]) { // first argument is an error
+            if (args[0]) {
+                // first argument is an error
                 return callback(...args);
             } else {
                 server.updateMailboxFlags(mailbox, update, () => callback(...args));
@@ -644,112 +742,124 @@ server.onStore = function (path, update, session, callback) {
                         }
                         break;
 
-                    case 'add':
-                        {
-                            let newFlags = [];
-                            message.flags = message.flags.concat(update.value.filter(flag => {
+                    case 'add': {
+                        let newFlags = [];
+                        message.flags = message.flags.concat(
+                            update.value.filter(flag => {
                                 if (!existingFlags.includes(flag.toLowerCase().trim())) {
                                     updated = true;
                                     newFlags.push(flag);
                                     return true;
                                 }
                                 return false;
-                            }));
+                            })
+                        );
 
-                            // add flags
-                            if (updated) {
-                                flagsupdate = {
-                                    $addToSet: {
-                                        flags: {
-                                            $each: newFlags
-                                        }
+                        // add flags
+                        if (updated) {
+                            flagsupdate = {
+                                $addToSet: {
+                                    flags: {
+                                        $each: newFlags
                                     }
-                                };
+                                }
+                            };
 
-                                if (newFlags.includes('\\Seen') || newFlags.includes('\\Flagged') || newFlags.includes('\\Deleted') || newFlags.includes('\\Draft')) {
-                                    flagsupdate.$set = {};
-                                    if (newFlags.includes('\\Seen')) {
-                                        flagsupdate.$set = {
-                                            seen: true
-                                        };
-                                    }
-                                    if (newFlags.includes('\\Flagged')) {
-                                        flagsupdate.$set = {
-                                            flagged: true
-                                        };
-                                    }
-                                    if (newFlags.includes('\\Deleted')) {
-                                        flagsupdate.$set = {
-                                            deleted: true
-                                        };
-                                    }
-                                    if (newFlags.includes('\\Draft')) {
-                                        flagsupdate.$set = {
-                                            draft: true
-                                        };
-                                    }
+                            if (
+                                newFlags.includes('\\Seen') ||
+                                newFlags.includes('\\Flagged') ||
+                                newFlags.includes('\\Deleted') ||
+                                newFlags.includes('\\Draft')
+                            ) {
+                                flagsupdate.$set = {};
+                                if (newFlags.includes('\\Seen')) {
+                                    flagsupdate.$set = {
+                                        seen: true
+                                    };
+                                }
+                                if (newFlags.includes('\\Flagged')) {
+                                    flagsupdate.$set = {
+                                        flagged: true
+                                    };
+                                }
+                                if (newFlags.includes('\\Deleted')) {
+                                    flagsupdate.$set = {
+                                        deleted: true
+                                    };
+                                }
+                                if (newFlags.includes('\\Draft')) {
+                                    flagsupdate.$set = {
+                                        draft: true
+                                    };
                                 }
                             }
-                            break;
                         }
+                        break;
+                    }
 
-                    case 'remove':
-                        {
-                            // We need to use the case of existing flags when removing
-                            let oldFlags = [];
-                            let flagsUpdates = update.value.map(flag => flag.toLowerCase().trim());
-                            message.flags = message.flags.filter(flag => {
-                                if (!flagsUpdates.includes(flag.toLowerCase().trim())) {
-                                    return true;
+                    case 'remove': {
+                        // We need to use the case of existing flags when removing
+                        let oldFlags = [];
+                        let flagsUpdates = update.value.map(flag => flag.toLowerCase().trim());
+                        message.flags = message.flags.filter(flag => {
+                            if (!flagsUpdates.includes(flag.toLowerCase().trim())) {
+                                return true;
+                            }
+                            oldFlags.push(flag);
+                            updated = true;
+                            return false;
+                        });
+
+                        // remove flags
+                        if (updated) {
+                            flagsupdate = {
+                                $pull: {
+                                    flags: {
+                                        $in: oldFlags
+                                    }
                                 }
-                                oldFlags.push(flag);
-                                updated = true;
-                                return false;
-                            });
-
-                            // remove flags
-                            if (updated) {
-                                flagsupdate = {
-                                    $pull: {
-                                        flags: {
-                                            $in: oldFlags
-                                        }
-                                    }
-                                };
-                                if (oldFlags.includes('\\Seen') || oldFlags.includes('\\Flagged') || oldFlags.includes('\\Deleted') || oldFlags.includes('\\Draft')) {
-                                    flagsupdate.$set = {};
-                                    if (oldFlags.includes('\\Seen')) {
-                                        flagsupdate.$set = {
-                                            seen: false
-                                        };
-                                    }
-                                    if (oldFlags.includes('\\Flagged')) {
-                                        flagsupdate.$set = {
-                                            flagged: false
-                                        };
-                                    }
-                                    if (oldFlags.includes('\\Deleted')) {
-                                        flagsupdate.$set = {
-                                            deleted: false
-                                        };
-                                    }
-                                    if (oldFlags.includes('\\Draft')) {
-                                        flagsupdate.$set = {
-                                            draft: false
-                                        };
-                                    }
+                            };
+                            if (
+                                oldFlags.includes('\\Seen') ||
+                                oldFlags.includes('\\Flagged') ||
+                                oldFlags.includes('\\Deleted') ||
+                                oldFlags.includes('\\Draft')
+                            ) {
+                                flagsupdate.$set = {};
+                                if (oldFlags.includes('\\Seen')) {
+                                    flagsupdate.$set = {
+                                        seen: false
+                                    };
+                                }
+                                if (oldFlags.includes('\\Flagged')) {
+                                    flagsupdate.$set = {
+                                        flagged: false
+                                    };
+                                }
+                                if (oldFlags.includes('\\Deleted')) {
+                                    flagsupdate.$set = {
+                                        deleted: false
+                                    };
+                                }
+                                if (oldFlags.includes('\\Draft')) {
+                                    flagsupdate.$set = {
+                                        draft: false
+                                    };
                                 }
                             }
-                            break;
                         }
+                        break;
+                    }
                 }
 
                 if (!update.silent) {
                     // print updated state of the message
-                    session.writeStream.write(session.formatResponse('FETCH', message.uid, {
-                        uid: update.isUid ? message.uid : false,
-                        flags: message.flags
-                    }));
+                    session.writeStream.write(
+                        session.formatResponse('FETCH', message.uid, {
+                            uid: update.isUid ? message.uid : false,
+                            flags: message.flags
+                        })
+                    );
                 }
 
                 if (updated) {
@@ -800,11 +910,16 @@ server.onStore = function (path, update, session, callback) {
 };
 
 // EXPUNGE deletes all messages in selected mailbox marked with \Delete
-server.onExpunge = function (path, update, session, callback) {
-    this.logger.debug({
-        tnx: 'expunge',
-        cid: session.id
-    }, '[%s] Deleting messages from "%s"', session.id, path);
+server.onExpunge = function(path, update, session, callback) {
+    this.logger.debug(
+        {
+            tnx: 'expunge',
+            cid: session.id
+        },
+        '[%s] Deleting messages from "%s"',
+        session.id,
+        path
+    );
     db.database.collection('mailboxes').findOne({
         user: session.user.id,
         path
@@ -816,18 +931,20 @@ server.onExpunge = function (path, update, session, callback) {
             return callback(null, 'NONEXISTENT');
         }
 
-        let cursor = db.database.collection('messages').find({
-            mailbox: mailbox._id,
-            deleted: true
-        }).project({
-            _id: true,
-            uid: true,
-            size: true,
-            map: true,
-            magic: true
-        }).sort([
-            ['uid', 1]
-        ]);
+        let cursor = db.database
+            .collection('messages')
+            .find({
+                mailbox: mailbox._id,
+                deleted: true
+            })
+            .project({
+                _id: true,
+                uid: true,
+                size: true,
+                map: true,
+                magic: true
+            })
+            .sort([['uid', 1]]);
 
         let deletedMessages = 0;
         let deletedStorage = 0;
@@ -837,13 +954,17 @@ server.onExpunge = function (path, update, session, callback) {
                 return next();
             }
 
-            db.database.collection('users').findOneAndUpdate({
-                _id: mailbox.user
-            }, {
-                $inc: {
-                    storageUsed: -deletedStorage
-                }
-            }, next);
+            db.database.collection('users').findOneAndUpdate(
+                {
+                    _id: mailbox.user
+                },
+                {
+                    $inc: {
+                        storageUsed: -deletedStorage
+                    }
+                },
+                next
+            );
         };
 
         let processNext = () => {
@@ -878,12 +999,17 @@ server.onExpunge = function (path, update, session, callback) {
 
                     if (!attachments.length) {
                         // not stored attachments
-                        return this.notifier.addEntries(session.user.id, path, {
-                            command: 'EXPUNGE',
-                            ignore: session.id,
-                            uid: message.uid,
-                            message: message._id
-                        }, processNext);
+                        return this.notifier.addEntries(
+                            session.user.id,
+                            path,
+                            {
+                                command: 'EXPUNGE',
+                                ignore: session.id,
+                                uid: message.uid,
+                                message: message._id
+                            },
+                            processNext
+                        );
                     }
 
                     // remove references to attachments (if any exist)
@@ -903,12 +1029,17 @@ server.onExpunge = function (path, update, session, callback) {
                         if (err) {
                             // ignore as we don't really care if we have orphans or not
                         }
-                        this.notifier.addEntries(session.user.id, path, {
-                            command: 'EXPUNGE',
-                            ignore: session.id,
-                            uid: message.uid,
-                            message: message._id
-                        }, processNext);
+                        this.notifier.addEntries(
+                            session.user.id,
+                            path,
+                            {
+                                command: 'EXPUNGE',
+                                ignore: session.id,
+                                uid: message.uid,
+                                message: message._id
+                            },
+                            processNext
+                        );
                     });
                 });
             });
@@ -919,11 +1050,17 @@ server.onExpunge = function (path, update, session, callback) {
 };
 
 // COPY / UID COPY sequence mailbox
-server.onCopy = function (path, update, session, callback) {
-    this.logger.debug({
-        tnx: 'copy',
-        cid: session.id
-    }, '[%s] Copying messages from "%s" to "%s"', session.id, path, update.destination);
+server.onCopy = function(path, update, session, callback) {
+    this.logger.debug(
+        {
+            tnx: 'copy',
+            cid: session.id
+        },
+        '[%s] Copying messages from "%s" to "%s"',
+        session.id,
+        path,
+        update.destination
+    );
     db.database.collection('mailboxes').findOne({
         user: session.user.id,
         path
@@ -946,14 +1083,15 @@ server.onCopy = function (path, update, session, callback) {
                 return callback(null, 'TRYCREATE');
             }
 
-            let cursor = db.database.collection('messages').find({
-                mailbox: mailbox._id,
-                uid: {
-                    $in: update.messages
-                }
-            }).sort([
-                ['uid', 1]
-            ]); // no projection as we need to copy the entire message
+            let cursor = db.database
+                .collection('messages')
+                .find({
+                    mailbox: mailbox._id,
+                    uid: {
+                        $in: update.messages
+                    }
+                })
+                .sort([['uid', 1]]); // no projection as we need to copy the entire message
 
             let copiedMessages = 0;
             let copiedStorage = 0;
@@ -962,13 +1100,17 @@ server.onCopy = function (path, update, session, callback) {
                 if (!copiedMessages) {
                     return next();
                 }
-                db.database.collection('users').findOneAndUpdate({
-                    _id: mailbox.user
-                }, {
-                    $inc: {
-                        storageUsed: copiedStorage
-                    }
-                }, next);
+                db.database.collection('users').findOneAndUpdate(
+                    {
+                        _id: mailbox.user
+                    },
+                    {
+                        $inc: {
+                            storageUsed: copiedStorage
+                        }
+                    },
+                    next
+                );
             };
 
             let sourceUid = [];
@@ -1043,11 +1185,16 @@ server.onCopy = function (path, update, session, callback) {
 
                             let attachments = Object.keys(message.map || {}).map(key => message.map[key]);
                             if (!attachments.length) {
-                                return this.notifier.addEntries(session.user.id, target.path, {
-                                    command: 'EXISTS',
-                                    uid: message.uid,
-                                    message: message._id
-                                }, processNext);
+                                return this.notifier.addEntries(
+                                    session.user.id,
+                                    target.path,
+                                    {
+                                        command: 'EXISTS',
+                                        uid: message.uid,
+                                        message: message._id
+                                    },
+                                    processNext
+                                );
                             }
 
                             // update attachments
@@ -1067,11 +1214,16 @@ server.onCopy = function (path, update, session, callback) {
                                 if (err) {
                                     // should we care about this error?
                                 }
-                                this.notifier.addEntries(session.user.id, target.path, {
-                                    command: 'EXISTS',
-                                    uid: message.uid,
-                                    message: message._id
-                                }, processNext);
+                                this.notifier.addEntries(
+                                    session.user.id,
+                                    target.path,
+                                    {
+                                        command: 'EXISTS',
+                                        uid: message.uid,
+                                        message: message._id
+                                    },
+                                    processNext
+                                );
                             });
                         });
                     });
@@ -1083,44 +1235,58 @@ server.onCopy = function (path, update, session, callback) {
 };
 
 // MOVE / UID MOVE sequence mailbox
-server.onMove = function (path, update, session, callback) {
-    this.logger.debug({
-        tnx: 'move',
-        cid: session.id
-    }, '[%s] Moving messages from "%s" to "%s"', session.id, path, update.destination);
+server.onMove = function(path, update, session, callback) {
+    this.logger.debug(
+        {
+            tnx: 'move',
+            cid: session.id
+        },
+        '[%s] Moving messages from "%s" to "%s"',
+        session.id,
+        path,
+        update.destination
+    );
 
-    messageHandler.move({
-        user: session.user.id,
-        // folder to move messages from
-        source: {
+    messageHandler.move(
+        {
             user: session.user.id,
-            path
+            // folder to move messages from
+            source: {
+                user: session.user.id,
+                path
+            },
+            // folder to move messages to
+            destination: {
+                user: session.user.id,
+                path: update.destination
+            },
+            session,
+            // list of UIDs to move
+            messages: update.messages
         },
-        // folder to move messages to
-        destination: {
-            user: session.user.id,
-            path: update.destination
-        },
-        session,
-        // list of UIDs to move
-        messages: update.messages
-    }, (...args) => {
-        if (args[0]) {
-            if (args[0].imapResponse) {
-                return callback(null, args[0].imapResponse);
+        (...args) => {
+            if (args[0]) {
+                if (args[0].imapResponse) {
+                    return callback(null, args[0].imapResponse);
+                }
+                return callback(args[0]);
             }
-            return callback(args[0]);
+            callback(...args);
         }
-        callback(...args);
-    });
+    );
 };
 
 // sends results to socket
-server.onFetch = function (path, options, session, callback) {
-    this.logger.debug({
-        tnx: 'fetch',
-        cid: session.id
-    }, '[%s] Requested FETCH for "%s"', session.id, path);
+server.onFetch = function(path, options, session, callback) {
+    this.logger.debug(
+        {
+            tnx: 'fetch',
+            cid: session.id
+        },
+        '[%s] Requested FETCH for "%s"',
+        session.id,
+        path
+    );
     db.database.collection('mailboxes').findOne({
         user: session.user.id,
         path
@@ -1194,12 +1360,7 @@ server.onFetch = function (path, options, session, callback) {
             return callback(...args);
         };
 
-        let cursor = db.database.collection('messages').
-        find(query).
-        project(projection).
-        sort([
-            ['uid', 1]
-        ]);
+        let cursor = db.database.collection('messages').find(query).project(projection).sort([['uid', 1]]);
 
         let rowCount = 0;
         let processNext = () => {
@@ -1223,15 +1384,17 @@ server.onFetch = function (path, options, session, callback) {
                     message.flags.unshift('\\Seen');
                 }
 
-                let stream = imapHandler.compileStream(session.formatResponse('FETCH', message.uid, {
-                    query: options.query,
-                    values: session.getQueryResponse(options.query, message, {
-                        logger: this.logger,
-                        fetchOptions: {},
-                        database: db.database,
-                        acceptUTF8Enabled: session.isUTF8Enabled()
+                let stream = imapHandler.compileStream(
+                    session.formatResponse('FETCH', message.uid, {
+                        query: options.query,
+                        values: session.getQueryResponse(options.query, message, {
+                            logger: this.logger,
+                            fetchOptions: {},
+                            database: db.database,
+                            acceptUTF8Enabled: session.isUTF8Enabled()
+                        })
                     })
-                }));
+                );
 
                 stream.description = util.format('* FETCH #%s uid=%s size=%sB ', ++rowCount, message.uid, message.size);
 
@@ -1247,10 +1410,15 @@ server.onFetch = function (path, options, session, callback) {
                         return processNext();
                     }
 
-                    this.logger.debug({
-                        tnx: 'flags',
-                        cid: session.id
-                    }, '[%s] UPDATE FLAGS for "%s"', session.id, message.uid);
+                    this.logger.debug(
+                        {
+                            tnx: 'flags',
+                            cid: session.id
+                        },
+                        '[%s] UPDATE FLAGS for "%s"',
+                        session.id,
+                        message.uid
+                    );
 
                     isUpdated = true;
 
@@ -1311,7 +1479,7 @@ server.onFetch = function (path, options, session, callback) {
  * IMAP search can be quite complex, so we optimize here for most common queries to be handled
  * by MongoDB and then do the final filtering on the client side. This allows
  */
-server.onSearch = function (path, options, session, callback) {
+server.onSearch = function(path, options, session, callback) {
     db.database.collection('mailboxes').findOne({
         user: session.user.id,
         path
@@ -1345,22 +1513,21 @@ server.onSearch = function (path, options, session, callback) {
                         walkQuery(parent, !ne, [].concat(term.value || []));
                         break;
 
-                    case 'or':
-                        {
-                            let $or = [];
+                    case 'or': {
+                        let $or = [];
 
-                            [].concat(term.value || []).forEach(entry => {
-                                walkQuery($or, false, [].concat(entry || []));
+                        [].concat(term.value || []).forEach(entry => {
+                            walkQuery($or, false, [].concat(entry || []));
+                        });
+
+                        if ($or.length) {
+                            parent.push({
+                                $or
                             });
-
-                            if ($or.length) {
-                                parent.push({
-                                    $or
-                                });
-                            }
-
-                            break;
                         }
+
+                        break;
+                    }
 
                     case 'text': // search over entire email
                     case 'body': // search over email body
@@ -1457,26 +1624,32 @@ server.onSearch = function (path, options, session, callback) {
                         {
                             // FIXME: this does not match unicode symbols for whatever reason
                             let regex = Buffer.from(term.value, 'binary').toString().replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
-                            let entry = term.value ? {
-                                headers: {
-                                    $elemMatch: {
-                                        key: term.header,
-                                        value: !ne ? {
-                                            $regex: regex,
-                                            $options: 'i'
-                                        } : {
-                                            $not: {
-                                                $regex: regex,
-                                                $options: 'i'
-                                            }
+                            let entry = term.value
+                                ? {
+                                    headers: {
+                                        $elemMatch: {
+                                            key: term.header,
+                                            value: !ne
+                                                  ? {
+                                                      $regex: regex,
+                                                      $options: 'i'
+                                                  }
+                                                  : {
+                                                      $not: {
+                                                          $regex: regex,
+                                                          $options: 'i'
+                                                      }
+                                                  }
                                         }
                                     }
                                 }
-                            } : {
-                                'headers.key': !ne ? term.header : {
-                                    $ne: term.header
-                                }
-                            };
+                                : {
+                                    'headers.key': !ne
+                                          ? term.header
+                                          : {
+                                              $ne: term.header
+                                          }
+                                };
                             parent.push(entry);
                         }
                         break;
@@ -1499,18 +1672,25 @@ server.onSearch = function (path, options, session, callback) {
                                     op = '$gte';
                                     break;
                             }
-                            let entry = !op ? [{
-                                $gte: value
-                            }, {
-                                $lt: new Date(value.getTime() + 24 * 3600 * 1000)
-                            }] : {
-                                [op]: value
-                            };
+                            let entry = !op
+                                ? [
+                                    {
+                                        $gte: value
+                                    },
+                                    {
+                                        $lt: new Date(value.getTime() + 24 * 3600 * 1000)
+                                    }
+                                ]
+                                : {
+                                    [op]: value
+                                };
 
                             entry = {
-                                idate: !ne ? entry : {
-                                    $not: entry
-                                }
+                                idate: !ne
+                                    ? entry
+                                    : {
+                                        $not: entry
+                                    }
                             };
 
                             parent.push(entry);
@@ -1535,18 +1715,25 @@ server.onSearch = function (path, options, session, callback) {
                                     op = '$gte';
                                     break;
                             }
-                            let entry = !op ? [{
-                                $gte: value
-                            }, {
-                                $lt: new Date(value.getTime() + 24 * 3600 * 1000)
-                            }] : {
-                                [op]: value
-                            };
+                            let entry = !op
+                                ? [
+                                    {
+                                        $gte: value
+                                    },
+                                    {
+                                        $lt: new Date(value.getTime() + 24 * 3600 * 1000)
+                                    }
+                                ]
+                                : {
+                                    [op]: value
+                                };
 
                             entry = {
-                                hdate: !ne ? entry : {
-                                    $not: entry
-                                }
+                                hdate: !ne
+                                    ? entry
+                                    : {
+                                        $not: entry
+                                    }
                             };
 
                             parent.push(entry);
@@ -1577,9 +1764,11 @@ server.onSearch = function (path, options, session, callback) {
                             };
 
                             entry = {
-                                size: !ne ? entry : {
-                                    $not: entry
-                                }
+                                size: !ne
+                                    ? entry
+                                    : {
+                                        $not: entry
+                                    }
                             };
 
                             parent.push(entry);
@@ -1595,14 +1784,17 @@ server.onSearch = function (path, options, session, callback) {
             query.$and = $and;
         }
 
-        this.logger.info({
-            tnx: 'search',
-            cid: session.id
-        }, '[%s] SEARCH %s', session.id, JSON.stringify(query));
+        this.logger.info(
+            {
+                tnx: 'search',
+                cid: session.id
+            },
+            '[%s] SEARCH %s',
+            session.id,
+            JSON.stringify(query)
+        );
 
-        let cursor = db.database.collection('messages').
-        find(query).
-        project({
+        let cursor = db.database.collection('messages').find(query).project({
             uid: true,
             modseq: true
         });
@@ -1613,17 +1805,25 @@ server.onSearch = function (path, options, session, callback) {
         let processNext = () => {
             cursor.next((err, message) => {
                 if (err) {
-                    this.logger.error({
-                        tnx: 'search',
-                        cid: session.id
-                    }, '[%s] SEARCHFAIL %s error="%s"', session.id, JSON.stringify(query), err.message);
+                    this.logger.error(
+                        {
+                            tnx: 'search',
+                            cid: session.id
+                        },
+                        '[%s] SEARCHFAIL %s error="%s"',
+                        session.id,
+                        JSON.stringify(query),
+                        err.message
+                    );
                     return callback(new Error('Can not make requested search query'));
                 }
                 if (!message) {
-                    return cursor.close(() => callback(null, {
-                        uidList,
-                        highestModseq
-                    }));
+                    return cursor.close(() =>
+                        callback(null, {
+                            uidList,
+                            highestModseq
+                        })
+                    );
                 }
 
                 if (highestModseq < message.modseq) {
@@ -1639,11 +1839,16 @@ server.onSearch = function (path, options, session, callback) {
     });
 };
 
-server.onGetQuotaRoot = function (path, session, callback) {
-    this.logger.debug({
-        tnx: 'quota',
-        cid: session.id
-    }, '[%s] Requested quota root info for "%s"', session.id, path);
+server.onGetQuotaRoot = function(path, session, callback) {
+    this.logger.debug(
+        {
+            tnx: 'quota',
+            cid: session.id
+        },
+        '[%s] Requested quota root info for "%s"',
+        session.id,
+        path
+    );
 
     db.database.collection('mailboxes').findOne({
         user: session.user.id,
@@ -1675,11 +1880,16 @@ server.onGetQuotaRoot = function (path, session, callback) {
     });
 };
 
-server.onGetQuota = function (quotaRoot, session, callback) {
-    this.logger.debug({
-        tnx: 'quota',
-        cid: session.id
-    }, '[%s] Requested quota info for "%s"', session.id, quotaRoot);
+server.onGetQuota = function(quotaRoot, session, callback) {
+    this.logger.debug(
+        {
+            tnx: 'quota',
+            cid: session.id
+        },
+        '[%s] Requested quota info for "%s"',
+        session.id,
+        quotaRoot
+    );
 
     if (quotaRoot !== '') {
         return callback(null, 'NONEXISTENT');
@@ -1760,12 +1970,16 @@ function clearExpiredMessages() {
     clearTimeout(gcTimeout);
 
     // First, acquire the lock. This prevents multiple connected clients for deleting the same messages
-    gcLock.acquireLock('gc_expired', 10 * 60 * 1000 /* Lock expires after 10min if not released */ , (err, lock) => {
+    gcLock.acquireLock('gc_expired', 10 * 60 * 1000 /* Lock expires after 10min if not released */, (err, lock) => {
         if (err) {
-            server.logger.error({
-                tnx: 'gc',
-                err
-            }, 'Failed to acquire lock error=%s', err.message);
+            server.logger.error(
+                {
+                    tnx: 'gc',
+                    err
+                },
+                'Failed to acquire lock error=%s',
+                err.message
+            );
             gcTimeout = setTimeout(clearExpiredMessages, GC_INTERVAL);
             gcTimeout.unref();
             return;
@@ -1778,29 +1992,36 @@ function clearExpiredMessages() {
         let done = () => {
             gcLock.releaseLock(lock, err => {
                 if (err) {
-                    server.logger.error({
-                        tnx: 'gc',
-                        err
-                    }, 'Failed to release lock error=%s', err.message);
+                    server.logger.error(
+                        {
+                            tnx: 'gc',
+                            err
+                        },
+                        'Failed to release lock error=%s',
+                        err.message
+                    );
                 }
                 gcTimeout = setTimeout(clearExpiredMessages, GC_INTERVAL);
                 gcTimeout.unref();
             });
         };
 
-        let cursor = db.database.collection('messages').find({
-            exp: true,
-            rdate: {
-                $lte: Date.now()
-            }
-        }).project({
-            _id: true,
-            mailbox: true,
-            uid: true,
-            size: true,
-            map: true,
-            magic: true
-        });
+        let cursor = db.database
+            .collection('messages')
+            .find({
+                exp: true,
+                rdate: {
+                    $lte: Date.now()
+                }
+            })
+            .project({
+                _id: true,
+                mailbox: true,
+                uid: true,
+                size: true,
+                map: true,
+                magic: true
+            });
 
         let deleted = 0;
         let processNext = () => {
@@ -1812,36 +2033,46 @@ function clearExpiredMessages() {
                     return cursor.close(() => {
                         // delete all attachments that do not have any active links to message objects
                         deleteOrphanedAttachments(() => {
-                            server.logger.debug({
-                                tnx: 'gc'
-                            }, 'Deleted %s messages', deleted);
+                            server.logger.debug(
+                                {
+                                    tnx: 'gc'
+                                },
+                                'Deleted %s messages',
+                                deleted
+                            );
                             done(null, true);
                         });
                     });
                 }
 
-                server.logger.info({
-                    tnx: 'gc',
-                    err
-                }, 'Deleting expired message id=%s', message._id);
+                server.logger.info(
+                    {
+                        tnx: 'gc',
+                        err
+                    },
+                    'Deleting expired message id=%s',
+                    message._id
+                );
 
                 gcTimeout = setTimeout(clearExpiredMessages, GC_INTERVAL);
 
-                messageHandler.del({
-                    message,
-                    skipAttachments: true
-                }, err => {
-                    if (err) {
-                        return cursor.close(() => done(err));
+                messageHandler.del(
+                    {
+                        message,
+                        skipAttachments: true
+                    },
+                    err => {
+                        if (err) {
+                            return cursor.close(() => done(err));
+                        }
+                        deleted++;
+                        processNext();
                     }
-                    deleted++;
-                    processNext();
-                });
+                );
             });
         };
 
         processNext();
-
     });
 }
 
@@ -1851,7 +2082,6 @@ module.exports = done => {
     }
 
     let start = () => {
-
         messageHandler = new MessageHandler(db.database, db.redisConfig);
         userHandler = new UserHandler(db.database, db.redis);
 
@@ -1871,9 +2101,12 @@ module.exports = done => {
                 started = true;
                 return done(err);
             }
-            server.logger.error({
+            server.logger.error(
+                {
+                    err
+                },
                 err
-            }, err);
+            );
         });
 
         // start listening
@@ -1889,9 +2122,13 @@ module.exports = done => {
     let indexpos = 0;
     let ensureIndexes = () => {
         if (indexpos >= setupIndexes.length) {
-            server.logger.info({
-                tnx: 'mongo'
-            }, 'Setup indexes for %s collections', setupIndexes.length);
+            server.logger.info(
+                {
+                    tnx: 'mongo'
+                },
+                'Setup indexes for %s collections',
+                setupIndexes.length
+            );
 
             gcLock = new RedFour({
                 redis: db.redisConfig,

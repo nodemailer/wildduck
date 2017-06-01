@@ -11,8 +11,7 @@ const punycode = require('punycode');
  * @param {Object} message A parsed mime tree node
  * @return {Object} ENVELOPE compatible object
  */
-module.exports = function (header) {
-
+module.exports = function(header) {
     let subject = Array.isArray(header.subject) ? header.subject.reverse().filter(line => line.trim()) : header.subject;
     subject = Buffer.from(subject || '', 'binary').toString();
 
@@ -78,9 +77,7 @@ function processAddress(arr, defaults) {
                 domain = Buffer.from(punycode.toUnicode(domain));
             }
 
-            result.push([
-                name, null, user, domain
-            ]);
+            result.push([name, null, user, domain]);
         } else {
             // Handle group syntax
             let name = addr.name || '';

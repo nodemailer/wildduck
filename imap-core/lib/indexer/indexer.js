@@ -15,6 +15,7 @@ const iconv = require('iconv-lite');
 const he = require('he');
 const htmlToText = require('html-to-text');
 const crypto = require('crypto');
+
 let cryptoAsync;
 try {
     cryptoAsync = require('@ronomon/crypto-async'); // eslint-disable-line global-require
@@ -23,7 +24,6 @@ try {
 }
 
 class Indexer {
-
     constructor(options) {
         this.options = options || {};
         this.fetchOptions = this.options.fetchOptions || {};
@@ -67,7 +67,6 @@ class Indexer {
         };
 
         let walk = (node, next) => {
-
             if (!textOnly || !root) {
                 append(formatHeaders(node.header).join('\r\n') + '\r\n');
             }
@@ -157,7 +156,6 @@ class Indexer {
         };
 
         let walk = (node, next) => {
-
             if (aborted) {
                 return next();
             }
@@ -234,9 +232,11 @@ class Indexer {
             }
         };
 
-        setImmediate(walk.bind(null, mimeTree, () => {
-            res.end();
-        }));
+        setImmediate(
+            walk.bind(null, mimeTree, () => {
+                res.end();
+            })
+        );
 
         // if called then stops resolving rest of the message
         res.abort = () => {
@@ -290,7 +290,9 @@ class Indexer {
             let parsedDisposition = node.parsedHeader['content-disposition'];
             let transferEncoding = (node.parsedHeader['content-transfer-encoding'] || '7bit').toLowerCase().trim();
 
-            let contentType = (parsedContentType && parsedContentType.value || (node.rootNode ? 'text/plain' : 'application/octet-stream')).toLowerCase().trim();
+            let contentType = ((parsedContentType && parsedContentType.value) || (node.rootNode ? 'text/plain' : 'application/octet-stream'))
+                .toLowerCase()
+                .trim();
 
             alternative = alternative || contentType === 'multipart/alternative';
             related = related || contentType === 'multipart/related';
@@ -302,13 +304,16 @@ class Indexer {
                 }
             }
 
-            let disposition = (parsedDisposition && parsedDisposition.value || '').toLowerCase().trim() || false;
+            let disposition = ((parsedDisposition && parsedDisposition.value) || '').toLowerCase().trim() || false;
             let isInlineText = false;
             let isMultipart = contentType.split('/')[0] === 'multipart';
 
             // If the current node is HTML or Plaintext then allow larger content included in the mime tree
             // Also decode text/html value
-            if (['text/plain', 'text/html', 'text/rfc822-headers', 'message/delivery-status'].includes(contentType) && (!disposition || disposition === 'inline')) {
+            if (
+                ['text/plain', 'text/html', 'text/rfc822-headers', 'message/delivery-status'].includes(contentType) &&
+                (!disposition || disposition === 'inline')
+            ) {
                 isInlineText = true;
                 if (node.body && node.body.length) {
                     let charset = parsedContentType.params.charset || 'windows-1257';
@@ -353,7 +358,12 @@ class Indexer {
                 let attachmentId = 'ATT' + leftPad(++idcount, '0', 5);
                 map[attachmentId] = new ObjectID();
 
-                let fileName = (node.parsedHeader['content-disposition'] && node.parsedHeader['content-disposition'].params && node.parsedHeader['content-disposition'].params.filename) || (node.parsedHeader['content-type'] && node.parsedHeader['content-type'].params && node.parsedHeader['content-type'].params.name) || false;
+                let fileName =
+                    (node.parsedHeader['content-disposition'] &&
+                        node.parsedHeader['content-disposition'].params &&
+                        node.parsedHeader['content-disposition'].params.filename) ||
+                    (node.parsedHeader['content-type'] && node.parsedHeader['content-type'].params && node.parsedHeader['content-type'].params.name) ||
+                    false;
                 let contentId = (node.parsedHeader['content-id'] || '').toString().replace(/<|>/g, '').trim();
 
                 if (fileName) {
@@ -363,7 +373,7 @@ class Indexer {
                         // failed to parse filename, keep as is (most probably an unknown charset is used)
                     }
                 } else {
-                    fileName = (crypto.randomBytes(4).toString('hex') + '.' + libmime.detectExtension(contentType));
+                    fileName = crypto.randomBytes(4).toString('hex') + '.' + libmime.detectExtension(contentType);
                 }
 
                 cidMap.set(contentId, {
@@ -425,13 +435,14 @@ class Indexer {
 
         walk(mimeTree, false, false);
 
-        let updateCidLinks = str => str.replace(/\bcid:([^\s"']+)/g, (match, cid) => {
-            if (cidMap.has(cid)) {
-                let attachment = cidMap.get(cid);
-                return 'attachment:' + messageId + '/' + attachment.id.toString();
-            }
-            return match;
-        });
+        let updateCidLinks = str =>
+            str.replace(/\bcid:([^\s"']+)/g, (match, cid) => {
+                if (cidMap.has(cid)) {
+                    let attachment = cidMap.get(cid);
+                    return 'attachment:' + messageId + '/' + attachment.id.toString();
+                }
+                return match;
+            });
 
         maildata.html = htmlContent.filter(str => str.trim()).map(updateCidLinks);
         maildata.text = textContent.filter(str => str.trim()).map(updateCidLinks).join('\n').trim();
@@ -447,10 +458,8 @@ class Indexer {
         let nodes = maildata.nodes;
         let storeNode = () => {
             if (pos >= nodes.length) {
-
                 // replace attachment IDs with ObjectIDs in the mimeTree
                 let walk = (node, next) => {
-
                     if (node.attachmentId && maildata.map[node.attachmentId]) {
                         node.attachmentId = maildata.map[node.attachmentId];
                     }
@@ -546,7 +555,6 @@ class Indexer {
      * @return {Array} BODY object as a structured Array
      */
     getBody(mimeTree) {
-
         // BODY – BODYSTRUCTURE without extension data
         let body = new BodyStructure(mimeTree, {
             upperCaseKeys: true,
@@ -563,7 +571,6 @@ class Indexer {
      * @return {Array} BODYSTRUCTURE object as a structured Array
      */
     getBodyStructure(mimeTree) {
-
         // full BODYSTRUCTURE
         let bodystructure = new BodyStructure(mimeTree, {
             upperCaseKeys: true,
@@ -647,7 +654,6 @@ class Indexer {
                 sent = true;
                 return callback(null, Buffer.concat(buffers, buflen));
             });
-
         } else {
             return setImmediate(() => callback(null, Buffer.from((data || '').toString(), 'binary')));
         }
@@ -711,20 +717,28 @@ class Indexer {
                 if (!selector.headers || !selector.headers.length) {
                     return '\r\n\r\n';
                 }
-                return formatHeaders(node.header).filter(line => {
-                    let key = line.split(':').shift().toLowerCase().trim();
-                    return selector.headers.indexOf(key) >= 0;
-                }).join('\r\n') + '\r\n\r\n';
+                return (
+                    formatHeaders(node.header)
+                        .filter(line => {
+                            let key = line.split(':').shift().toLowerCase().trim();
+                            return selector.headers.indexOf(key) >= 0;
+                        })
+                        .join('\r\n') + '\r\n\r\n'
+                );
 
             case 'header.fields.not':
                 // BODY[HEADER.FIELDS.NOT (Key1 Key2 KeyN)] all but selected header keys
                 if (!selector.headers || !selector.headers.length) {
                     return formatHeaders(node.header).join('\r\n') + '\r\n\r\n';
                 }
-                return formatHeaders(node.header).filter(line => {
-                    let key = line.split(':').shift().toLowerCase().trim();
-                    return selector.headers.indexOf(key) < 0;
-                }).join('\r\n') + '\r\n\r\n';
+                return (
+                    formatHeaders(node.header)
+                        .filter(line => {
+                            let key = line.split(':').shift().toLowerCase().trim();
+                            return selector.headers.indexOf(key) < 0;
+                        })
+                        .join('\r\n') + '\r\n\r\n'
+                );
 
             case 'mime':
                 // BODY[1.2.3.MIME] mime node header
@@ -754,19 +768,21 @@ function formatHeaders(headers) {
     return headers;
 }
 
-
 function textToHtml(str) {
-
-    let text = '<p>' + he.
-    // encode special chars
-    encode(
-        str, {
-            useNamedReferences: true
-        }).
-    replace(/\r?\n/g, '\n').trim(). // normalize line endings
-    replace(/[ \t]+$/mg, '').trim(). // trim empty line endings
-    replace(/\n\n+/g, '</p><p>').trim(). // insert <p> to multiple linebreaks
-    replace(/\n/g, '<br/>') + // insert <br> to single linebreaks
+    let text =
+        '<p>' +
+        he
+            // encode special chars
+            .encode(str, {
+                useNamedReferences: true
+            })
+            .replace(/\r?\n/g, '\n')
+            .trim() // normalize line endings
+            .replace(/[ \t]+$/gm, '')
+            .trim() // trim empty line endings
+            .replace(/\n\n+/g, '</p><p>')
+            .trim() // insert <p> to multiple linebreaks
+            .replace(/\n/g, '<br/>') + // insert <br> to single linebreaks
         '</p>';
 
     return text;

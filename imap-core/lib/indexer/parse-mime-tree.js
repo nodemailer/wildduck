@@ -1,6 +1,6 @@
 'use strict';
 
-let addressparser = require('nodemailer/lib/addressparser');
+const addressparser = require('nodemailer/lib/addressparser');
 
 /**
  * Parses a RFC822 message into a structured object (JSON compatible)
@@ -9,9 +9,7 @@ let addressparser = require('nodemailer/lib/addressparser');
  * @param {String|Buffer} rfc822 Raw body of the message
  */
 class MIMEParser {
-
     constructor(rfc822) {
-
         // ensure the input is a binary string
         this.rfc822 = (rfc822 || '').toString('binary');
 
@@ -38,7 +36,6 @@ class MIMEParser {
             line = this.readLine();
 
             switch (this._node.state) {
-
                 case 'header': // process header section
                     if (this.rawBody) {
                         this.rawBody += prevBr + line;
@@ -58,8 +55,11 @@ class MIMEParser {
                     this.rawBody += prevBr + line;
 
                     if (this._node.parentBoundary && (line === '--' + this._node.parentBoundary || line === '--' + this._node.parentBoundary + '--')) {
-
-                        if (this._node.parsedHeader['content-type'].value === 'message/rfc822') {
+                        if (
+                            this._node.parsedHeader['content-type'].value === 'message/rfc822' &&
+                            (!this._node.parsedHeader['content-transfer-encoding'] ||
+                                ['7bit', '8bit', 'binary'].includes(this._node.parsedHeader['content-transfer-encoding']))
+                        ) {
                             this._node.message = parse(this._node.body.join(''));
                         }
 
@@ -78,7 +78,8 @@ class MIMEParser {
                     }
                     break;
 
-                default: // never should be reached
+                default:
+                    // never should be reached
                     throw new Error('Unexpected state');
             }
 
@@ -107,7 +108,6 @@ class MIMEParser {
      * from the tree (circular references prohibit conversion to JSON)
      */
     finalizeTree() {
-
         if (this._node.state === 'header') {
             this.processNodeHeader();
             this.processContentType();
@@ -125,9 +125,12 @@ class MIMEParser {
 
                 node.lineCount = node.body.length;
                 node.body = Buffer.from(
-                    node.body.join('').
-                    // ensure proper line endings
-                    replace(/\r?\n/g, '\r\n'), 'binary');
+                    node.body
+                        .join('')
+                        // ensure proper line endings
+                        .replace(/\r?\n/g, '\r\n'),
+                    'binary'
+                );
                 node.size = node.body.length;
             }
             node.childNodes.forEach(walker);
@@ -243,7 +246,8 @@ class MIMEParser {
                 subtype: '',
                 params: {}
             },
-            match, processEncodedWords = {};
+            match,
+            processEncodedWords = {};
 
         (headerValue || '').split(';').forEach((part, i) => {
             let key, value;

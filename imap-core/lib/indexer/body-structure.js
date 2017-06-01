@@ -4,7 +4,6 @@ const libmime = require('libmime');
 const createEnvelope = require('./create-envelope');
 
 class BodyStructure {
-
     constructor(tree, options) {
         this.tree = tree;
         this.options = options || {};
@@ -38,13 +37,10 @@ class BodyStructure {
                 case 'text':
                     return this.processTextNode(node, options);
                 case 'message':
-                    if (node.parsedHeader['content-type'].subtype === 'rfc822') {
-                        if (!options.attachmentRFC822) {
-                            return this.processRFC822Node(node, options);
-                        }
-                        return this.processAttachmentNode(node, options);
+                    if (node.parsedHeader['content-type'].subtype === 'rfc822' && node.message && !options.attachmentRFC822) {
+                        return this.processRFC822Node(node, options);
                     }
-                    // fall through
+                // fall through
                 default:
                     return this.processAttachmentNode(node, options);
             }
@@ -60,32 +56,32 @@ class BodyStructure {
      * @return {Array} A list of basic fields
      */
     getBasicFields(node, options) {
-        let bodyType = node.parsedHeader['content-type'] && node.parsedHeader['content-type'].type || null;
-        let bodySubtype = node.parsedHeader['content-type'] && node.parsedHeader['content-type'].subtype || null;
+        let bodyType = (node.parsedHeader['content-type'] && node.parsedHeader['content-type'].type) || null;
+        let bodySubtype = (node.parsedHeader['content-type'] && node.parsedHeader['content-type'].subtype) || null;
         let contentTransfer = node.parsedHeader['content-transfer-encoding'] || '7bit';
 
         return [
             // body type
-            options.upperCaseKeys ? bodyType && bodyType.toUpperCase() || null : bodyType,
+            options.upperCaseKeys ? (bodyType && bodyType.toUpperCase()) || null : bodyType,
 
             // body subtype
-            options.upperCaseKeys ? bodySubtype && bodySubtype.toUpperCase() || null : bodySubtype,
+            options.upperCaseKeys ? (bodySubtype && bodySubtype.toUpperCase()) || null : bodySubtype,
 
             // body parameter parenthesized list
-            node.parsedHeader['content-type'] &&
-            node.parsedHeader['content-type'].hasParams &&
-            this.flatten(Object.keys(node.parsedHeader['content-type'].params).map(key => {
-                let value = node.parsedHeader['content-type'].params[key];
-                try {
-                    value = Buffer.from(libmime.decodeWords(value).trim());
-                } catch (E) {
-                    // failed to parse value
-                }
-                return [
-                    options.upperCaseKeys ? key.toUpperCase() : key,
-                    value
-                ];
-            })) || null,
+            (node.parsedHeader['content-type'] &&
+                node.parsedHeader['content-type'].hasParams &&
+                this.flatten(
+                    Object.keys(node.parsedHeader['content-type'].params).map(key => {
+                        let value = node.parsedHeader['content-type'].params[key];
+                        try {
+                            value = Buffer.from(libmime.decodeWords(value).trim());
+                        } catch (E) {
+                            // failed to parse value
+                        }
+                        return [options.upperCaseKeys ? key.toUpperCase() : key, value];
+                    })
+                )) ||
+                null,
 
             // body id
             node.parsedHeader['content-id'] || null,
@@ -94,7 +90,7 @@ class BodyStructure {
             node.parsedHeader['content-description'] || null,
 
             // body encoding
-            options.upperCaseKeys ? contentTransfer && contentTransfer.toUpperCase() || '7bit' : contentTransfer,
+            options.upperCaseKeys ? (contentTransfer && contentTransfer.toUpperCase()) || '7bit' : contentTransfer,
 
             // body size
             node.size
@@ -111,9 +107,8 @@ class BodyStructure {
     getExtensionFields(node, options) {
         options = options || {};
 
-        let languageString = node.parsedHeader['content-language'] &&
-            node.parsedHeader['content-language'].replace(/[ ,]+/g, ',').replace(/^,+|,+$/g, '');
-        let language = languageString && languageString.split(',') || null;
+        let languageString = node.parsedHeader['content-language'] && node.parsedHeader['content-language'].replace(/[ ,]+/g, ',').replace(/^,+|,+$/g, '');
+        let language = (languageString && languageString.split(',')) || null;
         let data;
 
         // if `contentLanguageString` is true, then use a string instead of single element array
@@ -126,25 +121,24 @@ class BodyStructure {
             node.parsedHeader['content-md5'] || null,
 
             // body disposition
-            node.parsedHeader['content-disposition'] && [
-                options.upperCaseKeys ?
-                node.parsedHeader['content-disposition'].value.toUpperCase() :
-                node.parsedHeader['content-disposition'].value,
-                node.parsedHeader['content-disposition'].params &&
-                node.parsedHeader['content-disposition'].hasParams &&
-                this.flatten(Object.keys(node.parsedHeader['content-disposition'].params).map(key => {
-                    let value = node.parsedHeader['content-disposition'].params[key];
-                    try {
-                        value = Buffer.from(libmime.decodeWords(value).trim());
-                    } catch (E) {
-                        // failed to parse value
-                    }
-                    return [
-                        options.upperCaseKeys ? key.toUpperCase() : key,
-                        value
-                    ];
-                })) || null
-            ] || null,
+            (node.parsedHeader['content-disposition'] && [
+                options.upperCaseKeys ? node.parsedHeader['content-disposition'].value.toUpperCase() : node.parsedHeader['content-disposition'].value,
+                (node.parsedHeader['content-disposition'].params &&
+                    node.parsedHeader['content-disposition'].hasParams &&
+                    this.flatten(
+                        Object.keys(node.parsedHeader['content-disposition'].params).map(key => {
+                            let value = node.parsedHeader['content-disposition'].params[key];
+                            try {
+                                value = Buffer.from(libmime.decodeWords(value).trim());
+                            } catch (E) {
+                                // failed to parse value
+                            }
+                            return [options.upperCaseKeys ? key.toUpperCase() : key, value];
+                        })
+                    )) ||
+                    null
+            ]) ||
+                null,
 
             // body language
             language
@@ -174,36 +168,35 @@ class BodyStructure {
     processMultipartNode(node, options) {
         options = options || {};
 
-        let data = (node.childNodes && node.childNodes.map(tree => this.createBodystructure(tree, options)) || [
-            []
-        ]).
-        concat([
+        let data = ((node.childNodes && node.childNodes.map(tree => this.createBodystructure(tree, options))) || [[]]).concat([
             // body subtype
-            options.upperCaseKeys ? node.multipart && node.multipart.toUpperCase() || null : node.multipart,
+            options.upperCaseKeys ? (node.multipart && node.multipart.toUpperCase()) || null : node.multipart,
 
             // body parameter parenthesized list
-            node.parsedHeader['content-type'] &&
-            node.parsedHeader['content-type'].hasParams &&
-            this.flatten(Object.keys(node.parsedHeader['content-type'].params).map(key => {
-                let value = node.parsedHeader['content-type'].params[key];
-                try {
-                    value = Buffer.from(libmime.decodeWords(value).trim());
-                } catch (E) {
-                    // failed to parse value
-                }
-                return [
-                    options.upperCaseKeys ? key.toUpperCase() : key,
-                    value
-                ];
-            })) || null
+            (node.parsedHeader['content-type'] &&
+                node.parsedHeader['content-type'].hasParams &&
+                this.flatten(
+                    Object.keys(node.parsedHeader['content-type'].params).map(key => {
+                        let value = node.parsedHeader['content-type'].params[key];
+                        try {
+                            value = Buffer.from(libmime.decodeWords(value).trim());
+                        } catch (E) {
+                            // failed to parse value
+                        }
+                        return [options.upperCaseKeys ? key.toUpperCase() : key, value];
+                    })
+                )) ||
+                null
         ]);
 
         if (options.body) {
             return data;
         } else {
-            return data.
-            // skip body MD5 from extension fields
-            concat(this.getExtensionFields(node, options).slice(1));
+            return (
+                data
+                    // skip body MD5 from extension fields
+                    .concat(this.getExtensionFields(node, options).slice(1))
+            );
         }
     }
 
@@ -217,9 +210,7 @@ class BodyStructure {
     processTextNode(node, options) {
         options = options || {};
 
-        let data = [].concat(this.getBasicFields(node, options)).concat([
-            node.lineCount
-        ]);
+        let data = [].concat(this.getBasicFields(node, options)).concat([node.lineCount]);
 
         if (!options.body) {
             data = data.concat(this.getExtensionFields(node, options));
@@ -261,10 +252,7 @@ class BodyStructure {
 
         data.push(createEnvelope(node.message.parsedHeader));
         data.push(this.createBodystructure(node.message, options));
-        data = data.concat(
-            node.lineCount
-        ).
-        concat(this.getExtensionFields(node, options));
+        data = data.concat(node.lineCount).concat(this.getExtensionFields(node, options));
 
         return data;
     }
@@ -291,7 +279,6 @@ class BodyStructure {
         }
         return result;
     }
-
 }
 
 // Expose to the world
