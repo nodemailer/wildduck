@@ -80,12 +80,13 @@ class Indexer {
                 next();
             };
 
-            root = false;
-
             if (node.size || node.attachmentId) {
-                append(false, true); // force newline
+                if (!root) {
+                    append(false, true); // force newline
+                }
                 size += node.size;
             }
+            root = false;
 
             if (node.boundary) {
                 append('--' + node.boundary);

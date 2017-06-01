@@ -37,7 +37,7 @@ class LengthLimiter extends Transform {
         if (this.byteCounter < this.startFrom) {
             // split the chunk and ignore the first part
             chunk = chunk.slice(this.startFrom - this.byteCounter);
-            this.byteCounter += (this.startFrom - this.byteCounter);
+            this.byteCounter += this.startFrom - this.byteCounter;
         }
 
         // can emit full chunk
@@ -69,7 +69,6 @@ class LengthLimiter extends Transform {
         }
         done();
     }
-
 }
 
 module.exports = LengthLimiter;
