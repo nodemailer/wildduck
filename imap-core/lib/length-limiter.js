@@ -1,7 +1,7 @@
 'use strict';
 
-let streams = require('stream');
-let Transform = streams.Transform;
+const streams = require('stream');
+const Transform = streams.Transform;
 
 // make sure that a stream piped to this transform stream
 // always emits a fixed amounts of bytes. Either by truncating

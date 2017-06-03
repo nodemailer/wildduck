@@ -1,10 +1,10 @@
 'use strict';
 
-let imapHandler = require('./handler/imap-handler');
+const imapHandler = require('./handler/imap-handler');
 
 const MAX_MESSAGE_SIZE = 1 * 1024 * 1024;
 
-let commands = new Map([
+const commands = new Map([
     /*eslint-disable global-require*/
     // require must normally be on top of the module
     ['NOOP', require('./commands/noop')],
@@ -51,7 +51,6 @@ let commands = new Map([
 ]);
 
 class IMAPCommand {
-
     constructor(connection) {
         this.connection = connection;
         this.payload = '';
@@ -87,7 +86,6 @@ class IMAPCommand {
         }
 
         if (command.literal) {
-
             // check if the literal size is in acceptable bounds
             if (isNaN(command.expecting) || isNaN(command.expecting) < 0 || command.expecting > Number.MAX_SAFE_INTEGER) {
                 this.connection.send(this.tag + ' BAD Invalid literal size');
@@ -99,12 +97,17 @@ class IMAPCommand {
                 // Allow large literals for selected commands only
                 (!['APPEND'].includes(this.command) && command.expecting > 1024) ||
                 // Deny all literals bigger than maxMessage
-                command.expecting > maxAllowed) {
-
-                this.connection._server.logger.debug({
-                    tnx: 'client',
-                    cid: this.connection.id
-                }, '[%s] C:', this.connection.id, this.payload);
+                command.expecting > maxAllowed
+            ) {
+                this.connection._server.logger.debug(
+                    {
+                        tnx: 'client',
+                        cid: this.connection.id
+                    },
+                    '[%s] C:',
+                    this.connection.id,
+                    this.payload
+                );
 
                 this.payload = ''; // reset payload
 
@@ -153,21 +156,31 @@ class IMAPCommand {
 
             // check if the payload needs to be directod to a preset handler
             if (typeof this.connection._nextHandler === 'function') {
-                this.connection._server.logger.debug({
-                    tnx: 'client',
-                    cid: this.connection.id
-                }, '[%s] C: <%s bytes of data>', this.connection.id, this.payload && this.payload.length || 0);
+                this.connection._server.logger.debug(
+                    {
+                        tnx: 'client',
+                        cid: this.connection.id
+                    },
+                    '[%s] C: <%s bytes of data>',
+                    this.connection.id,
+                    (this.payload && this.payload.length) || 0
+                );
                 return this.connection._nextHandler(this.payload, next);
             }
 
             try {
                 this.parsed = imapHandler.parser(this.payload);
             } catch (E) {
-                this.connection._server.logger.debug({
-                    err: E,
-                    tnx: 'client',
-                    cid: this.connection.id
-                }, '[%s] C:', this.connection.id, this.payload);
+                this.connection._server.logger.debug(
+                    {
+                        err: E,
+                        tnx: 'client',
+                        cid: this.connection.id
+                    },
+                    '[%s] C:',
+                    this.connection.id,
+                    this.payload
+                );
                 this.connection.send(this.tag + ' BAD ' + E.message);
                 return next();
             }
@@ -182,10 +195,15 @@ class IMAPCommand {
                 });
             }
 
-            this.connection._server.logger.debug({
-                tnx: 'client',
-                cid: this.connection.id
-            }, '[%s] C:', this.connection.id, imapHandler.compiler(this.parsed, false, true));
+            this.connection._server.logger.debug(
+                {
+                    tnx: 'client',
+                    cid: this.connection.id
+                },
+                '[%s] C:',
+                this.connection.id,
+                imapHandler.compiler(this.parsed, false, true)
+            );
 
             this.validateCommand(this.parsed, handler, err => {
                 if (err) {
@@ -194,34 +212,46 @@ class IMAPCommand {
                 }
 
                 if (typeof handler.handler === 'function') {
-                    handler.handler.call(this.connection, this.parsed, (err, response) => {
-                        if (err) {
-                            this.connection.send(this.tag + ' ' + (err.response || 'BAD') + ' ' + err.message);
-                            return next(err);
-                        }
+                    handler.handler.call(
+                        this.connection,
+                        this.parsed,
+                        (err, response) => {
+                            if (err) {
+                                this.connection.send(this.tag + ' ' + (err.response || 'BAD') + ' ' + err.message);
+                                return next(err);
+                            }
 
-                        // send EXPUNGE, EXISTS etc queued notices
-                        this.sendNotifications(handler, () => {
+                            // send EXPUNGE, EXISTS etc queued notices
+                            this.sendNotifications(handler, () => {
+                                // send command ready response
+                                this.connection.writeStream.write({
+                                    tag: this.tag,
+                                    command: response.response,
+                                    attributes: []
+                                        .concat(
+                                            response.code
+                                                ? {
+                                                    type: 'SECTION',
+                                                    section: [
+                                                        {
+                                                            type: 'TEXT',
+                                                            value: response.code
+                                                        }
+                                                    ]
+                                                }
+                                                : []
+                                        )
+                                        .concat({
+                                            type: 'TEXT',
+                                            value: response.message || this.command + ' completed'
+                                        })
+                                });
 
-                            // send command ready response
-                            this.connection.writeStream.write({
-                                tag: this.tag,
-                                command: response.response,
-                                attributes: [].concat(response.code ? {
-                                    type: 'SECTION',
-                                    section: [{
-                                        type: 'TEXT',
-                                        value: response.code
-                                    }]
-                                } : []).concat({
-                                    type: 'TEXT',
-                                    value: response.message || this.command + ' completed'
-                                })
+                                next();
                             });
-
-                            next();
-                        });
-                    }, next);
+                        },
+                        next
+                    );
                 } else {
                     this.connection.send(this.tag + ' NO Not implemented: ' + this.command);
                     return next();
@@ -262,13 +292,12 @@ class IMAPCommand {
         }
 
         // Deny commands with too little arguments
-        if ((parsed.attributes && parsed.attributes.length || 0) < minArgs) {
+        if (((parsed.attributes && parsed.attributes.length) || 0) < minArgs) {
             return callback(new Error('Not enough arguments provided'));
         }
 
         callback();
     }
-
 }
 
 module.exports.IMAPCommand = IMAPCommand;

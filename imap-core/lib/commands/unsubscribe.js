@@ -1,20 +1,21 @@
 'use strict';
 
-let imapTools = require('../imap-tools');
+const imapTools = require('../imap-tools');
 
 // tag UNSUBSCRIBE "mailbox"
 
 module.exports = {
     state: ['Authenticated', 'Selected'],
 
-    schema: [{
-        name: 'mailbox',
-        type: 'string'
-    }],
+    schema: [
+        {
+            name: 'mailbox',
+            type: 'string'
+        }
+    ],
 
     handler(command, callback) {
-
-        let mailbox = imapTools.normalizeMailbox(command.attributes[0] && command.attributes[0].value || '', !this.acceptUTF8Enabled);
+        let mailbox = imapTools.normalizeMailbox((command.attributes[0] && command.attributes[0].value) || '', !this.acceptUTF8Enabled);
 
         // Check if UNSUBSCRIBE method is set
         if (typeof this._server.onUnsubscribe !== 'function') {
@@ -48,8 +49,6 @@ module.exports = {
                 response: success === true ? 'OK' : 'NO',
                 code: typeof success === 'string' ? success.toUpperCase() : false
             });
-
         });
-
     }
 };

@@ -1,24 +1,26 @@
 'use strict';
 
-let imapTools = require('../imap-tools');
+const imapTools = require('../imap-tools');
 
 // tag RENAME "mailbox"
 
 module.exports = {
     state: ['Authenticated', 'Selected'],
 
-    schema: [{
-        name: 'mailbox',
-        type: 'string'
-    }, {
-        name: 'newname',
-        type: 'string'
-    }],
+    schema: [
+        {
+            name: 'mailbox',
+            type: 'string'
+        },
+        {
+            name: 'newname',
+            type: 'string'
+        }
+    ],
 
     handler(command, callback) {
-
-        let mailbox = Buffer.from(command.attributes[0] && command.attributes[0].value || '', 'binary').toString();
-        let newname = Buffer.from(command.attributes[1] && command.attributes[1].value || '', 'binary').toString();
+        let mailbox = Buffer.from((command.attributes[0] && command.attributes[0].value) || '', 'binary').toString();
+        let newname = Buffer.from((command.attributes[1] && command.attributes[1].value) || '', 'binary').toString();
 
         // Check if RENAME method is set
         if (typeof this._server.onRename !== 'function') {
@@ -75,8 +77,6 @@ module.exports = {
                 response: success === true ? 'OK' : 'NO',
                 code: typeof success === 'string' ? success.toUpperCase() : false
             });
-
         });
-
     }
 };

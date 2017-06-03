@@ -1,10 +1,9 @@
 'use strict';
 
-let imapHandler = require('./handler/imap-handler');
-let Transform = require('stream').Transform;
+const imapHandler = require('./handler/imap-handler');
+const Transform = require('stream').Transform;
 
 class IMAPComposer extends Transform {
-
     constructor(options) {
         super();
         Transform.call(this, {
@@ -20,10 +19,15 @@ class IMAPComposer extends Transform {
 
         if (typeof obj.pipe === 'function') {
             // pipe stream to socket and wait until it finishes before continuing
-            this.connection._server.logger.debug({
-                tnx: 'pipeout',
-                cid: this.connection.id
-            }, '[%s] S: %s<pipe message stream to socket>', this.connection.id, obj.description || '');
+            this.connection._server.logger.debug(
+                {
+                    tnx: 'pipeout',
+                    cid: this.connection.id
+                },
+                '[%s] S: %s<pipe message stream to socket>',
+                this.connection.id,
+                obj.description || ''
+            );
             obj.pipe(this.connection[!this.connection.compression ? '_socket' : '_deflate'], {
                 end: false
             });
@@ -37,10 +41,15 @@ class IMAPComposer extends Transform {
 
         let compiled = imapHandler.compiler(obj);
 
-        this.connection._server.logger.debug({
-            tnx: 'send',
-            cid: this.connection.id
-        }, '[%s] S:', this.connection.id, compiled);
+        this.connection._server.logger.debug(
+            {
+                tnx: 'send',
+                cid: this.connection.id
+            },
+            '[%s] S:',
+            this.connection.id,
+            compiled
+        );
 
         this.push(new Buffer(compiled + '\r\n', 'binary'));
         done();
@@ -49,7 +58,6 @@ class IMAPComposer extends Transform {
     _flush(done) {
         done();
     }
-
 }
 
 module.exports.IMAPComposer = IMAPComposer;

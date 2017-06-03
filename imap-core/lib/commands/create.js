@@ -1,21 +1,22 @@
 'use strict';
 
-let imapTools = require('../imap-tools');
-let utf7 = require('utf7').imap;
+const imapTools = require('../imap-tools');
+const utf7 = require('utf7').imap;
 
 // tag CREATE "mailbox"
 
 module.exports = {
     state: ['Authenticated', 'Selected'],
 
-    schema: [{
-        name: 'mailbox',
-        type: 'string'
-    }],
+    schema: [
+        {
+            name: 'mailbox',
+            type: 'string'
+        }
+    ],
 
     handler(command, callback) {
-
-        let mailbox = Buffer.from(command.attributes[0] && command.attributes[0].value || '', 'binary').toString();
+        let mailbox = Buffer.from((command.attributes[0] && command.attributes[0].value) || '', 'binary').toString();
 
         if (!this.acceptUTF8Enabled) {
             // decode before normalizing to uncover stuff like ending / etc.
@@ -68,8 +69,6 @@ module.exports = {
                 response: success === true ? 'OK' : 'NO',
                 code: typeof success === 'string' ? success.toUpperCase() : false
             });
-
         });
-
     }
 };

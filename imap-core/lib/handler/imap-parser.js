@@ -2,10 +2,9 @@
 
 'use strict';
 
-let imapFormalSyntax = require('./imap-formal-syntax');
+const imapFormalSyntax = require('./imap-formal-syntax');
 
 class TokenParser {
-
     constructor(parent, startPos, str, options) {
         this.str = (str || '').toString();
         this.options = options || {};
@@ -22,10 +21,9 @@ class TokenParser {
     }
 
     getAttributes() {
-        let attributes = [],
-            branch = attributes;
+        let attributes = [], branch = attributes;
 
-        let walk = function (node) {
+        let walk = function(node) {
             let curBranch = branch;
             let elm;
             let partial;
@@ -114,24 +112,22 @@ class TokenParser {
     }
 
     processString() {
-        let chr, i, len,
-            checkSP = function () {
+        let chr,
+            i,
+            len,
+            checkSP = function() {
                 // jump to the next non whitespace pos
                 while (this.str.charAt(i + 1) === ' ') {
                     i++;
                 }
             }.bind(this);
 
-        for (i = 0, len = this.str.length; i < len; i++) {
-
+        for ((i = 0), (len = this.str.length); i < len; i++) {
             chr = this.str.charAt(i);
 
             switch (this.state) {
-
                 case 'NORMAL':
-
                     switch (chr) {
-
                         // DQUOTE starts a new string
                         case '"':
                             this.currentNode = this.createNode(this.currentNode, this.pos + i);
@@ -139,15 +135,13 @@ class TokenParser {
                             this.state = 'STRING';
                             this.currentNode.closed = false;
                             break;
-
-                            // ( starts a new list
+                        // ( starts a new list
                         case '(':
                             this.currentNode = this.createNode(this.currentNode, this.pos + i);
                             this.currentNode.type = 'LIST';
                             this.currentNode.closed = false;
                             break;
-
-                            // ) closes a list
+                        // ) closes a list
                         case ')':
                             if (this.currentNode.type !== 'LIST') {
                                 throw new Error('Unexpected list terminator ) at position ' + (this.pos + i));
@@ -159,8 +153,7 @@ class TokenParser {
 
                             checkSP();
                             break;
-
-                            // ] closes section group
+                        // ] closes section group
                         case ']':
                             if (this.currentNode.type !== 'SECTION') {
                                 throw new Error('Unexpected section terminator ] at position ' + (this.pos + i));
@@ -170,8 +163,7 @@ class TokenParser {
                             this.currentNode = this.currentNode.parentNode;
                             checkSP();
                             break;
-
-                            // < starts a new partial
+                        // < starts a new partial
                         case '<':
                             if (this.str.charAt(i - 1) !== ']') {
                                 this.currentNode = this.createNode(this.currentNode, this.pos + i);
@@ -185,16 +177,14 @@ class TokenParser {
                                 this.currentNode.closed = false;
                             }
                             break;
-
-                            // { starts a new literal
+                        // { starts a new literal
                         case '{':
                             this.currentNode = this.createNode(this.currentNode, this.pos + i);
                             this.currentNode.type = 'LITERAL';
                             this.state = 'LITERAL';
                             this.currentNode.closed = false;
                             break;
-
-                            // ( starts a new sequence
+                        // ( starts a new sequence
                         case '*':
                             this.currentNode = this.createNode(this.currentNode, this.pos + i);
                             this.currentNode.type = 'SEQUENCE';
@@ -202,13 +192,11 @@ class TokenParser {
                             this.currentNode.closed = false;
                             this.state = 'SEQUENCE';
                             break;
-
-                            // normally a space should never occur
+                        // normally a space should never occur
                         case ' ':
                             // just ignore
                             break;
-
-                            // [ starts section
+                        // [ starts section
                         case '[':
                             // If it is the *first* element after response command, then process as a response argument list
                             if (['OK', 'NO', 'BAD', 'BYE', 'PREAUTH'].indexOf(this.parent.command.toUpperCase()) >= 0 && this.currentNode === this.tree) {
@@ -241,8 +229,7 @@ class TokenParser {
                                     // jump i to the ']'
                                     i = this.str.indexOf(']', i + 10);
                                     this.currentNode.endPos = this.pos + i - 1;
-                                    this.currentNode.value = this.str.substring(this.currentNode.startPos - this.pos,
-                                        this.currentNode.endPos - this.pos + 1);
+                                    this.currentNode.value = this.str.substring(this.currentNode.startPos - this.pos, this.currentNode.endPos - this.pos + 1);
                                     this.currentNode = this.currentNode.parentNode;
 
                                     // close out the SECTION
@@ -253,7 +240,7 @@ class TokenParser {
 
                                 break;
                             }
-                            /* falls through */
+                        /* falls through */
                         default:
                             // Any ATOM supported char starts a new Atom sequence, otherwise throw an error
                             // Allow \ as the first char for atom to support system flags
@@ -271,7 +258,6 @@ class TokenParser {
                     break;
 
                 case 'ATOM':
-
                     // space finishes an atom
                     if (chr === ' ') {
                         this.currentNode.endPos = this.pos + i - 1;
@@ -283,10 +269,7 @@ class TokenParser {
                     //
                     if (
                         this.currentNode.parentNode &&
-                        (
-                            (chr === ')' && this.currentNode.parentNode.type === 'LIST') ||
-                            (chr === ']' && this.currentNode.parentNode.type === 'SECTION')
-                        )
+                        ((chr === ')' && this.currentNode.parentNode.type === 'LIST') || (chr === ']' && this.currentNode.parentNode.type === 'SECTION'))
                     ) {
                         this.currentNode.endPos = this.pos + i - 1;
                         this.currentNode = this.currentNode.parentNode;
@@ -335,7 +318,6 @@ class TokenParser {
                     break;
 
                 case 'STRING':
-
                     // DQUOTE ends the string sequence
                     if (chr === '"') {
                         this.currentNode.endPos = this.pos + i;
@@ -466,9 +448,7 @@ class TokenParser {
                         this.currentNode = this.currentNode.parentNode;
                         this.state = 'NORMAL';
                         break;
-                    } else if (this.currentNode.parentNode &&
-                        chr === ']' &&
-                        this.currentNode.parentNode.type === 'SECTION') {
+                    } else if (this.currentNode.parentNode && chr === ']' && this.currentNode.parentNode.type === 'SECTION') {
                         this.currentNode.endPos = this.pos + i - 1;
                         this.currentNode = this.currentNode.parentNode;
 
@@ -509,12 +489,9 @@ class TokenParser {
             }
         }
     }
-
 }
 
-
 class ParserInstance {
-
     constructor(input, options) {
         this.input = (input || '').toString();
         this.options = options || {};
@@ -604,7 +581,7 @@ class ParserInstance {
     }
 }
 
-module.exports = function (command, options) {
+module.exports = function(command, options) {
     let parser, response = {};
 
     options = options || {};

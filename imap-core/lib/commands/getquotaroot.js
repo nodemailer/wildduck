@@ -1,8 +1,8 @@
 'use strict';
 
-let imapHandler = require('../handler/imap-handler');
-let imapTools = require('../imap-tools');
-let utf7 = require('utf7').imap;
+const imapHandler = require('../handler/imap-handler');
+const imapTools = require('../imap-tools');
+const utf7 = require('utf7').imap;
 
 // tag SELECT "mailbox"
 // tag EXAMINE "mailbox"
@@ -10,14 +10,15 @@ let utf7 = require('utf7').imap;
 module.exports = {
     state: ['Authenticated', 'Selected'],
 
-    schema: [{
-        name: 'mailbox',
-        type: 'string'
-    }],
+    schema: [
+        {
+            name: 'mailbox',
+            type: 'string'
+        }
+    ],
 
     handler(command, callback) {
-
-        let path = Buffer.from(command.attributes[0] && command.attributes[0].value || '', 'binary').toString();
+        let path = Buffer.from((command.attributes[0] && command.attributes[0].value) || '', 'binary').toString();
         let mailbox = imapTools.normalizeMailbox(path, !this.acceptUTF8Enabled);
 
         if (typeof this._server.onGetQuota !== 'function') {
@@ -54,27 +55,38 @@ module.exports = {
             }
 
             // * QUOTAROOT INBOX ""
-            this.send(imapHandler.compiler({
-                tag: '*',
-                command: 'QUOTAROOT',
-                attributes: [path, data.root || '']
-            }));
+            this.send(
+                imapHandler.compiler({
+                    tag: '*',
+                    command: 'QUOTAROOT',
+                    attributes: [path, data.root || '']
+                })
+            );
 
             // * QUOTA "" (STORAGE 220676 15728640)
-            this.send(imapHandler.compiler({
-                tag: '*',
-                command: 'QUOTA',
-                attributes: [data.root || '', [{
-                    type: 'atom',
-                    value: 'STORAGE'
-                }, {
-                    type: 'atom',
-                    value: String(Math.ceil((Number(data.storageUsed) || 0) / 1024))
-                }, {
-                    type: 'atom',
-                    value: String(Math.ceil((Number(data.quota) || 0) / 1024))
-                }]]
-            }));
+            this.send(
+                imapHandler.compiler({
+                    tag: '*',
+                    command: 'QUOTA',
+                    attributes: [
+                        data.root || '',
+                        [
+                            {
+                                type: 'atom',
+                                value: 'STORAGE'
+                            },
+                            {
+                                type: 'atom',
+                                value: String(Math.ceil((Number(data.storageUsed) || 0) / 1024))
+                            },
+                            {
+                                type: 'atom',
+                                value: String(Math.ceil((Number(data.quota) || 0) / 1024))
+                            }
+                        ]
+                    ]
+                })
+            );
 
             callback(null, {
                 response: 'OK',

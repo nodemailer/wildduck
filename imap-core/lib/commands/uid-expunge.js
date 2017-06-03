@@ -1,17 +1,18 @@
 'use strict';
 
-let imapTools = require('../imap-tools');
+const imapTools = require('../imap-tools');
 
 module.exports = {
     state: 'Selected',
 
-    schema: [{
-        name: 'range',
-        type: 'sequence'
-    }],
+    schema: [
+        {
+            name: 'range',
+            type: 'sequence'
+        }
+    ],
 
     handler(command, callback) {
-
         // Check if EXPUNGE method is set
         if (typeof this._server.onExpunge !== 'function') {
             return callback(null, {
@@ -27,24 +28,29 @@ module.exports = {
             });
         }
 
-        let range = command.attributes[0] && command.attributes[0].value || '';
+        let range = (command.attributes[0] && command.attributes[0].value) || '';
         if (!imapTools.validateSequnce(range)) {
             return callback(new Error('Invalid sequence set for UID EXPUNGE'));
         }
         let messages = imapTools.getMessageRange(this.selected.uidList, range, true);
 
-        this._server.onExpunge(this.selected.mailbox, {
-            isUid: true,
-            messages
-        }, this.session, (err, success) => {
-            if (err) {
-                return callback(err);
-            }
+        this._server.onExpunge(
+            this.selected.mailbox,
+            {
+                isUid: true,
+                messages
+            },
+            this.session,
+            (err, success) => {
+                if (err) {
+                    return callback(err);
+                }
 
-            callback(null, {
-                response: success === true ? 'OK' : 'NO',
-                code: typeof success === 'string' ? success.toUpperCase() : false
-            });
-        });
+                callback(null, {
+                    response: success === true ? 'OK' : 'NO',
+                    code: typeof success === 'string' ? success.toUpperCase() : false
+                });
+            }
+        );
     }
 };

@@ -1,27 +1,31 @@
 'use strict';
 
-let imapTools = require('../imap-tools');
+const imapTools = require('../imap-tools');
 
 module.exports = {
     state: 'Selected',
 
-    schema: [{
-        name: 'range',
-        type: 'sequence'
-    }, {
-        name: 'extensions',
-        type: 'array',
-        optional: true
-    }, {
-        name: 'action',
-        type: 'string'
-    }, {
-        name: 'flags',
-        type: 'array'
-    }],
+    schema: [
+        {
+            name: 'range',
+            type: 'sequence'
+        },
+        {
+            name: 'extensions',
+            type: 'array',
+            optional: true
+        },
+        {
+            name: 'action',
+            type: 'string'
+        },
+        {
+            name: 'flags',
+            type: 'array'
+        }
+    ],
 
     handler(command, callback) {
-
         // Check if STORE method is set
         if (typeof this._server.onStore !== 'function') {
             return callback(null, {
@@ -31,24 +35,20 @@ module.exports = {
         }
 
         let type = 'flags'; // currently hard coded, in the future might support other values as well, eg. X-GM-LABELS
-        let range = command.attributes[0] && command.attributes[0].value || '';
+        let range = (command.attributes[0] && command.attributes[0].value) || '';
 
         // if arguments include extenstions at index 1, then length is 4, otherwise 3
         let pos = command.attributes.length === 4 ? 1 : 0;
 
-        let action = (command.attributes[pos + 1] && command.attributes[pos + 1].value || '').toString().toUpperCase();
+        let action = ((command.attributes[pos + 1] && command.attributes[pos + 1].value) || '').toString().toUpperCase();
 
-        let flags = [].
-        concat(command.attributes[pos + 2] || []).
-        map(flag => (flag && flag.value || '').toString());
+        let flags = [].concat(command.attributes[pos + 2] || []).map(flag => ((flag && flag.value) || '').toString());
 
         let unchangedSince = 0;
         let silent = false;
 
         // extensions are available as the optional argument at index 1
-        let extensions = !pos ? [] : [].
-        concat(command.attributes[pos] || []).
-        map(val => (val && val.value));
+        let extensions = !pos ? [] : [].concat(command.attributes[pos] || []).map(val => val && val.value);
 
         if (extensions.length) {
             if (extensions.length !== 2 || (extensions[0] || '').toString().toUpperCase() !== 'UNCHANGEDSINCE' || isNaN(extensions[1])) {
@@ -105,32 +105,38 @@ module.exports = {
 
         let messages = imapTools.getMessageRange(this.selected.uidList, range, true);
 
-        this._server.onStore(this.selected.mailbox, {
-            isUid: true,
-            value: flags,
-            action,
-            type,
-            silent,
-            messages,
-            unchangedSince
-        }, this.session, (err, success, modified) => {
-            if (err) {
-                return callback(err);
+        this._server.onStore(
+            this.selected.mailbox,
+            {
+                isUid: true,
+                value: flags,
+                action,
+                type,
+                silent,
+                messages,
+                unchangedSince
+            },
+            this.session,
+            (err, success, modified) => {
+                if (err) {
+                    return callback(err);
+                }
+
+                let message = success === true ? 'UID STORE completed' : false;
+                if (modified && modified.length) {
+                    message = 'Conditional UID STORE failed';
+                } else if (message && unchangedSince) {
+                    message = 'Conditional UID STORE completed';
+                }
+
+                callback(null, {
+                    response: success === true ? 'OK' : 'NO',
+                    code: typeof success === 'string'
+                        ? success.toUpperCase()
+                        : modified && modified.length ? 'MODIFIED ' + imapTools.packMessageRange(modified) : false,
+                    message
+                });
             }
-
-            let message = success === true ? 'UID STORE completed' : false;
-            if (modified && modified.length) {
-                message = 'Conditional UID STORE failed';
-            } else if (message && unchangedSince) {
-                message = 'Conditional UID STORE completed';
-            }
-
-            callback(null, {
-                response: success === true ? 'OK' : 'NO',
-                code: typeof success === 'string' ? success.toUpperCase() : (modified && modified.length ? 'MODIFIED ' + imapTools.packMessageRange(modified) : false),
-                message
-            });
-
-        });
+        );
     }
 };

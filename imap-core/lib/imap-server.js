@@ -17,7 +17,6 @@ const CLOSE_TIMEOUT = 1 * 1000; // how much to wait until pending connections ar
  * @param {Object} options Connection and IMAP optionsž
  */
 class IMAPServer extends EventEmitter {
-
     constructor(options) {
         super();
 
@@ -77,17 +76,28 @@ class IMAPServer extends EventEmitter {
 
         // close active connections
         if (connections) {
-            this.logger.info({
-                tnx: 'close'
-            }, 'Server closing with %s pending connection%s, waiting %s seconds before terminating', connections, connections !== 1 ? 's' : '', timeout / 1000);
+            this.logger.info(
+                {
+                    tnx: 'close'
+                },
+                'Server closing with %s pending connection%s, waiting %s seconds before terminating',
+                connections,
+                connections !== 1 ? 's' : '',
+                timeout / 1000
+            );
         }
 
         this._closeTimeout = setTimeout(() => {
             connections = this.connections.size;
             if (connections) {
-                this.logger.info({
-                    tnx: 'close'
-                }, 'Closing %s pending connection%s to close the server', connections, connections !== 1 ? 's' : '');
+                this.logger.info(
+                    {
+                        tnx: 'close'
+                    },
+                    'Closing %s pending connection%s to close the server',
+                    connections,
+                    connections !== 1 ? 's' : ''
+                );
 
                 this.connections.forEach(connection => {
                     connection.send('* BYE System shutdown');
@@ -105,7 +115,6 @@ class IMAPServer extends EventEmitter {
      * @returns {Object} Bunyan logger instance
      */
     _createDefaultLogger() {
-
         let logger = {
             _print: (...args) => {
                 let level = args.shift();
@@ -117,10 +126,7 @@ class IMAPServer extends EventEmitter {
                     message = args[0];
                 }
 
-                console.log('[%s] %s: %s', // eslint-disable-line no-console
-                    new Date().toISOString().substr(0, 19).replace(/T/, ' '),
-                    level.toUpperCase(),
-                    message);
+                console.log('[%s] %s: %s', new Date().toISOString().substr(0, 19).replace(/T/, ' '), level.toUpperCase(), message); // eslint-disable-line no-console
             }
         };
 
@@ -159,7 +165,8 @@ class IMAPServer extends EventEmitter {
             '%sIMAP Server listening on %s:%s',
             this.options.secure ? 'Secure ' : '',
             address.family === 'IPv4' ? address.address : '[' + address.address + ']',
-            address.port);
+            address.port
+        );
     }
 
     /**
@@ -168,9 +175,12 @@ class IMAPServer extends EventEmitter {
      * @event
      */
     _onClose() {
-        this.logger.info({
-            tnx: 'closed'
-        }, 'IMAP Server closed');
+        this.logger.info(
+            {
+                tnx: 'closed'
+            },
+            'IMAP Server closed'
+        );
         this.emit('close');
     }
 
@@ -182,7 +192,6 @@ class IMAPServer extends EventEmitter {
     _onError(err) {
         this.emit('error', err);
     }
-
 }
 
 // Expose to the world

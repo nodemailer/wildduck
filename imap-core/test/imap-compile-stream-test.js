@@ -2,19 +2,18 @@
 
 'use strict';
 
-let chai = require('chai');
-let imapHandler = require('../lib/handler/imap-handler');
-let PassThrough = require('stream').PassThrough;
-let crypto = require('crypto');
-let expect = chai.expect;
+const chai = require('chai');
+const imapHandler = require('../lib/handler/imap-handler');
+const PassThrough = require('stream').PassThrough;
+const crypto = require('crypto');
+const expect = chai.expect;
 chai.config.includeStack = true;
 
-describe('IMAP Command Compile Stream', function () {
-
-    describe('#compile', function () {
-
-        it('should compile correctly', function (done) {
-            let command = '* FETCH (ENVELOPE ("Mon, 2 Sep 2013 05:30:13 -0700 (PDT)" NIL ((NIL NIL "andris" "kreata.ee")) ((NIL NIL "andris" "kreata.ee")) ((NIL NIL "andris" "kreata.ee")) ((NIL NIL "andris" "tr.ee")) NIL NIL NIL "<-4730417346358914070@unknownmsgid>") BODYSTRUCTURE (("MESSAGE" "RFC822" NIL NIL NIL "7BIT" 105 (NIL NIL ((NIL NIL "andris" "kreata.ee")) ((NIL NIL "andris" "kreata.ee")) ((NIL NIL "andris" "kreata.ee")) ((NIL NIL "andris" "pangalink.net")) NIL NIL "<test1>" NIL) ("TEXT" "PLAIN" NIL NIL NIL "7BIT" 12 0 NIL NIL NIL) 5 NIL NIL NIL) ("MESSAGE" "RFC822" NIL NIL NIL "7BIT" 83 (NIL NIL ((NIL NIL "andris" "kreata.ee")) ((NIL NIL "andris" "kreata.ee")) ((NIL NIL "andris" "kreata.ee")) ((NIL NIL "andris" "pangalink.net")) NIL NIL "NIL" NIL) ("TEXT" "PLAIN" NIL NIL NIL "7BIT" 12 0 NIL NIL NIL) 4 NIL NIL NIL) ("TEXT" "HTML" ("CHARSET" "utf-8") NIL NIL "QUOTED-PRINTABLE" 19 0 NIL NIL NIL) "MIXED" ("BOUNDARY" "----mailcomposer-?=_1-1328088797399") NIL NIL))',
+describe('IMAP Command Compile Stream', function() {
+    describe('#compile', function() {
+        it('should compile correctly', function(done) {
+            let command =
+                '* FETCH (ENVELOPE ("Mon, 2 Sep 2013 05:30:13 -0700 (PDT)" NIL ((NIL NIL "andris" "kreata.ee")) ((NIL NIL "andris" "kreata.ee")) ((NIL NIL "andris" "kreata.ee")) ((NIL NIL "andris" "tr.ee")) NIL NIL NIL "<-4730417346358914070@unknownmsgid>") BODYSTRUCTURE (("MESSAGE" "RFC822" NIL NIL NIL "7BIT" 105 (NIL NIL ((NIL NIL "andris" "kreata.ee")) ((NIL NIL "andris" "kreata.ee")) ((NIL NIL "andris" "kreata.ee")) ((NIL NIL "andris" "pangalink.net")) NIL NIL "<test1>" NIL) ("TEXT" "PLAIN" NIL NIL NIL "7BIT" 12 0 NIL NIL NIL) 5 NIL NIL NIL) ("MESSAGE" "RFC822" NIL NIL NIL "7BIT" 83 (NIL NIL ((NIL NIL "andris" "kreata.ee")) ((NIL NIL "andris" "kreata.ee")) ((NIL NIL "andris" "kreata.ee")) ((NIL NIL "andris" "pangalink.net")) NIL NIL "NIL" NIL) ("TEXT" "PLAIN" NIL NIL NIL "7BIT" 12 0 NIL NIL NIL) 4 NIL NIL NIL) ("TEXT" "HTML" ("CHARSET" "utf-8") NIL NIL "QUOTED-PRINTABLE" 19 0 NIL NIL NIL) "MIXED" ("BOUNDARY" "----mailcomposer-?=_1-1328088797399") NIL NIL))',
                 parsed = imapHandler.parser(command, {
                     allowUntagged: true
                 });
@@ -27,18 +26,18 @@ describe('IMAP Command Compile Stream', function () {
         });
     });
 
-    describe('Types', function () {
+    describe('Types', function() {
         let parsed;
 
-        beforeEach(function () {
+        beforeEach(function() {
             parsed = {
                 tag: '*',
                 command: 'CMD'
             };
         });
 
-        describe('No attributes', function () {
-            it('should compile correctly', function (done) {
+        describe('No attributes', function() {
+            it('should compile correctly', function(done) {
                 let command = '* CMD';
 
                 resolveStream(imapHandler.compileStream(parsed), (err, compiled) => {
@@ -49,12 +48,14 @@ describe('IMAP Command Compile Stream', function () {
             });
         });
 
-        describe('TEXT', function () {
-            it('should compile correctly', function (done) {
-                parsed.attributes = [{
-                    type: 'TEXT',
-                    value: 'Tere tere!'
-                }];
+        describe('TEXT', function() {
+            it('should compile correctly', function(done) {
+                parsed.attributes = [
+                    {
+                        type: 'TEXT',
+                        value: 'Tere tere!'
+                    }
+                ];
                 let command = '* CMD Tere tere!';
                 resolveStream(imapHandler.compileStream(parsed), (err, compiled) => {
                     expect(err).to.not.exist;
@@ -64,15 +65,19 @@ describe('IMAP Command Compile Stream', function () {
             });
         });
 
-        describe('SECTION', function () {
-            it('should compile correctly', function (done) {
-                parsed.attributes = [{
-                    type: 'SECTION',
-                    section: [{
-                        type: 'ATOM',
-                        value: 'ALERT'
-                    }]
-                }];
+        describe('SECTION', function() {
+            it('should compile correctly', function(done) {
+                parsed.attributes = [
+                    {
+                        type: 'SECTION',
+                        section: [
+                            {
+                                type: 'ATOM',
+                                value: 'ALERT'
+                            }
+                        ]
+                    }
+                ];
                 let command = '* CMD [ALERT]';
                 resolveStream(imapHandler.compileStream(parsed), (err, compiled) => {
                     expect(err).to.not.exist;
@@ -82,18 +87,22 @@ describe('IMAP Command Compile Stream', function () {
             });
         });
 
-        describe('ATOM', function () {
-            it('should compile correctly', function (done) {
-                parsed.attributes = [{
-                    type: 'ATOM',
-                    value: 'ALERT'
-                }, {
-                    type: 'ATOM',
-                    value: '\\ALERT'
-                }, {
-                    type: 'ATOM',
-                    value: 'NO ALERT'
-                }];
+        describe('ATOM', function() {
+            it('should compile correctly', function(done) {
+                parsed.attributes = [
+                    {
+                        type: 'ATOM',
+                        value: 'ALERT'
+                    },
+                    {
+                        type: 'ATOM',
+                        value: '\\ALERT'
+                    },
+                    {
+                        type: 'ATOM',
+                        value: 'NO ALERT'
+                    }
+                ];
                 let command = '* CMD ALERT \\ALERT "NO ALERT"';
                 resolveStream(imapHandler.compileStream(parsed), (err, compiled) => {
                     expect(err).to.not.exist;
@@ -103,12 +112,14 @@ describe('IMAP Command Compile Stream', function () {
             });
         });
 
-        describe('SEQUENCE', function () {
-            it('should compile correctly', function (done) {
-                parsed.attributes = [{
-                    type: 'SEQUENCE',
-                    value: '*:4,5,6'
-                }];
+        describe('SEQUENCE', function() {
+            it('should compile correctly', function(done) {
+                parsed.attributes = [
+                    {
+                        type: 'SEQUENCE',
+                        value: '*:4,5,6'
+                    }
+                ];
                 let command = '* CMD *:4,5,6';
                 resolveStream(imapHandler.compileStream(parsed), (err, compiled) => {
                     expect(err).to.not.exist;
@@ -118,12 +129,9 @@ describe('IMAP Command Compile Stream', function () {
             });
         });
 
-        describe('NIL', function () {
-            it('should compile correctly', function (done) {
-                parsed.attributes = [
-                    null,
-                    null
-                ];
+        describe('NIL', function() {
+            it('should compile correctly', function(done) {
+                parsed.attributes = [null, null];
 
                 let command = '* CMD NIL NIL';
                 resolveStream(imapHandler.compileStream(parsed), (err, compiled) => {
@@ -134,8 +142,8 @@ describe('IMAP Command Compile Stream', function () {
             });
         });
 
-        describe('TEXT', function () {
-            it('should compile correctly', function (done) {
+        describe('TEXT', function() {
+            it('should compile correctly', function(done) {
                 parsed.attributes = [
                     // keep indentation
                     {
@@ -154,7 +162,7 @@ describe('IMAP Command Compile Stream', function () {
                 });
             });
 
-            it('should keep short strings', function (done) {
+            it('should keep short strings', function(done) {
                 parsed.attributes = [
                     // keep indentation
                     {
@@ -172,7 +180,7 @@ describe('IMAP Command Compile Stream', function () {
                 });
             });
 
-            it('should hide strings', function (done) {
+            it('should hide strings', function(done) {
                 parsed.attributes = [
                     // keep indentation
                     {
@@ -191,7 +199,7 @@ describe('IMAP Command Compile Stream', function () {
                 });
             });
 
-            it('should hide long strings', function (done) {
+            it('should hide long strings', function(done) {
                 parsed.attributes = [
                     // keep indentation
                     {
@@ -210,12 +218,13 @@ describe('IMAP Command Compile Stream', function () {
             });
         });
 
-        describe('No Command', function () {
-            it('should compile correctly', function (done) {
+        describe('No Command', function() {
+            it('should compile correctly', function(done) {
                 parsed = {
                     tag: '*',
                     attributes: [
-                        1, {
+                        1,
+                        {
                             type: 'ATOM',
                             value: 'EXPUNGE'
                         }
@@ -230,8 +239,8 @@ describe('IMAP Command Compile Stream', function () {
                 });
             });
         });
-        describe('Literal', function () {
-            it('shoud return as text', function (done) {
+        describe('Literal', function() {
+            it('shoud return as text', function(done) {
                 let parsed = {
                     tag: '*',
                     command: 'CMD',
@@ -253,15 +262,18 @@ describe('IMAP Command Compile Stream', function () {
                 });
             });
 
-            it('should compile correctly without tag and command', function (done) {
+            it('should compile correctly without tag and command', function(done) {
                 let parsed = {
-                    attributes: [{
-                        type: 'LITERAL',
-                        value: 'Tere tere!'
-                    }, {
-                        type: 'LITERAL',
-                        value: 'Vana kere'
-                    }]
+                    attributes: [
+                        {
+                            type: 'LITERAL',
+                            value: 'Tere tere!'
+                        },
+                        {
+                            type: 'LITERAL',
+                            value: 'Vana kere'
+                        }
+                    ]
                 };
                 let command = '{10}\r\nTere tere! {9}\r\nVana kere';
                 resolveStream(imapHandler.compileStream(parsed), (err, compiled) => {
@@ -271,7 +283,7 @@ describe('IMAP Command Compile Stream', function () {
                 });
             });
 
-            it('shoud return byte length', function (done) {
+            it('shoud return byte length', function(done) {
                 let parsed = {
                     tag: '*',
                     command: 'CMD',
@@ -293,33 +305,40 @@ describe('IMAP Command Compile Stream', function () {
                 });
             });
 
-            it('should mix with other values', function (done) {
+            it('should mix with other values', function(done) {
                 let s = new PassThrough();
                 let str = 'abc'.repeat(100);
                 let parsed = {
-                    attributes: [{
-                        type: 'ATOM',
-                        value: 'BODY'
-                    }, {
-                        type: 'LITERAL',
-                        value: 'Tere tere!'
-                    }, {
-                        type: 'ATOM',
-                        value: 'BODY'
-                    }, {
-                        type: 'LITERAL',
-                        //value: str
-                        value: s,
-                        expectedLength: str.length
-                    }, {
-                        type: 'ATOM',
-                        value: 'UID'
-                    }, {
-                        type: 'ATOM',
-                        value: '12345'
-                    }]
+                    attributes: [
+                        {
+                            type: 'ATOM',
+                            value: 'BODY'
+                        },
+                        {
+                            type: 'LITERAL',
+                            value: 'Tere tere!'
+                        },
+                        {
+                            type: 'ATOM',
+                            value: 'BODY'
+                        },
+                        {
+                            type: 'LITERAL',
+                            //value: str
+                            value: s,
+                            expectedLength: str.length
+                        },
+                        {
+                            type: 'ATOM',
+                            value: 'UID'
+                        },
+                        {
+                            type: 'ATOM',
+                            value: '12345'
+                        }
+                    ]
                 };
-                setImmediate(function(){
+                setImmediate(function() {
                     s.end(str);
                 });
                 let command = 'BODY {10}\r\nTere tere! BODY {' + str.length + '}\r\n' + str + ' UID 12345';
@@ -330,7 +349,7 @@ describe('IMAP Command Compile Stream', function () {
                 });
             });
 
-            it('shoud pipe literal streams', function (done) {
+            it('shoud pipe literal streams', function(done) {
                 let stream1 = new PassThrough();
                 let stream2 = new PassThrough();
                 let stream3 = new PassThrough();
@@ -342,19 +361,23 @@ describe('IMAP Command Compile Stream', function () {
                         {
                             type: 'LITERAL',
                             value: 'Tere tere!'
-                        }, {
+                        },
+                        {
                             type: 'LITERAL',
                             expectedLength: 5,
                             value: stream1
                         },
-                        'Vana kere', {
+                        'Vana kere',
+                        {
                             type: 'LITERAL',
                             expectedLength: 7,
                             value: stream2
-                        }, {
+                        },
+                        {
                             type: 'LITERAL',
                             value: 'Kuidas laheb?'
-                        }, {
+                        },
+                        {
                             type: 'LITERAL',
                             expectedLength: 5,
                             value: stream3
@@ -380,7 +403,7 @@ describe('IMAP Command Compile Stream', function () {
                 }, 100);
             });
 
-            it('shoud pipe limited literal streams', function (done) {
+            it('shoud pipe limited literal streams', function(done) {
                 let stream1 = new PassThrough();
                 let stream2 = new PassThrough();
                 let stream3 = new PassThrough();
@@ -392,22 +415,26 @@ describe('IMAP Command Compile Stream', function () {
                         {
                             type: 'LITERAL',
                             value: 'Tere tere!'
-                        }, {
+                        },
+                        {
                             type: 'LITERAL',
                             expectedLength: 5,
                             value: stream1,
                             startFrom: 2,
                             maxLength: 2
                         },
-                        'Vana kere', {
+                        'Vana kere',
+                        {
                             type: 'LITERAL',
                             expectedLength: 7,
                             value: stream2,
                             startFrom: 2
-                        }, {
+                        },
+                        {
                             type: 'LITERAL',
                             value: 'Kuidas laheb?'
-                        }, {
+                        },
+                        {
                             type: 'LITERAL',
                             expectedLength: 7,
                             value: stream3,
@@ -435,7 +462,7 @@ describe('IMAP Command Compile Stream', function () {
                 }, 100);
             });
 
-            it('shoud pipe errors for literal streams', function (done) {
+            it('shoud pipe errors for literal streams', function(done) {
                 let stream1 = new PassThrough();
                 let parsed = {
                     tag: '*',
@@ -445,7 +472,8 @@ describe('IMAP Command Compile Stream', function () {
                         {
                             type: 'LITERAL',
                             value: 'Tere tere!'
-                        }, {
+                        },
+                        {
                             type: 'LITERAL',
                             expectedLength: 5,
                             value: stream1
@@ -465,10 +493,10 @@ describe('IMAP Command Compile Stream', function () {
         });
     });
 
-    describe('#LengthLimiter', function () {
+    describe('#LengthLimiter', function() {
         this.timeout(10000); //eslint-disable-line no-invalid-this
 
-        it('should emit exact length', function (done) {
+        it('should emit exact length', function(done) {
             let len = 1024;
             let limiter = new imapHandler.compileStream.LengthLimiter(len);
             let expected = 'X'.repeat(len);
@@ -495,7 +523,7 @@ describe('IMAP Command Compile Stream', function () {
             setTimeout(emitter, 100);
         });
 
-        it('should truncate output', function (done) {
+        it('should truncate output', function(done) {
             let len = 1024;
             let limiter = new imapHandler.compileStream.LengthLimiter(len - 100);
             let expected = 'X'.repeat(len - 100);
@@ -522,7 +550,7 @@ describe('IMAP Command Compile Stream', function () {
             setTimeout(emitter, 100);
         });
 
-        it('should skip output', function (done) {
+        it('should skip output', function(done) {
             let len = 1024;
             let limiter = new imapHandler.compileStream.LengthLimiter(len - 100, false, 30);
             let expected = 'X'.repeat(len - 100 - 30);
@@ -549,7 +577,7 @@ describe('IMAP Command Compile Stream', function () {
             setTimeout(emitter, 100);
         });
 
-        it('should pad output', function (done) {
+        it('should pad output', function(done) {
             let len = 1024;
             let limiter = new imapHandler.compileStream.LengthLimiter(len + 100);
             let expected = 'X'.repeat(len) + ' '.repeat(100);
@@ -576,7 +604,7 @@ describe('IMAP Command Compile Stream', function () {
             setTimeout(emitter, 100);
         });
 
-        it('should pipe to several streams', function (done) {
+        it('should pipe to several streams', function(done) {
             let len = 1024;
             let start = 30;
             let margin = 200;
@@ -586,7 +614,7 @@ describe('IMAP Command Compile Stream', function () {
             let expected1 = input.substr(start, len - margin - start);
             let expected2 = input.substr(len - margin);
 
-            limiter.on('done', function (remainder) {
+            limiter.on('done', function(remainder) {
                 stream.unpipe(limiter);
                 if (remainder) {
                     stream.unshift(remainder);
@@ -617,7 +645,6 @@ describe('IMAP Command Compile Stream', function () {
                 } else {
                     setImmediate(emitter);
                 }
-
             };
 
             stream.pipe(limiter);

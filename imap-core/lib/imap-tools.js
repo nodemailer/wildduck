@@ -9,12 +9,15 @@ module.exports.systemFlagsFormatted = ['\\Answered', '\\Flagged', '\\Draft', '\\
 module.exports.systemFlags = ['\\answered', '\\flagged', '\\draft', '\\deleted', '\\seen'];
 
 module.exports.fetchSchema = {
-    body: [true, {
-        type: /^(\d+\.)*(CONTENT|HEADER|HEADER\.FIELDS|HEADER\.FIELDS\.NOT|TEXT|MIME|\d+)$/i,
-        headers: /^(\d+\.)*(HEADER\.FIELDS|HEADER\.FIELDS\.NOT)$/i,
-        startFrom: 'optional',
-        maxLength: 'optional'
-    }],
+    body: [
+        true,
+        {
+            type: /^(\d+\.)*(CONTENT|HEADER|HEADER\.FIELDS|HEADER\.FIELDS\.NOT|TEXT|MIME|\d+)$/i,
+            headers: /^(\d+\.)*(HEADER\.FIELDS|HEADER\.FIELDS\.NOT)$/i,
+            startFrom: 'optional',
+            maxLength: 'optional'
+        }
+    ],
     bodystructure: true,
     envelope: true,
     flags: true,
@@ -42,10 +45,7 @@ module.exports.searchSchema = {
     header: ['string', 'string'],
     keyword: ['string'],
     larger: ['number'],
-    modseq: [
-        ['string', 'string', 'number'],
-        ['number']
-    ],
+    modseq: [['string', 'string', 'number'], ['number']],
     new: true,
     not: ['expression'],
     old: true,
@@ -195,11 +195,11 @@ module.exports.searchMapping = {
  * @param {range} range Sequence range, eg "1,2,3:7"
  * @returns {Boolean} True if the string looks like a sequence range
  */
-module.exports.validateSequnce = function (range) {
+module.exports.validateSequnce = function(range) {
     return !!(range.length && /^(\d+|\*)(:\d+|:\*)?(,(\d+|\*)(:\d+|:\*)?)*$/.test(range));
 };
 
-module.exports.normalizeMailbox = function (mailbox, utf7Encoded) {
+module.exports.normalizeMailbox = function(mailbox, utf7Encoded) {
     if (!mailbox) {
         return '';
     }
@@ -222,7 +222,7 @@ module.exports.normalizeMailbox = function (mailbox, utf7Encoded) {
     return mailbox;
 };
 
-module.exports.generateFolderListing = function (folders, skipHierarchy) {
+module.exports.generateFolderListing = function(folders, skipHierarchy) {
     let items = new Map();
     let parents = [];
 
@@ -328,10 +328,11 @@ module.exports.generateFolderListing = function (folders, skipHierarchy) {
     return result;
 };
 
-module.exports.filterFolders = function (folders, query) {
+module.exports.filterFolders = function(folders, query) {
     query = query
         // remove excess * and %
-        .replace(/\*\*+/g, '*').replace(/%%+/g, '%')
+        .replace(/\*\*+/g, '*')
+        .replace(/%%+/g, '%')
         // escape special characters
         .replace(/([\\^$+?!.():=\[\]|,\-])/g, '\\$1')
         // setup *
@@ -344,7 +345,7 @@ module.exports.filterFolders = function (folders, query) {
     return folders.filter(folder => !!regex.test(folder.path));
 };
 
-module.exports.getMessageRange = function (uidList, range, isUid) {
+module.exports.getMessageRange = function(uidList, range, isUid) {
     range = (range || '').toString();
 
     let result = [];
@@ -364,7 +365,7 @@ module.exports.getMessageRange = function (uidList, range, isUid) {
             }
             from = Number(from) || 1;
             to = to.pop() || from;
-            to = Number(to === '*' && total || to) || from;
+            to = Number((to === '*' && total) || to) || from;
 
             if (nr >= Math.min(from, to) && nr <= Math.max(from, to)) {
                 return true;
@@ -373,13 +374,13 @@ module.exports.getMessageRange = function (uidList, range, isUid) {
         return false;
     };
 
-    for (i = 0, len = uidList.length; i < len; i++) {
+    for ((i = 0), (len = uidList.length); i < len; i++) {
         if (uidList[i] > maxUid) {
             maxUid = uidList[i];
         }
     }
 
-    for (i = 0, len = uidList.length; i < len; i++) {
+    for ((i = 0), (len = uidList.length); i < len; i++) {
         uid = uidList[i] || 1;
         if (inRange(isUid ? uid : i + 1, rangeParts, isUid ? maxUid : totalMessages)) {
             result.push(uidList[i]);
@@ -389,7 +390,7 @@ module.exports.getMessageRange = function (uidList, range, isUid) {
     return result;
 };
 
-module.exports.packMessageRange = function (uidList) {
+module.exports.packMessageRange = function(uidList) {
     if (!Array.isArray(uidList)) {
         uidList = [].concat(uidList || []);
     }
@@ -398,12 +399,10 @@ module.exports.packMessageRange = function (uidList) {
         return '';
     }
 
-    uidList.sort((a, b) => (a - b));
+    uidList.sort((a, b) => a - b);
 
     let last = uidList[uidList.length - 1];
-    let result = [
-        [last]
-    ];
+    let result = [[last]];
     for (let i = uidList.length - 2; i >= 0; i--) {
         if (uidList[i] === uidList[i + 1] - 1) {
             result[0].unshift(uidList[i]);
@@ -428,11 +427,9 @@ module.exports.packMessageRange = function (uidList) {
  * @param {Date} date Date object to parse
  * @returns {String} Internaldate formatted date
  */
-module.exports.formatInternalDate = function (date) {
+module.exports.formatInternalDate = function(date) {
     let day = date.getUTCDate(),
-        month = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-            'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
-        ][date.getUTCMonth()],
+        month = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][date.getUTCMonth()],
         year = date.getUTCFullYear(),
         hour = date.getUTCHours(),
         minute = date.getUTCMinutes(),
@@ -441,11 +438,29 @@ module.exports.formatInternalDate = function (date) {
         tzHours = Math.abs(Math.floor(tz / 60)),
         tzMins = Math.abs(tz) - tzHours * 60;
 
-    return (day < 10 ? '0' : '') + day + '-' + month + '-' + year + ' ' +
-        (hour < 10 ? '0' : '') + hour + ':' + (minute < 10 ? '0' : '') +
-        minute + ':' + (second < 10 ? '0' : '') + second + ' ' +
-        (tz > 0 ? '-' : '+') + (tzHours < 10 ? '0' : '') + tzHours +
-        (tzMins < 10 ? '0' : '') + tzMins;
+    return (
+        (day < 10 ? '0' : '') +
+        day +
+        '-' +
+        month +
+        '-' +
+        year +
+        ' ' +
+        (hour < 10 ? '0' : '') +
+        hour +
+        ':' +
+        (minute < 10 ? '0' : '') +
+        minute +
+        ':' +
+        (second < 10 ? '0' : '') +
+        second +
+        ' ' +
+        (tz > 0 ? '-' : '+') +
+        (tzHours < 10 ? '0' : '') +
+        tzHours +
+        (tzMins < 10 ? '0' : '') +
+        tzMins
+    );
 };
 
 /**
@@ -470,8 +485,7 @@ module.exports.formatInternalDate = function (date) {
  * @param {Object} options Options for the indexer
  * @returns {Array} Resolved responses
  */
-module.exports.getQueryResponse = function (query, message, options) {
-
+module.exports.getQueryResponse = function(query, message, options) {
     options = options || {};
 
     // for optimization purposes try to use cached mimeTree etc. if available
@@ -485,7 +499,6 @@ module.exports.getQueryResponse = function (query, message, options) {
     query.forEach(item => {
         let value = '';
         switch (item.item) {
-
             case 'uid':
                 value = message.uid;
                 break;
@@ -505,39 +518,38 @@ module.exports.getQueryResponse = function (query, message, options) {
                 value = message.idate;
                 break;
 
-            case 'bodystructure':
-                {
-                    if (message.bodystructure) {
-                        value = message.bodystructure;
-                    } else {
-                        if (!mimeTree) {
-                            mimeTree = indexer.parseMimeTree(message.raw);
-                        }
-                        value = indexer.getBodyStructure(mimeTree);
+            case 'bodystructure': {
+                if (message.bodystructure) {
+                    value = message.bodystructure;
+                } else {
+                    if (!mimeTree) {
+                        mimeTree = indexer.parseMimeTree(message.raw);
                     }
-
-                    let walk = arr => {
-                        arr.forEach((entry, i) => {
-                            if (Array.isArray(entry)) {
-                                return walk(entry);
-                            }
-                            if (!entry || typeof entry !== 'object') {
-                                return;
-                            }
-                            let val = entry;
-                            if (!Buffer.isBuffer(val) && val.buffer) {
-                                val = val.buffer;
-                            }
-                            arr[i] = libmime.encodeWords(val.toString(), false, Infinity);
-                        });
-                    };
-
-                    if (!options.acceptUTF8Enabled) {
-                        walk(value);
-                    }
-
-                    break;
+                    value = indexer.getBodyStructure(mimeTree);
                 }
+
+                let walk = arr => {
+                    arr.forEach((entry, i) => {
+                        if (Array.isArray(entry)) {
+                            return walk(entry);
+                        }
+                        if (!entry || typeof entry !== 'object') {
+                            return;
+                        }
+                        let val = entry;
+                        if (!Buffer.isBuffer(val) && val.buffer) {
+                            val = val.buffer;
+                        }
+                        arr[i] = libmime.encodeWords(val.toString(), false, Infinity);
+                    });
+                };
+
+                if (!options.acceptUTF8Enabled) {
+                    walk(value);
+                }
+
+                break;
+            }
             case 'envelope':
                 if (message.envelope) {
                     value = message.envelope;
@@ -662,7 +674,7 @@ module.exports.getQueryResponse = function (query, message, options) {
 
                     // If start+length is larger than available value length, then do not return the length value
                     // Instead of BODY[]<10.20> return BODY[]<10> which means that the response is from offset 10 to the end
-                    if (item.original.partial.length === 2 && (item.partial.maxLength - item.partial.startFrom > len)) {
+                    if (item.original.partial.length === 2 && item.partial.maxLength - item.partial.startFrom > len) {
                         item.original.partial.pop();
                     }
                 }

@@ -3,7 +3,7 @@
 // Expose to the world
 module.exports = getTLSOptions;
 
-let tlsDefaults = {
+const tlsDefaults = {
     key: '-----BEGIN RSA PRIVATE KEY-----\n' +
         'MIIEpAIBAAKCAQEA6Z5Qqhw+oWfhtEiMHE32Ht94mwTBpAfjt3vPpX8M7DMCTwHs\n' +
         '1xcXvQ4lQ3rwreDTOWdoJeEEy7gMxXqH0jw0WfBx+8IIJU69xstOyT7FRFDvA1yT\n' +

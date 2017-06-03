@@ -3,16 +3,18 @@
 module.exports = {
     state: 'Not Authenticated',
 
-    schema: [{
-        name: 'username',
-        type: 'string'
-    }, {
-        name: 'password',
-        type: 'string'
-    }],
+    schema: [
+        {
+            name: 'username',
+            type: 'string'
+        },
+        {
+            name: 'password',
+            type: 'string'
+        }
+    ],
 
     handler(command, callback) {
-
         let username = Buffer.from((command.attributes[0].value || '').toString().trim(), 'binary').toString();
         let password = Buffer.from((command.attributes[1].value || '').toString().trim(), 'binary').toString();
 
@@ -26,13 +28,19 @@ module.exports = {
 
         // Check if authentication method is set
         if (typeof this._server.onAuth !== 'function') {
-            this._server.logger.info({
-                tnx: 'auth',
+            this._server.logger.info(
+                {
+                    tnx: 'auth',
+                    username,
+                    method: 'LOGIN',
+                    action: 'fail',
+                    cid: this.id
+                },
+                '[%s] Authentication failed for %s using %s',
+                this.id,
                 username,
-                method: 'LOGIN',
-                action: 'fail',
-                cid: this.id
-            }, '[%s] Authentication failed for %s using %s', this.id, username, 'LOGIN');
+                'LOGIN'
+            );
             return callback(null, {
                 response: 'NO',
                 message: 'Authentication not implemented'
@@ -40,57 +48,78 @@ module.exports = {
         }
 
         // Do auth
-        this._server.onAuth({
-            method: 'LOGIN',
-            username,
-            password
-        }, this.session, (err, response) => {
-
-            if (err) {
-                if (err.response) {
-                    return callback(null, err);
+        this._server.onAuth(
+            {
+                method: 'LOGIN',
+                username,
+                password
+            },
+            this.session,
+            (err, response) => {
+                if (err) {
+                    if (err.response) {
+                        return callback(null, err);
+                    }
+                    this._server.logger.info(
+                        {
+                            err,
+                            tnx: 'auth',
+                            username,
+                            method: 'LOGIN',
+                            action: 'fail',
+                            cid: this.id
+                        },
+                        '[%s] Authentication error for %s using %s\n%s',
+                        this.id,
+                        username,
+                        'LOGIN',
+                        err.message
+                    );
+                    return callback(err);
                 }
-                this._server.logger.info({
-                    err,
-                    tnx: 'auth',
-                    username,
-                    method: 'LOGIN',
-                    action: 'fail',
-                    cid: this.id
-                }, '[%s] Authentication error for %s using %s\n%s', this.id, username, 'LOGIN', err.message);
-                return callback(err);
-            }
 
-            if (!response || !response.user) {
-                this._server.logger.info({
-                    tnx: 'auth',
+                if (!response || !response.user) {
+                    this._server.logger.info(
+                        {
+                            tnx: 'auth',
+                            username,
+                            method: 'LOGIN',
+                            action: 'fail',
+                            cid: this.id
+                        },
+                        '[%s] Authentication failed for %s using %s',
+                        this.id,
+                        username,
+                        'LOGIN'
+                    );
+                    return callback(null, {
+                        response: 'NO',
+                        code: 'AUTHENTICATIONFAILED',
+                        message: 'Invalid credentials'
+                    });
+                }
+
+                this._server.logger.info(
+                    {
+                        tnx: 'auth',
+                        username,
+                        method: 'LOGIN',
+                        action: 'success',
+                        cid: this.id
+                    },
+                    '[%s] %s authenticated using %s',
+                    this.id,
                     username,
-                    method: 'LOGIN',
-                    action: 'fail',
-                    cid: this.id
-                }, '[%s] Authentication failed for %s using %s', this.id, username, 'LOGIN');
-                return callback(null, {
-                    response: 'NO',
-                    code: 'AUTHENTICATIONFAILED',
-                    message: 'Invalid credentials'
+                    'LOGIN'
+                );
+                this.session.user = response.user;
+                this.state = 'Authenticated';
+
+                callback(null, {
+                    response: 'OK',
+                    message: new Buffer(username + ' authenticated').toString('binary')
                 });
             }
-
-            this._server.logger.info({
-                tnx: 'auth',
-                username,
-                method: 'LOGIN',
-                action: 'success',
-                cid: this.id
-            }, '[%s] %s authenticated using %s', this.id, username, 'LOGIN');
-            this.session.user = response.user;
-            this.state = 'Authenticated';
-
-            callback(null, {
-                response: 'OK',
-                message: new Buffer(username + ' authenticated').toString('binary')
-            });
-
-        });
+        );
     }
 };

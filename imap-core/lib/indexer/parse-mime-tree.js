@@ -123,7 +123,7 @@ class MIMEParser {
                     node.message = parse(node.body.join(''));
                 }
 
-                node.lineCount = node.body.length;
+                node.lineCount = node.body.length ? node.body.length - 1 : 0;
                 node.body = Buffer.from(
                     node.body
                         .join('')
@@ -241,13 +241,13 @@ class MIMEParser {
      */
     parseValueParams(headerValue) {
         let data = {
-                value: '',
-                type: '',
-                subtype: '',
-                params: {}
-            },
-            match,
-            processEncodedWords = {};
+            value: '',
+            type: '',
+            subtype: '',
+            params: {}
+        };
+        let match;
+        let processEncodedWords = {};
 
         (headerValue || '').split(';').forEach((part, i) => {
             let key, value;
@@ -287,7 +287,7 @@ class MIMEParser {
             let charset = '';
             let value = '';
             processEncodedWords[key].forEach(val => {
-                let parts = val.split('\'');
+                let parts = val.split("'"); // eslint-disable-line quotes
                 charset = charset || parts.shift();
                 value += (parts.pop() || '').replace(/%/g, '=');
             });

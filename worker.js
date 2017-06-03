@@ -1,12 +1,12 @@
 'use strict';
 
-let config = require('config');
-let log = require('npmlog');
-let imap = require('./imap');
-let pop3 = require('./pop3');
-let lmtp = require('./lmtp');
-let api = require('./api');
-let db = require('./lib/db');
+const config = require('config');
+const log = require('npmlog');
+const imap = require('./imap');
+const pop3 = require('./pop3');
+const lmtp = require('./lmtp');
+const api = require('./api');
+const db = require('./lib/db');
 
 // Initialize database connection
 db.connect(err => {

@@ -2,7 +2,6 @@
 
 module.exports = {
     handler(command, callback) {
-
         let capabilities = [];
 
         if (!this.secure) {

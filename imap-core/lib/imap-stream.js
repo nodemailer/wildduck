@@ -1,8 +1,8 @@
 'use strict';
 
-let stream = require('stream');
-let Writable = stream.Writable;
-let PassThrough = stream.PassThrough;
+const stream = require('stream');
+const Writable = stream.Writable;
+const PassThrough = stream.PassThrough;
 
 /**
  * Incoming IMAP stream parser. Detects and emits command payloads.
@@ -14,7 +14,6 @@ let PassThrough = stream.PassThrough;
  * @param {Object} [options] Optional Stream options object
  */
 class IMAPStream extends Writable {
-
     constructor(options) {
         // init Writable
         super();
@@ -34,11 +33,10 @@ class IMAPStream extends Writable {
         this.on('finish', this._flushData.bind(this));
     }
 
-
     /**
      * Placeholder command handler. Override this with your own.
      */
-    oncommand( /* command, callback */ ) {
+    oncommand(/* command, callback */) {
         throw new Error('Command handler is not set');
     }
 
@@ -75,7 +73,6 @@ class IMAPStream extends Writable {
         // Handle literal mode where we know how many bytes to expect before switching back to
         // normal line based mode. All the data we receive is pumped to a passthrough stream
         if (this._expecting > 0) {
-
             if (data.length - pos <= 0) {
                 return done();
             }
@@ -118,38 +115,44 @@ class IMAPStream extends Writable {
             if (!isNaN(match[1])) {
                 this._literal = new PassThrough();
 
-                this.oncommand({
-                    value: line,
-                    final: false,
-                    expecting: this._expecting,
-                    literal: this._literal,
+                this.oncommand(
+                    {
+                        value: line,
+                        final: false,
+                        expecting: this._expecting,
+                        literal: this._literal,
 
-                    // called once the stream has been processed
-                    readyCallback: () => {
-                        let next = this._literalReady;
-                        if (typeof next === 'function') {
-                            this._literalReady = false;
-                            next();
-                        } else {
-                            this._literalReady = true;
+                        // called once the stream has been processed
+                        readyCallback: () => {
+                            let next = this._literalReady;
+                            if (typeof next === 'function') {
+                                this._literalReady = false;
+                                next();
+                            } else {
+                                this._literalReady = true;
+                            }
                         }
+                    },
+                    err => {
+                        if (err) {
+                            this._expecting = 0;
+                            this._literal = false;
+                            this._literalReady = false;
+                        }
+                        setImmediate(this._readValue.bind(this, regex, data, pos, done));
                     }
-                }, err => {
-                    if (err) {
-                        this._expecting = 0;
-                        this._literal = false;
-                        this._literalReady = false;
-                    }
-                    setImmediate(this._readValue.bind(this, regex, data, pos, done));
-                });
+                );
                 return;
             }
         }
 
-        this.oncommand({
-            value: line,
-            final: true
-        }, this._readValue.bind(this, regex, data, pos, done));
+        this.oncommand(
+            {
+                value: line,
+                final: true
+            },
+            this._readValue.bind(this, regex, data, pos, done)
+        );
     }
 
     /**
@@ -163,9 +166,7 @@ class IMAPStream extends Writable {
             this.oncommand(new Buffer(line, 'binary'));
         }
     }
-
 }
-
 
 // Expose to the world
 module.exports.IMAPStream = IMAPStream;

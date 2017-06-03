@@ -1,20 +1,21 @@
 'use strict';
 
-let imapTools = require('../imap-tools');
+const imapTools = require('../imap-tools');
 
 // tag DELETE "mailbox"
 
 module.exports = {
     state: ['Authenticated', 'Selected'],
 
-    schema: [{
-        name: 'mailbox',
-        type: 'string'
-    }],
+    schema: [
+        {
+            name: 'mailbox',
+            type: 'string'
+        }
+    ],
 
     handler(command, callback) {
-
-        let mailbox = Buffer.from(command.attributes[0] && command.attributes[0].value || '', 'binary').toString();
+        let mailbox = Buffer.from((command.attributes[0] && command.attributes[0].value) || '', 'binary').toString();
         mailbox = imapTools.normalizeMailbox(mailbox, !this.acceptUTF8Enabled);
 
         // Check if DELETE method is set

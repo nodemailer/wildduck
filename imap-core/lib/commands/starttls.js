@@ -2,10 +2,10 @@
 
 // openssl s_client -starttls imap -crlf -connect localhost:1143
 
-let tls = require('tls');
-let tlsOptions = require('../tls-options');
+const tls = require('tls');
+const tlsOptions = require('../tls-options');
 
-let SOCKET_TIMEOUT = 30 * 60 * 1000;
+const SOCKET_TIMEOUT = 30 * 60 * 1000;
 
 module.exports = {
     handler(command, callback) {
@@ -63,10 +63,14 @@ function upgrade(connection) {
         connection._socket = secureSocket;
         connection._upgrading = false;
 
-        connection._server.logger.info({
-            tnx: 'starttls',
-            cid: connection.id
-        }, '[%s] Connection upgraded to TLS', connection.id);
+        connection._server.logger.info(
+            {
+                tnx: 'starttls',
+                cid: connection.id
+            },
+            '[%s] Connection upgraded to TLS',
+            connection.id
+        );
         connection._socket.pipe(connection._parser);
         connection.writeStream.pipe(connection._socket);
     });

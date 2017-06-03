@@ -2,18 +2,17 @@
 
 'use strict';
 
-let imapFormalSyntax = require('./imap-formal-syntax');
+const imapFormalSyntax = require('./imap-formal-syntax');
 
 /**
  * Compiles an input object into
  */
-module.exports = function (response, asArray, isLogging) {
+module.exports = function(response, asArray, isLogging) {
     let respParts = [];
     let resp = (response.tag || '') + (response.command ? ' ' + response.command : '');
     let val;
     let lastType;
-    let walk = function (node) {
-
+    let walk = function(node) {
         if (lastType === 'LITERAL' || (['(', '<', '['].indexOf(resp.substr(-1)) < 0 && resp.length)) {
             resp += ' ';
         }
@@ -85,7 +84,7 @@ module.exports = function (response, asArray, isLogging) {
                 break;
 
             case 'NUMBER':
-                resp += (node.value || 0);
+                resp += node.value || 0;
                 break;
 
             case 'ATOM':
@@ -108,7 +107,6 @@ module.exports = function (response, asArray, isLogging) {
                 }
                 break;
         }
-
     };
 
     [].concat(response.attributes || []).forEach(walk);

@@ -2,15 +2,15 @@
 
 'use strict';
 
-let imapFormalSyntax = require('./imap-formal-syntax');
-let streams = require('stream');
-let PassThrough = streams.PassThrough;
-let LengthLimiter = require('../length-limiter');
+const imapFormalSyntax = require('./imap-formal-syntax');
+const streams = require('stream');
+const PassThrough = streams.PassThrough;
+const LengthLimiter = require('../length-limiter');
 
 /**
  * Compiles an input object into a streamed IMAP response
  */
-module.exports = function (response, isLogging) {
+module.exports = function(response, isLogging) {
     let output = new PassThrough();
 
     let resp = (response.tag || '') + (response.command ? ' ' + response.command : '');
@@ -22,7 +22,7 @@ module.exports = function (response, isLogging) {
     let queue = [];
     let ended = false;
 
-    let emit = function (stream, expectedLength, startFrom, maxLength) {
+    let emit = function(stream, expectedLength, startFrom, maxLength) {
         expectedLength = expectedLength || 0;
         startFrom = startFrom || 0;
         maxLength = maxLength || 0;
@@ -92,7 +92,7 @@ module.exports = function (response, isLogging) {
         }
     };
 
-    let walk = function (node, callback) {
+    let walk = function(node, callback) {
         if (lastType === 'LITERAL' || (['(', '<', '['].indexOf((resp || lr).substr(-1)) < 0 && (resp || lr).length)) {
             resp += ' ';
         }
@@ -145,43 +145,42 @@ module.exports = function (response, isLogging) {
         }
 
         switch (node.type.toUpperCase()) {
-            case 'LITERAL':
-                {
-                    let nval = node.value;
+            case 'LITERAL': {
+                let nval = node.value;
 
-                    if (typeof nval === 'number') {
-                        nval = nval.toString();
+                if (typeof nval === 'number') {
+                    nval = nval.toString();
+                }
+
+                let len;
+
+                if (nval && typeof nval.pipe === 'function') {
+                    len = node.expectedLength || 0;
+                    if (node.startFrom) {
+                        len -= node.startFrom;
                     }
+                    if (node.maxLength) {
+                        len = Math.min(len, node.maxLength);
+                    }
+                } else {
+                    len = (nval || '').toString().length;
+                }
 
-                    let len;
+                if (isLogging) {
+                    resp += '"(* ' + len + 'B literal *)"';
+                } else {
+                    resp += '{' + len + '}\r\n';
+                    emit();
 
                     if (nval && typeof nval.pipe === 'function') {
-                        len = node.expectedLength || 0;
-                        if (node.startFrom) {
-                            len -= node.startFrom;
-                        }
-                        if (node.maxLength) {
-                            len = Math.min(len, node.maxLength);
-                        }
+                        //value is a stream object
+                        emit(nval, node.expectedLength, node.startFrom, node.maxLength);
                     } else {
-                        len = (nval || '').toString().length;
+                        resp = (nval || '').toString('binary');
                     }
-
-                    if (isLogging) {
-                        resp += '"(* ' + len + 'B literal *)"';
-                    } else {
-                        resp += '{' + len + '}\r\n';
-                        emit();
-
-                        if (nval && typeof nval.pipe === 'function') {
-                            //value is a stream object
-                            emit(nval, node.expectedLength, node.startFrom, node.maxLength);
-                        } else {
-                            resp = (nval || '').toString('binary');
-                        }
-                    }
-                    break;
                 }
+                break;
+            }
             case 'STRING':
                 if (isLogging && node.value.length > 20) {
                     resp += '"(* ' + node.value.length + 'B string *)"';
@@ -195,44 +194,43 @@ module.exports = function (response, isLogging) {
                 break;
 
             case 'NUMBER':
-                resp += (node.value || 0);
+                resp += node.value || 0;
                 break;
 
             case 'ATOM':
-            case 'SECTION':
-                {
-                    val = (node.value || '').toString('binary');
+            case 'SECTION': {
+                val = (node.value || '').toString('binary');
 
-                    if (imapFormalSyntax.verify(val.charAt(0) === '\\' ? val.substr(1) : val, imapFormalSyntax['ATOM-CHAR']()) >= 0) {
-                        val = JSON.stringify(val);
+                if (imapFormalSyntax.verify(val.charAt(0) === '\\' ? val.substr(1) : val, imapFormalSyntax['ATOM-CHAR']()) >= 0) {
+                    val = JSON.stringify(val);
+                }
+
+                resp += val;
+
+                let finalize = () => {
+                    if (node.partial) {
+                        resp += '<' + node.partial.join('.') + '>';
                     }
+                    setImmediate(callback);
+                };
 
-                    resp += val;
+                if (node.section) {
+                    resp += '[';
 
-                    let finalize = () => {
-                        if (node.partial) {
-                            resp += '<' + node.partial.join('.') + '>';
+                    let pos = 0;
+                    let next = () => {
+                        if (pos >= node.section.length) {
+                            resp += ']';
+                            return setImmediate(finalize);
                         }
-                        setImmediate(callback);
+                        walk(node.section[pos++], next);
                     };
 
-                    if (node.section) {
-                        resp += '[';
-
-                        let pos = 0;
-                        let next = () => {
-                            if (pos >= node.section.length) {
-                                resp += ']';
-                                return setImmediate(finalize);
-                            }
-                            walk(node.section[pos++], next);
-                        };
-
-                        return setImmediate(next);
-                    }
-
-                    return finalize();
+                    return setImmediate(next);
                 }
+
+                return finalize();
+            }
         }
         setImmediate(callback);
     };

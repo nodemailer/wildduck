@@ -1,20 +1,22 @@
 'use strict';
 
-let imapTools = require('../imap-tools');
+const imapTools = require('../imap-tools');
 
 module.exports = {
     state: 'Selected',
 
-    schema: [{
-        name: 'range',
-        type: 'sequence'
-    }, {
-        name: 'mailbox',
-        type: 'string'
-    }],
+    schema: [
+        {
+            name: 'range',
+            type: 'sequence'
+        },
+        {
+            name: 'mailbox',
+            type: 'string'
+        }
+    ],
 
     handler(command, callback) {
-
         let cmd = (command.command || '').toString().toUpperCase();
 
         // Check if MOVE method is set
@@ -25,8 +27,8 @@ module.exports = {
             });
         }
 
-        let range = command.attributes[0] && command.attributes[0].value || '';
-        let path = Buffer.from(command.attributes[1] && command.attributes[1].value || '', 'binary').toString();
+        let range = (command.attributes[0] && command.attributes[0].value) || '';
+        let path = Buffer.from((command.attributes[1] && command.attributes[1].value) || '', 'binary').toString();
         let mailbox = imapTools.normalizeMailbox(path, !this.acceptUTF8Enabled);
 
         if (!mailbox) {
@@ -39,20 +41,27 @@ module.exports = {
 
         let messages = imapTools.getMessageRange(this.selected.uidList, range, cmd === 'UID MOVE');
 
-        this._server.onMove(this.selected.mailbox, {
-            destination: mailbox,
-            messages
-        }, this.session, (err, success, info) => {
-            if (err) {
-                return callback(err);
+        this._server.onMove(
+            this.selected.mailbox,
+            {
+                destination: mailbox,
+                messages
+            },
+            this.session,
+            (err, success, info) => {
+                if (err) {
+                    return callback(err);
+                }
+
+                let code = typeof success === 'string'
+                    ? success.toUpperCase()
+                    : 'COPYUID ' + info.uidValidity + ' ' + imapTools.packMessageRange(info.sourceUid) + ' ' + imapTools.packMessageRange(info.destinationUid);
+
+                callback(null, {
+                    response: success === true ? 'OK' : 'NO',
+                    code
+                });
             }
-
-            let code = typeof success === 'string' ? success.toUpperCase() : 'COPYUID ' + info.uidValidity + ' ' + imapTools.packMessageRange(info.sourceUid) + ' ' + imapTools.packMessageRange(info.destinationUid);
-
-            callback(null, {
-                response: success === true ? 'OK' : 'NO',
-                code
-            });
-        });
+        );
     }
 };

@@ -1,12 +1,14 @@
 'use strict';
 
-let quotes = [
+const quotes = [
     'All dreams are but another reality. Never forget...',
     'Oh boy, oh boy, oh boy...',
     'Cut the dramatics, would yeh, and follow me!',
     'Oh ho ho ho, duck hunters is da cwaziest peoples! Ha ha ha.',
     'Well, that makes sense. Send a bird to catch a cat!',
-    'Piccobello!'
+    'Piccobello!',
+    'No more Mr. Nice Duck!',
+    'Not bad for a duck from outer space.'
 ];
 
 module.exports = {

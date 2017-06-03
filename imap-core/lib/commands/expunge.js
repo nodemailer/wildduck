@@ -4,7 +4,6 @@ module.exports = {
     state: 'Selected',
 
     handler(command, callback) {
-
         // Check if EXPUNGE method is set
         if (typeof this._server.onExpunge !== 'function') {
             return callback(null, {
@@ -20,17 +19,22 @@ module.exports = {
             });
         }
 
-        this._server.onExpunge(this.selected.mailbox, {
-            isUid: false
-        }, this.session, (err, success) => {
-            if (err) {
-                return callback(err);
-            }
+        this._server.onExpunge(
+            this.selected.mailbox,
+            {
+                isUid: false
+            },
+            this.session,
+            (err, success) => {
+                if (err) {
+                    return callback(err);
+                }
 
-            callback(null, {
-                response: success === true ? 'OK' : 'NO',
-                code: typeof success === 'string' ? success.toUpperCase() : false
-            });
-        });
+                callback(null, {
+                    response: success === true ? 'OK' : 'NO',
+                    code: typeof success === 'string' ? success.toUpperCase() : false
+                });
+            }
+        );
     }
 };

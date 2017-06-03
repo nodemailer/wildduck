@@ -6,14 +6,15 @@ const zlib = require('zlib');
 module.exports = {
     state: ['Authenticated', 'Selected'],
 
-    schema: [{
-        name: 'mechanism',
-        type: 'string'
-    }],
+    schema: [
+        {
+            name: 'mechanism',
+            type: 'string'
+        }
+    ],
 
     handler(command, callback) {
-
-        let mechanism = (command.attributes[0] && command.attributes[0].value || '').toString().toUpperCase().trim();
+        let mechanism = ((command.attributes[0] && command.attributes[0].value) || '').toString().toUpperCase().trim();
 
         if (!mechanism) {
             return callback(null, {
@@ -38,20 +39,30 @@ module.exports = {
             this._inflate = zlib.createInflateRaw();
 
             this._deflate.once('error', err => {
-                this._server.logger.debug({
-                    err,
-                    tnx: 'deflate',
-                    cid: this.id
-                }, '[%s] Deflate error %s', this.id, err.message);
+                this._server.logger.debug(
+                    {
+                        err,
+                        tnx: 'deflate',
+                        cid: this.id
+                    },
+                    '[%s] Deflate error %s',
+                    this.id,
+                    err.message
+                );
                 this.close();
             });
 
             this._inflate.once('error', err => {
-                this._server.logger.debug({
-                    err,
-                    tnx: 'inflate',
-                    cid: this.id
-                }, '[%s] Inflate error %s', this.id, err.message);
+                this._server.logger.debug(
+                    {
+                        err,
+                        tnx: 'inflate',
+                        cid: this.id
+                    },
+                    '[%s] Inflate error %s',
+                    this.id,
+                    err.message
+                );
                 this.close();
             });
 

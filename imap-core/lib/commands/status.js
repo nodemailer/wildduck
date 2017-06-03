@@ -1,24 +1,26 @@
 'use strict';
 
-let imapTools = require('../imap-tools');
-let imapHandler = require('../handler/imap-handler');
+const imapTools = require('../imap-tools');
+const imapHandler = require('../handler/imap-handler');
 
 // tag STATUS "mailbox" (UNSEEN UIDNEXT)
 
 module.exports = {
     state: ['Authenticated', 'Selected'],
 
-    schema: [{
-        name: 'mailbox',
-        type: 'string'
-    }, {
-        name: 'query',
-        type: 'array'
-    }],
+    schema: [
+        {
+            name: 'mailbox',
+            type: 'string'
+        },
+        {
+            name: 'query',
+            type: 'array'
+        }
+    ],
 
     handler(command, callback) {
-
-        let mailbox = Buffer.from(command.attributes[0] && command.attributes[0].value || '', 'binary').toString();
+        let mailbox = Buffer.from((command.attributes[0] && command.attributes[0].value) || '', 'binary').toString();
         let query = command.attributes[1] && command.attributes[1];
 
         let statusElements = ['MESSAGES', 'RECENT', 'UIDNEXT', 'UIDVALIDITY', 'UNSEEN', 'HIGHESTMODSEQ'];
@@ -59,7 +61,7 @@ module.exports = {
 
         // check if only known status items are used
         for (let i = 0, len = query.length; i < len; i++) {
-            statusItem = (query[i] && query[i].value || '').toString().toUpperCase();
+            statusItem = ((query[i] && query[i].value) || '').toString().toUpperCase();
             if (statusElements.indexOf(statusItem) < 0) {
                 return callback(null, {
                     response: 'BAD',
@@ -128,8 +130,6 @@ module.exports = {
             callback(null, {
                 response: 'OK'
             });
-
         });
-
     }
 };

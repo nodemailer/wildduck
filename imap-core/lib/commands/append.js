@@ -1,6 +1,6 @@
 'use strict';
 
-let imapTools = require('../imap-tools');
+const imapTools = require('../imap-tools');
 
 module.exports = {
     state: ['Authenticated', 'Selected'],
@@ -10,24 +10,28 @@ module.exports = {
     // which does not yet take into account the appended message
     disableNotifications: true,
 
-    schema: [{
-        name: 'mailbox',
-        type: 'string'
-    }, {
-        name: 'flags',
-        type: 'array',
-        optional: true
-    }, {
-        name: 'datetime',
-        type: 'string',
-        optional: true
-    }, {
-        name: 'message',
-        type: 'literal'
-    }],
+    schema: [
+        {
+            name: 'mailbox',
+            type: 'string'
+        },
+        {
+            name: 'flags',
+            type: 'array',
+            optional: true
+        },
+        {
+            name: 'datetime',
+            type: 'string',
+            optional: true
+        },
+        {
+            name: 'message',
+            type: 'literal'
+        }
+    ],
 
     handler(command, callback) {
-
         // Check if APPEND method is set
         if (typeof this._server.onAppend !== 'function') {
             return callback(null, {
@@ -45,12 +49,12 @@ module.exports = {
 
         if (command.attributes.length === 2) {
             flags = command.attributes[0] || [];
-            internaldate = command.attributes[1] && command.attributes[1].value || '';
+            internaldate = (command.attributes[1] && command.attributes[1].value) || '';
         } else if (command.attributes.length === 1) {
             if (Array.isArray(command.attributes[0])) {
                 flags = command.attributes[0];
             } else {
-                internaldate = command.attributes[0] && command.attributes[0].value || '';
+                internaldate = (command.attributes[0] && command.attributes[0].value) || '';
             }
         }
 
@@ -94,20 +98,25 @@ module.exports = {
             return true;
         });
 
-        this._server.onAppend(mailbox, flags, internaldate, new Buffer(typeof message.value === 'string' ? message.value : (message.value || '').toString(), 'binary'), this.session, (err, success, info) => {
+        this._server.onAppend(
+            mailbox,
+            flags,
+            internaldate,
+            new Buffer(typeof message.value === 'string' ? message.value : (message.value || '').toString(), 'binary'),
+            this.session,
+            (err, success, info) => {
+                if (err) {
+                    return callback(err);
+                }
 
-            if (err) {
-                return callback(err);
+                let code = typeof success === 'string' ? success.toUpperCase() : 'APPENDUID ' + info.uidValidity + ' ' + info.uid;
+
+                callback(null, {
+                    response: success === true ? 'OK' : 'NO',
+                    code
+                });
             }
-
-            let code = typeof success === 'string' ? success.toUpperCase() : 'APPENDUID ' + info.uidValidity + ' ' + info.uid;
-
-            callback(null, {
-                response: success === true ? 'OK' : 'NO',
-                code
-            });
-
-        });
+        );
     }
 };
 

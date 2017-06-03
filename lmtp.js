@@ -15,7 +15,6 @@ const fs = require('fs');
 let messageHandler;
 
 const serverOptions = {
-
     lmtp: true,
 
     // log to console
@@ -42,7 +41,6 @@ const serverOptions = {
     disabledCommands: ['AUTH'],
 
     onMailFrom(address, session, callback) {
-
         // reset session entries
         session.users = [];
 
@@ -120,9 +118,8 @@ const serverOptions = {
         });
 
         stream.once('end', () => {
-
             let spamHeader = config.spamHeader && config.spamHeader.toLowerCase();
-            let sender = tools.normalizeAddress(session.envelope.mailFrom && session.envelope.mailFrom.address || '');
+            let sender = tools.normalizeAddress((session.envelope.mailFrom && session.envelope.mailFrom.address) || '');
             let responses = [];
             let users = session.users;
             let stored = 0;
@@ -164,55 +161,59 @@ const serverOptions = {
                 let mailboxQueryKey = 'path';
                 let mailboxQueryValue = 'INBOX';
 
-                let filters = (user.filters || []).concat(spamHeader ? {
-                    id: 'SPAM',
-                    query: {
-                        headers: {
-                            [spamHeader]: 'Yes'
+                let filters = (user.filters || []).concat(
+                    spamHeader
+                        ? {
+                            id: 'SPAM',
+                            query: {
+                                headers: {
+                                    [spamHeader]: 'Yes'
+                                }
+                            },
+                            action: {
+                                  // only applies if any other filter does not already mark message as spam or ham
+                                spam: true
+                            }
                         }
-                    },
-                    action: {
-                        // only applies if any other filter does not already mark message as spam or ham
-                        spam: true
-                    }
-                } : []);
+                        : []
+                );
 
                 let forwardTargets = new Set();
                 let forwardTargetUrls = new Set();
                 let matchingFilters = [];
                 let filterActions = new Map();
 
-                filters.
-                // apply all filters to the message
-                map(filter => checkFilter(filter, prepared, maildata)).
-                // remove all unmatched filers
-                filter(filter => filter).
-                // apply filter actions
-                forEach(filter => {
-                    matchingFilters.push(filter.id);
+                filters
+                    // apply all filters to the message
+                    .map(filter => checkFilter(filter, prepared, maildata))
+                    // remove all unmatched filers
+                    .filter(filter => filter)
+                    // apply filter actions
+                    .forEach(filter => {
+                        matchingFilters.push(filter.id);
 
-                    // apply matching filter
-                    if (!filterActions) {
-                        filterActions = filter.action;
-                    } else {
-                        Object.keys(filter.action).forEach(key => {
-                            if (key === 'forward') {
-                                forwardTargets.add(filter.action[key]);
-                                return;
-                            }
+                        // apply matching filter
+                        if (!filterActions) {
+                            filterActions = filter.action;
+                        } else {
+                            Object.keys(filter.action).forEach(key => {
+                                if (key === 'forward') {
+                                    forwardTargets.add(filter.action[key]);
+                                    return;
+                                }
 
-                            if (key === 'targetUrl') {
-                                forwardTargetUrls.add(filter.action[key]);
-                                return;
-                            }
+                                if (key === 'targetUrl') {
+                                    forwardTargetUrls.add(filter.action[key]);
+                                    return;
+                                }
 
-                            // if a previous filter already has set a value then do not touch it
-                            if (!filterActions.has(key)) {
-                                filterActions.set(key, filter.action[key]);
-                            }
-                        });
-                    }
-                });
+                                // if a previous filter already has set a value then do not touch it
+                                if (!filterActions.has(key)) {
+                                    filterActions.set(key, filter.action[key]);
+                                }
+                            });
+                        }
+                    });
 
                 let forwardMessage = done => {
                     if (user.forward && !filterActions.get('delete')) {
@@ -231,26 +232,34 @@ const serverOptions = {
                     }
 
                     // check limiting counters
-                    messageHandler.counters.ttlcounter('wdf:' + user._id.toString(), forwardTargets.size + forwardTargetUrls.size, user.forwards, (err, result) => {
-                        if (err) {
-                            // failed checks
-                            log.error('LMTP', 'FRWRDFAIL key=%s error=%s', 'wdf:' + user._id.toString(), err.message);
-                        } else if (!result.success) {
-                            log.silly('LMTP', 'FRWRDFAIL key=%s error=%s', 'wdf:' + user._id.toString(), 'Precondition failed');
-                            return done();
+                    messageHandler.counters.ttlcounter(
+                        'wdf:' + user._id.toString(),
+                        forwardTargets.size + forwardTargetUrls.size,
+                        user.forwards,
+                        (err, result) => {
+                            if (err) {
+                                // failed checks
+                                log.error('LMTP', 'FRWRDFAIL key=%s error=%s', 'wdf:' + user._id.toString(), err.message);
+                            } else if (!result.success) {
+                                log.silly('LMTP', 'FRWRDFAIL key=%s error=%s', 'wdf:' + user._id.toString(), 'Precondition failed');
+                                return done();
+                            }
+
+                            forward(
+                                {
+                                    user,
+                                    sender,
+                                    recipient,
+
+                                    forward: forwardTargets.size ? Array.from(forwardTargets) : false,
+                                    targetUrl: forwardTargetUrls.size ? Array.from(forwardTargetUrls) : false,
+
+                                    chunks
+                                },
+                                done
+                            );
                         }
-
-                        forward({
-                            user,
-                            sender,
-                            recipient,
-
-                            forward: forwardTargets.size ? Array.from(forwardTargets) : false,
-                            targetUrl: forwardTargetUrls.size ? Array.from(forwardTargetUrls) : false,
-
-                            chunks
-                        }, done);
-                    });
+                    );
                 };
 
                 let sendAutoreply = done => {
@@ -259,20 +268,39 @@ const serverOptions = {
                         return setImmediate(done);
                     }
 
-                    autoreply({
-                        user,
-                        sender,
-                        recipient,
-                        chunks,
-                        messageHandler
-                    }, done);
+                    autoreply(
+                        {
+                            user,
+                            sender,
+                            recipient,
+                            chunks,
+                            messageHandler
+                        },
+                        done
+                    );
                 };
 
                 forwardMessage((err, id) => {
                     if (err) {
-                        log.error('LMTP', '%s FRWRDFAIL from=%s to=%s target=%s error=%s', prepared.id.toString(), sender, recipient, Array.from(forwardTargets).concat(forwardTargetUrls).join(','), err.message);
+                        log.error(
+                            'LMTP',
+                            '%s FRWRDFAIL from=%s to=%s target=%s error=%s',
+                            prepared.id.toString(),
+                            sender,
+                            recipient,
+                            Array.from(forwardTargets).concat(forwardTargetUrls).join(','),
+                            err.message
+                        );
                     } else if (id) {
-                        log.silly('LMTP', '%s FRWRDOK id=%s from=%s to=%s target=%s', prepared.id.toString(), id, sender, recipient, Array.from(forwardTargets).concat(forwardTargetUrls).join(','));
+                        log.silly(
+                            'LMTP',
+                            '%s FRWRDOK id=%s from=%s to=%s target=%s',
+                            prepared.id.toString(),
+                            id,
+                            sender,
+                            recipient,
+                            Array.from(forwardTargets).concat(forwardTargetUrls).join(',')
+                        );
                     }
 
                     sendAutoreply((err, id) => {
@@ -324,7 +352,7 @@ const serverOptions = {
                         });
 
                         let messageOptions = {
-                            user: user && user._id || user,
+                            user: (user && user._id) || user,
                             [mailboxQueryKey]: mailboxQueryValue,
 
                             prepared,
@@ -351,7 +379,6 @@ const serverOptions = {
                         };
 
                         messageHandler.add(messageOptions, (err, inserted, info) => {
-
                             // remove Delivered-To
                             chunks.shift();
                             chunklen -= header.length;

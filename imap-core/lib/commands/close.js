@@ -4,7 +4,6 @@ module.exports = {
     state: 'Selected',
 
     handler(command, callback) {
-
         // Check if EXPUNGE method is set
         if (typeof this._server.onExpunge !== 'function') {
             return callback(null, {
@@ -28,15 +27,20 @@ module.exports = {
         this.state = 'Authenticated';
 
         this.updateNotificationListener(() => {
-            this._server.onExpunge(mailbox, {
-                isUid: false,
-                silent: true
-            }, this.session, () => {
-                // don't care if expunging succeeded, the mailbox is now closed anyway
-                callback(null, {
-                    response: 'OK'
-                });
-            });
+            this._server.onExpunge(
+                mailbox,
+                {
+                    isUid: false,
+                    silent: true
+                },
+                this.session,
+                () => {
+                    // don't care if expunging succeeded, the mailbox is now closed anyway
+                    callback(null, {
+                        response: 'OK'
+                    });
+                }
+            );
         });
     }
 };

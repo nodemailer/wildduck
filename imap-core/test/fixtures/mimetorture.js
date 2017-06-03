@@ -9,79 +9,99 @@ module.exports = {
     output: {
         tag: '*',
         command: '1',
-        attributes: [{
+        attributes: [
+            {
                 type: 'ATOM',
                 value: 'FETCH'
             },
-            [{
+            [
+                {
                     type: 'ATOM',
                     value: 'FLAGS'
                 },
-                [{
-                    type: 'ATOM',
-                    value: '\\Seen'
-                }, {
-                    type: 'ATOM',
-                    value: '$eee'
-                }], {
+                [
+                    {
+                        type: 'ATOM',
+                        value: '\\Seen'
+                    },
+                    {
+                        type: 'ATOM',
+                        value: '$eee'
+                    }
+                ],
+                {
                     type: 'ATOM',
                     value: 'ENVELOPE'
                 },
-                [{
+                [
+                    {
                         type: 'STRING',
                         value: '23 Oct 2003 23:28:34 -0700'
-                    }, {
+                    },
+                    {
                         type: 'STRING',
                         value: 'Ryan Finnie\'s MIME Torture Test v1.0'
                     },
                     [
-                        [{
+                        [
+                            {
                                 type: 'STRING',
                                 value: 'Andris Reinman'
                             },
-                            null, {
+                            null,
+                            {
                                 type: 'STRING',
                                 value: 'andris'
-                            }, {
+                            },
+                            {
                                 type: 'STRING',
                                 value: 'ekiri.ee'
                             }
                         ]
                     ],
                     [
-                        [{
+                        [
+                            {
                                 type: 'STRING',
                                 value: 'Andris Reinman'
                             },
-                            null, {
+                            null,
+                            {
                                 type: 'STRING',
                                 value: 'andris'
-                            }, {
+                            },
+                            {
                                 type: 'STRING',
                                 value: 'ekiri.ee'
                             }
                         ]
                     ],
                     [
-                        [{
+                        [
+                            {
                                 type: 'STRING',
                                 value: 'Andris Reinman'
                             },
-                            null, {
+                            null,
+                            {
                                 type: 'STRING',
                                 value: 'andris'
-                            }, {
+                            },
+                            {
                                 type: 'STRING',
                                 value: 'ekiri.ee'
                             }
                         ]
                     ],
                     [
-                        [null,
-                            null, {
+                        [
+                            null,
+                            null,
+                            {
                                 type: 'STRING',
                                 value: 'andmekala'
-                            }, {
+                            },
+                            {
                                 type: 'STRING',
                                 value: 'hot.ee'
                             }
@@ -89,37 +109,47 @@ module.exports = {
                     ],
                     null,
                     null,
-                    null, {
+                    null,
+                    {
                         type: 'STRING',
                         value: '<1066976914.4721.5.camel@localhost>'
                     }
-                ], {
+                ],
+                {
                     type: 'ATOM',
                     value: 'BODYSTRUCTURE'
                 },
                 [
-                    [{
+                    [
+                        {
                             type: 'STRING',
                             value: 'text'
-                        }, {
+                        },
+                        {
                             type: 'STRING',
                             value: 'plain'
                         },
-                        [{
-                            type: 'STRING',
-                            value: 'CHARSET'
-                        }, {
-                            type: 'STRING',
-                            value: 'US-ASCII'
-                        }],
+                        [
+                            {
+                                type: 'STRING',
+                                value: 'CHARSET'
+                            },
+                            {
+                                type: 'STRING',
+                                value: 'US-ASCII'
+                            }
+                        ],
                         null,
-                        null, {
+                        null,
+                        {
                             type: 'STRING',
                             value: '8bit'
-                        }, {
+                        },
+                        {
                             type: 'ATOM',
                             value: '617'
-                        }, {
+                        },
+                        {
                             type: 'ATOM',
                             value: '16'
                         },
@@ -128,79 +158,98 @@ module.exports = {
                         null,
                         null
                     ],
-                    [{
+                    [
+                        {
                             type: 'STRING',
                             value: 'message'
-                        }, {
+                        },
+                        {
                             type: 'STRING',
                             value: 'rfc822'
                         },
                         null,
-                        null, {
+                        null,
+                        {
                             type: 'STRING',
                             value: 'I\'ll be whatever I wanna do. --Fry'
-                        }, {
+                        },
+                        {
                             type: 'STRING',
                             value: '7bit'
-                        }, {
+                        },
+                        {
                             type: 'ATOM',
                             value: '582'
                         },
-                        [{
+                        [
+                            {
                                 type: 'STRING',
                                 value: '23 Oct 2003 22:25:56 -0700'
-                            }, {
+                            },
+                            {
                                 type: 'STRING',
                                 value: 'plain jane message'
                             },
                             [
-                                [{
+                                [
+                                    {
                                         type: 'STRING',
                                         value: 'Ryan Finnie'
                                     },
-                                    null, {
+                                    null,
+                                    {
                                         type: 'STRING',
                                         value: 'rfinnie'
-                                    }, {
+                                    },
+                                    {
                                         type: 'STRING',
                                         value: 'domain.dom'
                                     }
                                 ]
                             ],
                             [
-                                [{
+                                [
+                                    {
                                         type: 'STRING',
                                         value: 'Ryan Finnie'
                                     },
-                                    null, {
+                                    null,
+                                    {
                                         type: 'STRING',
                                         value: 'rfinnie'
-                                    }, {
+                                    },
+                                    {
                                         type: 'STRING',
                                         value: 'domain.dom'
                                     }
                                 ]
                             ],
                             [
-                                [{
+                                [
+                                    {
                                         type: 'STRING',
                                         value: 'Ryan Finnie'
                                     },
-                                    null, {
+                                    null,
+                                    {
                                         type: 'STRING',
                                         value: 'rfinnie'
-                                    }, {
+                                    },
+                                    {
                                         type: 'STRING',
                                         value: 'domain.dom'
                                     }
                                 ]
                             ],
                             [
-                                [null,
-                                    null, {
+                                [
+                                    null,
+                                    null,
+                                    {
                                         type: 'STRING',
                                         value: 'bob'
-                                    }, {
+                                    },
+                                    {
                                         type: 'STRING',
                                         value: 'domain.dom'
                                     }
@@ -208,33 +257,42 @@ module.exports = {
                             ],
                             null,
                             null,
-                            null, {
+                            null,
+                            {
                                 type: 'STRING',
                                 value: '<1066973156.4264.42.camel@localhost>'
                             }
                         ],
-                        [{
+                        [
+                            {
                                 type: 'STRING',
                                 value: 'text'
-                            }, {
+                            },
+                            {
                                 type: 'STRING',
                                 value: 'plain'
                             },
-                            [{
-                                type: 'STRING',
-                                value: 'CHARSET'
-                            }, {
-                                type: 'STRING',
-                                value: 'US-ASCII'
-                            }],
+                            [
+                                {
+                                    type: 'STRING',
+                                    value: 'CHARSET'
+                                },
+                                {
+                                    type: 'STRING',
+                                    value: 'US-ASCII'
+                                }
+                            ],
                             null,
-                            null, {
+                            null,
+                            {
                                 type: 'STRING',
                                 value: '8bit'
-                            }, {
+                            },
+                            {
                                 type: 'ATOM',
                                 value: '311'
-                            }, {
+                            },
+                            {
                                 type: 'ATOM',
                                 value: '9'
                             },
@@ -242,11 +300,14 @@ module.exports = {
                             null,
                             null,
                             null
-                        ], {
+                        ],
+                        {
                             type: 'ATOM',
                             value: '18'
                         },
-                        null, [{
+                        null,
+                        [
+                            {
                                 type: 'STRING',
                                 value: 'inline'
                             },
@@ -255,79 +316,98 @@ module.exports = {
                         null,
                         null
                     ],
-                    [{
+                    [
+                        {
                             type: 'STRING',
                             value: 'message'
-                        }, {
+                        },
+                        {
                             type: 'STRING',
                             value: 'rfc822'
                         },
                         null,
-                        null, {
+                        null,
+                        {
                             type: 'STRING',
                             value: 'Would you kindly shut your noise-hole? --Bender'
-                        }, {
+                        },
+                        {
                             type: 'STRING',
                             value: '7bit'
-                        }, {
+                        },
+                        {
                             type: 'ATOM',
                             value: '1460'
                         },
-                        [{
+                        [
+                            {
                                 type: 'STRING',
                                 value: '23 Oct 2003 23:15:11 -0700'
-                            }, {
+                            },
+                            {
                                 type: 'STRING',
                                 value: 'messages inside messages inside...'
                             },
                             [
-                                [{
+                                [
+                                    {
                                         type: 'STRING',
                                         value: 'Ryan Finnie'
                                     },
-                                    null, {
+                                    null,
+                                    {
                                         type: 'STRING',
                                         value: 'rfinnie'
-                                    }, {
+                                    },
+                                    {
                                         type: 'STRING',
                                         value: 'domain.dom'
                                     }
                                 ]
                             ],
                             [
-                                [{
+                                [
+                                    {
                                         type: 'STRING',
                                         value: 'Ryan Finnie'
                                     },
-                                    null, {
+                                    null,
+                                    {
                                         type: 'STRING',
                                         value: 'rfinnie'
-                                    }, {
+                                    },
+                                    {
                                         type: 'STRING',
                                         value: 'domain.dom'
                                     }
                                 ]
                             ],
                             [
-                                [{
+                                [
+                                    {
                                         type: 'STRING',
                                         value: 'Ryan Finnie'
                                     },
-                                    null, {
+                                    null,
+                                    {
                                         type: 'STRING',
                                         value: 'rfinnie'
-                                    }, {
+                                    },
+                                    {
                                         type: 'STRING',
                                         value: 'domain.dom'
                                     }
                                 ]
                             ],
                             [
-                                [null,
-                                    null, {
+                                [
+                                    null,
+                                    null,
+                                    {
                                         type: 'STRING',
                                         value: 'bob'
-                                    }, {
+                                    },
+                                    {
                                         type: 'STRING',
                                         value: 'domain.dom'
                                     }
@@ -335,34 +415,43 @@ module.exports = {
                             ],
                             null,
                             null,
-                            null, {
+                            null,
+                            {
                                 type: 'STRING',
                                 value: '<1066976111.4263.74.camel@localhost>'
                             }
                         ],
                         [
-                            [{
+                            [
+                                {
                                     type: 'STRING',
                                     value: 'text'
-                                }, {
+                                },
+                                {
                                     type: 'STRING',
                                     value: 'plain'
                                 },
-                                [{
-                                    type: 'STRING',
-                                    value: 'CHARSET'
-                                }, {
-                                    type: 'STRING',
-                                    value: 'US-ASCII'
-                                }],
+                                [
+                                    {
+                                        type: 'STRING',
+                                        value: 'CHARSET'
+                                    },
+                                    {
+                                        type: 'STRING',
+                                        value: 'US-ASCII'
+                                    }
+                                ],
                                 null,
-                                null, {
+                                null,
+                                {
                                     type: 'STRING',
                                     value: '8bit'
-                                }, {
+                                },
+                                {
                                     type: 'ATOM',
                                     value: '193'
-                                }, {
+                                },
+                                {
                                     type: 'ATOM',
                                     value: '3'
                                 },
@@ -371,79 +460,98 @@ module.exports = {
                                 null,
                                 null
                             ],
-                            [{
+                            [
+                                {
                                     type: 'STRING',
                                     value: 'message'
-                                }, {
+                                },
+                                {
                                     type: 'STRING',
                                     value: 'rfc822'
                                 },
                                 null,
-                                null, {
+                                null,
+                                {
                                     type: 'STRING',
                                     value: 'At the risk of sounding negative, no. --Leela'
-                                }, {
+                                },
+                                {
                                     type: 'STRING',
                                     value: '7bit'
-                                }, {
+                                },
+                                {
                                     type: 'ATOM',
                                     value: '697'
                                 },
-                                [{
+                                [
+                                    {
                                         type: 'STRING',
                                         value: '23 Oct 2003 23:09:05 -0700'
-                                    }, {
+                                    },
+                                    {
                                         type: 'STRING',
                                         value: 'the original message'
                                     },
                                     [
-                                        [{
+                                        [
+                                            {
                                                 type: 'STRING',
                                                 value: 'Ryan Finnie'
                                             },
-                                            null, {
+                                            null,
+                                            {
                                                 type: 'STRING',
                                                 value: 'rfinnie'
-                                            }, {
+                                            },
+                                            {
                                                 type: 'STRING',
                                                 value: 'domain.dom'
                                             }
                                         ]
                                     ],
                                     [
-                                        [{
+                                        [
+                                            {
                                                 type: 'STRING',
                                                 value: 'Ryan Finnie'
                                             },
-                                            null, {
+                                            null,
+                                            {
                                                 type: 'STRING',
                                                 value: 'rfinnie'
-                                            }, {
+                                            },
+                                            {
                                                 type: 'STRING',
                                                 value: 'domain.dom'
                                             }
                                         ]
                                     ],
                                     [
-                                        [{
+                                        [
+                                            {
                                                 type: 'STRING',
                                                 value: 'Ryan Finnie'
                                             },
-                                            null, {
+                                            null,
+                                            {
                                                 type: 'STRING',
                                                 value: 'rfinnie'
-                                            }, {
+                                            },
+                                            {
                                                 type: 'STRING',
                                                 value: 'domain.dom'
                                             }
                                         ]
                                     ],
                                     [
-                                        [null,
-                                            null, {
+                                        [
+                                            null,
+                                            null,
+                                            {
                                                 type: 'STRING',
                                                 value: 'bob'
-                                            }, {
+                                            },
+                                            {
                                                 type: 'STRING',
                                                 value: 'domain.dom'
                                             }
@@ -451,34 +559,43 @@ module.exports = {
                                     ],
                                     null,
                                     null,
-                                    null, {
+                                    null,
+                                    {
                                         type: 'STRING',
                                         value: '<1066975745.4263.70.camel@localhost>'
                                     }
                                 ],
                                 [
-                                    [{
+                                    [
+                                        {
                                             type: 'STRING',
                                             value: 'text'
-                                        }, {
+                                        },
+                                        {
                                             type: 'STRING',
                                             value: 'plain'
                                         },
-                                        [{
-                                            type: 'STRING',
-                                            value: 'CHARSET'
-                                        }, {
-                                            type: 'STRING',
-                                            value: 'US-ASCII'
-                                        }],
+                                        [
+                                            {
+                                                type: 'STRING',
+                                                value: 'CHARSET'
+                                            },
+                                            {
+                                                type: 'STRING',
+                                                value: 'US-ASCII'
+                                            }
+                                        ],
                                         null,
-                                        null, {
+                                        null,
+                                        {
                                             type: 'STRING',
                                             value: '8bit'
-                                        }, {
+                                        },
+                                        {
                                             type: 'ATOM',
                                             value: '78'
-                                        }, {
+                                        },
+                                        {
                                             type: 'ATOM',
                                             value: '3'
                                         },
@@ -487,61 +604,80 @@ module.exports = {
                                         null,
                                         null
                                     ],
-                                    [{
+                                    [
+                                        {
                                             type: 'STRING',
                                             value: 'application'
-                                        }, {
+                                        },
+                                        {
                                             type: 'STRING',
                                             value: 'x-gzip'
                                         },
-                                        [{
-                                            type: 'STRING',
-                                            value: 'NAME'
-                                        }, {
-                                            type: 'STRING',
-                                            value: 'foo.gz'
-                                        }],
+                                        [
+                                            {
+                                                type: 'STRING',
+                                                value: 'NAME'
+                                            },
+                                            {
+                                                type: 'STRING',
+                                                value: 'foo.gz'
+                                            }
+                                        ],
                                         null,
-                                        null, {
+                                        null,
+                                        {
                                             type: 'STRING',
                                             value: 'base64'
-                                        }, {
+                                        },
+                                        {
                                             type: 'ATOM',
                                             value: '58'
                                         },
-                                        null, [{
+                                        null,
+                                        [
+                                            {
                                                 type: 'STRING',
                                                 value: 'attachment'
                                             },
-                                            [{
-                                                type: 'STRING',
-                                                value: 'filename'
-                                            }, {
-                                                type: 'STRING',
-                                                value: 'foo.gz'
-                                            }]
+                                            [
+                                                {
+                                                    type: 'STRING',
+                                                    value: 'filename'
+                                                },
+                                                {
+                                                    type: 'STRING',
+                                                    value: 'foo.gz'
+                                                }
+                                            ]
                                         ],
                                         null,
                                         null
-                                    ], {
+                                    ],
+                                    {
                                         type: 'STRING',
                                         value: 'mixed'
                                     },
-                                    [{
-                                        type: 'STRING',
-                                        value: 'boundary'
-                                    }, {
-                                        type: 'STRING',
-                                        value: '=-XFYecI7w+0shpolXq8bb'
-                                    }],
+                                    [
+                                        {
+                                            type: 'STRING',
+                                            value: 'boundary'
+                                        },
+                                        {
+                                            type: 'STRING',
+                                            value: '=-XFYecI7w+0shpolXq8bb'
+                                        }
+                                    ],
                                     null,
                                     null,
                                     null
-                                ], {
+                                ],
+                                {
                                     type: 'ATOM',
                                     value: '25'
                                 },
-                                null, [{
+                                null,
+                                [
+                                    {
                                         type: 'STRING',
                                         value: 'inline'
                                     },
@@ -549,25 +685,32 @@ module.exports = {
                                 ],
                                 null,
                                 null
-                            ], {
+                            ],
+                            {
                                 type: 'STRING',
                                 value: 'mixed'
                             },
-                            [{
-                                type: 'STRING',
-                                value: 'boundary'
-                            }, {
-                                type: 'STRING',
-                                value: '=-9Brg7LoMERBrIDtMRose'
-                            }],
+                            [
+                                {
+                                    type: 'STRING',
+                                    value: 'boundary'
+                                },
+                                {
+                                    type: 'STRING',
+                                    value: '=-9Brg7LoMERBrIDtMRose'
+                                }
+                            ],
                             null,
                             null,
                             null
-                        ], {
+                        ],
+                        {
                             type: 'ATOM',
                             value: '49'
                         },
-                        null, [{
+                        null,
+                        [
+                            {
                                 type: 'STRING',
                                 value: 'inline'
                             },
@@ -576,79 +719,98 @@ module.exports = {
                         null,
                         null
                     ],
-                    [{
+                    [
+                        {
                             type: 'STRING',
                             value: 'message'
-                        }, {
+                        },
+                        {
                             type: 'STRING',
                             value: 'rfc822'
                         },
                         null,
-                        null, {
+                        null,
+                        {
                             type: 'STRING',
                             value: 'Dirt doesn\'t need luck! --Professor'
-                        }, {
+                        },
+                        {
                             type: 'STRING',
                             value: '7bit'
-                        }, {
+                        },
+                        {
                             type: 'ATOM',
                             value: '817'
                         },
-                        [{
+                        [
+                            {
                                 type: 'STRING',
                                 value: '23 Oct 2003 22:40:49 -0700'
-                            }, {
+                            },
+                            {
                                 type: 'STRING',
                                 value: 'this message JUST contains an attachment'
                             },
                             [
-                                [{
+                                [
+                                    {
                                         type: 'STRING',
                                         value: 'Ryan Finnie'
                                     },
-                                    null, {
+                                    null,
+                                    {
                                         type: 'STRING',
                                         value: 'rfinnie'
-                                    }, {
+                                    },
+                                    {
                                         type: 'STRING',
                                         value: 'domain.dom'
                                     }
                                 ]
                             ],
                             [
-                                [{
+                                [
+                                    {
                                         type: 'STRING',
                                         value: 'Ryan Finnie'
                                     },
-                                    null, {
+                                    null,
+                                    {
                                         type: 'STRING',
                                         value: 'rfinnie'
-                                    }, {
+                                    },
+                                    {
                                         type: 'STRING',
                                         value: 'domain.dom'
                                     }
                                 ]
                             ],
                             [
-                                [{
+                                [
+                                    {
                                         type: 'STRING',
                                         value: 'Ryan Finnie'
                                     },
-                                    null, {
+                                    null,
+                                    {
                                         type: 'STRING',
                                         value: 'rfinnie'
-                                    }, {
+                                    },
+                                    {
                                         type: 'STRING',
                                         value: 'domain.dom'
                                     }
                                 ]
                             ],
                             [
-                                [null,
-                                    null, {
+                                [
+                                    null,
+                                    null,
+                                    {
                                         type: 'STRING',
                                         value: 'bob'
-                                    }, {
+                                    },
+                                    {
                                         type: 'STRING',
                                         value: 'domain.dom'
                                     }
@@ -656,54 +818,71 @@ module.exports = {
                             ],
                             null,
                             null,
-                            null, {
+                            null,
+                            {
                                 type: 'STRING',
                                 value: '<1066974048.4264.62.camel@localhost>'
                             }
                         ],
-                        [{
+                        [
+                            {
                                 type: 'STRING',
                                 value: 'application'
-                            }, {
+                            },
+                            {
                                 type: 'STRING',
                                 value: 'x-gzip'
                             },
-                            [{
-                                type: 'STRING',
-                                value: 'NAME'
-                            }, {
-                                type: 'STRING',
-                                value: 'blah.gz'
-                            }],
-                            null, {
+                            [
+                                {
+                                    type: 'STRING',
+                                    value: 'NAME'
+                                },
+                                {
+                                    type: 'STRING',
+                                    value: 'blah.gz'
+                                }
+                            ],
+                            null,
+                            {
                                 type: 'STRING',
                                 value: 'Attachment has identical content to above foo.gz'
-                            }, {
+                            },
+                            {
                                 type: 'STRING',
                                 value: 'base64'
-                            }, {
+                            },
+                            {
                                 type: 'ATOM',
                                 value: '396'
                             },
-                            null, [{
+                            null,
+                            [
+                                {
                                     type: 'STRING',
                                     value: 'attachment'
                                 },
-                                [{
-                                    type: 'STRING',
-                                    value: 'filename'
-                                }, {
-                                    type: 'STRING',
-                                    value: 'blah.gz'
-                                }]
+                                [
+                                    {
+                                        type: 'STRING',
+                                        value: 'filename'
+                                    },
+                                    {
+                                        type: 'STRING',
+                                        value: 'blah.gz'
+                                    }
+                                ]
                             ],
                             null,
                             null
-                        ], {
+                        ],
+                        {
                             type: 'ATOM',
                             value: '17'
                         },
-                        null, [{
+                        null,
+                        [
+                            {
                                 type: 'STRING',
                                 value: 'inline'
                             },
@@ -712,79 +891,98 @@ module.exports = {
                         null,
                         null
                     ],
-                    [{
+                    [
+                        {
                             type: 'STRING',
                             value: 'message'
-                        }, {
+                        },
+                        {
                             type: 'STRING',
                             value: 'rfc822'
                         },
                         null,
-                        null, {
+                        null,
+                        {
                             type: 'STRING',
                             value: 'Hold still, I don\'t have good depth perception! --Leela'
-                        }, {
+                        },
+                        {
                             type: 'STRING',
                             value: '7bit'
-                        }, {
+                        },
+                        {
                             type: 'ATOM',
                             value: '1045'
                         },
-                        [{
+                        [
+                            {
                                 type: 'STRING',
                                 value: '23 Oct 2003 23:09:16 -0700'
-                            }, {
+                            },
+                            {
                                 type: 'STRING',
                                 value: 'Attachment filename vs. name'
                             },
                             [
-                                [{
+                                [
+                                    {
                                         type: 'STRING',
                                         value: 'Ryan Finnie'
                                     },
-                                    null, {
+                                    null,
+                                    {
                                         type: 'STRING',
                                         value: 'rfinnie'
-                                    }, {
+                                    },
+                                    {
                                         type: 'STRING',
                                         value: 'domain.dom'
                                     }
                                 ]
                             ],
                             [
-                                [{
+                                [
+                                    {
                                         type: 'STRING',
                                         value: 'Ryan Finnie'
                                     },
-                                    null, {
+                                    null,
+                                    {
                                         type: 'STRING',
                                         value: 'rfinnie'
-                                    }, {
+                                    },
+                                    {
                                         type: 'STRING',
                                         value: 'domain.dom'
                                     }
                                 ]
                             ],
                             [
-                                [{
+                                [
+                                    {
                                         type: 'STRING',
                                         value: 'Ryan Finnie'
                                     },
-                                    null, {
+                                    null,
+                                    {
                                         type: 'STRING',
                                         value: 'rfinnie'
-                                    }, {
+                                    },
+                                    {
                                         type: 'STRING',
                                         value: 'domain.dom'
                                     }
                                 ]
                             ],
                             [
-                                [null,
-                                    null, {
+                                [
+                                    null,
+                                    null,
+                                    {
                                         type: 'STRING',
                                         value: 'bob'
-                                    }, {
+                                    },
+                                    {
                                         type: 'STRING',
                                         value: 'domain.dom'
                                     }
@@ -792,34 +990,43 @@ module.exports = {
                             ],
                             null,
                             null,
-                            null, {
+                            null,
+                            {
                                 type: 'STRING',
                                 value: '<1066975756.4263.70.camel@localhost>'
                             }
                         ],
                         [
-                            [{
+                            [
+                                {
                                     type: 'STRING',
                                     value: 'text'
-                                }, {
+                                },
+                                {
                                     type: 'STRING',
                                     value: 'plain'
                                 },
-                                [{
-                                    type: 'STRING',
-                                    value: 'CHARSET'
-                                }, {
-                                    type: 'STRING',
-                                    value: 'US-ASCII'
-                                }],
+                                [
+                                    {
+                                        type: 'STRING',
+                                        value: 'CHARSET'
+                                    },
+                                    {
+                                        type: 'STRING',
+                                        value: 'US-ASCII'
+                                    }
+                                ],
                                 null,
-                                null, {
+                                null,
+                                {
                                     type: 'STRING',
                                     value: '8bit'
-                                }, {
+                                },
+                                {
                                     type: 'ATOM',
                                     value: '377'
-                                }, {
+                                },
+                                {
                                     type: 'ATOM',
                                     value: '6'
                                 },
@@ -828,63 +1035,83 @@ module.exports = {
                                 null,
                                 null
                             ],
-                            [{
+                            [
+                                {
                                     type: 'STRING',
                                     value: 'application'
-                                }, {
+                                },
+                                {
                                     type: 'STRING',
                                     value: 'x-gzip'
                                 },
-                                [{
-                                    type: 'STRING',
-                                    value: 'NAME'
-                                }, {
-                                    type: 'STRING',
-                                    value: 'blah2.gz'
-                                }],
-                                null, {
+                                [
+                                    {
+                                        type: 'STRING',
+                                        value: 'NAME'
+                                    },
+                                    {
+                                        type: 'STRING',
+                                        value: 'blah2.gz'
+                                    }
+                                ],
+                                null,
+                                {
                                     type: 'STRING',
                                     value: 'filename is blah1.gz, name is blah2.gz'
-                                }, {
+                                },
+                                {
                                     type: 'STRING',
                                     value: 'base64'
-                                }, {
+                                },
+                                {
                                     type: 'ATOM',
                                     value: '58'
                                 },
-                                null, [{
+                                null,
+                                [
+                                    {
                                         type: 'STRING',
                                         value: 'attachment'
                                     },
-                                    [{
-                                        type: 'STRING',
-                                        value: 'filename'
-                                    }, {
-                                        type: 'STRING',
-                                        value: 'blah1.gz'
-                                    }]
+                                    [
+                                        {
+                                            type: 'STRING',
+                                            value: 'filename'
+                                        },
+                                        {
+                                            type: 'STRING',
+                                            value: 'blah1.gz'
+                                        }
+                                    ]
                                 ],
                                 null,
                                 null
-                            ], {
+                            ],
+                            {
                                 type: 'STRING',
                                 value: 'mixed'
                             },
-                            [{
-                                type: 'STRING',
-                                value: 'boundary'
-                            }, {
-                                type: 'STRING',
-                                value: '=-1066975756jd02'
-                            }],
+                            [
+                                {
+                                    type: 'STRING',
+                                    value: 'boundary'
+                                },
+                                {
+                                    type: 'STRING',
+                                    value: '=-1066975756jd02'
+                                }
+                            ],
                             null,
                             null,
                             null
-                        ], {
+                        ],
+                        {
                             type: 'ATOM',
                             value: '29'
                         },
-                        null, [{
+                        null,
+                        [
+                            {
                                 type: 'STRING',
                                 value: 'inline'
                             },
@@ -893,79 +1120,98 @@ module.exports = {
                         null,
                         null
                     ],
-                    [{
+                    [
+                        {
                             type: 'STRING',
                             value: 'message'
-                        }, {
+                        },
+                        {
                             type: 'STRING',
                             value: 'rfc822'
                         },
                         null,
-                        null, {
+                        null,
+                        {
                             type: 'STRING',
                             value: 'Hello little man.  I WILL DESTROY YOU! --Moro'
-                        }, {
+                        },
+                        {
                             type: 'STRING',
                             value: '7bit'
-                        }, {
+                        },
+                        {
                             type: 'ATOM',
                             value: '1149'
                         },
-                        [{
+                        [
+                            {
                                 type: 'STRING',
                                 value: '23 Oct 2003 23:09:21 -0700'
-                            }, {
+                            },
+                            {
                                 type: 'LITERAL',
                                 value: 'No filename? No problem!'
                             },
                             [
-                                [{
+                                [
+                                    {
                                         type: 'STRING',
                                         value: 'Ryan Finnie'
                                     },
-                                    null, {
+                                    null,
+                                    {
                                         type: 'STRING',
                                         value: 'rfinnie'
-                                    }, {
+                                    },
+                                    {
                                         type: 'STRING',
                                         value: 'domain.dom'
                                     }
                                 ]
                             ],
                             [
-                                [{
+                                [
+                                    {
                                         type: 'STRING',
                                         value: 'Ryan Finnie'
                                     },
-                                    null, {
+                                    null,
+                                    {
                                         type: 'STRING',
                                         value: 'rfinnie'
-                                    }, {
+                                    },
+                                    {
                                         type: 'STRING',
                                         value: 'domain.dom'
                                     }
                                 ]
                             ],
                             [
-                                [{
+                                [
+                                    {
                                         type: 'STRING',
                                         value: 'Ryan Finnie'
                                     },
-                                    null, {
+                                    null,
+                                    {
                                         type: 'STRING',
                                         value: 'rfinnie'
-                                    }, {
+                                    },
+                                    {
                                         type: 'STRING',
                                         value: 'domain.dom'
                                     }
                                 ]
                             ],
                             [
-                                [null,
-                                    null, {
+                                [
+                                    null,
+                                    null,
+                                    {
                                         type: 'STRING',
                                         value: 'bob'
-                                    }, {
+                                    },
+                                    {
                                         type: 'STRING',
                                         value: 'domain.dom'
                                     }
@@ -973,34 +1219,43 @@ module.exports = {
                             ],
                             null,
                             null,
-                            null, {
+                            null,
+                            {
                                 type: 'STRING',
                                 value: '<1066975761.4263.70.camel@localhost>'
                             }
                         ],
                         [
-                            [{
+                            [
+                                {
                                     type: 'STRING',
                                     value: 'text'
-                                }, {
+                                },
+                                {
                                     type: 'STRING',
                                     value: 'plain'
                                 },
-                                [{
-                                    type: 'STRING',
-                                    value: 'CHARSET'
-                                }, {
-                                    type: 'STRING',
-                                    value: 'US-ASCII'
-                                }],
+                                [
+                                    {
+                                        type: 'STRING',
+                                        value: 'CHARSET'
+                                    },
+                                    {
+                                        type: 'STRING',
+                                        value: 'US-ASCII'
+                                    }
+                                ],
                                 null,
-                                null, {
+                                null,
+                                {
                                     type: 'STRING',
                                     value: '8bit'
-                                }, {
+                                },
+                                {
                                     type: 'ATOM',
                                     value: '517'
-                                }, {
+                                },
+                                {
                                     type: 'ATOM',
                                     value: '10'
                                 },
@@ -1009,25 +1264,32 @@ module.exports = {
                                 null,
                                 null
                             ],
-                            [{
+                            [
+                                {
                                     type: 'STRING',
                                     value: 'application'
-                                }, {
+                                },
+                                {
                                     type: 'STRING',
                                     value: 'x-gzip'
                                 },
                                 null,
-                                null, {
+                                null,
+                                {
                                     type: 'STRING',
                                     value: 'I\'m getting sick of witty things to say'
-                                }, {
+                                },
+                                {
                                     type: 'STRING',
                                     value: 'base64'
-                                }, {
+                                },
+                                {
                                     type: 'ATOM',
                                     value: '58'
                                 },
-                                null, [{
+                                null,
+                                [
+                                    {
                                         type: 'STRING',
                                         value: 'attachment'
                                     },
@@ -1035,25 +1297,32 @@ module.exports = {
                                 ],
                                 null,
                                 null
-                            ], {
+                            ],
+                            {
                                 type: 'STRING',
                                 value: 'mixed'
                             },
-                            [{
-                                type: 'STRING',
-                                value: 'boundary'
-                            }, {
-                                type: 'STRING',
-                                value: '=-1066975756jd03'
-                            }],
+                            [
+                                {
+                                    type: 'STRING',
+                                    value: 'boundary'
+                                },
+                                {
+                                    type: 'STRING',
+                                    value: '=-1066975756jd03'
+                                }
+                            ],
                             null,
                             null,
                             null
-                        ], {
+                        ],
+                        {
                             type: 'ATOM',
                             value: '33'
                         },
-                        null, [{
+                        null,
+                        [
+                            {
                                 type: 'STRING',
                                 value: 'inline'
                             },
@@ -1062,79 +1331,98 @@ module.exports = {
                         null,
                         null
                     ],
-                    [{
+                    [
+                        {
                             type: 'STRING',
                             value: 'message'
-                        }, {
+                        },
+                        {
                             type: 'STRING',
                             value: 'rfc822'
                         },
                         null,
-                        null, {
+                        null,
+                        {
                             type: 'STRING',
                             value: 'Friends! Help! A guinea pig tricked me! --Zoidberg'
-                        }, {
+                        },
+                        {
                             type: 'STRING',
                             value: '7bit'
-                        }, {
+                        },
+                        {
                             type: 'ATOM',
                             value: '896'
                         },
-                        [{
+                        [
+                            {
                                 type: 'STRING',
                                 value: '23 Oct 2003 22:40:45 -0700'
-                            }, {
+                            },
+                            {
                                 type: 'STRING',
                                 value: 'html and text, both inline'
                             },
                             [
-                                [{
+                                [
+                                    {
                                         type: 'STRING',
                                         value: 'Ryan Finnie'
                                     },
-                                    null, {
+                                    null,
+                                    {
                                         type: 'STRING',
                                         value: 'rfinnie'
-                                    }, {
+                                    },
+                                    {
                                         type: 'STRING',
                                         value: 'domain.dom'
                                     }
                                 ]
                             ],
                             [
-                                [{
+                                [
+                                    {
                                         type: 'STRING',
                                         value: 'Ryan Finnie'
                                     },
-                                    null, {
+                                    null,
+                                    {
                                         type: 'STRING',
                                         value: 'rfinnie'
-                                    }, {
+                                    },
+                                    {
                                         type: 'STRING',
                                         value: 'domain.dom'
                                     }
                                 ]
                             ],
                             [
-                                [{
+                                [
+                                    {
                                         type: 'STRING',
                                         value: 'Ryan Finnie'
                                     },
-                                    null, {
+                                    null,
+                                    {
                                         type: 'STRING',
                                         value: 'rfinnie'
-                                    }, {
+                                    },
+                                    {
                                         type: 'STRING',
                                         value: 'domain.dom'
                                     }
                                 ]
                             ],
                             [
-                                [null,
-                                    null, {
+                                [
+                                    null,
+                                    null,
+                                    {
                                         type: 'STRING',
                                         value: 'bob'
-                                    }, {
+                                    },
+                                    {
                                         type: 'STRING',
                                         value: 'domain.dom'
                                     }
@@ -1142,34 +1430,43 @@ module.exports = {
                             ],
                             null,
                             null,
-                            null, {
+                            null,
+                            {
                                 type: 'STRING',
                                 value: '<1066974044.4264.62.camel@localhost>'
                             }
                         ],
                         [
-                            [{
+                            [
+                                {
                                     type: 'STRING',
                                     value: 'text'
-                                }, {
+                                },
+                                {
                                     type: 'STRING',
                                     value: 'html'
                                 },
-                                [{
-                                    type: 'STRING',
-                                    value: 'CHARSET'
-                                }, {
-                                    type: 'STRING',
-                                    value: 'utf-8'
-                                }],
+                                [
+                                    {
+                                        type: 'STRING',
+                                        value: 'CHARSET'
+                                    },
+                                    {
+                                        type: 'STRING',
+                                        value: 'utf-8'
+                                    }
+                                ],
                                 null,
-                                null, {
+                                null,
+                                {
                                     type: 'STRING',
                                     value: '8bit'
-                                }, {
+                                },
+                                {
                                     type: 'ATOM',
                                     value: '327'
-                                }, {
+                                },
+                                {
                                     type: 'ATOM',
                                     value: '11'
                                 },
@@ -1178,28 +1475,36 @@ module.exports = {
                                 null,
                                 null
                             ],
-                            [{
+                            [
+                                {
                                     type: 'STRING',
                                     value: 'text'
-                                }, {
+                                },
+                                {
                                     type: 'STRING',
                                     value: 'plain'
                                 },
-                                [{
-                                    type: 'STRING',
-                                    value: 'CHARSET'
-                                }, {
-                                    type: 'STRING',
-                                    value: 'US-ASCII'
-                                }],
+                                [
+                                    {
+                                        type: 'STRING',
+                                        value: 'CHARSET'
+                                    },
+                                    {
+                                        type: 'STRING',
+                                        value: 'US-ASCII'
+                                    }
+                                ],
                                 null,
-                                null, {
+                                null,
+                                {
                                     type: 'STRING',
                                     value: '8bit'
-                                }, {
+                                },
+                                {
                                     type: 'ATOM',
                                     value: '61'
-                                }, {
+                                },
+                                {
                                     type: 'ATOM',
                                     value: '2'
                                 },
@@ -1207,25 +1512,32 @@ module.exports = {
                                 null,
                                 null,
                                 null
-                            ], {
+                            ],
+                            {
                                 type: 'STRING',
                                 value: 'mixed'
                             },
-                            [{
-                                type: 'STRING',
-                                value: 'boundary'
-                            }, {
-                                type: 'STRING',
-                                value: '=-ZCKMfHzvHMyK1iBu4kff'
-                            }],
+                            [
+                                {
+                                    type: 'STRING',
+                                    value: 'boundary'
+                                },
+                                {
+                                    type: 'STRING',
+                                    value: '=-ZCKMfHzvHMyK1iBu4kff'
+                                }
+                            ],
                             null,
                             null,
                             null
-                        ], {
+                        ],
+                        {
                             type: 'ATOM',
                             value: '33'
                         },
-                        null, [{
+                        null,
+                        [
+                            {
                                 type: 'STRING',
                                 value: 'inline'
                             },
@@ -1234,79 +1546,98 @@ module.exports = {
                         null,
                         null
                     ],
-                    [{
+                    [
+                        {
                             type: 'STRING',
                             value: 'message'
-                        }, {
+                        },
+                        {
                             type: 'STRING',
                             value: 'rfc822'
                         },
                         null,
-                        null, {
+                        null,
+                        {
                             type: 'STRING',
                             value: 'Smeesh! --Amy'
-                        }, {
+                        },
+                        {
                             type: 'STRING',
                             value: '7bit'
-                        }, {
+                        },
+                        {
                             type: 'ATOM',
                             value: '642'
                         },
-                        [{
+                        [
+                            {
                                 type: 'STRING',
                                 value: '23 Oct 2003 22:41:29 -0700'
-                            }, {
+                            },
+                            {
                                 type: 'STRING',
                                 value: 'text and text, both inline'
                             },
                             [
-                                [{
+                                [
+                                    {
                                         type: 'STRING',
                                         value: 'Ryan Finnie'
                                     },
-                                    null, {
+                                    null,
+                                    {
                                         type: 'STRING',
                                         value: 'rfinnie'
-                                    }, {
+                                    },
+                                    {
                                         type: 'STRING',
                                         value: 'domain.dom'
                                     }
                                 ]
                             ],
                             [
-                                [{
+                                [
+                                    {
                                         type: 'STRING',
                                         value: 'Ryan Finnie'
                                     },
-                                    null, {
+                                    null,
+                                    {
                                         type: 'STRING',
                                         value: 'rfinnie'
-                                    }, {
+                                    },
+                                    {
                                         type: 'STRING',
                                         value: 'domain.dom'
                                     }
                                 ]
                             ],
                             [
-                                [{
+                                [
+                                    {
                                         type: 'STRING',
                                         value: 'Ryan Finnie'
                                     },
-                                    null, {
+                                    null,
+                                    {
                                         type: 'STRING',
                                         value: 'rfinnie'
-                                    }, {
+                                    },
+                                    {
                                         type: 'STRING',
                                         value: 'domain.dom'
                                     }
                                 ]
                             ],
                             [
-                                [null,
-                                    null, {
+                                [
+                                    null,
+                                    null,
+                                    {
                                         type: 'STRING',
                                         value: 'bob'
-                                    }, {
+                                    },
+                                    {
                                         type: 'STRING',
                                         value: 'domain.dom'
                                     }
@@ -1314,34 +1645,43 @@ module.exports = {
                             ],
                             null,
                             null,
-                            null, {
+                            null,
+                            {
                                 type: 'STRING',
                                 value: '<1066974089.4265.64.camel@localhost>'
                             }
                         ],
                         [
-                            [{
+                            [
+                                {
                                     type: 'STRING',
                                     value: 'text'
-                                }, {
+                                },
+                                {
                                     type: 'STRING',
                                     value: 'plain'
                                 },
-                                [{
-                                    type: 'STRING',
-                                    value: 'CHARSET'
-                                }, {
-                                    type: 'STRING',
-                                    value: 'US-ASCII'
-                                }],
+                                [
+                                    {
+                                        type: 'STRING',
+                                        value: 'CHARSET'
+                                    },
+                                    {
+                                        type: 'STRING',
+                                        value: 'US-ASCII'
+                                    }
+                                ],
                                 null,
-                                null, {
+                                null,
+                                {
                                     type: 'STRING',
                                     value: '8bit'
-                                }, {
+                                },
+                                {
                                     type: 'ATOM',
                                     value: '62'
-                                }, {
+                                },
+                                {
                                     type: 'ATOM',
                                     value: '2'
                                 },
@@ -1350,28 +1690,36 @@ module.exports = {
                                 null,
                                 null
                             ],
-                            [{
+                            [
+                                {
                                     type: 'STRING',
                                     value: 'text'
-                                }, {
+                                },
+                                {
                                     type: 'STRING',
                                     value: 'plain'
                                 },
-                                [{
-                                    type: 'STRING',
-                                    value: 'CHARSET'
-                                }, {
-                                    type: 'STRING',
-                                    value: 'US-ASCII'
-                                }],
+                                [
+                                    {
+                                        type: 'STRING',
+                                        value: 'CHARSET'
+                                    },
+                                    {
+                                        type: 'STRING',
+                                        value: 'US-ASCII'
+                                    }
+                                ],
                                 null,
-                                null, {
+                                null,
+                                {
                                     type: 'STRING',
                                     value: '8bit'
-                                }, {
+                                },
+                                {
                                     type: 'ATOM',
                                     value: '68'
-                                }, {
+                                },
+                                {
                                     type: 'ATOM',
                                     value: '2'
                                 },
@@ -1379,25 +1727,32 @@ module.exports = {
                                 null,
                                 null,
                                 null
-                            ], {
+                            ],
+                            {
                                 type: 'STRING',
                                 value: 'mixed'
                             },
-                            [{
-                                type: 'STRING',
-                                value: 'boundary'
-                            }, {
-                                type: 'STRING',
-                                value: '=-pNc4wtlOIxs8RcX7H/AK'
-                            }],
+                            [
+                                {
+                                    type: 'STRING',
+                                    value: 'boundary'
+                                },
+                                {
+                                    type: 'STRING',
+                                    value: '=-pNc4wtlOIxs8RcX7H/AK'
+                                }
+                            ],
                             null,
                             null,
                             null
-                        ], {
+                        ],
+                        {
                             type: 'ATOM',
                             value: '24'
                         },
-                        null, [{
+                        null,
+                        [
+                            {
                                 type: 'STRING',
                                 value: 'inline'
                             },
@@ -1406,79 +1761,98 @@ module.exports = {
                         null,
                         null
                     ],
-                    [{
+                    [
+                        {
                             type: 'STRING',
                             value: 'message'
-                        }, {
+                        },
+                        {
                             type: 'STRING',
                             value: 'rfc822'
                         },
                         null,
-                        null, {
+                        null,
+                        {
                             type: 'STRING',
                             value: 'That\'s not a cigar. Uh... and it\'s not mine. --Hermes'
-                        }, {
+                        },
+                        {
                             type: 'STRING',
                             value: '7bit'
-                        }, {
+                        },
+                        {
                             type: 'ATOM',
                             value: '1515'
                         },
-                        [{
+                        [
+                            {
                                 type: 'STRING',
                                 value: '23 Oct 2003 22:39:17 -0700'
-                            }, {
+                            },
+                            {
                                 type: 'LITERAL',
                                 value: 'HTML and... HTML?'
                             },
                             [
-                                [{
+                                [
+                                    {
                                         type: 'STRING',
                                         value: 'Ryan Finnie'
                                     },
-                                    null, {
+                                    null,
+                                    {
                                         type: 'STRING',
                                         value: 'rfinnie'
-                                    }, {
+                                    },
+                                    {
                                         type: 'STRING',
                                         value: 'domain.dom'
                                     }
                                 ]
                             ],
                             [
-                                [{
+                                [
+                                    {
                                         type: 'STRING',
                                         value: 'Ryan Finnie'
                                     },
-                                    null, {
+                                    null,
+                                    {
                                         type: 'STRING',
                                         value: 'rfinnie'
-                                    }, {
+                                    },
+                                    {
                                         type: 'STRING',
                                         value: 'domain.dom'
                                     }
                                 ]
                             ],
                             [
-                                [{
+                                [
+                                    {
                                         type: 'STRING',
                                         value: 'Ryan Finnie'
                                     },
-                                    null, {
+                                    null,
+                                    {
                                         type: 'STRING',
                                         value: 'rfinnie'
-                                    }, {
+                                    },
+                                    {
                                         type: 'STRING',
                                         value: 'domain.dom'
                                     }
                                 ]
                             ],
                             [
-                                [null,
-                                    null, {
+                                [
+                                    null,
+                                    null,
+                                    {
                                         type: 'STRING',
                                         value: 'bob'
-                                    }, {
+                                    },
+                                    {
                                         type: 'STRING',
                                         value: 'domain.dom'
                                     }
@@ -1486,34 +1860,43 @@ module.exports = {
                             ],
                             null,
                             null,
-                            null, {
+                            null,
+                            {
                                 type: 'STRING',
                                 value: '<1066973957.4263.59.camel@localhost>'
                             }
                         ],
                         [
-                            [{
+                            [
+                                {
                                     type: 'STRING',
                                     value: 'text'
-                                }, {
+                                },
+                                {
                                     type: 'STRING',
                                     value: 'html'
                                 },
-                                [{
-                                    type: 'STRING',
-                                    value: 'CHARSET'
-                                }, {
-                                    type: 'STRING',
-                                    value: 'utf-8'
-                                }],
+                                [
+                                    {
+                                        type: 'STRING',
+                                        value: 'CHARSET'
+                                    },
+                                    {
+                                        type: 'STRING',
+                                        value: 'utf-8'
+                                    }
+                                ],
                                 null,
-                                null, {
+                                null,
+                                {
                                     type: 'STRING',
                                     value: '8bit'
-                                }, {
+                                },
+                                {
                                     type: 'ATOM',
                                     value: '824'
-                                }, {
+                                },
+                                {
                                     type: 'ATOM',
                                     value: '22'
                                 },
@@ -1522,70 +1905,92 @@ module.exports = {
                                 null,
                                 null
                             ],
-                            [{
+                            [
+                                {
                                     type: 'STRING',
                                     value: 'text'
-                                }, {
+                                },
+                                {
                                     type: 'STRING',
                                     value: 'html'
                                 },
-                                [{
-                                    type: 'STRING',
-                                    value: 'NAME'
-                                }, {
-                                    type: 'STRING',
-                                    value: 'htmlfile.html'
-                                }, {
-                                    type: 'STRING',
-                                    value: 'CHARSET'
-                                }, {
-                                    type: 'STRING',
-                                    value: 'UTF-8'
-                                }],
+                                [
+                                    {
+                                        type: 'STRING',
+                                        value: 'NAME'
+                                    },
+                                    {
+                                        type: 'STRING',
+                                        value: 'htmlfile.html'
+                                    },
+                                    {
+                                        type: 'STRING',
+                                        value: 'CHARSET'
+                                    },
+                                    {
+                                        type: 'STRING',
+                                        value: 'UTF-8'
+                                    }
+                                ],
                                 null,
-                                null, {
+                                null,
+                                {
                                     type: 'STRING',
                                     value: '8bit'
-                                }, {
+                                },
+                                {
                                     type: 'ATOM',
                                     value: '118'
-                                }, {
+                                },
+                                {
                                     type: 'ATOM',
                                     value: '6'
                                 },
-                                null, [{
+                                null,
+                                [
+                                    {
                                         type: 'STRING',
                                         value: 'attachment'
                                     },
-                                    [{
-                                        type: 'STRING',
-                                        value: 'filename'
-                                    }, {
-                                        type: 'STRING',
-                                        value: 'htmlfile.html'
-                                    }]
+                                    [
+                                        {
+                                            type: 'STRING',
+                                            value: 'filename'
+                                        },
+                                        {
+                                            type: 'STRING',
+                                            value: 'htmlfile.html'
+                                        }
+                                    ]
                                 ],
                                 null,
                                 null
-                            ], {
+                            ],
+                            {
                                 type: 'STRING',
                                 value: 'mixed'
                             },
-                            [{
-                                type: 'STRING',
-                                value: 'boundary'
-                            }, {
-                                type: 'STRING',
-                                value: '=-zxh/IezwzZITiphpcbJZ'
-                            }],
+                            [
+                                {
+                                    type: 'STRING',
+                                    value: 'boundary'
+                                },
+                                {
+                                    type: 'STRING',
+                                    value: '=-zxh/IezwzZITiphpcbJZ'
+                                }
+                            ],
                             null,
                             null,
                             null
-                        ], {
+                        ],
+                        {
                             type: 'ATOM',
                             value: '49'
                         },
-                        null, [{
+                        null,
+                        [
+                            {
                                 type: 'STRING',
                                 value: 'inline'
                             },
@@ -1594,82 +1999,102 @@ module.exports = {
                         null,
                         null
                     ],
-                    [{
+                    [
+                        {
                             type: 'STRING',
                             value: 'message'
-                        }, {
+                        },
+                        {
                             type: 'STRING',
                             value: 'rfc822'
                         },
                         null,
-                        null, {
+                        null,
+                        {
                             type: 'LITERAL',
                             value: 'The spirit is willing, but the flesh is spongy, and\r\n    bruised. --Zap'
-                        }, {
+                        },
+                        {
                             type: 'ATOM',
                             value: 'p'
-                        }, {
+                        },
+                        {
                             type: 'STRING',
                             value: '7bit'
-                        }, {
+                        },
+                        {
                             type: 'ATOM',
                             value: '6643'
                         },
-                        [{
+                        [
+                            {
                                 type: 'STRING',
                                 value: '23 Oct 2003 22:23:16 -0700'
-                            }, {
+                            },
+                            {
                                 type: 'STRING',
                                 value: 'smiley!'
                             },
                             [
-                                [{
+                                [
+                                    {
                                         type: 'STRING',
                                         value: 'Ryan Finnie'
                                     },
-                                    null, {
+                                    null,
+                                    {
                                         type: 'STRING',
                                         value: 'rfinnie'
-                                    }, {
+                                    },
+                                    {
                                         type: 'STRING',
                                         value: 'domain.dom'
                                     }
                                 ]
                             ],
                             [
-                                [{
+                                [
+                                    {
                                         type: 'STRING',
                                         value: 'Ryan Finnie'
                                     },
-                                    null, {
+                                    null,
+                                    {
                                         type: 'STRING',
                                         value: 'rfinnie'
-                                    }, {
+                                    },
+                                    {
                                         type: 'STRING',
                                         value: 'domain.dom'
                                     }
                                 ]
                             ],
                             [
-                                [{
+                                [
+                                    {
                                         type: 'STRING',
                                         value: 'Ryan Finnie'
                                     },
-                                    null, {
+                                    null,
+                                    {
                                         type: 'STRING',
                                         value: 'rfinnie'
-                                    }, {
+                                    },
+                                    {
                                         type: 'STRING',
                                         value: 'domain.dom'
                                     }
                                 ]
                             ],
                             [
-                                [null,
-                                    null, {
+                                [
+                                    null,
+                                    null,
+                                    {
                                         type: 'STRING',
                                         value: 'bob'
-                                    }, {
+                                    },
+                                    {
                                         type: 'STRING',
                                         value: 'domain.dom'
                                     }
@@ -1677,7 +2102,8 @@ module.exports = {
                             ],
                             null,
                             null,
-                            null, {
+                            null,
+                            {
                                 type: 'STRING',
                                 value: '<1066972996.4264.39.camel@localhost>'
                             }
@@ -1686,28 +2112,36 @@ module.exports = {
                             [
                                 [
                                     [
-                                        [{
+                                        [
+                                            {
                                                 type: 'STRING',
                                                 value: 'text'
-                                            }, {
+                                            },
+                                            {
                                                 type: 'STRING',
                                                 value: 'plain'
                                             },
-                                            [{
-                                                type: 'STRING',
-                                                value: 'charset'
-                                            }, {
-                                                type: 'STRING',
-                                                value: 'us-ascii'
-                                            }],
+                                            [
+                                                {
+                                                    type: 'STRING',
+                                                    value: 'charset'
+                                                },
+                                                {
+                                                    type: 'STRING',
+                                                    value: 'us-ascii'
+                                                }
+                                            ],
                                             null,
-                                            null, {
+                                            null,
+                                            {
                                                 type: 'STRING',
                                                 value: 'quoted-printable'
-                                            }, {
+                                            },
+                                            {
                                                 type: 'ATOM',
                                                 value: '1606'
-                                            }, {
+                                            },
+                                            {
                                                 type: 'ATOM',
                                                 value: '42'
                                             },
@@ -1716,28 +2150,36 @@ module.exports = {
                                             null,
                                             null
                                         ],
-                                        [{
+                                        [
+                                            {
                                                 type: 'STRING',
                                                 value: 'text'
-                                            }, {
+                                            },
+                                            {
                                                 type: 'STRING',
                                                 value: 'html'
                                             },
-                                            [{
-                                                type: 'STRING',
-                                                value: 'charset'
-                                            }, {
-                                                type: 'STRING',
-                                                value: 'utf-8'
-                                            }],
+                                            [
+                                                {
+                                                    type: 'STRING',
+                                                    value: 'charset'
+                                                },
+                                                {
+                                                    type: 'STRING',
+                                                    value: 'utf-8'
+                                                }
+                                            ],
                                             null,
-                                            null, {
+                                            null,
+                                            {
                                                 type: 'STRING',
                                                 value: 'quoted-printable'
-                                            }, {
+                                            },
+                                            {
                                                 type: 'ATOM',
                                                 value: '2128'
-                                            }, {
+                                            },
+                                            {
                                                 type: 'ATOM',
                                                 value: '54'
                                             },
@@ -1745,152 +2187,199 @@ module.exports = {
                                             null,
                                             null,
                                             null
-                                        ], {
+                                        ],
+                                        {
                                             type: 'STRING',
                                             value: 'alternative'
                                         },
-                                        [{
-                                            type: 'STRING',
-                                            value: 'boundary'
-                                        }, {
-                                            type: 'STRING',
-                                            value: '=-dHujWM/Xizz57x/JOmDF'
-                                        }],
+                                        [
+                                            {
+                                                type: 'STRING',
+                                                value: 'boundary'
+                                            },
+                                            {
+                                                type: 'STRING',
+                                                value: '=-dHujWM/Xizz57x/JOmDF'
+                                            }
+                                        ],
                                         null,
                                         null,
                                         null
                                     ],
-                                    [{
+                                    [
+                                        {
                                             type: 'STRING',
                                             value: 'image'
-                                        }, {
+                                        },
+                                        {
                                             type: 'STRING',
                                             value: 'png'
                                         },
-                                        [{
-                                            type: 'STRING',
-                                            value: 'name'
-                                        }, {
-                                            type: 'STRING',
-                                            value: 'smiley-3.png'
-                                        }], {
+                                        [
+                                            {
+                                                type: 'STRING',
+                                                value: 'name'
+                                            },
+                                            {
+                                                type: 'STRING',
+                                                value: 'smiley-3.png'
+                                            }
+                                        ],
+                                        {
                                             type: 'STRING',
                                             value: '<1066971953.4232.15.camel@localhost>'
                                         },
-                                        null, {
+                                        null,
+                                        {
                                             type: 'STRING',
                                             value: 'base64'
-                                        }, {
+                                        },
+                                        {
                                             type: 'ATOM',
                                             value: '1122'
                                         },
-                                        null, [{
+                                        null,
+                                        [
+                                            {
                                                 type: 'STRING',
                                                 value: 'attachment'
                                             },
-                                            [{
-                                                type: 'STRING',
-                                                value: 'filename'
-                                            }, {
-                                                type: 'STRING',
-                                                value: 'smiley-3.png'
-                                            }]
+                                            [
+                                                {
+                                                    type: 'STRING',
+                                                    value: 'filename'
+                                                },
+                                                {
+                                                    type: 'STRING',
+                                                    value: 'smiley-3.png'
+                                                }
+                                            ]
                                         ],
                                         null,
                                         null
-                                    ], {
+                                    ],
+                                    {
                                         type: 'STRING',
                                         value: 'related'
                                     },
-                                    [{
-                                        type: 'STRING',
-                                        value: 'type'
-                                    }, {
-                                        type: 'STRING',
-                                        value: 'multipart/alternative'
-                                    }, {
-                                        type: 'STRING',
-                                        value: 'boundary'
-                                    }, {
-                                        type: 'STRING',
-                                        value: '=-GpwozF9CQ7NdF+fd+vMG'
-                                    }],
+                                    [
+                                        {
+                                            type: 'STRING',
+                                            value: 'type'
+                                        },
+                                        {
+                                            type: 'STRING',
+                                            value: 'multipart/alternative'
+                                        },
+                                        {
+                                            type: 'STRING',
+                                            value: 'boundary'
+                                        },
+                                        {
+                                            type: 'STRING',
+                                            value: '=-GpwozF9CQ7NdF+fd+vMG'
+                                        }
+                                    ],
                                     null,
                                     null,
                                     null
                                 ],
-                                [{
+                                [
+                                    {
                                         type: 'STRING',
                                         value: 'image'
-                                    }, {
+                                    },
+                                    {
                                         type: 'STRING',
                                         value: 'gif'
                                     },
-                                    [{
-                                        type: 'STRING',
-                                        value: 'name'
-                                    }, {
-                                        type: 'STRING',
-                                        value: 'dot.gif'
-                                    }],
+                                    [
+                                        {
+                                            type: 'STRING',
+                                            value: 'name'
+                                        },
+                                        {
+                                            type: 'STRING',
+                                            value: 'dot.gif'
+                                        }
+                                    ],
                                     null,
-                                    null, {
+                                    null,
+                                    {
                                         type: 'STRING',
                                         value: 'base64'
-                                    }, {
+                                    },
+                                    {
                                         type: 'ATOM',
                                         value: '96'
                                     },
-                                    null, [{
+                                    null,
+                                    [
+                                        {
                                             type: 'STRING',
                                             value: 'attachment'
                                         },
-                                        [{
-                                            type: 'STRING',
-                                            value: 'filename'
-                                        }, {
-                                            type: 'STRING',
-                                            value: 'dot.gif'
-                                        }]
+                                        [
+                                            {
+                                                type: 'STRING',
+                                                value: 'filename'
+                                            },
+                                            {
+                                                type: 'STRING',
+                                                value: 'dot.gif'
+                                            }
+                                        ]
                                     ],
                                     null,
                                     null
-                                ], {
+                                ],
+                                {
                                     type: 'STRING',
                                     value: 'mixed'
                                 },
-                                [{
-                                    type: 'STRING',
-                                    value: 'boundary'
-                                }, {
-                                    type: 'STRING',
-                                    value: '=-CgV5jm9HAY9VbUlAuneA'
-                                }],
+                                [
+                                    {
+                                        type: 'STRING',
+                                        value: 'boundary'
+                                    },
+                                    {
+                                        type: 'STRING',
+                                        value: '=-CgV5jm9HAY9VbUlAuneA'
+                                    }
+                                ],
                                 null,
                                 null,
                                 null
                             ],
-                            [{
+                            [
+                                {
                                     type: 'STRING',
                                     value: 'application'
-                                }, {
+                                },
+                                {
                                     type: 'STRING',
                                     value: 'pgp-signature'
                                 },
-                                [{
-                                    type: 'STRING',
-                                    value: 'name'
-                                }, {
-                                    type: 'STRING',
-                                    value: 'signature.asc'
-                                }],
-                                null, {
+                                [
+                                    {
+                                        type: 'STRING',
+                                        value: 'name'
+                                    },
+                                    {
+                                        type: 'STRING',
+                                        value: 'signature.asc'
+                                    }
+                                ],
+                                null,
+                                {
                                     type: 'STRING',
                                     value: 'This is a digitally signed message part'
-                                }, {
+                                },
+                                {
                                     type: 'STRING',
                                     value: '7bit'
-                                }, {
+                                },
+                                {
                                     type: 'ATOM',
                                     value: '196'
                                 },
@@ -1898,37 +2387,48 @@ module.exports = {
                                 null,
                                 null,
                                 null
-                            ], {
+                            ],
+                            {
                                 type: 'STRING',
                                 value: 'signed'
                             },
-                            [{
-                                type: 'STRING',
-                                value: 'micalg'
-                            }, {
-                                type: 'STRING',
-                                value: 'pgp-sha1'
-                            }, {
-                                type: 'STRING',
-                                value: 'protocol'
-                            }, {
-                                type: 'STRING',
-                                value: 'application/pgp-signature'
-                            }, {
-                                type: 'STRING',
-                                value: 'boundary'
-                            }, {
-                                type: 'STRING',
-                                value: '=-vH3FQO9a8icUn1ROCoAi'
-                            }],
+                            [
+                                {
+                                    type: 'STRING',
+                                    value: 'micalg'
+                                },
+                                {
+                                    type: 'STRING',
+                                    value: 'pgp-sha1'
+                                },
+                                {
+                                    type: 'STRING',
+                                    value: 'protocol'
+                                },
+                                {
+                                    type: 'STRING',
+                                    value: 'application/pgp-signature'
+                                },
+                                {
+                                    type: 'STRING',
+                                    value: 'boundary'
+                                },
+                                {
+                                    type: 'STRING',
+                                    value: '=-vH3FQO9a8icUn1ROCoAi'
+                                }
+                            ],
                             null,
                             null,
                             null
-                        ], {
+                        ],
+                        {
                             type: 'ATOM',
                             value: '177'
                         },
-                        null, [{
+                        null,
+                        [
+                            {
                                 type: 'STRING',
                                 value: 'inline'
                             },
@@ -1937,79 +2437,98 @@ module.exports = {
                         null,
                         null
                     ],
-                    [{
+                    [
+                        {
                             type: 'STRING',
                             value: 'message'
-                        }, {
+                        },
+                        {
                             type: 'STRING',
                             value: 'rfc822'
                         },
                         null,
-                        null, {
+                        null,
+                        {
                             type: 'STRING',
                             value: 'Kittens give Morbo gas. --Morbo'
-                        }, {
+                        },
+                        {
                             type: 'STRING',
                             value: '7bit'
-                        }, {
+                        },
+                        {
                             type: 'ATOM',
                             value: '3088'
                         },
-                        [{
+                        [
+                            {
                                 type: 'STRING',
                                 value: '23 Oct 2003 22:32:37 -0700'
-                            }, {
+                            },
+                            {
                                 type: 'STRING',
                                 value: 'the PROPER way to do alternative/related'
                             },
                             [
-                                [{
+                                [
+                                    {
                                         type: 'STRING',
                                         value: 'Ryan Finnie'
                                     },
-                                    null, {
+                                    null,
+                                    {
                                         type: 'STRING',
                                         value: 'rfinnie'
-                                    }, {
+                                    },
+                                    {
                                         type: 'STRING',
                                         value: 'domain.dom'
                                     }
                                 ]
                             ],
                             [
-                                [{
+                                [
+                                    {
                                         type: 'STRING',
                                         value: 'Ryan Finnie'
                                     },
-                                    null, {
+                                    null,
+                                    {
                                         type: 'STRING',
                                         value: 'rfinnie'
-                                    }, {
+                                    },
+                                    {
                                         type: 'STRING',
                                         value: 'domain.dom'
                                     }
                                 ]
                             ],
                             [
-                                [{
+                                [
+                                    {
                                         type: 'STRING',
                                         value: 'Ryan Finnie'
                                     },
-                                    null, {
+                                    null,
+                                    {
                                         type: 'STRING',
                                         value: 'rfinnie'
-                                    }, {
+                                    },
+                                    {
                                         type: 'STRING',
                                         value: 'domain.dom'
                                     }
                                 ]
                             ],
                             [
-                                [null,
-                                    null, {
+                                [
+                                    null,
+                                    null,
+                                    {
                                         type: 'STRING',
                                         value: 'bob'
-                                    }, {
+                                    },
+                                    {
                                         type: 'STRING',
                                         value: 'domain.dom'
                                     }
@@ -2017,34 +2536,43 @@ module.exports = {
                             ],
                             null,
                             null,
-                            null, {
+                            null,
+                            {
                                 type: 'STRING',
                                 value: '<1066973557.4265.51.camel@localhost>'
                             }
                         ],
                         [
-                            [{
+                            [
+                                {
                                     type: 'STRING',
                                     value: 'text'
-                                }, {
+                                },
+                                {
                                     type: 'STRING',
                                     value: 'plain'
                                 },
-                                [{
-                                    type: 'STRING',
-                                    value: 'CHARSET'
-                                }, {
-                                    type: 'STRING',
-                                    value: 'US-ASCII'
-                                }],
+                                [
+                                    {
+                                        type: 'STRING',
+                                        value: 'CHARSET'
+                                    },
+                                    {
+                                        type: 'STRING',
+                                        value: 'US-ASCII'
+                                    }
+                                ],
                                 null,
-                                null, {
+                                null,
+                                {
                                     type: 'STRING',
                                     value: '8bit'
-                                }, {
+                                },
+                                {
                                     type: 'ATOM',
                                     value: '863'
-                                }, {
+                                },
+                                {
                                     type: 'ATOM',
                                     value: '22'
                                 },
@@ -2054,28 +2582,36 @@ module.exports = {
                                 null
                             ],
                             [
-                                [{
+                                [
+                                    {
                                         type: 'STRING',
                                         value: 'text'
-                                    }, {
+                                    },
+                                    {
                                         type: 'STRING',
                                         value: 'html'
                                     },
-                                    [{
-                                        type: 'STRING',
-                                        value: 'CHARSET'
-                                    }, {
-                                        type: 'STRING',
-                                        value: 'utf-8'
-                                    }],
+                                    [
+                                        {
+                                            type: 'STRING',
+                                            value: 'CHARSET'
+                                        },
+                                        {
+                                            type: 'STRING',
+                                            value: 'utf-8'
+                                        }
+                                    ],
                                     null,
-                                    null, {
+                                    null,
+                                    {
                                         type: 'STRING',
                                         value: '8bit'
-                                    }, {
+                                    },
+                                    {
                                         type: 'ATOM',
                                         value: '1258'
-                                    }, {
+                                    },
+                                    {
                                         type: 'ATOM',
                                         value: '22'
                                     },
@@ -2084,21 +2620,26 @@ module.exports = {
                                     null,
                                     null
                                 ],
-                                [{
+                                [
+                                    {
                                         type: 'STRING',
                                         value: 'image'
-                                    }, {
+                                    },
+                                    {
                                         type: 'STRING',
                                         value: 'gif'
                                     },
-                                    null, {
+                                    null,
+                                    {
                                         type: 'STRING',
                                         value: '<1066973340.4232.46.camel@localhost>'
                                     },
-                                    null, {
+                                    null,
+                                    {
                                         type: 'STRING',
                                         value: 'base64'
-                                    }, {
+                                    },
+                                    {
                                         type: 'ATOM',
                                         value: '116'
                                     },
@@ -2106,45 +2647,58 @@ module.exports = {
                                     null,
                                     null,
                                     null
-                                ], {
+                                ],
+                                {
                                     type: 'STRING',
                                     value: 'related'
                                 },
-                                [{
-                                    type: 'STRING',
-                                    value: 'boundary'
-                                }, {
-                                    type: 'STRING',
-                                    value: '=-bFkxH1S3HVGcxi+o/5jG'
-                                }],
+                                [
+                                    {
+                                        type: 'STRING',
+                                        value: 'boundary'
+                                    },
+                                    {
+                                        type: 'STRING',
+                                        value: '=-bFkxH1S3HVGcxi+o/5jG'
+                                    }
+                                ],
                                 null,
                                 null,
                                 null
-                            ], {
+                            ],
+                            {
                                 type: 'STRING',
                                 value: 'alternative'
                             },
-                            [{
-                                type: 'STRING',
-                                value: 'type'
-                            }, {
-                                type: 'STRING',
-                                value: 'multipart/alternative'
-                            }, {
-                                type: 'STRING',
-                                value: 'boundary'
-                            }, {
-                                type: 'STRING',
-                                value: '=-tyGlQ9JvB5uvPWzozI+y'
-                            }],
+                            [
+                                {
+                                    type: 'STRING',
+                                    value: 'type'
+                                },
+                                {
+                                    type: 'STRING',
+                                    value: 'multipart/alternative'
+                                },
+                                {
+                                    type: 'STRING',
+                                    value: 'boundary'
+                                },
+                                {
+                                    type: 'STRING',
+                                    value: '=-tyGlQ9JvB5uvPWzozI+y'
+                                }
+                            ],
                             null,
                             null,
                             null
-                        ], {
+                        ],
+                        {
                             type: 'ATOM',
                             value: '79'
                         },
-                        null, [{
+                        null,
+                        [
+                            {
                                 type: 'STRING',
                                 value: 'inline'
                             },
@@ -2152,25 +2706,31 @@ module.exports = {
                         ],
                         null,
                         null
-                    ], {
+                    ],
+                    {
                         type: 'STRING',
                         value: 'mixed'
                     },
-                    [{
-                        type: 'STRING',
-                        value: 'boundary'
-                    }, {
-                        type: 'STRING',
-                        value: '=-qYxqvD9rbH0PNeExagh1'
-                    }],
+                    [
+                        {
+                            type: 'STRING',
+                            value: 'boundary'
+                        },
+                        {
+                            type: 'STRING',
+                            value: '=-qYxqvD9rbH0PNeExagh1'
+                        }
+                    ],
                     null,
                     null,
                     null
-                ], {
+                ],
+                {
                     type: 'ATOM',
                     value: 'BODY',
                     section: []
-                }, {
+                },
+                {
                     type: 'LITERAL',
                     value: ''
                 }

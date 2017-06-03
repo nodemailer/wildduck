@@ -33,7 +33,7 @@ if (config.syslog && syslog) {
             log.on('log.warn', data => syslog.warn(...logger(data)));
         case 'error':
             log.on('log.error', data => syslog.error(...logger(data)));
-            /* eslint-enable no-fallthrough */
+        /* eslint-enable no-fallthrough */
     }
 
     log.level = 'silent'; // disable normal log stream

@@ -1,6 +1,7 @@
 'use strict';
 
-module.exports.rfc822 = '' +
+module.exports.rfc822 =
+    '' +
     'Subject: test\ r\ n ' +
     'Content-type: multipart/mixed; boundary=abc\r\n' +
     '\r\n' +
@@ -15,40 +16,41 @@ module.exports.rfc822 = '' +
     '--abc--\r\n';
 
 module.exports.mimetree = {
-    childNodes: [{
-        header: ['Content-Type: text/plain'],
-        parsedHeader: {
-            'content-type': {
-                value: 'text/plain',
-                type: 'text',
-                subtype: 'plain',
-                params: {}
-            }
+    childNodes: [
+        {
+            header: ['Content-Type: text/plain'],
+            parsedHeader: {
+                'content-type': {
+                    value: 'text/plain',
+                    type: 'text',
+                    subtype: 'plain',
+                    params: {}
+                }
+            },
+            body: 'Hello world!',
+            multipart: false,
+            boundary: false,
+            lineCount: 1,
+            size: 12
         },
-        body: 'Hello world!',
-        multipart: false,
-        boundary: false,
-        lineCount: 1,
-        size: 12
-    }, {
-        header: ['Content-Type: image/png'],
-        parsedHeader: {
-            'content-type': {
-                value: 'image/png',
-                type: 'image',
-                subtype: 'png',
-                params: {}
-            }
-        },
-        body: 'BinaryContent',
-        multipart: false,
-        boundary: false,
-        lineCount: 1,
-        size: 13
-    }],
-    header: ['Subject: test',
-        'Content-type: multipart/mixed; boundary=abc'
+        {
+            header: ['Content-Type: image/png'],
+            parsedHeader: {
+                'content-type': {
+                    value: 'image/png',
+                    type: 'image',
+                    subtype: 'png',
+                    params: {}
+                }
+            },
+            body: 'BinaryContent',
+            multipart: false,
+            boundary: false,
+            lineCount: 1,
+            size: 13
+        }
     ],
+    header: ['Subject: test', 'Content-type: multipart/mixed; boundary=abc'],
     parsedHeader: {
         'content-type': {
             value: 'multipart/mixed',
@@ -70,35 +72,14 @@ module.exports.mimetree = {
 };
 
 module.exports.bodystructure = [
-    ['text',
-        'plain',
-        null,
-        null,
-        null,
-        '7bit',
-        12,
-        1,
-        null,
-        null,
-        null,
-        null
-    ],
-    ['image',
-        'png',
-        null,
-        null,
-        null,
-        '7bit',
-        13,
-        null,
-        null,
-        null,
-        null
-    ],
-    'mixed', ['boundary', 'abc'],
+    ['text', 'plain', null, null, null, '7bit', 12, 1, null, null, null, null],
+    ['image', 'png', null, null, null, '7bit', 13, null, null, null, null],
+    'mixed',
+    ['boundary', 'abc'],
     null,
     null,
     null
 ];
 
-module.exports.command = '* FETCH (BODYSTRUCTURE (("text" "plain" NIL NIL NIL "7bit" 12 1 NIL NIL NIL NIL) ("image" "png" NIL NIL NIL "7bit" 13 NIL NIL NIL NIL) "mixed" ("boundary" "abc") NIL NIL NIL))';
+module.exports.command =
+    '* FETCH (BODYSTRUCTURE (("text" "plain" NIL NIL NIL "7bit" 12 1 NIL NIL NIL NIL) ("image" "png" NIL NIL NIL "7bit" 13 NIL NIL NIL NIL) "mixed" ("boundary" "abc") NIL NIL NIL))';

@@ -1,15 +1,17 @@
 'use strict';
 
-let packageInfo = require('../../../package');
-let imapHandler = require('../handler/imap-handler');
+const packageInfo = require('../../../package');
+const imapHandler = require('../handler/imap-handler');
 
-let allowedKeys = ['name', 'version', 'os', 'os-version', 'vendor', 'support-url', 'address', 'date', 'command', 'arguments', 'environment'];
+const allowedKeys = ['name', 'version', 'os', 'os-version', 'vendor', 'support-url', 'address', 'date', 'command', 'arguments', 'environment'];
 
 module.exports = {
-    schema: [{
-        name: 'id',
-        type: ['null', 'array']
-    }],
+    schema: [
+        {
+            name: 'id',
+            type: ['null', 'array']
+        }
+    ],
     handler(command, callback) {
         let clientId = {};
         let serverId = {};
@@ -41,18 +43,27 @@ module.exports = {
                 }
             });
 
-            this._server.logger.info({
-                tnx: 'id',
-                cid: this.id
-            }, '[%s] Client identification data received', this.id);
-
-            Object.keys(clientId).
-            sort((a, b) => (allowedKeys.indexOf(a) - allowedKeys.indexOf(b))).
-            forEach(key => {
-                this._server.logger.info({
+            this._server.logger.info(
+                {
                     tnx: 'id',
                     cid: this.id
-                }, '[%s] %s%s: %s', this.id, key, new Array(maxKeyLen - key.length + 1).join(' '), clientId[key]);
+                },
+                '[%s] Client identification data received',
+                this.id
+            );
+
+            Object.keys(clientId).sort((a, b) => allowedKeys.indexOf(a) - allowedKeys.indexOf(b)).forEach(key => {
+                this._server.logger.info(
+                    {
+                        tnx: 'id',
+                        cid: this.id
+                    },
+                    '[%s] %s%s: %s',
+                    this.id,
+                    key,
+                    new Array(maxKeyLen - key.length + 1).join(' '),
+                    clientId[key]
+                );
             });
         }
 
@@ -70,14 +81,18 @@ module.exports = {
             });
         }
 
-        this.send(imapHandler.compiler({
-            tag: '*',
-            command: 'ID',
-            attributes: serverIdList.length ? [serverIdList] : {
-                type: 'atom',
-                value: 'NIL'
-            }
-        }));
+        this.send(
+            imapHandler.compiler({
+                tag: '*',
+                command: 'ID',
+                attributes: serverIdList.length
+                    ? [serverIdList]
+                    : {
+                        type: 'atom',
+                        value: 'NIL'
+                    }
+            })
+        );
 
         callback(null, {
             response: 'OK'

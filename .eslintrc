@@ -1,3 +1,4 @@
 {
-    "extends": "nodemailer"
+    "extends":    "nodemailer",
+    "fix":        false
 }

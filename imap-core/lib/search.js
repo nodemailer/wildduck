@@ -1,11 +1,11 @@
 'use strict';
 
 const Indexer = require('./indexer/indexer');
-let indexer = new Indexer();
+const indexer = new Indexer();
 
 module.exports.matchSearchQuery = matchSearchQuery;
 
-let queryHandlers = {
+const queryHandlers = {
     // always matches
     all(message, query, callback) {
         return callback(null, true);
@@ -57,9 +57,13 @@ let queryHandlers = {
 
     // matches message body
     body(message, query, callback) {
-        let data = indexer.getContents(message.mimeTree, {
-            type: 'text'
-        }, true);
+        let data = indexer.getContents(
+            message.mimeTree,
+            {
+                type: 'text'
+            },
+            true
+        );
 
         let resolveData = next => {
             if (data.type !== 'stream') {
@@ -94,9 +98,13 @@ let queryHandlers = {
 
     // matches message source
     text(message, query, callback) {
-        let data = indexer.getContents(message.mimeTree, {
-            type: 'content'
-        }, true);
+        let data = indexer.getContents(
+            message.mimeTree,
+            {
+                type: 'content'
+            },
+            true
+        );
 
         let resolveData = next => {
             if (data.type !== 'stream') {
@@ -160,7 +168,7 @@ let queryHandlers = {
             mimeTree = indexer.parseMimeTree(message.raw || '');
         }
 
-        let headers = (mimeTree.header || []);
+        let headers = mimeTree.header || [];
         let header = query.header;
         let term = (query.value || '').toString().toLowerCase();
         let key, value, parts;
@@ -169,7 +177,7 @@ let queryHandlers = {
             parts = headers[i].split(':');
             key = (parts.shift() || '').trim().toLowerCase();
 
-            value = (parts.join(':') || '');
+            value = parts.join(':') || '';
 
             if (key === header && (!term || value.toLowerCase().indexOf(term) >= 0)) {
                 return callback(null, true);
@@ -212,7 +220,6 @@ function getShortDate(date) {
  * @returns {Boolean} Term matched (true) or not (false)
  */
 function matchSearchTerm(message, query, callback) {
-
     if (Array.isArray(query)) {
         // AND, all terms need to match
         return matchSearchQuery(message, query, callback);
@@ -224,28 +231,27 @@ function matchSearchTerm(message, query, callback) {
     }
 
     switch (query.key) {
-        case 'or':
-            {
-                // OR, only single match needed
-                let checked = 0;
-                let checkNext = () => {
-                    if (checked >= query.value.length) {
-                        return callback(null, false);
+        case 'or': {
+            // OR, only single match needed
+            let checked = 0;
+            let checkNext = () => {
+                if (checked >= query.value.length) {
+                    return callback(null, false);
+                }
+                let term = query.value[checked++];
+                matchSearchTerm(message, term, (err, match) => {
+                    if (err) {
+                        return callback(err);
                     }
-                    let term = query.value[checked++];
-                    matchSearchTerm(message, term, (err, match) => {
-                        if (err) {
-                            return callback(err);
-                        }
-                        if (match) {
-                            return callback(null, true);
-                        }
-                        setImmediate(checkNext);
-                    });
-                };
-                return setImmediate(checkNext);
-            }
-            /*
+                    if (match) {
+                        return callback(null, true);
+                    }
+                    setImmediate(checkNext);
+                });
+            };
+            return setImmediate(checkNext);
+        }
+        /*
             // OR, only single match needed
             for (let i = query.value.length - 1; i >= 0; i--) {
                 if (matchSearchTerm(message, query.value[i])) {

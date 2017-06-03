@@ -36,29 +36,34 @@ const serverOptions = {
     },
 
     onAuth(auth, session, callback) {
-        userHandler.authenticate(auth.username, auth.password, {
-            protocol: 'POP3',
-            ip: session.remoteAddress
-        }, (err, result) => {
-            if (err) {
-                return callback(err);
-            }
-            if (!result) {
-                return callback();
-            }
-
-            if (result.scope === 'master' && result.enabled2fa) {
-                // master password not allowed if 2fa is enabled!
-                return callback();
-            }
-
-            callback(null, {
-                user: {
-                    id: result.user,
-                    username: result.username
+        userHandler.authenticate(
+            auth.username,
+            auth.password,
+            {
+                protocol: 'POP3',
+                ip: session.remoteAddress
+            },
+            (err, result) => {
+                if (err) {
+                    return callback(err);
                 }
-            });
-        });
+                if (!result) {
+                    return callback();
+                }
+
+                if (result.scope === 'master' && result.enabled2fa) {
+                    // master password not allowed if 2fa is enabled!
+                    return callback();
+                }
+
+                callback(null, {
+                    user: {
+                        id: result.user,
+                        username: result.username
+                    }
+                });
+            }
+        );
     },
 
     onListMessages(session, callback) {
@@ -67,7 +72,6 @@ const serverOptions = {
             user: session.user.id,
             path: 'INBOX'
         }, (err, mailbox) => {
-
             if (err) {
                 return callback(err);
             }
@@ -78,37 +82,41 @@ const serverOptions = {
 
             session.user.mailbox = mailbox._id;
 
-            db.database.collection('messages').find({
-                mailbox: mailbox._id
-            }).project({
-                uid: true,
-                size: true,
-                // required to decide if we need to update flags after RETR
-                flags: true,
-                seen: true
-            }).sort([
-                ['uid', -1]
-            ]).limit(config.pop3.maxMessages || MAX_MESSAGES).toArray((err, messages) => {
-                if (err) {
-                    return callback(err);
-                }
+            db.database
+                .collection('messages')
+                .find({
+                    mailbox: mailbox._id
+                })
+                .project({
+                    uid: true,
+                    size: true,
+                    // required to decide if we need to update flags after RETR
+                    flags: true,
+                    seen: true
+                })
+                .sort([['uid', -1]])
+                .limit(config.pop3.maxMessages || MAX_MESSAGES)
+                .toArray((err, messages) => {
+                    if (err) {
+                        return callback(err);
+                    }
 
-                return callback(null, {
-                    messages: messages.
-                    // showolder first
-                    reverse().
-                    // compose message objects
-                    map(message => ({
-                        id: message._id.toString(),
-                        uid: message.uid,
-                        size: message.size,
-                        flags: message.flags,
-                        seen: message.seen
-                    })),
-                    count: messages.length,
-                    size: messages.reduce((acc, message) => acc + message.size, 0)
+                    return callback(null, {
+                        messages: messages
+                            // showolder first
+                            .reverse()
+                            // compose message objects
+                            .map(message => ({
+                                id: message._id.toString(),
+                                uid: message.uid,
+                                size: message.size,
+                                flags: message.flags,
+                                seen: message.seen
+                            })),
+                        count: messages.length,
+                        size: messages.reduce((acc, message) => acc + message.size, 0)
+                    });
                 });
-            });
         });
     },
 
@@ -136,7 +144,6 @@ const serverOptions = {
     },
 
     onUpdate(update, session, callback) {
-
         let handleSeen = next => {
             if (update.seen && update.seen.length) {
                 return markAsSeen(session, update.seen, next);
@@ -193,25 +200,28 @@ function trashMessages(session, messages, callback) {
             return callback(new Error('Trash mailbox not found for user'));
         }
 
-        messageHandler.move({
-            user: session.user.id,
-            // folder to move messages from
-            source: {
-                mailbox: session.user.mailbox
-            },
-            // folder to move messages to
-            destination: trashMailbox,
-            // list of UIDs to move
-            messages: messages.map(message => message.uid),
+        messageHandler.move(
+            {
+                user: session.user.id,
+                // folder to move messages from
+                source: {
+                    mailbox: session.user.mailbox
+                },
+                // folder to move messages to
+                destination: trashMailbox,
+                // list of UIDs to move
+                messages: messages.map(message => message.uid),
 
-            // add \Seen flags to deleted messages
-            markAsSeen: true
-        }, (err, success, meta) => {
-            if (err) {
-                return callback(err);
+                // add \Seen flags to deleted messages
+                markAsSeen: true
+            },
+            (err, success, meta) => {
+                if (err) {
+                    return callback(err);
+                }
+                callback(null, (success && meta && meta.destinationUid && meta.destinationUid.length) || 0);
             }
-            callback(null, success && meta && meta.destinationUid && meta.destinationUid.length || 0);
-        });
+        );
     });
 }
 
@@ -259,19 +269,24 @@ function markAsSeen(session, messages, callback) {
             if (err) {
                 return callback(err);
             }
-            messageHandler.notifier.addEntries(mailboxData, false, messages.map(message => {
-                let result = {
-                    command: 'FETCH',
-                    uid: message.uid,
-                    flags: message.flags.concat('\\Seen'),
-                    message: new ObjectID(message.id),
-                    modseq: mailboxData.modifyIndex
-                };
-                return result;
-            }), () => {
-                messageHandler.notifier.fire(mailboxData.user, mailboxData.path);
-                callback(null, messages.length);
-            });
+            messageHandler.notifier.addEntries(
+                mailboxData,
+                false,
+                messages.map(message => {
+                    let result = {
+                        command: 'FETCH',
+                        uid: message.uid,
+                        flags: message.flags.concat('\\Seen'),
+                        message: new ObjectID(message.id),
+                        modseq: mailboxData.modifyIndex
+                    };
+                    return result;
+                }),
+                () => {
+                    messageHandler.notifier.fire(mailboxData.user, mailboxData.path);
+                    callback(null, messages.length);
+                }
+            );
         });
     });
 }

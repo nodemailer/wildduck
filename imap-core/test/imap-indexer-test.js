@@ -3,19 +3,19 @@
 
 'use strict';
 
-let chai = require('chai');
-let expect = chai.expect;
+const chai = require('chai');
+const expect = chai.expect;
 
 //let http = require('http');
-let fs = require('fs');
-let Indexer = require('../lib/indexer/indexer');
-let indexer = new Indexer();
+const fs = require('fs');
+const Indexer = require('../lib/indexer/indexer');
+const indexer = new Indexer();
 
 chai.config.includeStack = true;
 
 //const HTTP_PORT = 9998;
 
-let fixtures = {
+const fixtures = {
     simple: {
         eml: fs.readFileSync(__dirname + '/fixtures/simple.eml'),
         tree: require('./fixtures/simple.json')
@@ -26,8 +26,8 @@ let fixtures = {
     }
 };
 
-describe('#parseMimeTree', function () {
-    it('should parse mime message', function (done) {
+describe('#parseMimeTree', function() {
+    it('should parse mime message', function(done) {
         let parsed = indexer.parseMimeTree(fixtures.simple.eml);
 
         //expect(parsed).to.deep.equal(fixtures.simple.tree);

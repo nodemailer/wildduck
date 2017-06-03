@@ -1,7 +1,7 @@
 'use strict';
 
-let imapHandler = require('../handler/imap-handler');
-let imapTools = require('../imap-tools');
+const imapHandler = require('../handler/imap-handler');
+const imapTools = require('../imap-tools');
 
 module.exports = {
     state: 'Selected',
@@ -9,7 +9,6 @@ module.exports = {
     schema: false, // recursive, can't predefine
 
     handler(command, callback) {
-
         // Check if SEARCH method is set
         if (typeof this._server.onSearch !== 'function') {
             return callback(null, {
@@ -44,73 +43,78 @@ module.exports = {
             this.condstoreEnabled = this.selected.condstoreEnabled = true;
         }
 
-        this._server.onSearch(this.selected.mailbox, {
-            query: parsed.query,
-            terms: parsed.terms,
-            isUid
-        }, this.session, (err, results) => {
-            if (err) {
-                return callback(err);
-            }
+        this._server.onSearch(
+            this.selected.mailbox,
+            {
+                query: parsed.query,
+                terms: parsed.terms,
+                isUid
+            },
+            this.session,
+            (err, results) => {
+                if (err) {
+                    return callback(err);
+                }
 
-            let matches = results.uidList;
+                let matches = results.uidList;
 
-            if (typeof matches === 'string') {
-                return callback(null, {
-                    response: 'NO',
-                    code: matches.toUpperCase()
-                });
-            }
+                if (typeof matches === 'string') {
+                    return callback(null, {
+                        response: 'NO',
+                        code: matches.toUpperCase()
+                    });
+                }
 
-            let response = {
-                tag: '*',
-                command: 'SEARCH',
-                attributes: []
-            };
+                let response = {
+                    tag: '*',
+                    command: 'SEARCH',
+                    attributes: []
+                };
 
-            if (Array.isArray(matches) && matches.length) {
-                matches.sort((a, b) => (a - b));
+                if (Array.isArray(matches) && matches.length) {
+                    matches.sort((a, b) => a - b);
 
-                matches.forEach(nr => {
-                    let seq;
+                    matches.forEach(nr => {
+                        let seq;
 
-                    if (!isUid) {
-                        seq = this.selected.uidList.indexOf(nr) + 1;
-                        if (seq) {
+                        if (!isUid) {
+                            seq = this.selected.uidList.indexOf(nr) + 1;
+                            if (seq) {
+                                response.attributes.push({
+                                    type: 'atom',
+                                    value: String(seq)
+                                });
+                            }
+                        } else {
                             response.attributes.push({
                                 type: 'atom',
-                                value: String(seq)
+                                value: String(nr)
                             });
                         }
-                    } else {
-                        response.attributes.push({
+                    });
+                }
+
+                // append (MODSEQ 123) for queries that include MODSEQ criteria
+                if (results.highestModseq && parsed.terms.indexOf('modseq') >= 0) {
+                    response.attributes.push([
+                        {
                             type: 'atom',
-                            value: String(nr)
-                        });
-                    }
+                            value: 'MODSEQ'
+                        },
+                        {
+                            type: 'atom',
+                            value: String(results.highestModseq)
+                        }
+                    ]);
+                }
+
+                this.send(imapHandler.compiler(response));
+
+                return callback(null, {
+                    response: 'OK'
                 });
             }
-
-            // append (MODSEQ 123) for queries that include MODSEQ criteria
-            if (results.highestModseq && parsed.terms.indexOf('modseq') >= 0) {
-                response.attributes.push(
-                    [{
-                        type: 'atom',
-                        value: 'MODSEQ'
-                    }, {
-                        type: 'atom',
-                        value: String(results.highestModseq)
-                    }]
-                );
-            }
-
-            this.send(imapHandler.compiler(response));
-
-            return callback(null, {
-                response: 'OK'
-            });
-
-        });
+        );
     },
 
     parseQueryTerms // expose for testing
@@ -189,7 +193,6 @@ function parseQueryTerms(terms, uidList) {
         };
 
         switch (response.key) {
-
             case 'not':
                 // make sure not is not an array, instead return several 'not' expressions
                 response = [].concat(curTerm[1] || []).map(val => ({
@@ -266,7 +269,7 @@ function normalizeTerm(term, mapping) {
     if (result[0] === 'flag') {
         flags = [];
         result.forEach((val, i) => {
-            if (i && (i % 2 !== 0)) {
+            if (i && i % 2 !== 0) {
                 flags.push({
                     key: 'flag',
                     value: val,

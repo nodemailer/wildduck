@@ -1,7 +1,7 @@
 'use strict';
 
-let imapTools = require('../imap-tools');
-let imapHandler = require('../handler/imap-handler');
+const imapTools = require('../imap-tools');
+const imapHandler = require('../handler/imap-handler');
 
 /*
 
@@ -16,20 +16,23 @@ module.exports = {
     state: 'Selected',
     disableNotifications: true,
 
-    schema: [{
-        name: 'range',
-        type: 'sequence'
-    }, {
-        name: 'data',
-        type: 'mixed'
-    }, {
-        name: 'extensions',
-        type: 'array',
-        optional: true
-    }],
+    schema: [
+        {
+            name: 'range',
+            type: 'sequence'
+        },
+        {
+            name: 'data',
+            type: 'mixed'
+        },
+        {
+            name: 'extensions',
+            type: 'array',
+            optional: true
+        }
+    ],
 
     handler(command, callback) {
-
         // Check if FETCH method is set
         if (typeof this._server.onFetch !== 'function') {
             return callback(null, {
@@ -39,7 +42,7 @@ module.exports = {
         }
 
         let isUid = (command.command || '').toString().toUpperCase() === 'UID FETCH' ? true : false;
-        let range = command.attributes[0] && command.attributes[0].value || '';
+        let range = (command.attributes[0] && command.attributes[0].value) || '';
         if (!imapTools.validateSequnce(range)) {
             return callback(new Error('Invalid sequence set for ' + command.command));
         }
@@ -53,7 +56,7 @@ module.exports = {
         let query = [];
 
         let params = [].concat(command.attributes[1] || []);
-        let extensions = [].concat(command.attributes[2] || []).map(val => (val && val.value));
+        let extensions = [].concat(command.attributes[2] || []).map(val => val && val.value);
 
         if (extensions.length) {
             if (extensions.length !== 2 || (extensions[0] || '').toString().toUpperCase() !== 'CHANGEDSINCE' || isNaN(extensions[1])) {
@@ -87,7 +90,7 @@ module.exports = {
         }
 
         // checks conditions – does the messages need to be marked as seen, is the full body needed etc.
-        for (i = 0, len = params.length; i < len; i++) {
+        for ((i = 0), (len = params.length); i < len; i++) {
             param = params[i];
             if (!param || (typeof param !== 'string' && param.type !== 'ATOM')) {
                 return callback(new Error('Invalid message data item name for ' + command.command));
@@ -161,7 +164,7 @@ module.exports = {
         let getFieldName = field => (field.value || '').toString().toLowerCase();
 
         // compose query object from parsed IMAP command
-        for (i = 0, len = params.length; i < len; i++) {
+        for ((i = 0), (len = params.length); i < len; i++) {
             param = params[i];
             let item = {
                 query: imapHandler.compiler({
@@ -221,42 +224,52 @@ module.exports = {
             query.push(item);
         }
 
-        this._server.logger.debug({
-            tnx: 'fetch',
-            cid: this.id
-        }, '[%s] FETCH: %s', this.id, JSON.stringify({
-            metadataOnly: !!metadataOnly,
-            markAsSeen: !!markAsSeen,
-            messages: messages.length,
-            query,
-            changedSince,
-            isUid
-        }));
+        this._server.logger.debug(
+            {
+                tnx: 'fetch',
+                cid: this.id
+            },
+            '[%s] FETCH: %s',
+            this.id,
+            JSON.stringify({
+                metadataOnly: !!metadataOnly,
+                markAsSeen: !!markAsSeen,
+                messages: messages.length,
+                query,
+                changedSince,
+                isUid
+            })
+        );
 
-        this._server.onFetch(this.selected.mailbox, {
-            metadataOnly: !!metadataOnly,
-            markAsSeen: !!markAsSeen,
-            messages,
-            query,
-            changedSince,
-            isUid
-        }, this.session, (err, success) => {
-            if (err) {
-                return callback(err);
+        this._server.onFetch(
+            this.selected.mailbox,
+            {
+                metadataOnly: !!metadataOnly,
+                markAsSeen: !!markAsSeen,
+                messages,
+                query,
+                changedSince,
+                isUid
+            },
+            this.session,
+            (err, success) => {
+                if (err) {
+                    return callback(err);
+                }
+
+                callback(null, {
+                    response: success === true ? 'OK' : 'NO',
+                    code: typeof success === 'string' ? success.toUpperCase() : false
+                });
             }
-
-            callback(null, {
-                response: success === true ? 'OK' : 'NO',
-                code: typeof success === 'string' ? success.toUpperCase() : false
-            });
-        });
+        );
     }
 };
 
 function checkSchema(schema, item) {
     let i, len;
     if (Array.isArray(schema)) {
-        for (i = 0, len = schema.length; i < len; i++) {
+        for ((i = 0), (len = schema.length); i < len; i++) {
             if (checkSchema(schema[i], item)) {
                 return true;
             }
@@ -272,7 +285,6 @@ function checkSchema(schema, item) {
     }
 
     if (typeof schema === 'object' && schema) {
-
         // check.type
         switch (Object.prototype.toString.call(schema.type)) {
             case '[object RegExp]':

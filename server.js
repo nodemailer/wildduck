@@ -4,14 +4,14 @@
 
 process.env.UV_THREADPOOL_SIZE = 16;
 
-let config = require('config');
-let log = require('npmlog');
-let packageData = require('./package.json');
+const config = require('config');
+const log = require('npmlog');
+const packageData = require('./package.json');
 
 log.level = config.log.level;
 require('./logger');
 
-let printLogo = () => {
+const printLogo = () => {
     log.info('App', '');
     log.info('App', ' ##   ##  ######  ##      #####       #####   ##  ##   ####   ##  ##');
     log.info('App', ' ##   ##    ##    ##      ##  ##      ##  ##  ##  ##  ##  ##  ## ##');

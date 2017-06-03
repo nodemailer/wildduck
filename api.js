@@ -25,12 +25,14 @@ let messageHandler;
 let userHandler;
 
 server.use(restify.queryParser());
-server.use(restify.bodyParser({
-    maxBodySize: 0,
-    mapParams: true,
-    mapFiles: false,
-    overrideParams: false
-}));
+server.use(
+    restify.bodyParser({
+        maxBodySize: 0,
+        mapParams: true,
+        mapFiles: false,
+        overrideParams: false
+    })
+);
 
 server.post('/user/create', (req, res, next) => {
     res.charSet('utf-8');
@@ -41,15 +43,19 @@ server.post('/user/create', (req, res, next) => {
         quota: Joi.number().default(config.maxStorage * (1024 * 1024))
     });
 
-    const result = Joi.validate({
-        username: req.params.username,
-        password: req.params.password,
-        quota: req.params.quota
-    }, schema, {
-        abortEarly: false,
-        convert: true,
-        allowUnknown: true
-    });
+    const result = Joi.validate(
+        {
+            username: req.params.username,
+            password: req.params.password,
+            quota: req.params.quota
+        },
+        schema,
+        {
+            abortEarly: false,
+            convert: true,
+            allowUnknown: true
+        }
+    );
 
     if (result.error) {
         res.json({
@@ -88,15 +94,19 @@ server.post('/user/address/create', (req, res, next) => {
     let address = req.params.address;
     let main = req.params.main;
 
-    const result = Joi.validate({
-        username,
-        address: (address || '').replace(/[\u0080-\uFFFF]/g, 'x'),
-        main
-    }, schema, {
-        abortEarly: false,
-        convert: true,
-        allowUnknown: true
-    });
+    const result = Joi.validate(
+        {
+            username,
+            address: (address || '').replace(/[\u0080-\uFFFF]/g, 'x'),
+            main
+        },
+        schema,
+        {
+            abortEarly: false,
+            convert: true,
+            allowUnknown: true
+        }
+    );
 
     if (result.error) {
         res.json({
@@ -179,13 +189,18 @@ server.post('/user/address/create', (req, res, next) => {
 
                 if (!userData.address || main) {
                     // register this address as the default address for that user
-                    return db.database.collection('users').findOneAndUpdate({
-                        _id: userData._id
-                    }, {
-                        $set: {
-                            address
-                        }
-                    }, {}, done);
+                    return db.database.collection('users').findOneAndUpdate(
+                        {
+                            _id: userData._id
+                        },
+                        {
+                            $set: {
+                                address
+                            }
+                        },
+                        {},
+                        done
+                    );
                 }
 
                 done();
@@ -204,16 +219,20 @@ server.post('/user/quota', (req, res, next) => {
         forwards: Joi.number().min(0).max(1000000).optional()
     });
 
-    const result = Joi.validate({
-        username: req.params.username,
-        quota: req.params.quota,
-        recipients: req.params.recipients,
-        forwards: req.params.forwards
-    }, schema, {
-        abortEarly: false,
-        convert: true,
-        allowUnknown: true
-    });
+    const result = Joi.validate(
+        {
+            username: req.params.username,
+            quota: req.params.quota,
+            recipients: req.params.recipients,
+            forwards: req.params.forwards
+        },
+        schema,
+        {
+            abortEarly: false,
+            convert: true,
+            allowUnknown: true
+        }
+    );
 
     if (result.error) {
         res.json({
@@ -286,13 +305,17 @@ server.post('/user/quota/reset', (req, res, next) => {
         username: Joi.string().alphanum().lowercase().min(3).max(30).required()
     });
 
-    const result = Joi.validate({
-        username: req.params.username
-    }, schema, {
-        abortEarly: false,
-        convert: true,
-        allowUnknown: true
-    });
+    const result = Joi.validate(
+        {
+            username: req.params.username
+        },
+        schema,
+        {
+            abortEarly: false,
+            convert: true,
+            allowUnknown: true
+        }
+    );
 
     if (result.error) {
         res.json({
@@ -322,46 +345,34 @@ server.post('/user/quota/reset', (req, res, next) => {
             return next();
         }
 
-
         // calculate mailbox size by aggregating the size's of all messages
-        db.database.collection('messages').aggregate([{
-            $match: {
-                user: user._id
-            }
-        }, {
-            $group: {
-                _id: {
-                    user: '$user'
+        db.database
+            .collection('messages')
+            .aggregate(
+            [
+                {
+                    $match: {
+                        user: user._id
+                    }
                 },
-                storageUsed: {
-                    $sum: '$size'
+                {
+                    $group: {
+                        _id: {
+                            user: '$user'
+                        },
+                        storageUsed: {
+                            $sum: '$size'
+                        }
+                    }
+                }
+            ],
+            {
+                cursor: {
+                    batchSize: 1
                 }
             }
-        }], {
-            cursor: {
-                batchSize: 1
-            }
-        }).toArray((err, result) => {
-            if (err) {
-                res.json({
-                    error: 'MongoDB Error: ' + err.message,
-                    username
-                });
-                return next();
-            }
-
-            let storageUsed = result && result[0] && result[0].storageUsed || 0;
-
-            // update quota counter
-            db.database.collection('users').findOneAndUpdate({
-                _id: user._id
-            }, {
-                $set: {
-                    storageUsed: Number(storageUsed) || 0
-                }
-            }, {
-                returnOriginal: false
-            }, (err, result) => {
+            )
+            .toArray((err, result) => {
                 if (err) {
                     res.json({
                         error: 'MongoDB Error: ' + err.message,
@@ -370,23 +381,43 @@ server.post('/user/quota/reset', (req, res, next) => {
                     return next();
                 }
 
-                if (!result || !result.value) {
+                let storageUsed = (result && result[0] && result[0].storageUsed) || 0;
+
+                // update quota counter
+                db.database.collection('users').findOneAndUpdate({
+                    _id: user._id
+                }, {
+                    $set: {
+                        storageUsed: Number(storageUsed) || 0
+                    }
+                }, {
+                    returnOriginal: false
+                }, (err, result) => {
+                    if (err) {
+                        res.json({
+                            error: 'MongoDB Error: ' + err.message,
+                            username
+                        });
+                        return next();
+                    }
+
+                    if (!result || !result.value) {
+                        res.json({
+                            error: 'This user does not exist',
+                            username
+                        });
+                        return next();
+                    }
+
                     res.json({
-                        error: 'This user does not exist',
-                        username
+                        success: true,
+                        username,
+                        previousStorageUsed: user.storageUsed,
+                        storageUsed: Number(result.value.storageUsed) || 0
                     });
                     return next();
-                }
-
-                res.json({
-                    success: true,
-                    username,
-                    previousStorageUsed: user.storageUsed,
-                    storageUsed: Number(result.value.storageUsed) || 0
                 });
-                return next();
             });
-        });
     });
 });
 
@@ -398,14 +429,18 @@ server.post('/user/password', (req, res, next) => {
         password: Joi.string().min(3).max(100).required()
     });
 
-    const result = Joi.validate({
-        username: req.params.username,
-        password: req.params.password
-    }, schema, {
-        abortEarly: false,
-        convert: true,
-        allowUnknown: true
-    });
+    const result = Joi.validate(
+        {
+            username: req.params.username,
+            password: req.params.password
+        },
+        schema,
+        {
+            abortEarly: false,
+            convert: true,
+            allowUnknown: true
+        }
+    );
 
     if (result.error) {
         res.json({
@@ -456,13 +491,17 @@ server.get('/user', (req, res, next) => {
         username: Joi.string().alphanum().lowercase().min(3).max(30).required()
     });
 
-    const result = Joi.validate({
-        username: req.query.username
-    }, schema, {
-        abortEarly: false,
-        convert: true,
-        allowUnknown: true
-    });
+    const result = Joi.validate(
+        {
+            username: req.query.username
+        },
+        schema,
+        {
+            abortEarly: false,
+            convert: true,
+            allowUnknown: true
+        }
+    );
 
     if (result.error) {
         res.json({
@@ -491,70 +530,75 @@ server.get('/user', (req, res, next) => {
             return next();
         }
 
-        db.database.collection('addresses').find({
-            user: userData._id
-        }).sort({
-            address: 1
-        }).toArray((err, addresses) => {
-            if (err) {
-                res.json({
-                    error: 'MongoDB Error: ' + err.message,
-                    username
-                });
-                return next();
-            }
-
-            if (!addresses) {
-                addresses = [];
-            }
-
-            db.redis.multi().
-            get('wdr:' + userData._id.toString()).
-            ttl('wdr:' + userData._id.toString()).
-            get('wdf:' + userData._id.toString()).
-            ttl('wdf:' + userData._id.toString()).
-            exec((err, result) => {
+        db.database
+            .collection('addresses')
+            .find({
+                user: userData._id
+            })
+            .sort({
+                address: 1
+            })
+            .toArray((err, addresses) => {
                 if (err) {
-                    // ignore
+                    res.json({
+                        error: 'MongoDB Error: ' + err.message,
+                        username
+                    });
+                    return next();
                 }
-                let recipients = Number(userData.recipients) || 0;
-                let forwards = Number(userData.forwards) || 0;
 
-                let recipientsSent = Number(result && result[0]) || 0;
-                let recipientsTtl = Number(result && result[1]) || 0;
+                if (!addresses) {
+                    addresses = [];
+                }
 
-                let forwardsSent = Number(result && result[2]) || 0;
-                let forwardsTtl = Number(result && result[3]) || 0;
+                db.redis
+                    .multi()
+                    .get('wdr:' + userData._id.toString())
+                    .ttl('wdr:' + userData._id.toString())
+                    .get('wdf:' + userData._id.toString())
+                    .ttl('wdf:' + userData._id.toString())
+                    .exec((err, result) => {
+                        if (err) {
+                            // ignore
+                        }
+                        let recipients = Number(userData.recipients) || 0;
+                        let forwards = Number(userData.forwards) || 0;
 
-                res.json({
-                    success: true,
-                    username,
+                        let recipientsSent = Number(result && result[0]) || 0;
+                        let recipientsTtl = Number(result && result[1]) || 0;
 
-                    quota: Number(userData.quota) || config.maxStorage * 1024 * 1024,
-                    storageUsed: Math.max(Number(userData.storageUsed) || 0, 0),
+                        let forwardsSent = Number(result && result[2]) || 0;
+                        let forwardsTtl = Number(result && result[3]) || 0;
 
-                    recipients,
-                    recipientsSent,
+                        res.json({
+                            success: true,
+                            username,
 
-                    forwards,
-                    forwardsSent,
+                            quota: Number(userData.quota) || config.maxStorage * 1024 * 1024,
+                            storageUsed: Math.max(Number(userData.storageUsed) || 0, 0),
 
-                    recipientsLimited: recipients ? recipients <= recipientsSent : false,
-                    recipientsTtl: recipientsTtl >= 0 ? recipientsTtl : false,
+                            recipients,
+                            recipientsSent,
 
-                    forwardsLimited: forwards ? forwards <= forwardsSent : false,
-                    forwardsTtl: forwardsTtl >= 0 ? forwardsTtl : false,
+                            forwards,
+                            forwardsSent,
 
-                    addresses: addresses.map(address => ({
-                        id: address._id.toString(),
-                        address: address.address,
-                        main: address.address === userData.address,
-                        created: address.created
-                    }))
-                });
-                return next();
+                            recipientsLimited: recipients ? recipients <= recipientsSent : false,
+                            recipientsTtl: recipientsTtl >= 0 ? recipientsTtl : false,
+
+                            forwardsLimited: forwards ? forwards <= forwardsSent : false,
+                            forwardsTtl: forwardsTtl >= 0 ? forwardsTtl : false,
+
+                            addresses: addresses.map(address => ({
+                                id: address._id.toString(),
+                                address: address.address,
+                                main: address.address === userData.address,
+                                created: address.created
+                            }))
+                        });
+                        return next();
+                    });
             });
-        });
     });
 });
 
@@ -565,13 +609,17 @@ server.get('/user/mailboxes', (req, res, next) => {
         username: Joi.string().alphanum().lowercase().min(3).max(30).required()
     });
 
-    const result = Joi.validate({
-        username: req.query.username
-    }, schema, {
-        abortEarly: false,
-        convert: true,
-        allowUnknown: true
-    });
+    const result = Joi.validate(
+        {
+            username: req.query.username
+        },
+        schema,
+        {
+            abortEarly: false,
+            convert: true,
+            allowUnknown: true
+        }
+    );
 
     if (result.error) {
         res.json({
@@ -600,53 +648,58 @@ server.get('/user/mailboxes', (req, res, next) => {
             return next();
         }
 
-        db.database.collection('mailboxes').find({
-            user: userData._id
-        }).toArray((err, mailboxes) => {
-            if (err) {
+        db.database
+            .collection('mailboxes')
+            .find({
+                user: userData._id
+            })
+            .toArray((err, mailboxes) => {
+                if (err) {
+                    res.json({
+                        error: 'MongoDB Error: ' + err.message,
+                        username
+                    });
+                    return next();
+                }
+
+                if (!mailboxes) {
+                    mailboxes = [];
+                }
+
+                let priority = {
+                    Inbox: 1,
+                    Sent: 2,
+                    Junk: 3,
+                    Trash: 4
+                };
+
                 res.json({
-                    error: 'MongoDB Error: ' + err.message,
-                    username
+                    success: true,
+                    username,
+                    mailboxes: mailboxes
+                        .map(mailbox => ({
+                            id: mailbox._id.toString(),
+                            path: mailbox.path,
+                            special: mailbox.path === 'INBOX' ? 'Inbox' : mailbox.specialUse ? mailbox.specialUse.replace(/^\\/, '') : false
+                        }))
+                        .sort((a, b) => {
+                            if (a.special && !b.special) {
+                                return -1;
+                            }
+
+                            if (b.special && !a.special) {
+                                return 1;
+                            }
+
+                            if (a.special && b.special) {
+                                return (priority[a.special] || 5) - (priority[b.special] || 5);
+                            }
+
+                            return a.path.localeCompare(b.path);
+                        })
                 });
                 return next();
-            }
-
-            if (!mailboxes) {
-                mailboxes = [];
-            }
-
-            let priority = {
-                Inbox: 1,
-                Sent: 2,
-                Junk: 3,
-                Trash: 4
-            };
-
-            res.json({
-                success: true,
-                username,
-                mailboxes: mailboxes.map(mailbox => ({
-                    id: mailbox._id.toString(),
-                    path: mailbox.path,
-                    special: mailbox.path === 'INBOX' ? 'Inbox' : (mailbox.specialUse ? mailbox.specialUse.replace(/^\\/, '') : false)
-                })).sort((a, b) => {
-                    if (a.special && !b.special) {
-                        return -1;
-                    }
-
-                    if (b.special && !a.special) {
-                        return 1;
-                    }
-
-                    if (a.special && b.special) {
-                        return (priority[a.special] || 5) - (priority[b.special] || 5);
-                    }
-
-                    return a.path.localeCompare(b.path);
-                })
             });
-            return next();
-        });
     });
 });
 
@@ -662,16 +715,20 @@ server.get('/mailbox/:id', (req, res, next) => {
         size: Joi.number().min(1).max(50).default(20)
     });
 
-    const result = Joi.validate({
-        id: req.params.id,
-        before: req.params.before,
-        after: req.params.after,
-        size: req.params.size
-    }, schema, {
-        abortEarly: false,
-        convert: true,
-        allowUnknown: true
-    });
+    const result = Joi.validate(
+        {
+            id: req.params.id,
+            before: req.params.before,
+            after: req.params.after,
+            size: req.params.size
+        },
+        schema,
+        {
+            abortEarly: false,
+            convert: true,
+            allowUnknown: true
+        }
+    );
 
     if (result.error) {
         res.json({
@@ -707,9 +764,7 @@ server.get('/mailbox/:id', (req, res, next) => {
             mailbox: mailbox._id
         };
         let reverse = false;
-        let sort = [
-            ['uid', -1]
-        ];
+        let sort = [['uid', -1]];
 
         if (req.params.before) {
             query.uid = {
@@ -719,9 +774,7 @@ server.get('/mailbox/:id', (req, res, next) => {
             query.uid = {
                 $gt: after
             };
-            sort = [
-                ['uid', 1]
-            ];
+            sort = [['uid', 1]];
             reverse = true;
         }
 
@@ -731,9 +784,7 @@ server.get('/mailbox/:id', (req, res, next) => {
             fields: {
                 uid: true
             },
-            sort: [
-                ['uid', -1]
-            ]
+            sort: [['uid', -1]]
         }, (err, entry) => {
             if (err) {
                 res.json({
@@ -765,9 +816,7 @@ server.get('/mailbox/:id', (req, res, next) => {
                 fields: {
                     uid: true
                 },
-                sort: [
-                    ['uid', 1]
-                ]
+                sort: [['uid', 1]]
             }, (err, entry) => {
                 if (err) {
                     res.json({
@@ -786,71 +835,76 @@ server.get('/mailbox/:id', (req, res, next) => {
 
                 let oldest = entry.uid;
 
-                db.database.collection('messages').find(query, {
-                    uid: true,
-                    mailbox: true,
-                    idate: true,
-                    headers: true,
-                    ha: true,
-                    intro: true
-                }).sort(sort).limit(size).toArray((err, messages) => {
-                    if (err) {
-                        res.json({
-                            error: 'MongoDB Error: ' + err.message,
-                            id
-                        });
-                        return next();
-                    }
-
-                    if (reverse) {
-                        messages = messages.reverse();
-                    }
-
-                    let nextPage = false;
-                    let prevPage = false;
-
-                    if (messages.length) {
-                        if (after || before) {
-                            prevPage = messages[0].uid;
-                            if (prevPage >= newest) {
-                                prevPage = false;
-                            }
-                        }
-                        if (messages.length >= size) {
-                            nextPage = messages[messages.length - 1].uid;
-                            if (nextPage < oldest) {
-                                nextPage = false;
-                            }
-                        }
-                    }
-
-                    res.json({
-                        success: true,
-                        mailbox: {
-                            id: mailbox._id,
-                            path: mailbox.path
-                        },
-                        next: nextPage ? '/mailbox/' + id + '?before=' + nextPage + '&size=' + size : false,
-                        prev: prevPage ? '/mailbox/' + id + '?after=' + prevPage + '&size=' + size : false,
-                        messages: messages.map(message => {
-                            let response = {
-                                id: message._id,
-                                date: message.idate,
-                                ha: message.ha,
-                                intro: message.intro
-                            };
-
-                            message.headers.forEach(entry => {
-                                if (['subject', 'from', 'to', 'cc', 'bcc'].includes(entry.key)) {
-                                    response[entry.key] = entry.value;
-                                }
+                db.database
+                    .collection('messages')
+                    .find(query, {
+                        uid: true,
+                        mailbox: true,
+                        idate: true,
+                        headers: true,
+                        ha: true,
+                        intro: true
+                    })
+                    .sort(sort)
+                    .limit(size)
+                    .toArray((err, messages) => {
+                        if (err) {
+                            res.json({
+                                error: 'MongoDB Error: ' + err.message,
+                                id
                             });
-                            return response;
-                        })
-                    });
+                            return next();
+                        }
 
-                    return next();
-                });
+                        if (reverse) {
+                            messages = messages.reverse();
+                        }
+
+                        let nextPage = false;
+                        let prevPage = false;
+
+                        if (messages.length) {
+                            if (after || before) {
+                                prevPage = messages[0].uid;
+                                if (prevPage >= newest) {
+                                    prevPage = false;
+                                }
+                            }
+                            if (messages.length >= size) {
+                                nextPage = messages[messages.length - 1].uid;
+                                if (nextPage < oldest) {
+                                    nextPage = false;
+                                }
+                            }
+                        }
+
+                        res.json({
+                            success: true,
+                            mailbox: {
+                                id: mailbox._id,
+                                path: mailbox.path
+                            },
+                            next: nextPage ? '/mailbox/' + id + '?before=' + nextPage + '&size=' + size : false,
+                            prev: prevPage ? '/mailbox/' + id + '?after=' + prevPage + '&size=' + size : false,
+                            messages: messages.map(message => {
+                                let response = {
+                                    id: message._id,
+                                    date: message.idate,
+                                    ha: message.ha,
+                                    intro: message.intro
+                                };
+
+                                message.headers.forEach(entry => {
+                                    if (['subject', 'from', 'to', 'cc', 'bcc'].includes(entry.key)) {
+                                        response[entry.key] = entry.value;
+                                    }
+                                });
+                                return response;
+                            })
+                        });
+
+                        return next();
+                    });
             });
         });
     });
@@ -864,14 +918,18 @@ server.get('/message/:id', (req, res, next) => {
         mailbox: Joi.string().hex().lowercase().length(24).optional()
     });
 
-    const result = Joi.validate({
-        id: req.params.id,
-        mailbox: req.params.mailbox
-    }, schema, {
-        abortEarly: false,
-        convert: true,
-        allowUnknown: true
-    });
+    const result = Joi.validate(
+        {
+            id: req.params.id,
+            mailbox: req.params.mailbox
+        },
+        schema,
+        {
+            abortEarly: false,
+            convert: true,
+            allowUnknown: true
+        }
+    );
 
     if (result.error) {
         res.json({
@@ -941,14 +999,18 @@ server.get('/message/:id/raw', (req, res, next) => {
         mailbox: Joi.string().hex().lowercase().length(24).optional()
     });
 
-    const result = Joi.validate({
-        id: req.params.id,
-        mailbox: req.params.mailbox
-    }, schema, {
-        abortEarly: false,
-        convert: true,
-        allowUnknown: true
-    });
+    const result = Joi.validate(
+        {
+            id: req.params.id,
+            mailbox: req.params.mailbox
+        },
+        schema,
+        {
+            abortEarly: false,
+            convert: true,
+            allowUnknown: true
+        }
+    );
 
     if (result.error) {
         res.json({
@@ -1012,14 +1074,18 @@ server.get('/message/:message/attachment/:attachment', (req, res, next) => {
         attachment: Joi.string().regex(/^ATT\d+$/i).uppercase().required()
     });
 
-    const result = Joi.validate({
-        message: req.params.message,
-        attachment: req.params.attachment
-    }, schema, {
-        abortEarly: false,
-        convert: true,
-        allowUnknown: true
-    });
+    const result = Joi.validate(
+        {
+            message: req.params.message,
+            attachment: req.params.attachment
+        },
+        schema,
+        {
+            abortEarly: false,
+            convert: true,
+            allowUnknown: true
+        }
+    );
 
     if (result.error) {
         res.json({
@@ -1112,13 +1178,17 @@ server.get('/attachment/:attachment', (req, res, next) => {
         attachment: Joi.string().hex().lowercase().length(24).required()
     });
 
-    const result = Joi.validate({
-        attachment: req.params.attachment
-    }, schema, {
-        abortEarly: false,
-        convert: true,
-        allowUnknown: true
-    });
+    const result = Joi.validate(
+        {
+            attachment: req.params.attachment
+        },
+        schema,
+        {
+            abortEarly: false,
+            convert: true,
+            allowUnknown: true
+        }
+    );
 
     if (result.error) {
         res.json({
@@ -1173,14 +1243,18 @@ server.del('/message/:id', (req, res, next) => {
         mailbox: Joi.string().hex().lowercase().length(24).optional()
     });
 
-    const result = Joi.validate({
-        id: req.params.id,
-        mailbox: req.params.mailbox
-    }, schema, {
-        abortEarly: false,
-        convert: true,
-        allowUnknown: true
-    });
+    const result = Joi.validate(
+        {
+            id: req.params.id,
+            mailbox: req.params.mailbox
+        },
+        schema,
+        {
+            abortEarly: false,
+            convert: true,
+            allowUnknown: true
+        }
+    );
 
     if (result.error) {
         res.json({
@@ -1200,23 +1274,26 @@ server.del('/message/:id', (req, res, next) => {
         query.mailbox = new ObjectID(mailbox);
     }
 
-    messageHandler.del({
-        query
-    }, (err, success) => {
-        if (err) {
+    messageHandler.del(
+        {
+            query
+        },
+        (err, success) => {
+            if (err) {
+                res.json({
+                    error: 'MongoDB Error: ' + err.message,
+                    id
+                });
+                return next();
+            }
+
             res.json({
-                error: 'MongoDB Error: ' + err.message,
+                success,
                 id
             });
             return next();
         }
-
-        res.json({
-            success,
-            id
-        });
-        return next();
-    });
+    );
 });
 
 module.exports = done => {

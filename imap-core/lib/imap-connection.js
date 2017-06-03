@@ -1,15 +1,15 @@
 'use strict';
 
-let IMAPStream = require('./imap-stream').IMAPStream;
-let IMAPCommand = require('./imap-command').IMAPCommand;
-let IMAPComposer = require('./imap-composer').IMAPComposer;
-let imapTools = require('./imap-tools');
-let search = require('./search');
-let dns = require('dns');
-let crypto = require('crypto');
-let os = require('os');
-let EventEmitter = require('events').EventEmitter;
-let packageInfo = require('../../package');
+const IMAPStream = require('./imap-stream').IMAPStream;
+const IMAPCommand = require('./imap-command').IMAPCommand;
+const IMAPComposer = require('./imap-composer').IMAPComposer;
+const imapTools = require('./imap-tools');
+const search = require('./search');
+const dns = require('dns');
+const crypto = require('crypto');
+const os = require('os');
+const EventEmitter = require('events').EventEmitter;
+const packageInfo = require('../../package');
 
 const SOCKET_TIMEOUT = 30 * 60 * 1000;
 
@@ -21,7 +21,6 @@ const SOCKET_TIMEOUT = 30 * 60 * 1000;
  * @param {Object} socket Socket instance
  */
 class IMAPConnection extends EventEmitter {
-
     constructor(server, socket) {
         super();
 
@@ -89,7 +88,6 @@ class IMAPConnection extends EventEmitter {
         this._closed = false;
     }
 
-
     /**
      * Initiates the connection. Checks connection limits and reverse resolves client hostname. The client
      * is not allowed to send anything before init has finished otherwise 'You talk too soon' error is returned
@@ -100,20 +98,30 @@ class IMAPConnection extends EventEmitter {
 
         // Resolve hostname for the remote IP
         // we do not care for errors as we consider the ip as unresolved in this case, no big deal
-        dns.reverse(this.remoteAddress, (err, hostnames) => { // eslint-disable-line handle-callback-err
+        dns.reverse(this.remoteAddress, (err, hostnames) => {
+            if (err) {
+                //ignore, no big deal
+            }
+
+            // eslint-disable-line handle-callback-err
             if (this._closing || this._closed) {
                 return;
             }
 
-            this.clientHostname = hostnames && hostnames.shift() || '[' + this.remoteAddress + ']';
+            this.clientHostname = (hostnames && hostnames.shift()) || '[' + this.remoteAddress + ']';
 
             this._startSession();
 
-            this._server.logger.info({
-                tnx: 'connect',
-                cid: this.id
-            }, '[%s] Connection from %s', this.id, this.clientHostname);
-            this.send('* OK ' + (this._server.options.id && this._server.options.id.name || packageInfo.name) + ' ready');
+            this._server.logger.info(
+                {
+                    tnx: 'connect',
+                    cid: this.id
+                },
+                '[%s] Connection from %s',
+                this.id,
+                this.clientHostname
+            );
+            this.send('* OK ' + ((this._server.options.id && this._server.options.id.name) || packageInfo.name) + ' ready');
         });
     }
 
@@ -126,14 +134,19 @@ class IMAPConnection extends EventEmitter {
     send(payload, callback) {
         if (this._socket && this._socket.writable) {
             this[!this.compression ? '_socket' : '_deflate'].write(payload + '\r\n', 'binary', callback);
-            if(this.compression){
+            if (this.compression) {
                 // make sure we transmit the message immediatelly
                 this._deflate.flush();
             }
-            this._server.logger.debug({
-                tnx: 'send',
-                cid: this.id
-            }, '[%s] S:', this.id, payload);
+            this._server.logger.debug(
+                {
+                    tnx: 'send',
+                    cid: this.id
+                },
+                '[%s] S:',
+                this.id,
+                payload
+            );
         }
     }
 
@@ -168,10 +181,14 @@ class IMAPConnection extends EventEmitter {
      * @event
      */
     _onEnd() {
-        this._server.logger.info({
-            tnx: 'close',
-            cid: this.id
-        }, '[%s] Connection END', this.id);
+        this._server.logger.info(
+            {
+                tnx: 'close',
+                cid: this.id
+            },
+            '[%s] Connection END',
+            this.id
+        );
         if (!this._closed) {
             this._onClose();
         }
@@ -181,7 +198,7 @@ class IMAPConnection extends EventEmitter {
      * Fired when the socket is closed
      * @event
      */
-    _onClose( /* hadError */ ) {
+    _onClose(/* hadError */) {
         if (this._closed) {
             return;
         }
@@ -216,10 +233,15 @@ class IMAPConnection extends EventEmitter {
         this._closed = true;
         this._closing = false;
 
-        this._server.logger.info({
-            tnx: 'close',
-            cid: this.id
-        }, '[%s] Connection closed to %s', this.id, this.clientHostname);
+        this._server.logger.info(
+            {
+                tnx: 'close',
+                cid: this.id
+            },
+            '[%s] Connection closed to %s',
+            this.id,
+            this.clientHostname
+        );
     }
 
     /**
@@ -234,10 +256,15 @@ class IMAPConnection extends EventEmitter {
             return;
         }
 
-        this._server.logger.error({
-            err,
-            cid: this.id
-        }, '[%s] %s', this.id, err.message);
+        this._server.logger.error(
+            {
+                err,
+                cid: this.id
+            },
+            '[%s] %s',
+            this.id,
+            err.message
+        );
         this.emit('error', err);
     }
 
@@ -247,10 +274,14 @@ class IMAPConnection extends EventEmitter {
      * @event
      */
     _onTimeout() {
-        this._server.logger.info({
-            tnx: 'connection',
-            cid: this.id
-        }, '[%s] Connection TIMEOUT', this.id);
+        this._server.logger.info(
+            {
+                tnx: 'connection',
+                cid: this.id
+            },
+            '[%s] Connection TIMEOUT',
+            this.id
+        );
         if (this.idling) {
             return; // ignore timeouts when IDLEing
         }
@@ -291,7 +322,6 @@ class IMAPConnection extends EventEmitter {
      */
     _startSession() {
         this.session = {
-
             id: this.id,
 
             selected: this.selected,
@@ -331,7 +361,7 @@ class IMAPConnection extends EventEmitter {
         }
 
         let cleared = false;
-        let listenerData = this._listenerData = {
+        let listenerData = (this._listenerData = {
             mailbox: this.selected.mailbox,
             lock: false,
             clear: () => {
@@ -376,11 +406,16 @@ class IMAPConnection extends EventEmitter {
                     listenerData.lock = false;
 
                     if (err) {
-                        this._server.logger.info({
-                            err,
-                            tnx: 'updates',
-                            cid: this.id
-                        }, '[%s] Notification Error: %s', this.id, err.message);
+                        this._server.logger.info(
+                            {
+                                err,
+                                tnx: 'updates',
+                                cid: this.id
+                            },
+                            '[%s] Notification Error: %s',
+                            this.id,
+                            err.message
+                        );
                         return;
                     }
 
@@ -407,7 +442,7 @@ class IMAPConnection extends EventEmitter {
                     }
                 });
             }
-        };
+        });
 
         this._server.notifier.addListener(this.session, this._listenerData.mailbox, this._listenerData.callback);
 
@@ -424,10 +459,15 @@ class IMAPConnection extends EventEmitter {
         let existsResponse;
 
         // show notifications
-        this._server.logger.info({
-            tnx: 'notifications',
-            cid: this.id
-        }, '[%s] Pending notifications: %s', this.id, this.selected.notifications.length);
+        this._server.logger.info(
+            {
+                tnx: 'notifications',
+                cid: this.id
+            },
+            '[%s] Pending notifications: %s',
+            this.id,
+            this.selected.notifications.length
+        );
 
         // find UIDs that are both added and removed
         let added = new Set(); // added UIDs
@@ -475,23 +515,31 @@ class IMAPConnection extends EventEmitter {
                 this.selected.modifyIndex = update.modseq;
             }
 
-            this._server.logger.info({
-                tnx: 'notifications',
-                cid: this.id
-            }, '[%s] Processing notification: %s', this.id, JSON.stringify(update));
+            this._server.logger.info(
+                {
+                    tnx: 'notifications',
+                    cid: this.id
+                },
+                '[%s] Processing notification: %s',
+                this.id,
+                JSON.stringify(update)
+            );
 
             if (update.ignore === this.id) {
                 continue; // skip this
             }
 
-            this._server.logger.info({
-                tnx: 'notifications',
-                cid: this.id
-            }, '[%s] UIDS: %s', this.id, this.selected.uidList.length);
+            this._server.logger.info(
+                {
+                    tnx: 'notifications',
+                    cid: this.id
+                },
+                '[%s] UIDS: %s',
+                this.id,
+                this.selected.uidList.length
+            );
             switch (update.command) {
-
                 case 'EXISTS':
-
                     // Generate the response but do not send it yet (EXIST response generation is needed to modify the UID list)
                     // This way we can accumulate consecutive EXISTS responses into single one as
                     // only the last one actually matters to the client
@@ -500,27 +548,32 @@ class IMAPConnection extends EventEmitter {
 
                     break;
 
-                case 'EXPUNGE':
-                    {
-                        let seq = (this.selected.uidList || []).indexOf(update.uid);
-                        this._server.logger.info({
+                case 'EXPUNGE': {
+                    let seq = (this.selected.uidList || []).indexOf(update.uid);
+                    this._server.logger.info(
+                        {
                             tnx: 'expunge',
                             cid: this.id
-                        }, '[%s] EXPUNGE %s', this.id, seq);
-                        if (seq >= 0) {
-                            let output = this.formatResponse('EXPUNGE', update.uid);
-                            this.writeStream.write(output);
-                            changed = true; // if no more EXISTS after this, then generate an additional EXISTS
-                        }
-
-                        break;
+                        },
+                        '[%s] EXPUNGE %s',
+                        this.id,
+                        seq
+                    );
+                    if (seq >= 0) {
+                        let output = this.formatResponse('EXPUNGE', update.uid);
+                        this.writeStream.write(output);
+                        changed = true; // if no more EXISTS after this, then generate an additional EXISTS
                     }
-                case 'FETCH':
 
-                    this.writeStream.write(this.formatResponse('FETCH', update.uid, {
-                        flags: update.flags,
-                        modseq: this.selected.condstoreEnabled && update.modseq || false
-                    }));
+                    break;
+                }
+                case 'FETCH':
+                    this.writeStream.write(
+                        this.formatResponse('FETCH', update.uid, {
+                            flags: update.flags,
+                            modseq: (this.selected.condstoreEnabled && update.modseq) || false
+                        })
+                    );
 
                     break;
             }
@@ -536,10 +589,12 @@ class IMAPConnection extends EventEmitter {
             this.writeStream.write({
                 tag: '*',
                 command: String(this.selected.uidList.length),
-                attributes: [{
-                    type: 'atom',
-                    value: 'EXISTS'
-                }]
+                attributes: [
+                    {
+                        type: 'atom',
+                        value: 'EXISTS'
+                    }
+                ]
             });
         }
 
@@ -573,10 +628,12 @@ class IMAPConnection extends EventEmitter {
         let response = {
             tag: '*',
             command: String(seq),
-            attributes: [{
-                type: 'atom',
-                value: command
-            }]
+            attributes: [
+                {
+                    type: 'atom',
+                    value: command
+                }
+            ]
         };
 
         if (data) {
@@ -586,11 +643,12 @@ class IMAPConnection extends EventEmitter {
                 data.query.forEach((item, i) => {
                     response.attributes[1].push(item.original);
                     if (['flags', 'modseq'].indexOf(item.item) >= 0) {
-                        response.attributes[1].
-                        push([].concat(data.values[i] || []).map(value => ({
-                            type: 'ATOM',
-                            value: (value || value === 0 ? value : '').toString()
-                        })));
+                        response.attributes[1].push(
+                            [].concat(data.values[i] || []).map(value => ({
+                                type: 'ATOM',
+                                value: (value || value === 0 ? value : '').toString()
+                            }))
+                        );
                     } else if (Object.prototype.toString.call(data.values[i]) === '[object Date]') {
                         response.attributes[1].push({
                             type: 'ATOM',
@@ -618,7 +676,7 @@ class IMAPConnection extends EventEmitter {
                     } else {
                         response.attributes[1].push({
                             type: 'ATOM',
-                            value: (data.values[i]).toString()
+                            value: data.values[i].toString()
                         });
                     }
                 });
@@ -633,24 +691,35 @@ class IMAPConnection extends EventEmitter {
 
                     switch (key) {
                         case 'FLAGS':
-                            value = [].concat(value || []).map(flag => (flag && flag.value ? flag : {
-                                type: 'ATOM',
-                                value: flag
-                            }));
+                            value = [].concat(value || []).map(
+                                flag =>
+                                    flag && flag.value
+                                        ? flag
+                                        : {
+                                            type: 'ATOM',
+                                            value: flag
+                                        }
+                            );
                             break;
 
                         case 'UID':
-                            value = value && value.value ? value : {
-                                type: 'ATOM',
-                                value: (value || '0').toString()
-                            };
+                            value = value && value.value
+                                ? value
+                                : {
+                                    type: 'ATOM',
+                                    value: (value || '0').toString()
+                                };
                             break;
 
                         case 'MODSEQ':
-                            value = [].concat(value && value.value ? value : {
-                                type: 'ATOM',
-                                value: (value || '0').toString()
-                            });
+                            value = [].concat(
+                                value && value.value
+                                    ? value
+                                    : {
+                                        type: 'ATOM',
+                                        value: (value || '0').toString()
+                                    }
+                            );
                             break;
                     }
 
@@ -666,7 +735,6 @@ class IMAPConnection extends EventEmitter {
 
         return response;
     }
-
 }
 
 // Expose to the world

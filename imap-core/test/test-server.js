@@ -7,93 +7,104 @@ const fs = require('fs');
 const parseMimeTree = require('../lib/indexer/parse-mime-tree');
 const imapHandler = require('../lib/handler/imap-handler');
 
-module.exports = function (options) {
-
+module.exports = function(options) {
     // This example uses global folders and subscriptions
     let folders = new Map();
     let subscriptions = new WeakSet();
 
-    [{
-        path: 'INBOX',
-        uidValidity: 123,
-        uidNext: 70,
-        modifyIndex: 5000,
-        messages: [{
-            uid: 45,
-            flags: [],
-            modseq: 100,
-            idate: new Date('14-Sep-2013 21:22:28 -0300'),
-            mimeTree: parseMimeTree(new Buffer('from: sender@example.com\r\nto: to@example.com\r\ncc: cc@example.com\r\nsubject: test\r\n\r\nzzzz'))
-        }, {
-            uid: 49,
-            flags: ['\\Seen'],
-            idate: new Date(),
-            modseq: 5000,
-            mimeTree: parseMimeTree(fs.readFileSync(__dirname + '/fixtures/ryan_finnie_mime_torture.eml'))
-        }, {
-            uid: 50,
-            flags: ['\\Seen'],
-            modseq: 45,
-            idate: new Date(),
-            mimeTree: parseMimeTree('MIME-Version: 1.0\r\n' +
-                'From: andris@kreata.ee\r\n' +
-                'To: andris@tr.ee\r\n' +
-                'Content-Type: multipart/mixed;\r\n' +
-                ' boundary=\'----mailcomposer-?=_1-1328088797399\'\r\n' +
-                'Message-Id: <testmessage-for-bug>;\r\n' +
-                '\r\n' +
-                '------mailcomposer-?=_1-1328088797399\r\n' +
-                'Content-Type: message/rfc822\r\n' +
-                'Content-Transfer-Encoding: 7bit\r\n' +
-                '\r\n' +
-                'MIME-Version: 1.0\r\n' +
-                'From: andris@kreata.ee\r\n' +
-                'To: andris@pangalink.net\r\n' +
-                'In-Reply-To: <test1>\r\n' +
-                '\r\n' +
-                'Hello world 1!\r\n' +
-                '------mailcomposer-?=_1-1328088797399\r\n' +
-                'Content-Type: message/rfc822\r\n' +
-                'Content-Transfer-Encoding: 7bit\r\n' +
-                '\r\n' +
-                'MIME-Version: 1.0\r\n' +
-                'From: andris@kreata.ee\r\n' +
-                'To: andris@pangalink.net\r\n' +
-                '\r\n' +
-                'Hello world 2!\r\n' +
-                '------mailcomposer-?=_1-1328088797399\r\n' +
-                'Content-Type: text/html; charset=utf-8\r\n' +
-                'Content-Transfer-Encoding: quoted-printable\r\n' +
-                '\r\n' +
-                '<b>Hello world 3!</b>\r\n' +
-                '------mailcomposer-?=_1-1328088797399--')
-        }, {
-            uid: 52,
-            flags: [],
-            modseq: 4,
-            idate: new Date(),
-            mimeTree: parseMimeTree('from: sender@example.com\r\nto: to@example.com\r\ncc: cc@example.com\r\nsubject: test\r\n\r\nHello World!')
-        }, {
-            uid: 53,
-            flags: [],
-            modseq: 5,
-            idate: new Date()
-        }, {
-            uid: 60,
-            flags: [],
-            modseq: 6,
-            idate: new Date()
-        }],
-        journal: []
-    }, {
-        path: '[Gmail]/Sent Mail',
-        specialUse: '\\Sent',
-        uidValidity: 123,
-        uidNext: 90,
-        modifyIndex: 1,
-        messages: [],
-        journal: []
-    }].forEach(folder => {
+    [
+        {
+            path: 'INBOX',
+            uidValidity: 123,
+            uidNext: 70,
+            modifyIndex: 5000,
+            messages: [
+                {
+                    uid: 45,
+                    flags: [],
+                    modseq: 100,
+                    idate: new Date('14-Sep-2013 21:22:28 -0300'),
+                    mimeTree: parseMimeTree(new Buffer('from: sender@example.com\r\nto: to@example.com\r\ncc: cc@example.com\r\nsubject: test\r\n\r\nzzzz\r\n'))
+                },
+                {
+                    uid: 49,
+                    flags: ['\\Seen'],
+                    idate: new Date(),
+                    modseq: 5000,
+                    mimeTree: parseMimeTree(fs.readFileSync(__dirname + '/fixtures/ryan_finnie_mime_torture.eml'))
+                },
+                {
+                    uid: 50,
+                    flags: ['\\Seen'],
+                    modseq: 45,
+                    idate: new Date(),
+                    mimeTree: parseMimeTree(
+                        'MIME-Version: 1.0\r\n' +
+                            'From: andris@kreata.ee\r\n' +
+                            'To: andris@tr.ee\r\n' +
+                            'Content-Type: multipart/mixed;\r\n' +
+                            ' boundary=\'----mailcomposer-?=_1-1328088797399\'\r\n' +
+                            'Message-Id: <testmessage-for-bug>;\r\n' +
+                            '\r\n' +
+                            '------mailcomposer-?=_1-1328088797399\r\n' +
+                            'Content-Type: message/rfc822\r\n' +
+                            'Content-Transfer-Encoding: 7bit\r\n' +
+                            '\r\n' +
+                            'MIME-Version: 1.0\r\n' +
+                            'From: andris@kreata.ee\r\n' +
+                            'To: andris@pangalink.net\r\n' +
+                            'In-Reply-To: <test1>\r\n' +
+                            '\r\n' +
+                            'Hello world 1!\r\n' +
+                            '------mailcomposer-?=_1-1328088797399\r\n' +
+                            'Content-Type: message/rfc822\r\n' +
+                            'Content-Transfer-Encoding: 7bit\r\n' +
+                            '\r\n' +
+                            'MIME-Version: 1.0\r\n' +
+                            'From: andris@kreata.ee\r\n' +
+                            'To: andris@pangalink.net\r\n' +
+                            '\r\n' +
+                            'Hello world 2!\r\n' +
+                            '------mailcomposer-?=_1-1328088797399\r\n' +
+                            'Content-Type: text/html; charset=utf-8\r\n' +
+                            'Content-Transfer-Encoding: quoted-printable\r\n' +
+                            '\r\n' +
+                            '<b>Hello world 3!</b>\r\n' +
+                            '------mailcomposer-?=_1-1328088797399--\r\n'
+                    )
+                },
+                {
+                    uid: 52,
+                    flags: [],
+                    modseq: 4,
+                    idate: new Date(),
+                    mimeTree: parseMimeTree('from: sender@example.com\r\nto: to@example.com\r\ncc: cc@example.com\r\nsubject: test\r\n\r\nHello World!\r\n')
+                },
+                {
+                    uid: 53,
+                    flags: [],
+                    modseq: 5,
+                    idate: new Date()
+                },
+                {
+                    uid: 60,
+                    flags: [],
+                    modseq: 6,
+                    idate: new Date()
+                }
+            ],
+            journal: []
+        },
+        {
+            path: '[Gmail]/Sent Mail',
+            specialUse: '\\Sent',
+            uidValidity: 123,
+            uidNext: 90,
+            modifyIndex: 1,
+            messages: [],
+            journal: []
+        }
+    ].forEach(folder => {
         folders.set(folder.path, folder);
         subscriptions.add(folder);
     });
@@ -113,7 +124,7 @@ module.exports = function (options) {
         console.log('SERVER ERR\n%s', err.stack); // eslint-disable-line no-console
     });
 
-    server.onAuth = function (login, session, callback) {
+    server.onAuth = function(login, session, callback) {
         if (login.username !== 'testuser' || login.password !== 'pass') {
             return callback();
         }
@@ -128,7 +139,7 @@ module.exports = function (options) {
     // LIST "" "*"
     // Returns all folders, query is informational
     // folders is either an Array or a Map
-    server.onList = function (query, session, callback) {
+    server.onList = function(query, session, callback) {
         this.logger.debug('[%s] LIST for "%s"', session.id, query);
 
         callback(null, folders);
@@ -137,7 +148,7 @@ module.exports = function (options) {
     // LSUB "" "*"
     // Returns all subscribed folders, query is informational
     // folders is either an Array or a Map
-    server.onLsub = function (query, session, callback) {
+    server.onLsub = function(query, session, callback) {
         this.logger.debug('[%s] LSUB for "%s"', session.id, query);
 
         let subscribed = [];
@@ -151,7 +162,7 @@ module.exports = function (options) {
     };
 
     // SUBSCRIBE "path/to/mailbox"
-    server.onSubscribe = function (mailbox, session, callback) {
+    server.onSubscribe = function(mailbox, session, callback) {
         this.logger.debug('[%s] SUBSCRIBE to "%s"', session.id, mailbox);
 
         if (!folders.has(mailbox)) {
@@ -163,7 +174,7 @@ module.exports = function (options) {
     };
 
     // UNSUBSCRIBE "path/to/mailbox"
-    server.onUnsubscribe = function (mailbox, session, callback) {
+    server.onUnsubscribe = function(mailbox, session, callback) {
         this.logger.debug('[%s] UNSUBSCRIBE from "%s"', session.id, mailbox);
 
         if (!folders.has(mailbox)) {
@@ -175,7 +186,7 @@ module.exports = function (options) {
     };
 
     // CREATE "path/to/mailbox"
-    server.onCreate = function (mailbox, session, callback) {
+    server.onCreate = function(mailbox, session, callback) {
         this.logger.debug('[%s] CREATE "%s"', session.id, mailbox);
 
         if (folders.has(mailbox)) {
@@ -197,7 +208,7 @@ module.exports = function (options) {
 
     // RENAME "path/to/mailbox" "new/path"
     // NB! RENAME affects child and hierarchy mailboxes as well, this example does not do this
-    server.onRename = function (mailbox, newname, session, callback) {
+    server.onRename = function(mailbox, newname, session, callback) {
         this.logger.debug('[%s] RENAME "%s" to "%s"', session.id, mailbox, newname);
 
         if (!folders.has(mailbox)) {
@@ -218,7 +229,7 @@ module.exports = function (options) {
     };
 
     // DELETE "path/to/mailbox"
-    server.onDelete = function (mailbox, session, callback) {
+    server.onDelete = function(mailbox, session, callback) {
         this.logger.debug('[%s] DELETE "%s"', session.id, mailbox);
 
         if (!folders.has(mailbox)) {
@@ -235,7 +246,7 @@ module.exports = function (options) {
     };
 
     // SELECT/EXAMINE
-    server.onOpen = function (mailbox, session, callback) {
+    server.onOpen = function(mailbox, session, callback) {
         this.logger.debug('[%s] Opening "%s"', session.id, mailbox);
 
         if (!folders.has(mailbox)) {
@@ -254,7 +265,7 @@ module.exports = function (options) {
     };
 
     // STATUS (X Y X)
-    server.onStatus = function (mailbox, session, callback) {
+    server.onStatus = function(mailbox, session, callback) {
         this.logger.debug('[%s] Requested status for "%s"', session.id, mailbox);
 
         if (!folders.has(mailbox)) {
@@ -273,20 +284,20 @@ module.exports = function (options) {
     };
 
     // APPEND mailbox (flags) date message
-    server.onAppend = function (mailbox, flags, date, raw, session, callback) {
+    server.onAppend = function(mailbox, flags, date, raw, session, callback) {
         this.logger.debug('[%s] Appending message to "%s"', session.id, mailbox);
 
         if (!folders.has(mailbox)) {
             return callback(null, 'TRYCREATE');
         }
 
-        date = date && new Date(date) || new Date();
+        date = (date && new Date(date)) || new Date();
 
         let folder = folders.get(mailbox);
         let message = {
             uid: folder.uidNext++,
             modseq: ++folder.modifyIndex,
-            date: date && new Date(date) || new Date(),
+            date: (date && new Date(date)) || new Date(),
             mimeTree: parseMimeTree(raw),
             flags
         };
@@ -294,21 +305,26 @@ module.exports = function (options) {
         folder.messages.push(message);
 
         // do not write directly to stream, use notifications as the currently selected mailbox might not be the one that receives the message
-        this.notifier.addEntries(session.user.username, mailbox, {
-            command: 'EXISTS',
-            uid: message.uid
-        }, () => {
-            this.notifier.fire(session.user.username, mailbox);
-
-            return callback(null, true, {
-                uidValidity: folder.uidValidity,
+        this.notifier.addEntries(
+            session.user.username,
+            mailbox,
+            {
+                command: 'EXISTS',
                 uid: message.uid
-            });
-        });
+            },
+            () => {
+                this.notifier.fire(session.user.username, mailbox);
+
+                return callback(null, true, {
+                    uidValidity: folder.uidValidity,
+                    uid: message.uid
+                });
+            }
+        );
     };
 
     // STORE / UID STORE, updates flags for selected UIDs
-    server.onStore = function (mailbox, update, session, callback) {
+    server.onStore = function(mailbox, update, session, callback) {
         this.logger.debug('[%s] Updating messages in "%s"', session.id, mailbox);
 
         if (!folders.has(mailbox)) {
@@ -342,8 +358,7 @@ module.exports = function (options) {
             switch (update.action) {
                 case 'set':
                     // check if update set matches current or is different
-                    if (message.flags.length !== update.value.length ||
-                        update.value.filter(flag => message.flags.indexOf(flag) < 0).length) {
+                    if (message.flags.length !== update.value.length || update.value.filter(flag => message.flags.indexOf(flag) < 0).length) {
                         updated = true;
                     }
                     // set flags
@@ -351,13 +366,15 @@ module.exports = function (options) {
                     break;
 
                 case 'add':
-                    message.flags = message.flags.concat(update.value.filter(flag => {
-                        if (message.flags.indexOf(flag) < 0) {
-                            updated = true;
-                            return true;
-                        }
-                        return false;
-                    }));
+                    message.flags = message.flags.concat(
+                        update.value.filter(flag => {
+                            if (message.flags.indexOf(flag) < 0) {
+                                updated = true;
+                                return true;
+                            }
+                            return false;
+                        })
+                    );
                     break;
 
                 case 'remove':
@@ -377,19 +394,26 @@ module.exports = function (options) {
 
                 // Only show response if not silent or modseq is required
                 if (!update.silent || condstoreEnabled) {
-                    session.writeStream.write(session.formatResponse('FETCH', message.uid, {
-                        uid: update.isUid ? message.uid : false,
-                        flags: update.silent ? false : message.flags,
-                        modseq: condstoreEnabled ? message.modseq : false
-                    }));
+                    session.writeStream.write(
+                        session.formatResponse('FETCH', message.uid, {
+                            uid: update.isUid ? message.uid : false,
+                            flags: update.silent ? false : message.flags,
+                            modseq: condstoreEnabled ? message.modseq : false
+                        })
+                    );
                 }
 
-                this.notifier.addEntries(session.user.username, mailbox, {
-                    command: 'FETCH',
-                    ignore: session.id,
-                    uid: message.uid,
-                    flags: message.flags
-                }, processMessages);
+                this.notifier.addEntries(
+                    session.user.username,
+                    mailbox,
+                    {
+                        command: 'FETCH',
+                        ignore: session.id,
+                        uid: message.uid,
+                        flags: message.flags
+                    },
+                    processMessages
+                );
             } else {
                 processMessages();
             }
@@ -399,7 +423,7 @@ module.exports = function (options) {
     };
 
     // EXPUNGE deletes all messages in selected mailbox marked with \Delete
-    server.onExpunge = function (mailbox, update, session, callback) {
+    server.onExpunge = function(mailbox, update, session, callback) {
         this.logger.debug('[%s] Deleting messages from "%s"', session.id, mailbox);
 
         if (!folders.has(mailbox)) {
@@ -412,18 +436,16 @@ module.exports = function (options) {
 
         for (i = folder.messages.length - 1; i >= 0; i--) {
             if (
-                (
-                    (update.isUid && update.messages.indexOf(folder.messages[i].uid) >= 0) ||
-                    !update.isUid
-                ) && folder.messages[i].flags.indexOf('\\Deleted') >= 0) {
-
+                ((update.isUid && update.messages.indexOf(folder.messages[i].uid) >= 0) || !update.isUid) &&
+                folder.messages[i].flags.indexOf('\\Deleted') >= 0
+            ) {
                 deleted.unshift(folder.messages[i].uid);
                 folder.messages.splice(i, 1);
             }
         }
 
         let entries = [];
-        for (i = 0, len = deleted.length; i < len; i++) {
+        for ((i = 0), (len = deleted.length); i < len; i++) {
             entries.push({
                 command: 'EXPUNGE',
                 ignore: session.id,
@@ -441,7 +463,7 @@ module.exports = function (options) {
     };
 
     // COPY / UID COPY sequence mailbox
-    server.onCopy = function (mailbox, update, session, callback) {
+    server.onCopy = function(mailbox, update, session, callback) {
         this.logger.debug('[%s] Copying messages from "%s" to "%s"', session.id, mailbox, update.destination);
 
         if (!folders.has(mailbox)) {
@@ -468,7 +490,7 @@ module.exports = function (options) {
             }
         }
 
-        for (i = 0, len = messages.length; i < len; i++) {
+        for ((i = 0), (len = messages.length); i < len; i++) {
             messages[i].uid = destinationFolder.uidNext++;
             destinationUid.push(messages[i].uid);
             destinationFolder.messages.push(messages[i]);
@@ -492,7 +514,7 @@ module.exports = function (options) {
     };
 
     // sends results to socket
-    server.onFetch = function (mailbox, options, session, callback) {
+    server.onFetch = function(mailbox, options, session, callback) {
         this.logger.debug('[%s] Requested FETCH for "%s"', session.id, mailbox);
         this.logger.debug('[%s] FETCH: %s', session.id, JSON.stringify(options.query));
         if (!folders.has(mailbox)) {
@@ -519,7 +541,6 @@ module.exports = function (options) {
                         flags: message.flags
                     });
                 }
-
             });
         }
 
@@ -541,10 +562,12 @@ module.exports = function (options) {
                     return setImmediate(processMessage);
                 }
 
-                let stream = imapHandler.compileStream(session.formatResponse('FETCH', message.uid, {
-                    query: options.query,
-                    values: session.getQueryResponse(options.query, message)
-                }));
+                let stream = imapHandler.compileStream(
+                    session.formatResponse('FETCH', message.uid, {
+                        query: options.query,
+                        values: session.getQueryResponse(options.query, message)
+                    })
+                );
 
                 // send formatted response to socket
                 session.writeStream.write(stream, () => {
@@ -557,7 +580,7 @@ module.exports = function (options) {
     };
 
     // returns an array of matching UID values and the highest modseq of matching messages
-    server.onSearch = function (mailbox, options, session, callback) {
+    server.onSearch = function(mailbox, options, session, callback) {
         if (!folders.has(mailbox)) {
             return callback(null, 'NONEXISTENT');
         }

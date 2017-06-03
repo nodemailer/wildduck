@@ -4,7 +4,6 @@ module.exports = {
     state: ['Authenticated', 'Selected'],
 
     handler(command, callback, next) {
-
         let idleTimeout = setTimeout(() => {
             if (typeof this._server.onIdleEnd === 'function') {
                 this._server.onIdleEnd(this.selected && this.selected.mailbox, this.session);

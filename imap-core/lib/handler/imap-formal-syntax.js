@@ -24,121 +24,119 @@ function excludeChars(source, exclude) {
 }
 
 module.exports = {
-
-    CHAR: function () {
-        let value = expandRange(0x01, 0x7F);
-        this.CHAR = function () {
+    CHAR: function() {
+        let value = expandRange(0x01, 0x7f);
+        this.CHAR = function() {
             return value;
         };
         return value;
     },
 
-    CHAR8: function () {
-        let value = expandRange(0x01, 0xFF);
-        this.CHAR8 = function () {
+    CHAR8: function() {
+        let value = expandRange(0x01, 0xff);
+        this.CHAR8 = function() {
             return value;
         };
         return value;
     },
 
-    SP: function () {
+    SP: function() {
         return ' ';
     },
 
-    CTL: function () {
-        let value = expandRange(0x00, 0x1F) + '\x7F';
-        this.CTL = function () {
+    CTL: function() {
+        let value = expandRange(0x00, 0x1f) + '\x7F';
+        this.CTL = function() {
             return value;
         };
         return value;
     },
 
-    DQUOTE: function () {
+    DQUOTE: function() {
         return '"';
     },
 
-    ALPHA: function () {
-        let value = expandRange(0x41, 0x5A) + expandRange(0x61, 0x7A);
-        this.ALPHA = function () {
+    ALPHA: function() {
+        let value = expandRange(0x41, 0x5a) + expandRange(0x61, 0x7a);
+        this.ALPHA = function() {
             return value;
         };
         return value;
     },
 
-    DIGIT: function () {
-        let value = expandRange(0x30, 0x39) + expandRange(0x61, 0x7A);
-        this.DIGIT = function () {
+    DIGIT: function() {
+        let value = expandRange(0x30, 0x39) + expandRange(0x61, 0x7a);
+        this.DIGIT = function() {
             return value;
         };
         return value;
     },
 
-    'ATOM-CHAR': function () {
+    'ATOM-CHAR': function() {
         let value = excludeChars(this.CHAR(), this['atom-specials']());
-        this['ATOM-CHAR'] = function () {
+        this['ATOM-CHAR'] = function() {
             return value;
         };
         return value;
     },
 
-    'ASTRING-CHAR': function () {
+    'ASTRING-CHAR': function() {
         let value = this['ATOM-CHAR']() + this['resp-specials']();
-        this['ASTRING-CHAR'] = function () {
+        this['ASTRING-CHAR'] = function() {
             return value;
         };
         return value;
     },
 
-    'TEXT-CHAR': function () {
+    'TEXT-CHAR': function() {
         let value = excludeChars(this.CHAR(), '\r\n');
-        this['TEXT-CHAR'] = function () {
+        this['TEXT-CHAR'] = function() {
             return value;
         };
         return value;
     },
 
-    'atom-specials': function () {
-        let value = '(' + ')' + '{' + this.SP() + this.CTL() + this['list-wildcards']() +
-            this['quoted-specials']() + this['resp-specials']();
-        this['atom-specials'] = function () {
+    'atom-specials': function() {
+        let value = '(' + ')' + '{' + this.SP() + this.CTL() + this['list-wildcards']() + this['quoted-specials']() + this['resp-specials']();
+        this['atom-specials'] = function() {
             return value;
         };
         return value;
     },
 
-    'list-wildcards': function () {
+    'list-wildcards': function() {
         return '%' + '*';
     },
 
-    'quoted-specials': function () {
+    'quoted-specials': function() {
         let value = this.DQUOTE() + '\\';
-        this['quoted-specials'] = function () {
+        this['quoted-specials'] = function() {
             return value;
         };
         return value;
     },
 
-    'resp-specials': function () {
+    'resp-specials': function() {
         return ']';
     },
 
-    tag: function () {
+    tag: function() {
         let value = excludeChars(this['ASTRING-CHAR'](), '+');
-        this.tag = function () {
+        this.tag = function() {
             return value;
         };
         return value;
     },
 
-    command: function () {
+    command: function() {
         let value = this.ALPHA() + this.DIGIT();
-        this.command = function () {
+        this.command = function() {
             return value;
         };
         return value;
     },
 
-    verify: function (str, allowedChars) {
+    verify: function(str, allowedChars) {
         for (let i = 0, len = str.length; i < len; i++) {
             if (allowedChars.indexOf(str.charAt(i)) < 0) {
                 return i;

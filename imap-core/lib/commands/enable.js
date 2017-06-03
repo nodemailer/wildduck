@@ -8,12 +8,12 @@ module.exports = {
         let enabled = [];
 
         command.attributes.map(attr => {
-            if ((attr && attr.value || '').toString().toUpperCase() === 'CONDSTORE') {
+            if (((attr && attr.value) || '').toString().toUpperCase() === 'CONDSTORE') {
                 this.condstoreEnabled = true;
                 enabled.push('CONDSTORE');
             }
 
-            if ((attr && attr.value || '').toString().toUpperCase() === 'UTF8=ACCEPT') {
+            if (((attr && attr.value) || '').toString().toUpperCase() === 'UTF8=ACCEPT') {
                 this.acceptUTF8Enabled = true;
                 enabled.push('UTF8=ACCEPT');
             }
