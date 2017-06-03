@@ -733,7 +733,7 @@ This should "deliver" a new message to the INBOX of _username@example.com_ by us
 
 Use [ZoneMTA](https://github.com/zone-eu/zone-mta) with the [ZoneMTA-WildDuck](https://github.com/wildduck-email/zonemta-wildduck) plugin. This gives you an outbound SMTP server that uses Wild Duck accounts for authentication.
 
-## Outbound SMTP
+## Inbound SMTP
 
 Use [Haraka](http://haraka.github.io/) with [queue/lmtp](http://haraka.github.io/manual/plugins/queue/lmtp.html) plugin. Wild Duck specific recipient processing plugin coming soon!
 
