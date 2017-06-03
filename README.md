@@ -47,6 +47,10 @@ NODE_ENV=production npm start
 
 See see [below](#http-api) for details about creating new user accounts
 
+### Step 6\. Use an IMAP/POP3 client to log in
+
+Any IMAP or POP3 client will do. Use the credentials from step 5. to log in.
+
 ## Goals of the Project
 
 1. Build a scalable and distributed IMAP/POP3 server that uses clustered database instead of single machine file system as mail store
