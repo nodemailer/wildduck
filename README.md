@@ -6,6 +6,47 @@ Wild Duck is a distributed IMAP/POP3 server built with Node.js, MongoDB and Redi
 
 > **NB!** Wild Duck is currently in **beta**. You should not use it in production.
 
+## Usage
+
+Assuming you have MongoDB and Redis running somewhere.
+
+### Step 1\. Get the code from github
+
+```
+$ git clone git://github.com/wildduck-email/wildduck.git
+$ cd wildduck
+```
+
+### Step 2\. Install dependencies
+
+Install dependencies from npm
+
+```
+$ npm install --production
+```
+
+### Step 3\. Modify config
+
+You can either modify the default [config file](./config/default.js) or alternatively generate an environment related config file that gets merged with the default values. Read about the config module [here](https://www.npmjs.com/package/config)
+
+### Step 4\. Run the server
+
+To use the default config file, run the following
+
+```
+npm start
+```
+
+Or if you want to use environment related config file, eg from `production.js`, run the following
+
+```
+NODE_ENV=production npm start
+```
+
+### Step 5\. Create an user account
+
+See see [below](#http-api) for details about creating new user accounts
+
 ## Goals of the Project
 
 1. Build a scalable and distributed IMAP/POP3 server that uses clustered database instead of single machine file system as mail store
@@ -118,47 +159,6 @@ Actual update data (information about new and deleted messages, flag updates and
 
 1. Add interoperability with current servers, for example by fetching authentication data from MySQL
 2. Maybe allow some kind of message manipulation through plugins? This would allow to turn Wild Duck for example into an encrypted mail server – mail data would be encrypted using users public key before storing it to DB and decrypted with users private key whenever the user logs in and FETCHes or SEARCHes messages. Private key would be protected by users password. For the user the encryption layer would be invisible while guaranteeing that if the user is currently not logged in then there would be no way to read the messages as the private key is locked.
-
-## Usage
-
-Assuming you have MongoDB and Redis running somewhere.
-
-### Step 1\. Get the code from github
-
-```
-$ git clone git://github.com/wildduck-email/wildduck.git
-$ cd wildduck
-```
-
-### Step 2\. Install dependencies
-
-Install dependencies from npm
-
-```
-$ npm install --production
-```
-
-### Step 3\. Modify config
-
-You can either modify the default [config file](./config/default.js) or alternatively generate an environment related config file that gets merged with the default values. Read about the config module [here](https://www.npmjs.com/package/config)
-
-### Step 4\. Run the server
-
-To use the default config file, run the following
-
-```
-npm start
-```
-
-Or if you want to use environment related config file, eg from `production.js`, run the following
-
-```
-NODE_ENV=production npm start
-```
-
-### Step 5\. Create an user account
-
-See see [below](#http-api) for details about creating new user accounts
 
 ## HTTP API
 
