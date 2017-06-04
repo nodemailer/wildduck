@@ -4,7 +4,7 @@
 
 Wild Duck is a distributed IMAP/POP3 server built with Node.js, MongoDB and Redis. Node.js runs the application, MongoDB is used as the mail store and Redis is used for ephemeral actions like publish/subscribe, locking and caching.
 
-> **NB!** Wild Duck is currently in **beta**. You should not use it in production.
+> **NB!** Wild Duck is currently in **beta**. Use it on your own responsibility.
 
 ## Usage
 
