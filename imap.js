@@ -1968,9 +1968,10 @@ function deleteOrphanedAttachments(callback) {
 
 function clearExpiredMessages() {
     clearTimeout(gcTimeout);
+    let startTime = Date.now();
 
     // First, acquire the lock. This prevents multiple connected clients for deleting the same messages
-    gcLock.acquireLock('gc_expired', 3 * 60 * 60 * 1000 /* Lock expires after 61min if not released */, (err, lock) => {
+    gcLock.acquireLock('gc_expired', 3 * 60 * 60 * 1000 /* Lock expires after 3 hours if not released */, (err, lock) => {
         if (err) {
             server.logger.error(
                 {
@@ -2024,25 +2025,32 @@ function clearExpiredMessages() {
             });
 
         let deleted = 0;
+        let clear = () =>
+            cursor.close(() => {
+                // delete all attachments that do not have any active links to message objects
+                deleteOrphanedAttachments(() => {
+                    server.logger.debug(
+                        {
+                            tnx: 'gc'
+                        },
+                        'Deleted %s messages',
+                        deleted
+                    );
+                    done(null, true);
+                });
+            });
+
         let processNext = () => {
+            if (Date.now() - startTime > GC_INTERVAL * 0.8) {
+                return clear();
+            }
+
             cursor.next((err, message) => {
                 if (err) {
                     return done(err);
                 }
                 if (!message) {
-                    return cursor.close(() => {
-                        // delete all attachments that do not have any active links to message objects
-                        deleteOrphanedAttachments(() => {
-                            server.logger.debug(
-                                {
-                                    tnx: 'gc'
-                                },
-                                'Deleted %s messages',
-                                deleted
-                            );
-                            done(null, true);
-                        });
-                    });
+                    return clear();
                 }
 
                 server.logger.info(
