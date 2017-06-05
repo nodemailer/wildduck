@@ -1970,7 +1970,7 @@ function clearExpiredMessages() {
     clearTimeout(gcTimeout);
 
     // First, acquire the lock. This prevents multiple connected clients for deleting the same messages
-    gcLock.acquireLock('gc_expired', 61 * 60 * 1000 /* Lock expires after 61min if not released */, (err, lock) => {
+    gcLock.acquireLock('gc_expired', 3 * 60 * 60 * 1000 /* Lock expires after 61min if not released */, (err, lock) => {
         if (err) {
             server.logger.error(
                 {
