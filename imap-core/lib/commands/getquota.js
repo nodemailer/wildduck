@@ -1,6 +1,6 @@
 'use strict';
 
-let imapHandler = require('../handler/imap-handler');
+const imapHandler = require('../handler/imap-handler');
 
 // tag GETQUOTA ""
 
