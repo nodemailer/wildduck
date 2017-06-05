@@ -2066,7 +2066,7 @@ function clearExpiredMessages() {
                             return cursor.close(() => done(err));
                         }
                         deleted++;
-                        processNext();
+                        setTimeout(processNext, 100);
                     }
                 );
             });
