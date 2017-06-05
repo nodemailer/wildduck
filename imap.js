@@ -22,7 +22,7 @@ const packageData = require('./package.json');
 const BULK_BATCH_SIZE = 150;
 
 // how often to clear expired messages
-const GC_INTERVAL = 1 * 60 * 1000;
+const GC_INTERVAL = 60 * 60 * 1000;
 
 // Setup server
 const serverOptions = {
@@ -1970,7 +1970,7 @@ function clearExpiredMessages() {
     clearTimeout(gcTimeout);
 
     // First, acquire the lock. This prevents multiple connected clients for deleting the same messages
-    gcLock.acquireLock('gc_expired', 10 * 60 * 1000 /* Lock expires after 10min if not released */, (err, lock) => {
+    gcLock.acquireLock('gc_expired', 61 * 60 * 1000 /* Lock expires after 61min if not released */, (err, lock) => {
         if (err) {
             server.logger.error(
                 {

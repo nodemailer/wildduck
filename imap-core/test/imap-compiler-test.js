@@ -69,6 +69,7 @@ describe('IMAP Command Compiler', function() {
         describe('ATOM', function() {
             it('should compile correctly', function() {
                 parsed.attributes = [
+                    //
                     {
                         type: 'ATOM',
                         value: 'ALERT'
