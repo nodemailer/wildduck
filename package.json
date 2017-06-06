@@ -1,6 +1,6 @@
 {
   "name": "wildduck",
-  "version": "1.0.44",
+  "version": "1.0.45",
   "description": "IMAP server built with Node.js and MongoDB",
   "main": "server.js",
   "scripts": {
@@ -11,7 +11,7 @@
   "license": "EUPL-1.1",
   "devDependencies": {
     "browserbox": "^0.9.1",
-    "chai": "^4.0.1",
+    "chai": "^4.0.2",
     "eslint-config-nodemailer": "^1.0.0",
     "grunt": "^1.0.1",
     "grunt-cli": "^1.2.0",
