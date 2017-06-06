@@ -22,7 +22,10 @@ const packageData = require('./package.json');
 const BULK_BATCH_SIZE = 150;
 
 // how often to clear expired messages
-const GC_INTERVAL = 60 * 60 * 1000;
+const GC_INTERVAL = 10 * 60 * 1000;
+
+// artificail delay between deleting next expired message in ms
+const GC_DELAY_DELETE = 100;
 
 // Setup server
 const serverOptions = {
@@ -1971,7 +1974,7 @@ function clearExpiredMessages() {
     let startTime = Date.now();
 
     // First, acquire the lock. This prevents multiple connected clients for deleting the same messages
-    gcLock.acquireLock('gc_expired', 3 * 60 * 60 * 1000 /* Lock expires after 3 hours if not released */, (err, lock) => {
+    gcLock.acquireLock('gc_expired', Math.round(GC_INTERVAL * 1.2) /* Lock expires if not released */, (err, lock) => {
         if (err) {
             server.logger.error(
                 {
@@ -2006,6 +2009,11 @@ function clearExpiredMessages() {
                 gcTimeout.unref();
             });
         };
+
+        if (config.imap.disableRetention) {
+            // delete all attachments that do not have any active links to message objects
+            return deleteOrphanedAttachments(() => done(null, true));
+        }
 
         let cursor = db.database
             .collection('messages')
@@ -2074,7 +2082,11 @@ function clearExpiredMessages() {
                             return cursor.close(() => done(err));
                         }
                         deleted++;
-                        setTimeout(processNext, 100);
+                        if (GC_DELAY_DELETE) {
+                            setTimeout(processNext, GC_DELAY_DELETE);
+                        } else {
+                            setImmediate(processNext);
+                        }
                     }
                 );
             });

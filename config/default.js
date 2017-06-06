@@ -48,7 +48,9 @@ module.exports = {
         //key: '/path/to/server/key.pem'
         //cert: '/path/to/server/cert.pem'
         host: '0.0.0.0',
-        maxMB: 5
+        maxMB: 5,
+        // if true then do not autodelete expired messages
+        disableRetention: false
     },
 
     pop3: {
