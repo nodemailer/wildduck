@@ -338,7 +338,7 @@ module.exports.filterFolders = function(folders, query) {
         // setup *
         .replace(/[*]/g, '.*')
         // setup %
-        .replace(/[%]/g, '[^\/]*');
+        .replace(/[%]/g, '[^/]*');
 
     let regex = new RegExp('^' + query + '$', '');
 
@@ -374,13 +374,13 @@ module.exports.getMessageRange = function(uidList, range, isUid) {
         return false;
     };
 
-    for ((i = 0), (len = uidList.length); i < len; i++) {
+    for (i = 0, len = uidList.length; i < len; i++) {
         if (uidList[i] > maxUid) {
             maxUid = uidList[i];
         }
     }
 
-    for ((i = 0), (len = uidList.length); i < len; i++) {
+    for (i = 0, len = uidList.length; i < len; i++) {
         uid = uidList[i] || 1;
         if (inRange(isUid ? uid : i + 1, rangeParts, isUid ? maxUid : totalMessages)) {
             result.push(uidList[i]);
@@ -592,7 +592,11 @@ module.exports.getQueryResponse = function(query, message, options) {
                                     if (!Buffer.isBuffer(val) && val.buffer) {
                                         val = val.buffer;
                                     }
-                                    addr[3] = punycode.toASCII(val.toString());
+                                    try {
+                                        addr[3] = punycode.toASCII(val.toString());
+                                    } catch (E) {
+                                        addr[3] = val.toString();
+                                    }
                                 }
                             });
                         }

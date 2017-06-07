@@ -1,6 +1,6 @@
 {
   "name": "wildduck",
-  "version": "1.0.46",
+  "version": "1.0.47",
   "description": "IMAP server built with Node.js and MongoDB",
   "main": "server.js",
   "scripts": {
@@ -27,7 +27,7 @@
     "html-to-text": "^3.3.0",
     "iconv-lite": "^0.4.17",
     "joi": "^10.5.2",
-    "libbase64": "^0.1.0",
+    "libbase64": "^0.2.0",
     "libmime": "^3.1.0",
     "libqp": "^1.1.0",
     "mailsplit": "^4.0.2",

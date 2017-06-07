@@ -74,7 +74,11 @@ function processAddress(arr, defaults) {
             }
 
             if (domain) {
-                domain = Buffer.from(punycode.toUnicode(domain));
+                try {
+                    domain = Buffer.from(punycode.toUnicode(domain));
+                } catch (E) {
+                    domain = Buffer.from(domain);
+                }
             }
 
             result.push([name, null, user, domain]);

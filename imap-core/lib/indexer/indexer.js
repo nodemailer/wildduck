@@ -343,7 +343,12 @@ class Indexer {
                     if (contentType === 'text/html') {
                         htmlContent.push(content.trim());
                         if (!alternative) {
-                            textContent.push(htmlToText.fromString(content).trim());
+                            try {
+                                let text = htmlToText.fromString(content);
+                                textContent.push(text.trim());
+                            } catch (E) {
+                                // ignore
+                            }
                         }
                     } else {
                         textContent.push(content.trim());
