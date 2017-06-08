@@ -101,7 +101,7 @@
         "key": {
             "mailbox": 1,
             "idate": -1,
-            "_uid": -1
+            "_id": -1
         }
     }, {
         "name": "by_hdate",
