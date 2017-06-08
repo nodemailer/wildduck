@@ -97,6 +97,13 @@
             "idate": 1
         }
     }, {
+        "name": "by_idate_newer",
+        "key": {
+            "mailbox": 1,
+            "idate": -1,
+            "_uid": -1
+        }
+    }, {
         "name": "by_hdate",
         "key": {
             "mailbox": 1,
