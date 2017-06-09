@@ -29,7 +29,8 @@ class MIMEParser {
      * Parses the message, line by line
      */
     parse() {
-        let line, prevBr = '';
+        let line,
+            prevBr = '';
 
         // keep parsing until the last linebreak is not a string (no linebreaks anymore)
         while (typeof this._br === 'string') {
@@ -187,6 +188,9 @@ class MIMEParser {
                     continue;
                 }
 
+                // assume UTF-8 for binary headers
+                value = Buffer.from(value, 'binary').toString();
+
                 if (key in this._node.parsedHeader) {
                     if (Array.isArray(this._node.parsedHeader[key])) {
                         this._node.parsedHeader[key].unshift(value);
@@ -224,7 +228,7 @@ class MIMEParser {
             if (this._node.parsedHeader[key]) {
                 [].concat(this._node.parsedHeader[key] || []).forEach(value => {
                     if (value) {
-                        addresses = addresses.concat(addressparser(Buffer.from(value, 'binary').toString()) || []);
+                        addresses = addresses.concat(addressparser(value) || []);
                     }
                 });
                 this._node.parsedHeader[key] = addresses;
