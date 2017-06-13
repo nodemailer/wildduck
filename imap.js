@@ -2171,6 +2171,14 @@ module.exports = done => {
             return start();
         }
         let index = setupIndexes[indexpos++];
+        server.logger.info(
+            {
+                tnx: 'mongo'
+            },
+            'Creating index %s %s',
+            indexpos,
+            JSON.stringify(index.indexes)
+        );
         db.database.collection(index.collection).createIndexes(index.indexes, ensureIndexes);
     };
     ensureIndexes();
