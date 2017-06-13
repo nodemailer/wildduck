@@ -2140,7 +2140,17 @@ module.exports = done => {
     };
 
     let indexpos = 0;
-    let ensureIndexes = () => {
+    let ensureIndexes = err => {
+        if (err) {
+            server.logger.error(
+                {
+                    tnx: 'mongo',
+                    err
+                },
+                'Failed creating index',
+                err.message
+            );
+        }
         if (indexpos >= setupIndexes.length) {
             server.logger.info(
                 {
