@@ -2142,7 +2142,7 @@ module.exports = done => {
     let indexpos = 0;
     let ensureIndexes = err => {
         if (err) {
-            server.logger.error(
+            server.logger.debug(
                 {
                     tnx: 'mongo',
                     err
@@ -2171,7 +2171,7 @@ module.exports = done => {
             return start();
         }
         let index = setupIndexes[indexpos++];
-        server.logger.info(
+        server.logger.debug(
             {
                 tnx: 'mongo'
             },
