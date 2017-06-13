@@ -5,12 +5,14 @@
         "key": {
             "username": 1
         },
-        "unique": true
+        "unique": true,
+        "background": true
     }, {
         "name": "show_new",
         "key": {
             "created": -1
-        }
+        },
+        "background": true
     }]
 }, {
     "collection": "addresses",
@@ -19,12 +21,14 @@
         "key": {
             "address": 1
         },
-        "unique": true
+        "unique": true,
+        "background": true
     }, {
         "name": "user",
         "key": {
             "user": 1
-        }
+        },
+        "background": true
     }]
 }, {
     "collection": "mailboxes",
@@ -33,19 +37,22 @@
         "key": {
             "user": 1,
             "path": 1
-        }
+        },
+        "background": true
     }, {
         "name": "user_subscribed",
         "key": {
             "user": 1,
             "subscribed": 1
-        }
+        },
+        "background": true
     }, {
         "name": "find_by_type",
         "key": {
             "user": 1,
             "specialUse": 1
-        }
+        },
+        "background": true
     }]
 }, {
     "collection": "messages",
@@ -53,126 +60,146 @@
         "name": "mailbox_messages",
         "key": {
             "mailbox": 1
-        }
+        },
+        "background": true
     }, {
         "name": "user_messages",
         "key": {
             "user": 1
-        }
+        },
+        "background": true
     }, {
         "name": "mailbox_uid",
         "key": {
             "mailbox": 1,
             "uid": 1
-        }
+        },
+        "background": true
     }, {
         "name": "mailbox_modseq_uid",
         "key": {
             "mailbox": 1,
             "modseq": 1,
             "uid": 1
-        }
+        },
+        "background": true
     }, {
         "name": "newer_first",
         "key": {
             "mailbox": 1,
             "uid": -1
-        }
+        },
+        "background": true
     }, {
         "name": "mailbox_flags",
         "key": {
             "mailbox": 1,
             "flags": 1
-        }
+        },
+        "background": true
     }, {
         "name": "by_modseq",
         "key": {
             "mailbox": 1,
             "modseq": 1
-        }
+        },
+        "background": true
     }, {
         "name": "by_idate",
         "key": {
             "mailbox": 1,
             "idate": 1,
             "_id": 1
-        }
+        },
+        "background": true
     }, {
         "name": "by_idate_newer",
         "key": {
             "mailbox": 1,
             "idate": -1,
             "_id": -1
-        }
+        },
+        "background": true
     }, {
         "name": "by_idate_newer",
         "key": {
             "mailbox": 1,
             "idate": -1,
             "_id": -1
-        }
+        },
+        "background": true
     }, {
         "name": "by_hdate",
         "key": {
             "mailbox": 1,
             "hdate": 1,
             "msgid": 1
-        }
+        },
+        "background": true
     }, {
         "name": "by_size",
         "key": {
             "mailbox": 1,
             "size": 1
-        }
+        },
+        "background": true
     }, {
         "name": "by_headers",
         "key": {
             "mailbox": 1,
             "headers.key": 1,
             "headers.value": 1
-        }
+        },
+        "background": true
     }, {
         "name": "fulltext",
         "key": {
             "mailbox": 1,
             "text": "text"
-        }
+        },
+        "background": true
     }, {
         "name": "mailbox_seen_flag",
         "key": {
             "mailbox": 1,
             "seen": 1
-        }
+        },
+        "background": true
     }, {
         "name": "mailbox_deleted_flag",
         "key": {
             "mailbox": 1,
             "deleted": 1
-        }
+        },
+        "background": true
     }, {
         "name": "mailbox_flagged_flag",
         "key": {
             "mailbox": 1,
             "flagged": 1
-        }
+        },
+        "background": true
     }, {
         "name": "mailbox_draft_flag",
         "key": {
             "mailbox": 1,
             "draft": 1
-        }
+        },
+        "background": true
     }, {
         "name": "has_attachment",
         "key": {
             "mailbox": 1,
             "ha": 1
-        }
+        },
+        "background": true
     }, {
         "name": "retention_time",
         "key": {
             "exp": 1,
             "rdate": 1
-        }
+        },
+        "background": true
     }]
 }, {
     "collection": "attachments.files",
@@ -180,13 +207,15 @@
         "name": "attachment_hash",
         "key": {
             "metadata.h": 1
-        }
+        },
+        "background": true
     }, {
         "name": "related_attachments",
         "key": {
             "metadata.c": 1,
             "metadata.m": 1
-        }
+        },
+        "background": true
     }]
 }, {
     "collection": "journal",
@@ -195,12 +224,14 @@
         "key": {
             "mailbox": 1,
             "modseq": 1
-        }
+        },
+        "background": true
     }, {
         "name": "autoexpire",
         "expireAfterSeconds": 21600,
         "key": {
             "created": 1
-        }
+        },
+        "background": true
     }]
 }]
