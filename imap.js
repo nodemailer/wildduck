@@ -348,28 +348,28 @@ server.onDelete = function(path, session, callback) {
             db.database
                 .collection('messages')
                 .aggregate(
-                [
-                    {
-                        $match: {
-                            mailbox: mailbox._id
-                        }
-                    },
-                    {
-                        $group: {
-                            _id: {
-                                mailbox: '$mailbox'
-                            },
-                            storageUsed: {
-                                $sum: '$size'
+                    [
+                        {
+                            $match: {
+                                mailbox: mailbox._id
+                            }
+                        },
+                        {
+                            $group: {
+                                _id: {
+                                    mailbox: '$mailbox'
+                                },
+                                storageUsed: {
+                                    $sum: '$size'
+                                }
                             }
                         }
+                    ],
+                    {
+                        cursor: {
+                            batchSize: 1
+                        }
                     }
-                ],
-                {
-                    cursor: {
-                        batchSize: 1
-                    }
-                }
                 )
                 .toArray((err, res) => {
                     if (err) {
@@ -1629,30 +1629,30 @@ server.onSearch = function(path, options, session, callback) {
                             let regex = Buffer.from(term.value, 'binary').toString().replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
                             let entry = term.value
                                 ? {
-                                    headers: {
-                                        $elemMatch: {
-                                            key: term.header,
-                                            value: !ne
+                                      headers: {
+                                          $elemMatch: {
+                                              key: term.header,
+                                              value: !ne
                                                   ? {
-                                                      $regex: regex,
-                                                      $options: 'i'
-                                                  }
+                                                        $regex: regex,
+                                                        $options: 'i'
+                                                    }
                                                   : {
-                                                      $not: {
-                                                          $regex: regex,
-                                                          $options: 'i'
-                                                      }
-                                                  }
-                                        }
-                                    }
-                                }
+                                                        $not: {
+                                                            $regex: regex,
+                                                            $options: 'i'
+                                                        }
+                                                    }
+                                          }
+                                      }
+                                  }
                                 : {
-                                    'headers.key': !ne
+                                      'headers.key': !ne
                                           ? term.header
                                           : {
-                                              $ne: term.header
-                                          }
-                                };
+                                                $ne: term.header
+                                            }
+                                  };
                             parent.push(entry);
                         }
                         break;
@@ -1677,23 +1677,23 @@ server.onSearch = function(path, options, session, callback) {
                             }
                             let entry = !op
                                 ? [
-                                    {
-                                        $gte: value
-                                    },
-                                    {
-                                        $lt: new Date(value.getTime() + 24 * 3600 * 1000)
-                                    }
-                                ]
+                                      {
+                                          $gte: value
+                                      },
+                                      {
+                                          $lt: new Date(value.getTime() + 24 * 3600 * 1000)
+                                      }
+                                  ]
                                 : {
-                                    [op]: value
-                                };
+                                      [op]: value
+                                  };
 
                             entry = {
                                 idate: !ne
                                     ? entry
                                     : {
-                                        $not: entry
-                                    }
+                                          $not: entry
+                                      }
                             };
 
                             parent.push(entry);
@@ -1720,23 +1720,23 @@ server.onSearch = function(path, options, session, callback) {
                             }
                             let entry = !op
                                 ? [
-                                    {
-                                        $gte: value
-                                    },
-                                    {
-                                        $lt: new Date(value.getTime() + 24 * 3600 * 1000)
-                                    }
-                                ]
+                                      {
+                                          $gte: value
+                                      },
+                                      {
+                                          $lt: new Date(value.getTime() + 24 * 3600 * 1000)
+                                      }
+                                  ]
                                 : {
-                                    [op]: value
-                                };
+                                      [op]: value
+                                  };
 
                             entry = {
                                 hdate: !ne
                                     ? entry
                                     : {
-                                        $not: entry
-                                    }
+                                          $not: entry
+                                      }
                             };
 
                             parent.push(entry);
@@ -1770,8 +1770,8 @@ server.onSearch = function(path, options, session, callback) {
                                 size: !ne
                                     ? entry
                                     : {
-                                        $not: entry
-                                    }
+                                          $not: entry
+                                      }
                             };
 
                             parent.push(entry);

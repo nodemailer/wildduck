@@ -1,312 +1,395 @@
-[{
-    "collection": "users",
-    "indexes": [{
-        "name": "users",
-        "key": {
-            "username": 1
-        },
-        "unique": true,
-        "background": true
-    }]
-}, {
-    "collection": "users",
-    "indexes": [{
-        "name": "show_new",
-        "key": {
-            "created": -1
-        },
-        "background": true
-    }]
-}, {
-    "collection": "addresses",
-    "indexes": [{
-        "name": "address",
-        "key": {
-            "address": 1
-        },
-        "unique": true,
-        "background": true
-    }]
-}, {
-    "collection": "addresses",
-    "indexes": [{
-        "name": "user",
-        "key": {
-            "user": 1
-        },
-        "background": true
-    }]
-}, {
-    "collection": "mailboxes",
-    "indexes": [{
-        "name": "find_by_user",
-        "key": {
-            "user": 1,
-            "path": 1
-        },
-        "background": true
-    }]
-}, {
-    "collection": "mailboxes",
-    "indexes": [{
-        "name": "user_subscribed",
-        "key": {
-            "user": 1,
-            "subscribed": 1
-        },
-        "background": true
-    }]
-}, {
-    "collection": "mailboxes",
-    "indexes": [{
-        "name": "find_by_type",
-        "key": {
-            "user": 1,
-            "specialUse": 1
-        },
-        "background": true
-    }]
-}, {
-    "collection": "messages",
-    "indexes": [{
-        "name": "mailbox_messages",
-        "key": {
-            "mailbox": 1
-        },
-        "background": true
-    }]
-}, {
-    "collection": "messages",
-    "indexes": [{
-        "name": "user_messages",
-        "key": {
-            "user": 1
-        },
-        "background": true
-    }]
-}, {
-    "collection": "messages",
-    "indexes": [{
-        "name": "mailbox_uid",
-        "key": {
-            "mailbox": 1,
-            "uid": 1
-        },
-        "background": true
-    }]
-}, {
-    "collection": "messages",
-    "indexes": [{
-        "name": "mailbox_modseq_uid",
-        "key": {
-            "mailbox": 1,
-            "modseq": 1,
-            "uid": 1
-        },
-        "background": true
-    }]
-}, {
-    "collection": "messages",
-    "indexes": [{
-        "name": "newer_first",
-        "key": {
-            "mailbox": 1,
-            "uid": -1
-        },
-        "background": true
-    }]
-}, {
-    "collection": "messages",
-    "indexes": [{
-        "name": "mailbox_flags",
-        "key": {
-            "mailbox": 1,
-            "flags": 1
-        },
-        "background": true
-    }]
-}, {
-    "collection": "messages",
-    "indexes": [{
-        "name": "by_modseq",
-        "key": {
-            "mailbox": 1,
-            "modseq": 1
-        },
-        "background": true
-    }]
-}, {
-    "collection": "messages",
-    "indexes": [{
-        "name": "by_idate",
-        "key": {
-            "mailbox": 1,
-            "idate": 1,
-            "_id": 1
-        },
-        "background": true
-    }]
-}, {
-    "collection": "messages",
-    "indexes": [{
-        "name": "by_idate_newer",
-        "key": {
-            "mailbox": 1,
-            "idate": -1,
-            "_id": -1
-        },
-        "background": true
-    }]
-}, {
-    "collection": "messages",
-    "indexes": [{
-        "name": "by_idate_newer",
-        "key": {
-            "mailbox": 1,
-            "idate": -1,
-            "_id": -1
-        },
-        "background": true
-    }]
-}, {
-    "collection": "messages",
-    "indexes": [{
-        "name": "by_hdate",
-        "key": {
-            "mailbox": 1,
-            "hdate": 1,
-            "msgid": 1
-        },
-        "background": true
-    }]
-}, {
-    "collection": "messages",
-    "indexes": [{
-        "name": "by_size",
-        "key": {
-            "mailbox": 1,
-            "size": 1
-        },
-        "background": true
-    }]
-}, {
-    "collection": "messages",
-    "indexes": [{
-        "name": "by_headers",
-        "key": {
-            "mailbox": 1,
-            "headers.key": 1,
-            "headers.value": 1
-        },
-        "background": true
-    }]
-}, {
-    "collection": "messages",
-    "indexes": [{
-        "name": "fulltext",
-        "key": {
-            "mailbox": 1,
-            "text": "text"
-        },
-        "background": true
-    }]
-}, {
-    "collection": "messages",
-    "indexes": [{
-        "name": "mailbox_seen_flag",
-        "key": {
-            "mailbox": 1,
-            "seen": 1
-        },
-        "background": true
-    }]
-}, {
-    "collection": "messages",
-    "indexes": [{
-        "name": "mailbox_deleted_flag",
-        "key": {
-            "mailbox": 1,
-            "deleted": 1
-        },
-        "background": true
-    }]
-}, {
-    "collection": "messages",
-    "indexes": [{
-        "name": "mailbox_flagged_flag",
-        "key": {
-            "mailbox": 1,
-            "flagged": 1
-        },
-        "background": true
-    }]
-}, {
-    "collection": "messages",
-    "indexes": [{
-        "name": "mailbox_draft_flag",
-        "key": {
-            "mailbox": 1,
-            "draft": 1
-        },
-        "background": true
-    }]
-}, {
-    "collection": "messages",
-    "indexes": [{
-        "name": "has_attachment",
-        "key": {
-            "mailbox": 1,
-            "ha": 1
-        },
-        "background": true
-    }]
-}, {
-    "collection": "messages",
-    "indexes": [{
-        "name": "retention_time",
-        "key": {
-            "exp": 1,
-            "rdate": 1
-        },
-        "background": true
-    }]
-}, {
-    "collection": "attachments.files",
-    "indexes": [{
-        "name": "attachment_hash",
-        "key": {
-            "metadata.h": 1
-        },
-        "background": true
-    }]
-}, {
-    "collection": "attachments.files",
-    "indexes": [{
-        "name": "related_attachments",
-        "key": {
-            "metadata.c": 1,
-            "metadata.m": 1
-        },
-        "background": true
-    }]
-}, {
-    "collection": "journal",
-    "indexes": [{
-        "name": "mailbox_modseq",
-        "key": {
-            "mailbox": 1,
-            "modseq": 1
-        },
-        "background": true
-    }]
-}, {
-    "collection": "journal",
-    "indexes": [{
-        "name": "autoexpire",
-        "expireAfterSeconds": 21600,
-        "key": {
-            "created": 1
-        },
-        "background": true
-    }]
-}]
+[
+    {
+        "collection": "users",
+        "indexes": [
+            {
+                "name": "users",
+                "key": {
+                    "username": 1
+                },
+                "unique": true,
+                "background": true
+            }
+        ]
+    },
+    {
+        "collection": "users",
+        "indexes": [
+            {
+                "name": "show_new",
+                "key": {
+                    "created": -1
+                },
+                "background": true
+            }
+        ]
+    },
+    {
+        "collection": "addresses",
+        "indexes": [
+            {
+                "name": "address",
+                "key": {
+                    "address": 1
+                },
+                "unique": true,
+                "background": true
+            }
+        ]
+    },
+    {
+        "collection": "addresses",
+        "indexes": [
+            {
+                "name": "user",
+                "key": {
+                    "user": 1
+                },
+                "background": true
+            }
+        ]
+    },
+    {
+        "collection": "mailboxes",
+        "indexes": [
+            {
+                "name": "find_by_user",
+                "key": {
+                    "user": 1,
+                    "path": 1
+                },
+                "background": true
+            }
+        ]
+    },
+    {
+        "collection": "mailboxes",
+        "indexes": [
+            {
+                "name": "user_subscribed",
+                "key": {
+                    "user": 1,
+                    "subscribed": 1
+                },
+                "background": true
+            }
+        ]
+    },
+    {
+        "collection": "mailboxes",
+        "indexes": [
+            {
+                "name": "find_by_type",
+                "key": {
+                    "user": 1,
+                    "specialUse": 1
+                },
+                "background": true
+            }
+        ]
+    },
+    {
+        "collection": "messages",
+        "indexes": [
+            {
+                "name": "mailbox_messages",
+                "key": {
+                    "mailbox": 1
+                },
+                "background": true
+            }
+        ]
+    },
+    {
+        "collection": "messages",
+        "indexes": [
+            {
+                "name": "user_messages",
+                "key": {
+                    "user": 1
+                },
+                "background": true
+            }
+        ]
+    },
+    {
+        "collection": "messages",
+        "indexes": [
+            {
+                "name": "mailbox_uid",
+                "key": {
+                    "mailbox": 1,
+                    "uid": 1
+                },
+                "background": true
+            }
+        ]
+    },
+    {
+        "collection": "messages",
+        "indexes": [
+            {
+                "name": "mailbox_modseq_uid",
+                "key": {
+                    "mailbox": 1,
+                    "modseq": 1,
+                    "uid": 1
+                },
+                "background": true
+            }
+        ]
+    },
+    {
+        "collection": "messages",
+        "indexes": [
+            {
+                "name": "newer_first",
+                "key": {
+                    "mailbox": 1,
+                    "uid": -1
+                },
+                "background": true
+            }
+        ]
+    },
+    {
+        "collection": "messages",
+        "indexes": [
+            {
+                "name": "mailbox_flags",
+                "key": {
+                    "mailbox": 1,
+                    "flags": 1
+                },
+                "background": true
+            }
+        ]
+    },
+    {
+        "collection": "messages",
+        "indexes": [
+            {
+                "name": "by_modseq",
+                "key": {
+                    "mailbox": 1,
+                    "modseq": 1
+                },
+                "background": true
+            }
+        ]
+    },
+    {
+        "collection": "messages",
+        "indexes": [
+            {
+                "name": "by_idate",
+                "key": {
+                    "mailbox": 1,
+                    "idate": 1,
+                    "_id": 1
+                },
+                "background": true
+            }
+        ]
+    },
+    {
+        "collection": "messages",
+        "indexes": [
+            {
+                "name": "by_idate_newer",
+                "key": {
+                    "mailbox": 1,
+                    "idate": -1,
+                    "_id": -1
+                },
+                "background": true
+            }
+        ]
+    },
+    {
+        "collection": "messages",
+        "indexes": [
+            {
+                "name": "by_hdate",
+                "key": {
+                    "mailbox": 1,
+                    "hdate": 1,
+                    "msgid": 1
+                },
+                "background": true
+            }
+        ]
+    },
+    {
+        "collection": "messages",
+        "indexes": [
+            {
+                "name": "by_size",
+                "key": {
+                    "mailbox": 1,
+                    "size": 1
+                },
+                "background": true
+            }
+        ]
+    },
+    {
+        "collection": "messages",
+        "indexes": [
+            {
+                "name": "by_headers",
+                "key": {
+                    "mailbox": 1,
+                    "headers.key": 1,
+                    "headers.value": 1
+                },
+                "background": true
+            }
+        ]
+    },
+    {
+        "collection": "messages",
+        "indexes": [
+            {
+                "name": "fulltext",
+                "key": {
+                    "mailbox": 1,
+                    "text": "text"
+                },
+                "background": true
+            }
+        ]
+    },
+    {
+        "collection": "messages",
+        "indexes": [
+            {
+                "name": "mailbox_seen_flag",
+                "key": {
+                    "mailbox": 1,
+                    "seen": 1
+                },
+                "background": true
+            }
+        ]
+    },
+    {
+        "collection": "messages",
+        "indexes": [
+            {
+                "name": "mailbox_deleted_flag",
+                "key": {
+                    "mailbox": 1,
+                    "deleted": 1
+                },
+                "background": true
+            }
+        ]
+    },
+    {
+        "collection": "messages",
+        "indexes": [
+            {
+                "name": "mailbox_flagged_flag",
+                "key": {
+                    "mailbox": 1,
+                    "flagged": 1
+                },
+                "background": true
+            }
+        ]
+    },
+    {
+        "collection": "messages",
+        "indexes": [
+            {
+                "name": "mailbox_draft_flag",
+                "key": {
+                    "mailbox": 1,
+                    "draft": 1
+                },
+                "background": true
+            }
+        ]
+    },
+    {
+        "collection": "messages",
+        "indexes": [
+            {
+                "name": "has_attachment",
+                "key": {
+                    "mailbox": 1,
+                    "ha": 1
+                },
+                "background": true
+            }
+        ]
+    },
+    {
+        "collection": "messages",
+        "indexes": [
+            {
+                "name": "retention_time",
+                "partialFilterExpression": {
+                    "exp": true
+                },
+                "key": {
+                    "exp": 1,
+                    "rdate": 1
+                },
+                "background": true
+            }
+        ]
+    },
+    {
+        "collection": "attachments.files",
+        "indexes": [
+            {
+                "name": "attachment_hash",
+                "key": {
+                    "metadata.h": 1
+                },
+                "background": true
+            }
+        ]
+    },
+    {
+        "collection": "attachments.files",
+        "indexes": [
+            {
+                "name": "related_attachments",
+                "key": {
+                    "metadata.c": 1,
+                    "metadata.m": 1
+                },
+                "background": true
+            }
+        ]
+    },
+    {
+        "collection": "journal",
+        "indexes": [
+            {
+                "name": "mailbox_modseq",
+                "key": {
+                    "mailbox": 1,
+                    "modseq": 1
+                },
+                "background": true
+            }
+        ]
+    },
+    {
+        "collection": "journal",
+        "indexes": [
+            {
+                "name": "autoexpire",
+                "expireAfterSeconds": 21600,
+                "key": {
+                    "created": 1
+                },
+                "background": true
+            }
+        ]
+    }
+]
