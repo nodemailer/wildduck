@@ -24,9 +24,9 @@ const server = restify.createServer({
 let messageHandler;
 let userHandler;
 
-server.use(restify.queryParser());
+server.use(restify.plugins.queryParser());
 server.use(
-    restify.bodyParser({
+    restify.plugins.bodyParser({
         maxBodySize: 0,
         mapParams: true,
         mapFiles: false,
@@ -349,28 +349,28 @@ server.post('/user/quota/reset', (req, res, next) => {
         db.database
             .collection('messages')
             .aggregate(
-            [
-                {
-                    $match: {
-                        user: user._id
-                    }
-                },
-                {
-                    $group: {
-                        _id: {
-                            user: '$user'
-                        },
-                        storageUsed: {
-                            $sum: '$size'
+                [
+                    {
+                        $match: {
+                            user: user._id
+                        }
+                    },
+                    {
+                        $group: {
+                            _id: {
+                                user: '$user'
+                            },
+                            storageUsed: {
+                                $sum: '$size'
+                            }
                         }
                     }
+                ],
+                {
+                    cursor: {
+                        batchSize: 1
+                    }
                 }
-            ],
-            {
-                cursor: {
-                    batchSize: 1
-                }
-            }
             )
             .toArray((err, result) => {
                 if (err) {
