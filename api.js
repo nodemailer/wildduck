@@ -14,11 +14,7 @@ const libqp = require('libqp');
 const libbase64 = require('libbase64');
 
 const server = restify.createServer({
-    name: 'Wild Duck API',
-    formatters: {
-        'application/json': (req, res, body, cb) => cb(null, JSON.stringify(body, null, 2)),
-        'text/html': (req, res, body, cb) => cb(null, body)
-    }
+    name: 'Wild Duck API'
 });
 
 let messageHandler;
@@ -72,6 +68,7 @@ server.post('/user/create', (req, res, next) => {
             });
             return next();
         }
+
         res.json({
             success: !!user,
             username: result.value.username

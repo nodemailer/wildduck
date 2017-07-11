@@ -3,7 +3,6 @@
 const config = require('config');
 const log = require('npmlog');
 const POP3Server = require('./lib/pop3-server');
-const fs = require('fs');
 const UserHandler = require('./lib/user-handler');
 const MessageHandler = require('./lib/message-handler');
 const ObjectID = require('mongodb').ObjectID;
@@ -175,12 +174,28 @@ const serverOptions = {
     }
 };
 
-if (config.pop3.key) {
-    serverOptions.key = fs.readFileSync(config.pop3.key);
-}
+if (config.pop3.tls) {
+    if (config.pop3.tls.key) {
+        serverOptions.key = config.pop3.tls.key;
 
-if (config.pop3.cert) {
-    serverOptions.cert = fs.readFileSync(config.pop3.cert);
+        if (config.pop3.tls.ca) {
+            serverOptions.ca = config.pop3.tls.ca;
+        }
+
+        if (config.pop3.tls.cert) {
+            serverOptions.cert = config.pop3.tls.cert;
+        }
+    } else if (config.tls.key) {
+        serverOptions.key = config.tls.key;
+
+        if (config.tls.ca) {
+            serverOptions.ca = config.tls.ca;
+        }
+
+        if (config.tls.cert) {
+            serverOptions.cert = config.tls.cert;
+        }
+    }
 }
 
 const server = new POP3Server(serverOptions);

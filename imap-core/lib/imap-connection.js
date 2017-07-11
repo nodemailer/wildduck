@@ -65,7 +65,7 @@ class IMAPConnection extends EventEmitter {
         this.remoteAddress = this._socket.remoteAddress;
 
         // Server hostname for the greegins
-        this.name = this._server.options.name || os.hostname();
+        this.name = (this._server.options.name || os.hostname()).toLowerCase();
 
         this.state = 'Not Authenticated';
 
@@ -703,12 +703,13 @@ class IMAPConnection extends EventEmitter {
                             break;
 
                         case 'UID':
-                            value = value && value.value
-                                ? value
-                                : {
-                                    type: 'ATOM',
-                                    value: (value || '0').toString()
-                                };
+                            value =
+                                value && value.value
+                                    ? value
+                                    : {
+                                        type: 'ATOM',
+                                        value: (value || '0').toString()
+                                    };
                             break;
 
                         case 'MODSEQ':

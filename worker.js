@@ -1,6 +1,29 @@
 'use strict';
 
 const config = require('config');
+const fs = require('fs');
+
+// load certificate files
+[config.tls, config.imap.tls, config.lmtp.tls, config.pop3.tls].forEach(tlsconf => {
+    if (!tlsconf) {
+        return;
+    }
+    if (tlsconf.key) {
+        tlsconf.key = fs.readFileSync(tlsconf.key, 'ascii');
+    }
+
+    if (tlsconf.cert) {
+        tlsconf.cert = fs.readFileSync(tlsconf.cert, 'ascii');
+    }
+
+    if (tlsconf.ca) {
+        tlsconf.ca = [].concat(tlsconf.ca || []).map(ca => fs.readFileSync(ca, 'ascii'));
+        if (!tlsconf.ca.length) {
+            tlsconf.ca = false;
+        }
+    }
+});
+
 const log = require('npmlog');
 const imap = require('./imap');
 const pop3 = require('./pop3');

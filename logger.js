@@ -11,7 +11,7 @@ try {
     // just ignore
 }
 
-if (config.syslog && syslog) {
+if (config.log.syslog && syslog) {
     syslog.open(config.ident, syslog.option.LOG_PID, syslog.level.LOG_INFO);
 
     let logger = data => {

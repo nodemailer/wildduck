@@ -10,7 +10,6 @@ const MessageHandler = require('./lib/message-handler');
 const db = require('./lib/db');
 const forward = require('./lib/forward');
 const autoreply = require('./lib/autoreply');
-const fs = require('fs');
 
 let messageHandler;
 
@@ -142,7 +141,7 @@ const serverOptions = {
                 // create Delivered-To and Received headers
                 let header = Buffer.from(
                     'Delivered-To: ' + recipient + '\r\n'
-                    //+ 'Received: ' + generateReceivedHeader(session, queueId, os.hostname(), recipient) + '\r\n'
+                    //+ 'Received: ' + generateReceivedHeader(session, queueId, os.hostname().toLowerCase(), recipient) + '\r\n'
                 );
 
                 chunks.unshift(header);
@@ -171,7 +170,7 @@ const serverOptions = {
                                 }
                             },
                             action: {
-                                  // only applies if any other filter does not already mark message as spam or ham
+                                // only applies if any other filter does not already mark message as spam or ham
                                 spam: true
                             }
                         }
@@ -400,12 +399,28 @@ const serverOptions = {
     }
 };
 
-if (config.lmtp.key) {
-    serverOptions.key = fs.readFileSync(config.lmtp.key);
-}
+if (config.lmtp.tls) {
+    if (config.lmtp.tls.key) {
+        serverOptions.key = config.lmtp.tls.key;
 
-if (config.lmtp.cert) {
-    serverOptions.cert = fs.readFileSync(config.lmtp.cert);
+        if (config.lmtp.tls.ca) {
+            serverOptions.ca = config.lmtp.tls.ca;
+        }
+
+        if (config.lmtp.tls.cert) {
+            serverOptions.cert = config.lmtp.tls.cert;
+        }
+    } else if (config.tls.key) {
+        serverOptions.key = config.tls.key;
+
+        if (config.tls.ca) {
+            serverOptions.ca = config.tls.ca;
+        }
+
+        if (config.tls.cert) {
+            serverOptions.cert = config.tls.cert;
+        }
+    }
 }
 
 const server = new SMTPServer(serverOptions);

@@ -1,0 +1,126 @@
+# Uncomment if you start the app as root and want to downgrade
+# once all privileged actions are completed
+#user="wildduck"
+#group="wildduck"
+
+# process title and syslog ident
+ident="wildduck"
+
+# how many processes to start
+processes=1
+
+# mongodb connection string
+mongo="mongodb://127.0.0.1:27017/wildduck"
+
+# redis connection string
+redis="redis://127.0.0.1:6379/3"
+
+# if this header exists and starts with yes then the message is treated as spam
+spamHeader="X-Rspamd-Spam"
+
+# default quota storage in MB (can be overriden per user)
+maxStorage=1024
+
+# default smtp recipients for 24h (can be overriden per user)
+maxRecipients=2000
+
+# default forwarded messages for 24h (can be overriden per user)
+maxForwards=2000
+
+# If usernames are not email addresses then use this domain as hostname part
+#emailDomain="mydomain.info"
+
+[log]
+    level="silly"
+    # log to syslog if true
+    # not needed if you run the app as systemd service
+    syslog=false
+
+[imap]
+    # If enabled then Wild Duck exposes an IMAP interface for listing and fetching emails
+    enabled=true
+    port=9993
+    # by default bind to localhost only
+    host="127.0.0.1"
+
+    # Use `true` for port 993 and `false` for 143. If connection is not secured
+    # on connection then Wild Duck enables STARTTLS extension
+    secure=true
+
+    # Max size for messages uploaded via APPEND
+    maxMB=25
+
+    # delete messages from \Trash and \Junk after retention days
+    retention=30
+
+    # if `true` then do not autodelete expired messages
+    disableRetention=false
+
+[tls]
+    # Default TLS keys (can be overriden by individual services)
+    #key="/path/to/server/key.pem"
+    #ca=["/path/to/server/ca1.pem", "/path/to/server/ca2.pem"]
+    #cert="/path/to/server/cert.pem"
+
+[imap.tls]
+    # If certificate path is not defined, use global or built-in self-signed certs
+    #key="/path/to/server/key.pem"
+    #cert="/path/to/server/cert.pem"
+
+[lmtp]
+    # If enabled then Wild Duck exposes a LMTP interface for pushing messages to mail store
+    enabled=true
+    port=2424
+    # by default bind to localhost only
+    host='127.0.0.1'
+
+    # Max accepted size for messages pushed via LMTP
+    maxMB=25
+
+    [lmtp.tls]
+        # If certificate path is not defined, use global or built-in self-signed certs for STARTTLS
+        #key="/path/to/server/key.pem"
+        #cert="/path/to/server/cert.pem"
+
+[pop3]
+    # If enabled then Wild Duck exposes a limited POP3 interface for listing and fetching emails
+    enabled=true
+    port=9995
+    # by default bind to localhost only
+    host="127.0.0.1"
+
+    # Use `true` for port 995 and `false` for 110. Try to always use `true` as the included
+    # POP3 server is limited and does not support the STLS command
+    secure=true
+
+    # How many latest messages to list for LIST and UIDL
+    # POP3 server never lists all messages but only a limited length list
+    maxMessages=250
+
+    [pop3.tls]
+        # If certificate path is not defined, use global or built-in self-signed certs
+        #key="/path/to/server/key.pem"
+        #cert="/path/to/server/cert.pem"
+
+[api]
+    enabled=true
+    port=8080
+    # by default bind to localhost only
+    host="127.0.0.1"
+
+[sender]
+    # Push messages to ZoneMTA queue for delivery
+    # if `false` then no messages are sent
+    enabled=true
+
+    # which ZoneMTA queue to use by default
+    zone="default"
+
+    # MongoDB connection url. Do not set if you want to use main database
+    mongo="mongodb://127.0.0.1:27017/zone-mta"
+
+    # Collection name for GridFS storage
+    gfs="mail"
+
+    # Collection name for the queue
+    collection="zone-queue"

@@ -10,7 +10,6 @@ const imapHandler = IMAPServerModule.imapHandler;
 const ObjectID = require('mongodb').ObjectID;
 const Indexer = require('./imap-core/lib/indexer/indexer');
 const imapTools = require('./imap-core/lib/imap-tools');
-const fs = require('fs');
 const setupIndexes = require('./indexes.json');
 const MessageHandler = require('./lib/message-handler');
 const UserHandler = require('./lib/user-handler');
@@ -57,12 +56,28 @@ const serverOptions = {
     maxStorage: config.maxStorage * 1024 * 1024
 };
 
-if (config.imap.key) {
-    serverOptions.key = fs.readFileSync(config.imap.key);
-}
+if (config.imap.tls) {
+    if (config.imap.tls.key) {
+        serverOptions.key = config.imap.tls.key;
 
-if (config.imap.cert) {
-    serverOptions.cert = fs.readFileSync(config.imap.cert);
+        if (config.imap.tls.ca) {
+            serverOptions.ca = config.imap.tls.ca;
+        }
+
+        if (config.imap.tls.cert) {
+            serverOptions.cert = config.imap.tls.cert;
+        }
+    } else if (config.tls.key) {
+        serverOptions.key = config.tls.key;
+
+        if (config.tls.ca) {
+            serverOptions.ca = config.tls.ca;
+        }
+
+        if (config.tls.cert) {
+            serverOptions.cert = config.tls.cert;
+        }
+    }
 }
 
 const server = new IMAPServer(serverOptions);
@@ -1626,33 +1641,33 @@ server.onSearch = function(path, options, session, callback) {
                     case 'header':
                         {
                             // FIXME: this does not match unicode symbols for whatever reason
-                            let regex = Buffer.from(term.value, 'binary').toString().replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+                            let regex = Buffer.from(term.value, 'binary').toString().replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
                             let entry = term.value
                                 ? {
-                                      headers: {
-                                          $elemMatch: {
-                                              key: term.header,
-                                              value: !ne
-                                                  ? {
+                                    headers: {
+                                        $elemMatch: {
+                                            key: term.header,
+                                            value: !ne
+                                                ? {
+                                                    $regex: regex,
+                                                    $options: 'i'
+                                                }
+                                                : {
+                                                    $not: {
                                                         $regex: regex,
                                                         $options: 'i'
                                                     }
-                                                  : {
-                                                        $not: {
-                                                            $regex: regex,
-                                                            $options: 'i'
-                                                        }
-                                                    }
-                                          }
-                                      }
-                                  }
+                                                }
+                                        }
+                                    }
+                                }
                                 : {
-                                      'headers.key': !ne
-                                          ? term.header
-                                          : {
-                                                $ne: term.header
-                                            }
-                                  };
+                                    'headers.key': !ne
+                                        ? term.header
+                                        : {
+                                            $ne: term.header
+                                        }
+                                };
                             parent.push(entry);
                         }
                         break;
@@ -1677,23 +1692,23 @@ server.onSearch = function(path, options, session, callback) {
                             }
                             let entry = !op
                                 ? [
-                                      {
-                                          $gte: value
-                                      },
-                                      {
-                                          $lt: new Date(value.getTime() + 24 * 3600 * 1000)
-                                      }
-                                  ]
+                                    {
+                                        $gte: value
+                                    },
+                                    {
+                                        $lt: new Date(value.getTime() + 24 * 3600 * 1000)
+                                    }
+                                ]
                                 : {
-                                      [op]: value
-                                  };
+                                    [op]: value
+                                };
 
                             entry = {
                                 idate: !ne
                                     ? entry
                                     : {
-                                          $not: entry
-                                      }
+                                        $not: entry
+                                    }
                             };
 
                             parent.push(entry);
@@ -1720,23 +1735,23 @@ server.onSearch = function(path, options, session, callback) {
                             }
                             let entry = !op
                                 ? [
-                                      {
-                                          $gte: value
-                                      },
-                                      {
-                                          $lt: new Date(value.getTime() + 24 * 3600 * 1000)
-                                      }
-                                  ]
+                                    {
+                                        $gte: value
+                                    },
+                                    {
+                                        $lt: new Date(value.getTime() + 24 * 3600 * 1000)
+                                    }
+                                ]
                                 : {
-                                      [op]: value
-                                  };
+                                    [op]: value
+                                };
 
                             entry = {
                                 hdate: !ne
                                     ? entry
                                     : {
-                                          $not: entry
-                                      }
+                                        $not: entry
+                                    }
                             };
 
                             parent.push(entry);
@@ -1770,8 +1785,8 @@ server.onSearch = function(path, options, session, callback) {
                                 size: !ne
                                     ? entry
                                     : {
-                                          $not: entry
-                                      }
+                                        $not: entry
+                                    }
                             };
 
                             parent.push(entry);
@@ -2101,6 +2116,14 @@ module.exports = done => {
         return setImmediate(() => done(null, false));
     }
 
+    gcLock = new RedFour({
+        redis: db.redisConfig,
+        namespace: 'wildduck'
+    });
+
+    gcTimeout = setTimeout(clearExpiredMessages, GC_INTERVAL);
+    gcTimeout.unref();
+
     let start = () => {
         messageHandler = new MessageHandler(db.database, db.redisConfig);
         userHandler = new UserHandler(db.database, db.redis);
@@ -2140,17 +2163,7 @@ module.exports = done => {
     };
 
     let indexpos = 0;
-    let ensureIndexes = err => {
-        if (err) {
-            server.logger.debug(
-                {
-                    tnx: 'mongo',
-                    err
-                },
-                'Failed creating index',
-                err.message
-            );
-        }
+    let ensureIndexes = next => {
         if (indexpos >= setupIndexes.length) {
             server.logger.info(
                 {
@@ -2159,27 +2172,78 @@ module.exports = done => {
                 'Setup indexes for %s collections',
                 setupIndexes.length
             );
-
-            gcLock = new RedFour({
-                redis: db.redisConfig,
-                namespace: 'wildduck'
-            });
-
-            gcTimeout = setTimeout(clearExpiredMessages, GC_INTERVAL);
-            gcTimeout.unref();
-
-            return start();
+            return next();
         }
         let index = setupIndexes[indexpos++];
-        server.logger.debug(
-            {
-                tnx: 'mongo'
-            },
-            'Creating index %s %s',
-            indexpos,
-            JSON.stringify(index.indexes)
-        );
-        db.database.collection(index.collection).createIndexes(index.indexes, ensureIndexes);
+        db.database.collection(index.collection).createIndexes(index.indexes, (err, r) => {
+            if (err) {
+                server.logger.error(
+                    {
+                        err,
+                        tnx: 'mongo'
+                    },
+                    'Failed creating index %s %s. %s',
+                    indexpos,
+                    index.indexes.map(i => JSON.stringify(i.name)).join(', '),
+                    err.message
+                );
+            } else if (r.numIndexesAfter !== r.numIndexesBefore) {
+                server.logger.debug(
+                    {
+                        tnx: 'mongo'
+                    },
+                    'Created index %s %s',
+                    indexpos,
+                    index.indexes.map(i => JSON.stringify(i.name)).join(', ')
+                );
+            } else {
+                server.logger.debug(
+                    {
+                        tnx: 'mongo'
+                    },
+                    'Skipped index %s %s: %s',
+                    indexpos,
+                    index.indexes.map(i => JSON.stringify(i.name)).join(', '),
+                    r.note || 'No index added'
+                );
+            }
+
+            ensureIndexes(next);
+        });
     };
-    ensureIndexes();
+
+    gcLock.acquireLock('db_indexes', 10 * 60 * 1000, (err, lock) => {
+        if (err) {
+            server.logger.error(
+                {
+                    tnx: 'gc',
+                    err
+                },
+                'Failed to acquire lock error=%s',
+                err.message
+            );
+            return start();
+        } else if (!lock.success) {
+            return start();
+        }
+
+        ensureIndexes(() => {
+            // Do not release the indexing lock immediatelly
+            setTimeout(() => {
+                gcLock.releaseLock(lock, err => {
+                    if (err) {
+                        server.logger.error(
+                            {
+                                tnx: 'gc',
+                                err
+                            },
+                            'Failed to release lock error=%s',
+                            err.message
+                        );
+                    }
+                });
+            }, 60 * 1000);
+            return start();
+        });
+    });
 };

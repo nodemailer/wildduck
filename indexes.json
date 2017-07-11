@@ -104,9 +104,10 @@
         "collection": "messages",
         "indexes": [
             {
-                "name": "user_messages",
+                "name": "user_messages_by_thread",
                 "key": {
-                    "user": 1
+                    "user": 1,
+                    "thread": 1
                 },
                 "background": true
             }
@@ -254,7 +255,12 @@
                 "name": "fulltext",
                 "key": {
                     "mailbox": 1,
+                    "subject": "text",
                     "text": "text"
+                },
+                "weights": {
+                    "subject": 10,
+                    "text": 5
                 },
                 "background": true
             }
@@ -387,6 +393,32 @@
                 "expireAfterSeconds": 21600,
                 "key": {
                     "created": 1
+                },
+                "background": true
+            }
+        ]
+    },
+    {
+        "collection": "threads",
+        "indexes": [
+            {
+                "name": "thread",
+                "key": {
+                    "user": 1,
+                    "ids": 1
+                },
+                "background": true
+            }
+        ]
+    },
+    {
+        "collection": "threads",
+        "indexes": [
+            {
+                "name": "autoexpire",
+                "expireAfterSeconds": 31104000,
+                "key": {
+                    "updated": 1
                 },
                 "background": true
             }
