@@ -539,7 +539,7 @@ describe('IMAP Protocol integration tests', function() {
 
             let cmds = [
                 'T1 LOGIN testuser pass',
-                'T2 APPEND INBOX (\Seen $NotJunk NotJunk) "20-Oct-2015 09:57:08 +0300" {' + message.length + '}',
+                'T2 APPEND INBOX (Seen $NotJunk NotJunk) "20-Oct-2015 09:57:08 +0300" {' + message.length + '}',
                 lchunks,
                 'T3 LOGOUT'
             ];
@@ -781,7 +781,7 @@ describe('IMAP Protocol integration tests', function() {
                 },
                 function(resp) {
                     resp = resp.toString();
-                    expect(/^\* ID \("name\"/m.test(resp)).to.be.true;
+                    expect(/^\* ID \("name"/m.test(resp)).to.be.true;
                     expect(/^T1 OK/m.test(resp)).to.be.true;
                     done();
                 }

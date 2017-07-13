@@ -334,7 +334,7 @@ module.exports.filterFolders = function(folders, query) {
         .replace(/\*\*+/g, '*')
         .replace(/%%+/g, '%')
         // escape special characters
-        .replace(/([\\^$+?!.():=\[\]|,\-])/g, '\\$1')
+        .replace(/([\\^$+?!.():=[\]|,-])/g, '\\$1')
         // setup *
         .replace(/[*]/g, '.*')
         // setup %

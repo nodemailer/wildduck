@@ -2,7 +2,7 @@
 
 module.exports.rfc822 =
     '' +
-    'Subject: test\ r\ n ' +
+    'Subject: test r n ' +
     'Content-type: multipart/mixed; boundary=abc\r\n' +
     '\r\n' +
     '--abc\r\n' +

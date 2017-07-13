@@ -69,7 +69,7 @@ module.exports = {
             return callback(new Error('Invalid sequence set for UID STORE'));
         }
 
-        if (!/^[\-+]?FLAGS$/.test(action)) {
+        if (!/^[-+]?FLAGS$/.test(action)) {
             return callback(new Error('Invalid message data item name for UID STORE'));
         }
 
@@ -131,9 +131,10 @@ module.exports = {
 
                 callback(null, {
                     response: success === true ? 'OK' : 'NO',
-                    code: typeof success === 'string'
-                        ? success.toUpperCase()
-                        : modified && modified.length ? 'MODIFIED ' + imapTools.packMessageRange(modified) : false,
+                    code:
+                        typeof success === 'string'
+                            ? success.toUpperCase()
+                            : modified && modified.length ? 'MODIFIED ' + imapTools.packMessageRange(modified) : false,
                     message
                 });
             }

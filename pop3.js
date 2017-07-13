@@ -84,6 +84,7 @@ const serverOptions = {
             db.database
                 .collection('messages')
                 .find({
+                    user: session.user.id,
                     mailbox: mailbox._id
                 })
                 .project({
@@ -121,7 +122,8 @@ const serverOptions = {
 
     onFetchMessage(id, session, callback) {
         db.database.collection('messages').findOne({
-            _id: new ObjectID(id)
+            _id: new ObjectID(id),
+            user: session.user.id
         }, {
             mimeTree: true,
             size: true
@@ -262,10 +264,11 @@ function markAsSeen(session, messages, callback) {
         }
 
         db.database.collection('messages').updateMany({
-            mailbox: mailboxData._id,
             _id: {
                 $in: ids
             },
+            user: session.user.id,
+            mailbox: mailboxData._id,
             modseq: {
                 $lt: mailboxData.modifyIndex
             }

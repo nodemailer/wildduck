@@ -10,12 +10,14 @@ const imapHandler = IMAPServerModule.imapHandler;
 const ObjectID = require('mongodb').ObjectID;
 const Indexer = require('./imap-core/lib/indexer/indexer');
 const imapTools = require('./imap-core/lib/imap-tools');
-const setupIndexes = require('./indexes.json');
 const MessageHandler = require('./lib/message-handler');
 const UserHandler = require('./lib/user-handler');
 const db = require('./lib/db');
 const RedFour = require('redfour');
 const packageData = require('./package.json');
+const yaml = require('js-yaml');
+const fs = require('fs');
+const setupIndexes = yaml.safeLoad(fs.readFileSync(__dirname + '/indexes.yaml', 'utf8')).indexes;
 
 // home many modifications to cache before writing
 const BULK_BATCH_SIZE = 150;
@@ -366,6 +368,7 @@ server.onDelete = function(path, session, callback) {
                     [
                         {
                             $match: {
+                                user: session.user.id,
                                 mailbox: mailbox._id
                             }
                         },
@@ -394,6 +397,7 @@ server.onDelete = function(path, session, callback) {
                     let storageUsed = (res && res[0] && res[0].storageUsed) || 0;
 
                     db.database.collection('messages').deleteMany({
+                        user: session.user.id,
                         mailbox: mailbox._id
                     }, err => {
                         if (err) {
@@ -458,6 +462,7 @@ server.onOpen = function(path, session, callback) {
         db.database
             .collection('messages')
             .find({
+                user: session.user.id,
                 mailbox: mailbox._id
             })
             .project({
@@ -499,6 +504,7 @@ server.onStatus = function(path, session, callback) {
         db.database
             .collection('messages')
             .find({
+                user: session.user.id,
                 mailbox: mailbox._id
             })
             .count((err, total) => {
@@ -508,6 +514,7 @@ server.onStatus = function(path, session, callback) {
                 db.database
                     .collection('messages')
                     .find({
+                        user: session.user.id,
                         mailbox: mailbox._id,
                         seen: false
                     })
@@ -648,11 +655,13 @@ server.onStore = function(path, update, session, callback) {
         }
 
         let query = {
+            user: session.user.id,
             mailbox: mailbox._id
         };
 
         if (update.unchangedSince) {
             query = {
+                user: session.user.id,
                 mailbox: mailbox._id,
                 modseq: {
                     $lte: update.unchangedSince
@@ -884,7 +893,8 @@ server.onStore = function(path, update, session, callback) {
                     updateEntries.push({
                         updateOne: {
                             filter: {
-                                _id: message._id
+                                _id: message._id,
+                                user: session.user.id
                             },
                             update: flagsupdate
                         }
@@ -952,6 +962,7 @@ server.onExpunge = function(path, update, session, callback) {
         let cursor = db.database
             .collection('messages')
             .find({
+                user: session.user.id,
                 mailbox: mailbox._id,
                 deleted: true
             })
@@ -1004,7 +1015,8 @@ server.onExpunge = function(path, update, session, callback) {
                 }
 
                 db.database.collection('messages').deleteOne({
-                    _id: message._id
+                    _id: message._id,
+                    user: session.user.id
                 }, err => {
                     if (err) {
                         return updateQuota(() => cursor.close(() => callback(err)));
@@ -1104,6 +1116,7 @@ server.onCopy = function(path, update, session, callback) {
             let cursor = db.database
                 .collection('messages')
                 .find({
+                    user: session.user.id,
                     mailbox: mailbox._id,
                     uid: {
                         $in: update.messages
@@ -1331,11 +1344,13 @@ server.onFetch = function(path, options, session, callback) {
         }
 
         let query = {
+            user: session.user.id,
             mailbox: mailbox._id
         };
 
         if (options.changedSince) {
             query = {
+                user: session.user.id,
                 mailbox: mailbox._id,
                 modseq: {
                     $gt: options.changedSince
@@ -1443,7 +1458,8 @@ server.onFetch = function(path, options, session, callback) {
                     updateEntries.push({
                         updateOne: {
                             filter: {
-                                _id: message._id
+                                _id: message._id,
+                                user: session.user.id
                             },
                             update: {
                                 $addToSet: {
@@ -1512,6 +1528,7 @@ server.onSearch = function(path, options, session, callback) {
         // prepare query
 
         let query = {
+            user: session.user.id,
             mailbox: mailbox._id
         };
 
@@ -2030,6 +2047,8 @@ function clearExpiredMessages() {
             return deleteOrphanedAttachments(() => done(null, true));
         }
 
+        // TODO: check performance on sharded settings as the query
+        // does not use the shard key
         let cursor = db.database
             .collection('messages')
             .find({
@@ -2175,7 +2194,7 @@ module.exports = done => {
             return next();
         }
         let index = setupIndexes[indexpos++];
-        db.database.collection(index.collection).createIndexes(index.indexes, (err, r) => {
+        db.database.collection(index.collection).createIndexes([index.index], (err, r) => {
             if (err) {
                 server.logger.error(
                     {
@@ -2184,7 +2203,7 @@ module.exports = done => {
                     },
                     'Failed creating index %s %s. %s',
                     indexpos,
-                    index.indexes.map(i => JSON.stringify(i.name)).join(', '),
+                    JSON.stringify(index.index.name),
                     err.message
                 );
             } else if (r.numIndexesAfter !== r.numIndexesBefore) {
@@ -2194,7 +2213,7 @@ module.exports = done => {
                     },
                     'Created index %s %s',
                     indexpos,
-                    index.indexes.map(i => JSON.stringify(i.name)).join(', ')
+                    JSON.stringify(index.index.name)
                 );
             } else {
                 server.logger.debug(
@@ -2203,7 +2222,7 @@ module.exports = done => {
                     },
                     'Skipped index %s %s: %s',
                     indexpos,
-                    index.indexes.map(i => JSON.stringify(i.name)).join(', '),
+                    JSON.stringify(index.index.name),
                     r.note || 'No index added'
                 );
             }
@@ -2212,7 +2231,7 @@ module.exports = done => {
         });
     };
 
-    gcLock.acquireLock('db_indexes', 10 * 60 * 1000, (err, lock) => {
+    gcLock.acquireLock('db_indexes', 1 * 60 * 1000, (err, lock) => {
         if (err) {
             server.logger.error(
                 {

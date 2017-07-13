@@ -725,11 +725,11 @@ class Indexer {
                 }
                 return (
                     formatHeaders(node.header)
-                        .filter(line => {
-                            let key = line.split(':').shift().toLowerCase().trim();
-                            return selector.headers.indexOf(key) >= 0;
-                        })
-                        .join('\r\n') + '\r\n\r\n'
+                    .filter(line => {
+                        let key = line.split(':').shift().toLowerCase().trim();
+                        return selector.headers.indexOf(key) >= 0;
+                    })
+                    .join('\r\n') + '\r\n\r\n'
                 );
 
             case 'header.fields.not':
@@ -739,11 +739,11 @@ class Indexer {
                 }
                 return (
                     formatHeaders(node.header)
-                        .filter(line => {
-                            let key = line.split(':').shift().toLowerCase().trim();
-                            return selector.headers.indexOf(key) < 0;
-                        })
-                        .join('\r\n') + '\r\n\r\n'
+                    .filter(line => {
+                        let key = line.split(':').shift().toLowerCase().trim();
+                        return selector.headers.indexOf(key) < 0;
+                    })
+                    .join('\r\n') + '\r\n\r\n'
                 );
 
             case 'mime':

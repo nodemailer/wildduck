@@ -1,0 +1,255 @@
+---
+indexes:
+
+# Indexes for the user collection
+
+- collection: users
+  index:
+    name: users
+    unique: true
+    key:
+      username: 1
+- collection: users
+  index:
+    name: show_new
+    key:
+      created: -1
+
+# Indexes for the addresses collection
+
+- collection: addresses
+  index:
+    name: address
+    unique: true
+    key:
+      address: 1
+- collection: addresses
+  index:
+    name: user
+    key:
+      user: 1
+
+# Indexes for the mailboxes collection
+
+- collection: mailboxes
+  index:
+    name: find_by_user
+    key:
+      user: 1
+      path: 1
+- collection: mailboxes
+  index:
+    name: user_subscribed
+    key:
+      user: 1
+      subscribed: 1
+- collection: mailboxes
+  index:
+    name: find_by_type
+    key:
+      user: 1
+      specialUse: 1
+
+# Indexes for the messages collection
+# NB! this is a sharded collection and the shard
+# key should be 'user' so keep this field as the first one
+# in indexes
+
+- collection: messages
+  index:
+    name: mailbox_by_id
+    key:
+      _id: 1
+      user: 1
+- collection: messages
+  index:
+    name: mailbox_messages
+    key:
+      user: 1
+      mailbox: 1
+- collection: messages
+  index:
+    name: user_messages_by_thread
+    key:
+      user: 1
+      thread: 1
+- collection: messages
+  index:
+    name: mailbox_uid
+    key:
+      user: 1
+      mailbox: 1
+      uid: 1
+- collection: messages
+  index:
+    name: mailbox_modseq_uid
+    key:
+      user: 1
+      mailbox: 1
+      modseq: 1
+      uid: 1
+- collection: messages
+  index:
+    name: newer_first
+    key:
+      user: 1
+      mailbox: 1
+      uid: -1
+- collection: messages
+  index:
+    name: mailbox_flags
+    key:
+      user: 1
+      mailbox: 1
+      flags: 1
+- collection: messages
+  index:
+    name: by_modseq
+    key:
+      user: 1
+      mailbox: 1
+      modseq: 1
+- collection: messages
+  index:
+    name: by_idate
+    key:
+      user: 1
+      mailbox: 1
+      idate: 1
+      _id: 1
+- collection: messages
+  index:
+    name: by_idate_newer
+    key:
+      user: 1
+      mailbox: 1
+      idate: -1
+      _id: -1
+- collection: messages
+  index:
+    name: by_hdate
+    key:
+      user: 1
+      mailbox: 1
+      hdate: 1
+      msgid: 1
+- collection: messages
+  index:
+    name: by_size
+    key:
+      user: 1
+      mailbox: 1
+      size: 1
+- collection: messages
+  index:
+    name: by_headers
+    key:
+      user: 1
+      mailbox: 1
+      headers.key: 1
+      headers.value: 1
+- collection: messages
+  index:
+    # there can be only one $text index per collection, so in order to make
+    # account wide searches we do not use mailbox as compound key element here.
+    # IMAP TEXT and BODY searches might be slower though
+    name: fulltext
+    key:
+      user: 1
+      subject: text
+      text: text
+    weights:
+      subject: 10
+      text: 5
+- collection: messages
+  index:
+    name: mailbox_seen_flag
+    key:
+      user: 1
+      mailbox: 1
+      seen: 1
+- collection: messages
+  index:
+    name: mailbox_deleted_flag
+    key:
+      user: 1
+      mailbox: 1
+      deleted: 1
+- collection: messages
+  index:
+    name: mailbox_flagged_flag
+    key:
+      user: 1
+      mailbox: 1
+      flagged: 1
+- collection: messages
+  index:
+    name: mailbox_draft_flag
+    key:
+      user: 1
+      mailbox: 1
+      draft: 1
+- collection: messages
+  index:
+    name: has_attachment
+    key:
+      user: 1
+      mailbox: 1
+      ha: 1
+- collection: messages
+  index:
+    # This filter finds all messages that are expired and must be deleted.
+    # Not sure about performance though as it is a global query
+    name: retention_time
+    partialFilterExpression:
+      exp: true
+    key:
+      exp: 1
+      rdate: 1
+
+# Indexes for the attachments collection
+# attachments.files collection should be sharded by _id (hash)
+# attachments.chunks collection should be sharded by files_id (hash)
+
+- collection: attachments.files
+  index:
+    name: attachment_hash
+    key:
+      metadata.h: 1
+- collection: attachments.files
+  index:
+    name: related_attachments
+    key:
+      metadata.c: 1
+      metadata.m: 1
+
+# Indexes for the journal collection
+
+- collection: journal
+  index:
+    name: mailbox_modseq
+    key:
+      mailbox: 1
+      modseq: 1
+- collection: journal
+  index:
+    name: autoexpire
+    expireAfterSeconds: 21600
+    key:
+      created: 1
+
+# Indexes for the threads collection
+
+- collection: threads
+  index:
+    name: thread
+    key:
+      user: 1
+      ids: 1
+- collection: threads
+  index:
+    name: autoexpire
+    # autoremove thread indexes after 1 year of inactivity
+    expireAfterSeconds: 31104000
+    key:
+      updated: 1
