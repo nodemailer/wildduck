@@ -6,6 +6,8 @@ Wild Duck is a distributed IMAP/POP3 server built with Node.js, MongoDB and Redi
 
 > **NB!** Wild Duck is currently in **beta**. Use it on your own responsibility.
 
+*Distributed* means that Wild Duck uses a distributed database as a backend for storing emails. Wild Duck instances are also stateless, you can have multiple instances running and a client can connect to any of these. Wild Duck uses a write ahead log to keep different IMAP sessions in sync between different instances.
+
 ## Usage
 
 Assuming you have MongoDB and Redis running somewhere.
@@ -444,7 +446,14 @@ Shard the following collections by these keys:
 
 * Collection: `messages`, key: `user` (by hash?)
 * Collection: `attachment.files`, key: `_id` (by hash)
-* Collection: `attachment.chunks`, key: `file_id` (by hash)
+* Collection: `attachment.chunks`, key: `files_id` (by hash)
+
+```javascript
+sh.enableSharding('wildduck');
+sh.shardCollection('wildduck.messages', { user: 'hashed' });
+sh.shardCollection('wildduck.attachments.files', { 'metadata.h': 'hashed' });
+sh.shardCollection('wildduck.attachments.chunks', { files_id: 'hashed' });
+```
 
 ## IMAP Protocol Differences
 

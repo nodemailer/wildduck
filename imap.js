@@ -23,7 +23,7 @@ const setupIndexes = yaml.safeLoad(fs.readFileSync(__dirname + '/indexes.yaml', 
 const BULK_BATCH_SIZE = 150;
 
 // how often to clear expired messages
-const GC_INTERVAL = 10 * 60 * 1000;
+const GC_INTERVAL = 0.1 * 60 * 1000;
 
 // artificail delay between deleting next expired message in ms
 const GC_DELAY_DELETE = 100;

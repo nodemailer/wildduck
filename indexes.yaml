@@ -57,6 +57,13 @@ indexes:
 
 - collection: messages
   index:
+    # hashed index needed for sharding
+    name: messages_shard
+    key:
+      user: hashed
+
+- collection: messages
+  index:
     name: mailbox_by_id
     key:
       _id: 1
@@ -215,13 +222,19 @@ indexes:
   index:
     name: attachment_hash
     key:
-      metadata.h: 1
+      metadata.h: hashed
 - collection: attachments.files
   index:
     name: related_attachments
     key:
       metadata.c: 1
       metadata.m: 1
+- collection: attachments.chunks
+  index:
+    # hashed index needed for sharding
+    name: chunks_shard
+    key:
+      files_id: hashed
 
 # Indexes for the journal collection
 
