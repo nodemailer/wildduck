@@ -195,7 +195,6 @@ class Indexer {
             } else if (node.attachmentId && !skipExternal) {
                 append(false, true); // force newline between header and contents
 
-                console.log(this.gridstore);
                 let attachmentStream = this.gridstore.openDownloadStream(node.attachmentId);
 
                 attachmentStream.once('error', err => {
