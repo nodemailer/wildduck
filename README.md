@@ -6,7 +6,7 @@ Wild Duck is a distributed IMAP/POP3 server built with Node.js, MongoDB and Redi
 
 > **NB!** Wild Duck is currently in **beta**. Use it on your own responsibility.
 
-*Distributed* means that Wild Duck uses a distributed database as a backend for storing emails. Wild Duck instances are also stateless, you can have multiple instances running and a client can connect to any of these. Wild Duck uses a write ahead log to keep different IMAP sessions in sync between different instances.
+*Distributed* means that Wild Duck uses a distributed database (sharded+replicated MongoDB) as a backend for storing all data, including emails. Wild Duck instances are stateless, you can have multiple IMAP server instances running and a client can connect to any of these. Wild Duck uses a write ahead log to keep IMAP sessions in sync.
 
 ## Usage
 
@@ -29,7 +29,7 @@ $ npm install --production
 
 ### Step 3\. Modify config
 
-You can either modify the default [config file](./config/default.js) or alternatively generate an environment related config file that gets merged with the default values. Read about the config module [here](https://www.npmjs.com/package/config)
+You can either modify the default [config file](./config/default.toml) or alternatively generate an environment related config file that gets merged with the default values. Read about the config module [here](https://www.npmjs.com/package/config)
 
 ### Step 4\. Run the server
 
@@ -39,7 +39,7 @@ To use the default config file, run the following
 npm start
 ```
 
-Or if you want to use environment related config file, eg from `production.js`, run the following
+Or if you want to use environment related config file, eg. from `production.toml`, run the following
 
 ```
 NODE_ENV=production npm start
@@ -444,16 +444,16 @@ Filters are configuration objects stored in the `filters` array of the users obj
 
 Shard the following collections by these keys:
 
-* Collection: `messages`, key: `user` (by hash?)
-* Collection: `attachment.files`, key: `_id` (by hash)
-* Collection: `attachment.chunks`, key: `files_id` (by hash)
-
 ```javascript
 sh.enableSharding('wildduck');
 sh.shardCollection('wildduck.messages', { user: 'hashed' });
+sh.shardCollection('wildduck.threads', { user: 'hashed' });
 sh.shardCollection('wildduck.attachments.files', { 'metadata.h': 'hashed' });
 sh.shardCollection('wildduck.attachments.chunks', { files_id: 'hashed' });
 ```
+
+> Attachments collections might reside in a different database than default. Modify
+> sharding namespaces accordingly (and do not forget to enable sharding for the attachments database)
 
 ## IMAP Protocol Differences
 

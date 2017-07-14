@@ -4,12 +4,14 @@ indexes:
 # Indexes for the user collection
 
 - collection: users
+  type: users # index applies to users database
   index:
     name: users
     unique: true
     key:
       username: 1
 - collection: users
+  type: users # index applies to users database
   index:
     name: show_new
     key:
@@ -18,12 +20,14 @@ indexes:
 # Indexes for the addresses collection
 
 - collection: addresses
+  type: users # index applies to users database
   index:
     name: address
     unique: true
     key:
       address: 1
 - collection: addresses
+  type: users # index applies to users database
   index:
     name: user
     key:
@@ -219,17 +223,20 @@ indexes:
 # attachments.chunks collection should be sharded by files_id (hash)
 
 - collection: attachments.files
+  type: gridfs # index applies to gridfs database
   index:
     name: attachment_hash
     key:
       metadata.h: hashed
 - collection: attachments.files
+  type: gridfs # index applies to gridfs database
   index:
     name: related_attachments
     key:
       metadata.c: 1
       metadata.m: 1
 - collection: attachments.chunks
+  type: gridfs # index applies to gridfs database
   index:
     # hashed index needed for sharding
     name: chunks_shard
@@ -253,6 +260,11 @@ indexes:
 
 # Indexes for the threads collection
 
+- collection: threads
+  index:
+    name: thread_shard
+    key:
+      user: hashed
 - collection: threads
   index:
     name: thread

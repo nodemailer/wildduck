@@ -118,7 +118,7 @@ server.post('/user/address/create', (req, res, next) => {
         return next();
     }
 
-    db.database.collection('users').findOne({
+    db.users.collection('users').findOne({
         username
     }, (err, userData) => {
         if (err) {
@@ -136,7 +136,7 @@ server.post('/user/address/create', (req, res, next) => {
             return next();
         }
 
-        db.database.collection('addresses').findOne({
+        db.users.collection('addresses').findOne({
             address
         }, (err, addressData) => {
             if (err) {
@@ -157,7 +157,7 @@ server.post('/user/address/create', (req, res, next) => {
             }
 
             // insert alias address to email address registry
-            db.database.collection('addresses').insertOne({
+            db.users.collection('addresses').insertOne({
                 user: userData._id,
                 address,
                 created: new Date()
@@ -181,7 +181,7 @@ server.post('/user/address/create', (req, res, next) => {
 
                 if (!userData.address || main) {
                     // register this address as the default address for that user
-                    return db.database.collection('users').findOneAndUpdate(
+                    return db.users.collection('users').findOneAndUpdate(
                         {
                             _id: userData._id
                         },
@@ -256,7 +256,7 @@ server.post('/user/quota', (req, res, next) => {
         return next();
     }
 
-    db.database.collection('users').findOneAndUpdate({
+    db.users.collection('users').findOneAndUpdate({
         username
     }, {
         $set
@@ -318,7 +318,7 @@ server.post('/user/quota/reset', (req, res, next) => {
 
     let username = result.value.username;
 
-    db.database.collection('users').findOne({
+    db.users.collection('users').findOne({
         username
     }, (err, user) => {
         if (err) {
@@ -376,7 +376,7 @@ server.post('/user/quota/reset', (req, res, next) => {
                 let storageUsed = (result && result[0] && result[0].storageUsed) || 0;
 
                 // update quota counter
-                db.database.collection('users').findOneAndUpdate({
+                db.users.collection('users').findOneAndUpdate({
                     _id: user._id
                 }, {
                     $set: {
@@ -444,7 +444,7 @@ server.post('/user/password', (req, res, next) => {
     let username = result.value.username;
     let password = result.value.password;
 
-    db.database.collection('users').findOneAndUpdate({
+    db.users.collection('users').findOneAndUpdate({
         username
     }, {
         $set: {
@@ -504,7 +504,7 @@ server.get('/user', (req, res, next) => {
 
     let username = result.value.username;
 
-    db.database.collection('users').findOne({
+    db.users.collection('users').findOne({
         username
     }, (err, userData) => {
         if (err) {
@@ -522,7 +522,7 @@ server.get('/user', (req, res, next) => {
             return next();
         }
 
-        db.database
+        db.users
             .collection('addresses')
             .find({
                 user: userData._id
@@ -601,7 +601,7 @@ module.exports = done => {
 
     let started = false;
 
-    userHandler = new UserHandler(db.database, db.redis);
+    userHandler = new UserHandler({ database: db.database, users: db.users, redis: db.redis });
 
     server.on('error', err => {
         if (!started) {

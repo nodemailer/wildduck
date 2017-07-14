@@ -29,8 +29,9 @@ class Indexer {
         this.fetchOptions = this.options.fetchOptions || {};
 
         this.database = this.options.database;
-        if (this.database) {
-            this.gridstore = new GridFSBucket(this.database, {
+        this.gridfs = this.options.gridfs || this.options.database;
+        if (this.gridfs) {
+            this.gridstore = new GridFSBucket(this.gridfs, {
                 bucketName: 'attachments'
             });
         }
@@ -194,6 +195,7 @@ class Indexer {
             } else if (node.attachmentId && !skipExternal) {
                 append(false, true); // force newline between header and contents
 
+                console.log(this.gridstore);
                 let attachmentStream = this.gridstore.openDownloadStream(node.attachmentId);
 
                 attachmentStream.once('error', err => {
@@ -495,7 +497,7 @@ class Indexer {
                     return callback(err);
                 }
 
-                this.database.collection('attachments.files').findOneAndUpdate({
+                this.gridfs.collection('attachments.files').findOneAndUpdate({
                     'metadata.h': hash
                 }, {
                     $inc: {

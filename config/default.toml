@@ -30,6 +30,17 @@ maxForwards=2000
 # If usernames are not email addresses then use this domain as hostname part
 #emailDomain="mydomain.info"
 
+[dbs]
+    # Optional database name for GridFS if you do not want to
+    # use the main db for storing attachments. Useful if you want
+    # to use a different mount folder or storage engine
+    #gridfs="wildduck"
+
+    # Optional database name for users collection if you do not want to
+    # use the main db for storing user/address data. Useful if you want
+    # to use a different mount folder or storage engine
+    #users="wildduck"
+
 [log]
     level="silly"
     # log to syslog if true

@@ -53,7 +53,7 @@ const serverOptions = {
         let originalRecipient = tools.normalizeAddress(rcpt.address);
         let recipient = originalRecipient.replace(/\+[^@]*@/, '@');
 
-        db.database.collection('addresses').findOne({
+        db.users.collection('addresses').findOne({
             address: recipient
         }, (err, address) => {
             if (err) {
@@ -64,7 +64,7 @@ const serverOptions = {
                 return callback(new Error('Unknown recipient'));
             }
 
-            db.database.collection('users').findOne({
+            db.users.collection('users').findOne({
                 _id: address.user
             }, {
                 fields: {
@@ -430,7 +430,7 @@ module.exports = done => {
         return setImmediate(() => done(null, false));
     }
 
-    messageHandler = new MessageHandler(db.database, db.redisConfig);
+    messageHandler = new MessageHandler({ database: db.database, gridfs: db.gridfs, redis: db.redis });
 
     let started = false;
 

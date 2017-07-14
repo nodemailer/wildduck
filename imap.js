@@ -23,7 +23,7 @@ const setupIndexes = yaml.safeLoad(fs.readFileSync(__dirname + '/indexes.yaml', 
 const BULK_BATCH_SIZE = 150;
 
 // how often to clear expired messages
-const GC_INTERVAL = 0.1 * 60 * 1000;
+const GC_INTERVAL = 10 * 60 * 1000;
 
 // artificail delay between deleting next expired message in ms
 const GC_DELAY_DELETE = 100;
@@ -251,7 +251,7 @@ server.onCreate = function(path, session, callback) {
             return callback(null, 'ALREADYEXISTS');
         }
 
-        db.database.collection('users').findOne({
+        db.users.collection('users').findOne({
             _id: session.user.id
         }, {
             fields: {
@@ -420,7 +420,7 @@ server.onDelete = function(path, session, callback) {
                         }
 
                         // decrement quota counters
-                        db.database.collection('users').findOneAndUpdate(
+                        db.users.collection('users').findOneAndUpdate(
                             {
                                 _id: mailbox.user
                             },
@@ -546,7 +546,7 @@ server.onAppend = function(path, flags, date, raw, session, callback) {
         path
     );
 
-    db.database.collection('users').findOne({
+    db.users.collection('users').findOne({
         _id: session.user.id
     }, (err, user) => {
         if (err) {
@@ -983,7 +983,7 @@ server.onExpunge = function(path, update, session, callback) {
                 return next();
             }
 
-            db.database.collection('users').findOneAndUpdate(
+            db.users.collection('users').findOneAndUpdate(
                 {
                     _id: mailbox.user
                 },
@@ -1043,7 +1043,7 @@ server.onExpunge = function(path, update, session, callback) {
                     }
 
                     // remove references to attachments (if any exist)
-                    db.database.collection('attachments.files').updateMany({
+                    db.gridfs.collection('attachments.files').updateMany({
                         _id: {
                             $in: attachments
                         }
@@ -1131,7 +1131,7 @@ server.onCopy = function(path, update, session, callback) {
                 if (!copiedMessages) {
                     return next();
                 }
-                db.database.collection('users').findOneAndUpdate(
+                db.users.collection('users').findOneAndUpdate(
                     {
                         _id: mailbox.user
                     },
@@ -1229,7 +1229,7 @@ server.onCopy = function(path, update, session, callback) {
                             }
 
                             // update attachments
-                            db.database.collection('attachments.files').updateMany({
+                            db.gridfs.collection('attachments.files').updateMany({
                                 _id: {
                                     $in: attachments
                                 }
@@ -1424,6 +1424,7 @@ server.onFetch = function(path, options, session, callback) {
                             logger: this.logger,
                             fetchOptions: {},
                             database: db.database,
+                            gridfs: db.gridfs,
                             acceptUTF8Enabled: session.isUTF8Enabled()
                         })
                     })
@@ -1432,7 +1433,7 @@ server.onFetch = function(path, options, session, callback) {
                 stream.description = util.format('* FETCH #%s uid=%s size=%sB ', ++rowCount, message.uid, message.size);
 
                 stream.on('error', err => {
-                    session.socket.write('INTERNAL ERROR\n');
+                    session.socket.write('* BYE INTERNAL ERROR\n');
                     session.socket.destroy(); // ended up in erroneus state, kill the connection to abort
                     return cursor.close(() => done(err));
                 });
@@ -1896,7 +1897,7 @@ server.onGetQuotaRoot = function(path, session, callback) {
             return callback(null, 'NONEXISTENT');
         }
 
-        db.database.collection('users').findOne({
+        db.users.collection('users').findOne({
             _id: session.user.id
         }, (err, user) => {
             if (err) {
@@ -1930,7 +1931,7 @@ server.onGetQuota = function(quotaRoot, session, callback) {
         return callback(null, 'NONEXISTENT');
     }
 
-    db.database.collection('users').findOne({
+    db.users.collection('users').findOne({
         _id: session.user.id
     }, (err, user) => {
         if (err) {
@@ -1949,7 +1950,7 @@ server.onGetQuota = function(quotaRoot, session, callback) {
 };
 
 function deleteOrphanedAttachments(callback) {
-    let cursor = db.database.collection('attachments.files').find({
+    let cursor = db.gridfs.collection('attachments.files').find({
         'metadata.c': 0,
         'metadata.m': 0
     });
@@ -1973,7 +1974,7 @@ function deleteOrphanedAttachments(callback) {
             }
 
             // delete file entry first
-            db.database.collection('attachments.files').deleteOne({
+            db.gridfs.collection('attachments.files').deleteOne({
                 _id: attachment._id,
                 // make sure that we do not delete a message that is already re-used
                 'metadata.c': 0,
@@ -1984,7 +1985,7 @@ function deleteOrphanedAttachments(callback) {
                 }
 
                 // delete data chunks
-                db.database.collection('attachments.chunks').deleteMany({
+                db.gridfs.collection('attachments.chunks').deleteMany({
                     files_id: attachment._id
                 }, err => {
                     if (err) {
@@ -2144,8 +2145,8 @@ module.exports = done => {
     gcTimeout.unref();
 
     let start = () => {
-        messageHandler = new MessageHandler(db.database, db.redisConfig);
-        userHandler = new UserHandler(db.database, db.redis);
+        messageHandler = new MessageHandler({ database: db.database, gridfs: db.gridfs, redis: db.redis });
+        userHandler = new UserHandler({ database: db.database, users: db.users, redis: db.redis });
 
         server.indexer = new Indexer({
             database: db.database
@@ -2194,7 +2195,7 @@ module.exports = done => {
             return next();
         }
         let index = setupIndexes[indexpos++];
-        db.database.collection(index.collection).createIndexes([index.index], (err, r) => {
+        db[index.type || 'database'].collection(index.collection).createIndexes([index.index], (err, r) => {
             if (err) {
                 server.logger.error(
                     {
