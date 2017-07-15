@@ -84,12 +84,12 @@ const serverOptions = {
             db.database
                 .collection('messages')
                 .find({
-                    user: session.user.id,
                     mailbox: mailbox._id
                 })
                 .project({
                     uid: true,
                     size: true,
+                    mailbox: true,
                     // required to decide if we need to update flags after RETR
                     flags: true,
                     seen: true
@@ -109,6 +109,7 @@ const serverOptions = {
                             .map(message => ({
                                 id: message._id.toString(),
                                 uid: message.uid,
+                                mailbox: message.mailbox,
                                 size: message.size,
                                 flags: message.flags,
                                 seen: message.seen
@@ -120,10 +121,12 @@ const serverOptions = {
         });
     },
 
-    onFetchMessage(id, session, callback) {
+    onFetchMessage(message, session, callback) {
         db.database.collection('messages').findOne({
-            _id: new ObjectID(id),
-            user: session.user.id
+            _id: new ObjectID(message.id),
+            // shard key
+            mailbox: message.mailbox,
+            uid: message.uid
         }, {
             mimeTree: true,
             size: true

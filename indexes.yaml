@@ -55,29 +55,7 @@ indexes:
       specialUse: 1
 
 # Indexes for the messages collection
-# NB! this is a sharded collection and the shard
-# key should be 'user' so keep this field as the first one
-# in indexes
 
-- collection: messages
-  index:
-    # hashed index needed for sharding
-    name: messages_shard
-    key:
-      user: hashed
-
-- collection: messages
-  index:
-    name: mailbox_by_id
-    key:
-      _id: 1
-      user: 1
-- collection: messages
-  index:
-    name: mailbox_messages
-    key:
-      user: 1
-      mailbox: 1
 - collection: messages
   index:
     name: user_messages_by_thread
@@ -86,45 +64,50 @@ indexes:
       thread: 1
 - collection: messages
   index:
+    # use also as sharding key
     name: mailbox_uid
     key:
-      user: 1
       mailbox: 1
       uid: 1
+
+- collection: messages
+  index:
+    # several message related queries include the shard key values
+    name: mailbox_uid_shard
+    key:
+      _id: 1
+      mailbox: 1
+      uid: 1
+
+- collection: messages
+  index:
+    name: newer_first
+    key:
+      mailbox: 1
+      uid: -1
 - collection: messages
   index:
     name: mailbox_modseq_uid
     key:
-      user: 1
       mailbox: 1
       modseq: 1
       uid: 1
 - collection: messages
   index:
-    name: newer_first
-    key:
-      user: 1
-      mailbox: 1
-      uid: -1
-- collection: messages
-  index:
     name: mailbox_flags
     key:
-      user: 1
       mailbox: 1
       flags: 1
 - collection: messages
   index:
     name: by_modseq
     key:
-      user: 1
       mailbox: 1
       modseq: 1
 - collection: messages
   index:
     name: by_idate
     key:
-      user: 1
       mailbox: 1
       idate: 1
       _id: 1
@@ -132,7 +115,6 @@ indexes:
   index:
     name: by_idate_newer
     key:
-      user: 1
       mailbox: 1
       idate: -1
       _id: -1
@@ -140,7 +122,6 @@ indexes:
   index:
     name: by_hdate
     key:
-      user: 1
       mailbox: 1
       hdate: 1
       msgid: 1
@@ -148,22 +129,18 @@ indexes:
   index:
     name: by_size
     key:
-      user: 1
       mailbox: 1
       size: 1
 - collection: messages
   index:
     name: by_headers
     key:
-      user: 1
       mailbox: 1
       headers.key: 1
       headers.value: 1
 - collection: messages
   index:
-    # there can be only one $text index per collection, so in order to make
-    # account wide searches we do not use mailbox as compound key element here.
-    # IMAP TEXT and BODY searches might be slower though
+    # there can be only one $text index per collection
     name: fulltext
     key:
       user: 1
@@ -176,35 +153,30 @@ indexes:
   index:
     name: mailbox_seen_flag
     key:
-      user: 1
       mailbox: 1
       seen: 1
 - collection: messages
   index:
     name: mailbox_deleted_flag
     key:
-      user: 1
       mailbox: 1
       deleted: 1
 - collection: messages
   index:
     name: mailbox_flagged_flag
     key:
-      user: 1
       mailbox: 1
       flagged: 1
 - collection: messages
   index:
     name: mailbox_draft_flag
     key:
-      user: 1
       mailbox: 1
       draft: 1
 - collection: messages
   index:
     name: has_attachment
     key:
-      user: 1
       mailbox: 1
       ha: 1
 - collection: messages
