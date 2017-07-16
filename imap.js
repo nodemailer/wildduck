@@ -83,6 +83,7 @@ let gcTimeout;
 let gcLock;
 
 function deleteOrphanedAttachments(callback) {
+    // NB! scattered query
     let cursor = db.gridfs.collection('attachments.files').find({
         'metadata.c': 0,
         'metadata.m': 0
@@ -181,8 +182,7 @@ function clearExpiredMessages() {
             return deleteOrphanedAttachments(() => done(null, true));
         }
 
-        // TODO: check performance on sharded settings as the query
-        // does not use the shard key
+        // NB! scattered query
         let cursor = db.database
             .collection('messages')
             .find({
