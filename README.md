@@ -6,7 +6,7 @@ Wild Duck is a distributed IMAP/POP3 server built with Node.js, MongoDB and Redi
 
 > **NB!** Wild Duck is currently in **beta**. Use it on your own responsibility.
 
-*Distributed* means that Wild Duck uses a distributed database (sharded+replicated MongoDB) as a backend for storing all data, including emails. Wild Duck instances are stateless, you can have multiple IMAP server instances running and a client can connect to any of these. Wild Duck uses a write ahead log to keep IMAP sessions in sync.
+_Distributed_ means that Wild Duck uses a distributed database (sharded+replicated MongoDB) as a backend for storing all data, including emails. Wild Duck instances are stateless, you can have multiple IMAP server instances running and a client can connect to any of these. Wild Duck uses a write ahead log to keep IMAP sessions in sync.
 
 ## Usage
 
@@ -51,7 +51,7 @@ See see [below](#http-api) for details about creating new user accounts
 
 ### Step 6\. Use an IMAP/POP3 client to log in
 
-Any IMAP or POP3 client will do. Use the credentials from step 5. to log in.
+Any IMAP or POP3 client will do. Use the credentials from step 5\. to log in.
 
 ## Goals of the Project
 
@@ -60,15 +60,44 @@ Any IMAP or POP3 client will do. Use the credentials from step 5. to log in.
 3. Provide Gmail-like features like pushing sent messages automatically to Sent Mail folder or notifying about messages moved to Junk folder so these could be marked as spam
 4. Provide parsed mailbox and message data over HTTP. This should make creating webmail interfaces super easy, no need to parse RFC822 messages to get text content or attachments
 
-## Alternatives
+## FAQ
 
-Here's a list of email/IMAP servers that use database for storing email messages
+### Does it work?
+
+Yes, it does. You can run the server and get working IMAP and POP3 servers for mail store, LMTP server for pushing messages to the mail store and HTTP API server to create new users. All handled by Node.js, MongoDB and Redis, no additional dependencies needed. Provided services can be disabled and enabled one by one so, for example you could process just IMAP in one host and LMTP in another.
+
+### What are the killer features?
+
+1. **Stateless.** Start as many instances as you want. You can start multiple Wild Duck instances in different machines and as long as they share the same MongoDB and Redis settings, users can connect to any instances. This is very different from the traditional IMAP servers where a single user always needs to connect (or be proxied) to the same IMAP server. Wild Duck keeps all required state information in MongoDB, so it does not matter which IMAP instance you use.
+2. **Centralized logging** which allows modern features like 2FA, application specific passwords, authentication scopes, revoking authentication tokens, audit logging and even profile files to auto configure Apple email clients without providing master password
+3. **Works on any OS including Windows.** At least if you get MongoDB and Redis running first.
+4. Focus on **internationalization**, ie. supporting email addresses with non-ascii characters
+5. **De-duplication of attachments.** If the same attachment is referenced by different messages then only a single copy of the attachment is stored. Attachment is stored in the encoded form (eg. encoded in base64) to not break any signatures so the resulting encoding must match as well.
+6. Access messages both using **IMAP and HTTP API**. The latter serves parsed data, so no need to fetch RFC822 messages and parse out html, plaintext content or attachments. It is super easy to create a webmail interface on top of this.
+7. Build in **address labels**: _username+label@example.com_ is delivered to _username@example.com_
+8. **Super easy to tweak.** The entire codebase is pure JavaScript, so there's nothing to compile or anything platform specific. If you need to tweak something then change the code, restart the app and you're ready to go. If it works on one machine then most probably it works in every other machine as well.
+
+### Isn't it bad to use a database as a mail store?
+
+Yes, historically it has been considered a bad practice to store emails in a database. And for a good reason. The data model of relational databases like MySQL does not work well with tree like structures (email mime tree) or large blobs (email source).
+
+Notice the word "relational"? In fact document stores like MongoDB work very well with emails. Document store is great for storing tree-like structures and while GridFS is not as good as "real" object storage, it is good enough for storing the raw parts of the message. Additionally there's nothing too GridFS specific, so (at least in theory) it could be replaced with any object store.
+
+Here's a list of alternative email/IMAP servers that also use a database for storing email messages:
 
 - [DBMail](http://www.dbmail.org/) (IMAP)
 - [Archiveopteryx](http://archiveopteryx.org/) (IMAP)
 - [ElasticInbox](http://www.elasticinbox.com/) (POP3)
 
-## Supported features
+### How does it work?
+
+Whenever a message is received Wild Duck parses it into a tree-like structure based on the MIME tree and stores this tree to MongoDB. Attachments are removed from the tree and stored separately in GridStore. If a message needs to be loaded then Wild Duck fetches the tree structure first and, if needed, loads attachments from GridStore and then compiles it back into the original RFC822 message. The result should be identical to the original messages unless the original message used unix newlines, these might be partially replaced with windows newlines.
+
+Wild Duck tries to keep minimal state for sessions (basically just a list of currently known UIDs and latest MODSEQ value) to be able to distribute sessions between different hosts. Whenever a mailbox is opened the entire message list is loaded as an array of UID values. The first UID in the array element points to the message #1 in IMAP, second one points to message #2 etc.
+
+Actual update data (information about new and deleted messages, flag updates and such) is stored to a journal log and an update beacon is propagated through Redis pub/sub whenever something happens. If a session detects that there have been some changes in the current mailbox and it is possible to notify the user about it (eg. a NOOP call was made), journaled log is loaded from the database and applied to the UID array one action at a time. Once all journaled updates have applied then the result should match the latest state. If it is not possible to notify the user (eg a FETCH call was made), then journal log is not loaded and the user continues to see the old state.
+
+## E-Mail Protocol support
 
 Wild Duck IMAP server supports the following IMAP standards:
 
@@ -84,7 +113,7 @@ Wild Duck IMAP server supports the following IMAP standards:
 - **MOVE** ([RFC6851](https://tools.ietf.org/html/rfc6851))
 - **AUTHENTICATE PLAIN** ([RFC4959](https://tools.ietf.org/html/rfc4959)) and **SASL-IR**
 - **APPENDLIMIT** ([RFC7889](https://tools.ietf.org/html/rfc7889)) – maximum global allowed message size is advertised in CAPABILITY listing
-- **UTF8=ACCEPT** ([RFC6855](https://tools.ietf.org/html/rfc6855)) – this also means that Wild Duck natively supports unicode email usernames. For example <андрис@уайлддак.орг> is a valid email address that is hosted by a test instance of Wild Duck
+- **UTF8=ACCEPT** ([RFC6855](https://tools.ietf.org/html/rfc6855)) – this also means that Wild Duck natively supports unicode email usernames. For example [андрис@уайлддак.орг](mailto:андрис@уайлддак.орг) is a valid email address that is hosted by a test instance of Wild Duck
 - **QUOTA** ([RFC2087](https://tools.ietf.org/html/rfc2087)) – Quota size is global for an account, using a single quota root. Be aware that quota size does not mean actual byte storage in disk, it is calculated as the sum of the [RFC822](https://tools.ietf.org/html/rfc822) sources of stored messages. Actual disk usage is larger as there are database overhead per every message.
 - **COMPRESS=DEFLATE** ([RFC4978](https://tools.ietf.org/html/rfc4978)) – Compress traffic between the client and the server
 
@@ -120,51 +149,6 @@ If a messages is downloaded by a client this message gets marked as _Seen_
 ##### DELE
 
 If a messages is deleted by a client this message gets marked as Seen and moved to Trash folder
-
-## FAQ
-
-### Does it work?
-
-Yes, it does. You can run the server and get working IMAP and POP3 servers for mail store, LMTP server for pushing messages to the mail store and HTTP API server to create new users. All handled by Node.js, MongoDB and Redis, no additional dependencies needed. Provided services can be disabled and enabled one by one so, for example you could process just IMAP in one host and LMTP in another.
-
-### What are the killer features?
-
-1. Start as many instances as you want. You can start multiple Wild Duck instances in different machines and as long as they share the same MongoDB and Redis settings, users can connect to any instances. This is very different from the traditional IMAP servers where a single user always needs to connect (or be proxied) to the same IMAP server. Wild Duck keeps all required state information in MongoDB, so it does not matter which IMAP instance you use.
-2. Super easy to tweak. The entire codebase is pure JavaScript, so there's nothing to compile or anything platform specific. If you need to tweak something then change the code, restart the app and you're ready to go. If it works on one machine then most probably it works in every other machine as well.
-3. Works almost on any OS including Windows. At least if you get MongoDB and Redis ([Windows fork](https://github.com/MSOpenTech/redis)) running first.
-4. Focus on internationalization, ie. supporting email addresses with non-ascii characters
-5. `+`-labels: _андрис+ööö@уайлддак.орг_ is delivered to _андрис@уайлддак.орг_
-6. Access messages both using IMAP and HTTP API. The latter serves parsed data, so no need to fetch RFC822 messages and parse out html, plaintext content or attachments. It is super easy to create a webmail interface on top of this.
-7. Deduplication of attachments. If the same attachment is referenced by different messages then only a single copy of the attachment is stored. Attachment is stored in the encoded form (eg. encoded in base64) to not break any signatures so the resulting encoding must match as well.
-
-### Isn't it bad to use a database as a mail store?
-
-Yes, historically it has been considered a bad practice to store emails in a database. And for a good reason. The data model of relational databases like MySQL does not work well with tree like structures (email mime tree) or large blobs (email source).
-
-Notice the word "relational"? In fact document stores like MongoDB work very well with emails. Document store is great for storing tree-like structures and while GridFS is not as good as "real" object storage, it is good enough for storing the raw parts of the message. Additionally there's nothing too GridFS specific, so (at least in theory) it could be replaced with any object store.
-
-You can see an example mail entry [here](https://gist.github.com/andris9/520d530bcc126768ce5e09e774be8c2e). Lines [184-217](https://gist.github.com/andris9/520d530bcc126768ce5e09e774be8c2e#file-entry-js-L184-L217) demonstrate a node that has its body missing as it was big enough to be moved to GridStore and not be included with the main entry.
-
-### Is the server scalable?
-
-Somewhat yes. Even though on some parts Wild Duck is already fast (Wild Duck is successfully tested with mailboxes up to 200K messages), there are still some important improvements that need to be done:
-
-1. Optimize FETCH queries to load only partial data for BODY subparts
-2. Parse incoming message into the mime tree as a stream. Currently the entire message is buffered in memory before being parsed.
-3. CPU usage seems a bit too high, there is probably a ton of profiling to do
-
-### How does it work?
-
-Whenever a message is received Wild Duck parses it into a tree-like structure based on the MIME tree and stores this tree to MongoDB. Attachments are removed from the tree and stored separately in GridStore. If a message needs to be loaded then Wild Duck fetches the tree structure first and, if needed, loads attachments from GridStore and then compiles it back into the original RFC822 message. The result should be identical to the original messages unless the original message used unix newlines, these might be partially replaced with windows newlines.
-
-Wild Duck tries to keep minimal state for sessions (basically just a list of currently known UIDs and latest MODSEQ value) to be able to distribute sessions between different hosts. Whenever a mailbox is opened the entire message list is loaded as an array of UID values. The first UID in the array element points to the message #1 in IMAP, second one points to message #2 etc.
-
-Actual update data (information about new and deleted messages, flag updates and such) is stored to a journal log and an update beacon is propagated through Redis pub/sub whenever something happens. If a session detects that there have been some changes in the current mailbox and it is possible to notify the user about it (eg. a NOOP call was made), journaled log is loaded from the database and applied to the UID array one action at a time. Once all journaled updates have applied then the result should match the latest state. If it is not possible to notify the user (eg a FETCH call was made), then journal log is not loaded and the user continues to see the old state.
-
-### Future considerations
-
-1. Add interoperability with current servers, for example by fetching authentication data from MySQL
-2. Maybe allow some kind of message manipulation through plugins? This would allow to turn Wild Duck for example into an encrypted mail server – mail data would be encrypted using users public key before storing it to DB and decrypted with users private key whenever the user logs in and FETCHes or SEARCHes messages. Private key would be protected by users password. For the user the encryption layer would be invisible while guaranteeing that if the user is currently not logged in then there would be no way to read the messages as the private key is locked.
 
 ## HTTP API
 
@@ -384,6 +368,8 @@ Recipient limits assume that messages are sent using ZoneMTA with [zonemta-wildd
 
 ## Message filtering
 
+> The filtering system is subject to change with the API updates. Most probably the filters are going to reside in separate collection and not as part of the user object.
+
 Wild Duck has built-in message filtering in LMTP server. This is somewhat similar to Sieve even though the filters are not scripts.
 
 Filters are configuration objects stored in the `filters` array of the users object.
@@ -452,8 +438,7 @@ sh.shardCollection('wildduck.attachments.files', { 'metadata.h': 'hashed' });
 sh.shardCollection('wildduck.attachments.chunks', { files_id: 'hashed' });
 ```
 
-> Attachments collections might reside in a different database than default. Modify
-> sharding namespaces accordingly (and do not forget to enable sharding for the attachments database)
+> Attachments collections might reside in a different database than default. Modify sharding namespaces accordingly (and do not forget to enable sharding for the attachments database)
 
 ## IMAP Protocol Differences
 
@@ -469,14 +454,6 @@ This is a list of known differences from the IMAP specification. Listed differen
 8. What happens when FETCH is called for messages that were deleted in another session? _Not sure, need to check_
 
 Any other differences are most probably real bugs and unintentional.
-
-## Future considerations for IMAP extensions
-
-Wild Duck does not plan to be the most feature-rich IMAP client in the world. Most IMAP extensions are useless because there aren't too many clients that are able to benefit from these extensions. There are a few extensions though that would make sense to be added to Wild Duck
-
-1. IMAP4 non-synchronizing literals, LITERAL- ([RFC7888](https://tools.ietf.org/html/rfc7888)). Synchronized literals are needed for APPEND to check mailbox quota, small values could go with the non-synchronizing version.
-2. LIST-STATUS ([RFC5819](https://tools.ietf.org/html/rfc5819))
-3. _What else?_ (definitely not NOTIFY nor QRESYNC)
 
 ## Testing
 
@@ -495,6 +472,18 @@ Use [ZoneMTA](https://github.com/zone-eu/zone-mta) with the [ZoneMTA-WildDuck](h
 ## Inbound SMTP
 
 Use [Haraka](http://haraka.github.io/) with [queue/lmtp](http://haraka.github.io/manual/plugins/queue/lmtp.html) plugin. Wild Duck specific recipient processing plugin coming soon!
+
+## Future considerations
+
+- Add interoperability with current servers, for example by fetching authentication data from MySQL
+- Optimize FETCH queries to load only partial data for BODY subparts
+- Parse incoming message into the mime tree as a stream. Currently the entire message is buffered in memory before being parsed.
+- CPU usage seems a bit too high, there is probably a ton of profiling to do
+- Maybe allow some kind of message manipulation through plugins?
+- Wild Duck does not plan to be the most feature-rich IMAP client in the world. Most IMAP extensions are useless because there aren't too many clients that are able to benefit from these extensions. There are a few extensions though that would make sense to be added to Wild Duck:
+  - IMAP4 non-synchronizing literals, LITERAL- ([RFC7888](https://tools.ietf.org/html/rfc7888)). Synchronized literals are needed for APPEND to check mailbox quota, small values could go with the non-synchronizing version.
+  - LIST-STATUS ([RFC5819](https://tools.ietf.org/html/rfc5819))
+  - _What else?_ (definitely not NOTIFY nor QRESYNC)
 
 ## License
 
