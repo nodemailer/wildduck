@@ -1,6 +1,6 @@
 'use strict';
 
-const config = require('config');
+const config = require('wild-config');
 const log = require('npmlog');
 
 let syslog;

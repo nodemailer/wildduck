@@ -4,7 +4,7 @@
 
 process.env.UV_THREADPOOL_SIZE = 16;
 
-const config = require('config');
+const config = require('wild-config');
 const fs = require('fs');
 const log = require('npmlog');
 const packageData = require('./package.json');

@@ -1,35 +1,15 @@
 'use strict';
 
-const config = require('config');
-const fs = require('fs');
-
-// load certificate files
-[config.tls, config.imap.tls, config.lmtp.tls, config.pop3.tls].forEach(tlsconf => {
-    if (!tlsconf) {
-        return;
-    }
-    if (tlsconf.key) {
-        tlsconf.key = fs.readFileSync(tlsconf.key, 'ascii');
-    }
-
-    if (tlsconf.cert) {
-        tlsconf.cert = fs.readFileSync(tlsconf.cert, 'ascii');
-    }
-
-    if (tlsconf.ca) {
-        tlsconf.ca = [].concat(tlsconf.ca || []).map(ca => fs.readFileSync(ca, 'ascii'));
-        if (!tlsconf.ca.length) {
-            tlsconf.ca = false;
-        }
-    }
-});
-
+const config = require('wild-config');
 const log = require('npmlog');
 const imap = require('./imap');
 const pop3 = require('./pop3');
 const lmtp = require('./lmtp');
 const api = require('./api');
 const db = require('./lib/db');
+
+// preload certificate files
+require('./lib/certs');
 
 // Initialize database connection
 db.connect(err => {

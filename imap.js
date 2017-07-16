@@ -1,7 +1,7 @@
 'use strict';
 
 const log = require('npmlog');
-const config = require('config');
+const config = require('wild-config');
 const IMAPServerModule = require('./imap-core');
 const IMAPServer = IMAPServerModule.IMAPServer;
 const ImapNotifier = require('./lib/imap-notifier');
@@ -14,6 +14,7 @@ const RedFour = require('redfour');
 const packageData = require('./package.json');
 const yaml = require('js-yaml');
 const fs = require('fs');
+const certs = require('./lib/certs').get('imap');
 const setupIndexes = yaml.safeLoad(fs.readFileSync(__dirname + '/indexes.yaml', 'utf8')).indexes;
 
 const onFetch = require('./lib/handlers/on-fetch');
@@ -66,28 +67,12 @@ const serverOptions = {
     maxStorage: config.maxStorage * 1024 * 1024
 };
 
-if (config.imap.tls) {
-    if (config.imap.tls.key) {
-        serverOptions.key = config.imap.tls.key;
-
-        if (config.imap.tls.ca) {
-            serverOptions.ca = config.imap.tls.ca;
-        }
-
-        if (config.imap.tls.cert) {
-            serverOptions.cert = config.imap.tls.cert;
-        }
-    } else if (config.tls.key) {
-        serverOptions.key = config.tls.key;
-
-        if (config.tls.ca) {
-            serverOptions.ca = config.tls.ca;
-        }
-
-        if (config.tls.cert) {
-            serverOptions.cert = config.tls.cert;
-        }
+if (certs) {
+    serverOptions.key = certs.key;
+    if (certs.ca) {
+        serverOptions.ca = certs.ca;
     }
+    serverOptions.cert = certs.cert;
 }
 
 const server = new IMAPServer(serverOptions);

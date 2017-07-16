@@ -4,7 +4,7 @@
 
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
-const config = require('config');
+const config = require('wild-config');
 const BrowserBox = require('browserbox');
 
 const client = new BrowserBox('localhost', config.imap.port, {

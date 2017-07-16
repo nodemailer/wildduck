@@ -2,7 +2,7 @@
 
 // Simple LMTP server that accepts all messages for valid recipients
 
-const config = require('config');
+const config = require('wild-config');
 const log = require('npmlog');
 const SMTPServer = require('smtp-server').SMTPServer;
 const tools = require('./lib/tools');
@@ -10,6 +10,7 @@ const MessageHandler = require('./lib/message-handler');
 const db = require('./lib/db');
 const forward = require('./lib/forward');
 const autoreply = require('./lib/autoreply');
+const certs = require('./lib/certs').get('lmtp');
 
 let messageHandler;
 
@@ -399,28 +400,12 @@ const serverOptions = {
     }
 };
 
-if (config.lmtp.tls) {
-    if (config.lmtp.tls.key) {
-        serverOptions.key = config.lmtp.tls.key;
-
-        if (config.lmtp.tls.ca) {
-            serverOptions.ca = config.lmtp.tls.ca;
-        }
-
-        if (config.lmtp.tls.cert) {
-            serverOptions.cert = config.lmtp.tls.cert;
-        }
-    } else if (config.tls.key) {
-        serverOptions.key = config.tls.key;
-
-        if (config.tls.ca) {
-            serverOptions.ca = config.tls.ca;
-        }
-
-        if (config.tls.cert) {
-            serverOptions.cert = config.tls.cert;
-        }
+if (certs) {
+    serverOptions.key = certs.key;
+    if (certs.ca) {
+        serverOptions.ca = certs.ca;
     }
+    serverOptions.cert = certs.cert;
 }
 
 const server = new SMTPServer(serverOptions);

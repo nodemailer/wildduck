@@ -10,7 +10,7 @@ if (!recipient) {
     return process.exit(1);
 }
 
-const config = require('config');
+const config = require('wild-config');
 const nodemailer = require('nodemailer');
 
 const transporter = nodemailer.createTransport({

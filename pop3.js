@@ -1,12 +1,13 @@
 'use strict';
 
-const config = require('config');
+const config = require('wild-config');
 const log = require('npmlog');
 const POP3Server = require('./lib/pop3-server');
 const UserHandler = require('./lib/user-handler');
 const MessageHandler = require('./lib/message-handler');
 const ObjectID = require('mongodb').ObjectID;
 const db = require('./lib/db');
+const certs = require('./lib/certs').get('pop3');
 
 const MAX_MESSAGES = 250;
 
@@ -179,28 +180,12 @@ const serverOptions = {
     }
 };
 
-if (config.pop3.tls) {
-    if (config.pop3.tls.key) {
-        serverOptions.key = config.pop3.tls.key;
-
-        if (config.pop3.tls.ca) {
-            serverOptions.ca = config.pop3.tls.ca;
-        }
-
-        if (config.pop3.tls.cert) {
-            serverOptions.cert = config.pop3.tls.cert;
-        }
-    } else if (config.tls.key) {
-        serverOptions.key = config.tls.key;
-
-        if (config.tls.ca) {
-            serverOptions.ca = config.tls.ca;
-        }
-
-        if (config.tls.cert) {
-            serverOptions.cert = config.tls.cert;
-        }
+if (certs) {
+    serverOptions.key = certs.key;
+    if (certs.ca) {
+        serverOptions.ca = certs.ca;
     }
+    serverOptions.cert = certs.cert;
 }
 
 const server = new POP3Server(serverOptions);

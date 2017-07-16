@@ -27,23 +27,21 @@ Install dependencies from npm
 $ npm install --production
 ```
 
-### Step 3\. Modify config
-
-You can either modify the default [config file](./config/default.toml) or alternatively generate an environment related config file that gets merged with the default values. Read about the config module [here](https://www.npmjs.com/package/config)
-
 ### Step 4\. Run the server
 
-To use the default config file, run the following
+To use the [default config](./config/default.toml) file, run the following:
 
 ```
-npm start
+node server.js
 ```
 
-Or if you want to use environment related config file, eg. from `production.toml`, run the following
+Or if you want to override default configuration options with your own, run the following (custom config file is merged with the default, so specify only these values that you want to change):
 
 ```
-NODE_ENV=production npm start
+node server.js --config=/etc/wildduck.toml
 ```
+
+> For additional config options, see the *wild-config* [documentation](https://github.com/wildduck-email/wild-config).
 
 ### Step 5\. Create an user account
 

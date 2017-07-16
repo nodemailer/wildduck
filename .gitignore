@@ -3,4 +3,4 @@ node_modules
 npm-debug.log
 .npmrc
 config/production.*
-config/local*
+config/development.*
