@@ -27,7 +27,7 @@ Install dependencies from npm
 $ npm install --production
 ```
 
-### Step 4\. Run the server
+### Step 3\. Run the server
 
 To use the [default config](./config/default.toml) file, run the following:
 
@@ -43,13 +43,13 @@ node server.js --config=/etc/wildduck.toml
 
 > For additional config options, see the *wild-config* [documentation](https://github.com/wildduck-email/wild-config).
 
-### Step 5\. Create an user account
+### Step 4\. Create an user account
 
 See see [below](#http-api) for details about creating new user accounts
 
-### Step 6\. Use an IMAP/POP3 client to log in
+### Step 5\. Use an IMAP/POP3 client to log in
 
-Any IMAP or POP3 client will do. Use the credentials from step 5\. to log in.
+Any IMAP or POP3 client will do. Use the credentials from step 4\. to log in.
 
 ## Goals of the Project
 
