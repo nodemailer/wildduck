@@ -9,13 +9,7 @@ ident="wildduck"
 # how many processes to start
 processes=1
 
-# mongodb connection string
-mongo="mongodb://127.0.0.1:27017/wildduck"
-
-# redis connection string
-redis="redis://127.0.0.1:6379/3"
-
-# if this header exists and starts with yes then the message is treated as spam
+# if this header exists and starts with "yes" then the message is treated as spam
 spamHeader="X-Rspamd-Spam"
 
 # default quota storage in MB (can be overriden per user)
@@ -31,15 +25,31 @@ maxForwards=2000
 #emailDomain="mydomain.info"
 
 [dbs]
-    # Optional database name for GridFS if you do not want to
+    # mongodb connection string for the main database
+    mongo="mongodb://127.0.0.1:27017/wildduck"
+
+    # redis connection string
+    redis="redis://127.0.0.1:6379/3"
+
+    # Wild Duck allows using different kind of data in different databases
+    # If you do not provide a database config value, then main database connection
+    # is used for everything
+    # You can either use a database name (uses shared connection) or a configutaion
+    # url (creates a separate connection) for each databases
+
+    # Optional database name or connection url for GridFS if you do not want to
     # use the main db for storing attachments. Useful if you want
     # to use a different mount folder or storage engine
     #gridfs="wildduck"
 
-    # Optional database name for users collection if you do not want to
+    # Optional database name or connection url for users collection if you do not want to
     # use the main db for storing user/address data. Useful if you want
     # to use a different mount folder or storage engine
     #users="wildduck"
+
+    # Optional database name or connection url for ZoneMTA queue database. This is
+    # used to push outbound emails to the sending queue
+    #sender="zone-mta"
 
 [log]
     level="silly"
@@ -119,6 +129,14 @@ maxForwards=2000
     # by default bind to localhost only
     host="127.0.0.1"
 
+    # Use `true` (HTTPS) for port 443 and `false` (HTTP) for 80
+    secure=true
+
+    [api.tls]
+        # If certificate path is not defined, use global or built-in self-signed certs
+        #key="/path/to/server/key.pem"
+        #cert="/path/to/server/cert.pem"
+
 [sender]
     # Push messages to ZoneMTA queue for delivery
     # if `false` then no messages are sent
@@ -127,11 +145,10 @@ maxForwards=2000
     # which ZoneMTA queue to use by default
     zone="default"
 
-    # MongoDB connection url. Do not set if you want to use main database
-    mongo="mongodb://127.0.0.1:27017/zone-mta"
-
     # Collection name for GridFS storage
     gfs="mail"
 
     # Collection name for the queue
+    # see [dbs].sender option for choosing correct database to use for ZoneMTA queues
+    # by default the main wildduck database is used
     collection="zone-queue"

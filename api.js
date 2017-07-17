@@ -8,10 +8,22 @@ const bcrypt = require('bcryptjs');
 const tools = require('./lib/tools');
 const UserHandler = require('./lib/user-handler');
 const db = require('./lib/db');
+const certs = require('./lib/certs').get('api');
+const ObjectID = require('mongodb').ObjectID;
 
-const server = restify.createServer({
+const serverOptions = {
     name: 'Wild Duck API'
-});
+};
+
+if (certs && config.api.secure) {
+    serverOptions.key = certs.key;
+    if (certs.ca) {
+        serverOptions.ca = certs.ca;
+    }
+    serverOptions.certificate = certs.cert;
+}
+
+const server = restify.createServer(serverOptions);
 
 let userHandler;
 
@@ -25,28 +37,27 @@ server.use(
     })
 );
 
-server.post('/user/create', (req, res, next) => {
+server.post('/users', (req, res, next) => {
     res.charSet('utf-8');
 
     const schema = Joi.object().keys({
         username: Joi.string().alphanum().lowercase().min(3).max(30).required(),
-        password: Joi.string().min(3).max(100).required(),
-        quota: Joi.number().default(config.maxStorage * (1024 * 1024))
+        password: Joi.string().max(256).required(),
+
+        address: Joi.string().email(),
+
+        language: Joi.string().min(2).max(20).lowercase(),
+        retention: Joi.number().min(0).default(0),
+
+        quota: Joi.number().min(0).default(0),
+        recipients: Joi.number().min(0).default(0),
+        forwards: Joi.number().min(0).default(0)
     });
 
-    const result = Joi.validate(
-        {
-            username: req.params.username,
-            password: req.params.password,
-            quota: req.params.quota
-        },
-        schema,
-        {
-            abortEarly: false,
-            convert: true,
-            allowUnknown: true
-        }
-    );
+    const result = Joi.validate(req.params, schema, {
+        abortEarly: false,
+        convert: true
+    });
 
     if (result.error) {
         res.json({
@@ -55,7 +66,7 @@ server.post('/user/create', (req, res, next) => {
         return next();
     }
 
-    userHandler.create(result.value, (err, user) => {
+    userHandler.create(result.value, (err, id) => {
         if (err) {
             res.json({
                 error: err.message,
@@ -65,40 +76,34 @@ server.post('/user/create', (req, res, next) => {
         }
 
         res.json({
-            success: !!user,
-            username: result.value.username
+            success: !!id,
+            id
         });
 
         return next();
     });
 });
 
-server.post('/user/address/create', (req, res, next) => {
+server.put('/users/:user', (req, res, next) => {
     res.charSet('utf-8');
 
     const schema = Joi.object().keys({
-        username: Joi.string().alphanum().lowercase().min(3).max(30).required(),
-        address: Joi.string().email().required(),
-        main: Joi.boolean().truthy(['Y', 'true', 'yes', 1]).optional()
+        user: Joi.string().hex().lowercase().length(24).required(),
+
+        password: Joi.string().max(256),
+
+        language: Joi.string().min(2).max(20).lowercase(),
+
+        retention: Joi.number().min(0),
+        quota: Joi.number().min(0),
+        recipients: Joi.number().min(0),
+        forwards: Joi.number().min(0)
     });
 
-    let username = req.params.username;
-    let address = req.params.address;
-    let main = req.params.main;
-
-    const result = Joi.validate(
-        {
-            username,
-            address: (address || '').replace(/[\u0080-\uFFFF]/g, 'x'),
-            main
-        },
-        schema,
-        {
-            abortEarly: false,
-            convert: true,
-            allowUnknown: true
-        }
-    );
+    const result = Joi.validate(req.params, schema, {
+        abortEarly: false,
+        convert: true
+    });
 
     if (result.error) {
         res.json({
@@ -107,9 +112,87 @@ server.post('/user/address/create', (req, res, next) => {
         return next();
     }
 
-    username = result.value.username;
-    address = tools.normalizeAddress(address);
-    main = result.value.main;
+    let user = new ObjectID(result.value.user);
+
+    let $set = {};
+    let updates = false;
+    Object.keys(result.value).forEach(key => {
+        if (key === 'user') {
+            return;
+        }
+        if (key === 'password') {
+            $set.password = bcrypt.hashSync(result.value[key], 11);
+            return;
+        }
+        $set[key] = result.value[key];
+        updates = true;
+    });
+
+    if (!updates) {
+        res.json({
+            error: 'Nothing was changed'
+        });
+        return next();
+    }
+
+    db.users.collection('users').findOneAndUpdate({
+        _id: user
+    }, {
+        $set
+    }, {
+        returnOriginal: false
+    }, (err, result) => {
+        if (err) {
+            res.json({
+                error: 'MongoDB Error: ' + err.message
+            });
+            return next();
+        }
+
+        if (!result || !result.value) {
+            res.json({
+                error: 'This user does not exist'
+            });
+            return next();
+        }
+
+        res.json({
+            success: true
+        });
+        return next();
+    });
+});
+
+server.post('/users/:user/addresses', (req, res, next) => {
+    res.charSet('utf-8');
+
+    const schema = Joi.object().keys({
+        user: Joi.string().hex().lowercase().length(24).required(),
+        address: Joi.string().email().required(),
+        main: Joi.boolean().truthy(['Y', 'true', 'yes', 1])
+    });
+
+    let address = tools.normalizeAddress(req.params.address);
+
+    if (/[\u0080-\uFFFF]/.test(req.params.address)) {
+        // replace unicode characters in email addresses before validation
+        req.params.address = req.params.address.replace(/[\u0080-\uFFFF]/g, 'x');
+    }
+
+    const result = Joi.validate(req.params, schema, {
+        abortEarly: false,
+        convert: true
+    });
+
+    if (result.error) {
+        res.json({
+            error: result.error.message
+        });
+        return next();
+    }
+
+    let user = new ObjectID(result.value.user);
+    let main = result.value.main;
 
     if (address.indexOf('+') >= 0) {
         res.json({
@@ -119,19 +202,21 @@ server.post('/user/address/create', (req, res, next) => {
     }
 
     db.users.collection('users').findOne({
-        username
+        _id: user
+    }, {
+        fields: {
+            address: true
+        }
     }, (err, userData) => {
         if (err) {
             res.json({
-                error: 'MongoDB Error: ' + err.message,
-                username
+                error: 'MongoDB Error: ' + err.message
             });
             return next();
         }
         if (!userData) {
             res.json({
-                error: 'This user does not exist',
-                username
+                error: 'This user does not exist'
             });
             return next();
         }
@@ -141,40 +226,37 @@ server.post('/user/address/create', (req, res, next) => {
         }, (err, addressData) => {
             if (err) {
                 res.json({
-                    error: 'MongoDB Error: ' + err.message,
-                    username,
-                    address
+                    error: 'MongoDB Error: ' + err.message
                 });
                 return next();
             }
             if (addressData) {
                 res.json({
-                    error: 'This email address already exists',
-                    username,
-                    address
+                    error: 'This email address already exists'
                 });
                 return next();
             }
 
             // insert alias address to email address registry
             db.users.collection('addresses').insertOne({
-                user: userData._id,
+                user,
                 address,
                 created: new Date()
-            }, err => {
+            }, (err, r) => {
                 if (err) {
                     res.json({
-                        error: 'MongoDB Error: ' + err.message,
-                        address
+                        error: 'MongoDB Error: ' + err.message
                     });
                     return next();
                 }
 
+                let insertId = r.insertedId;
+
                 let done = () => {
+                    // ignore potential user update error
                     res.json({
-                        success: true,
-                        username,
-                        address
+                        success: !!insertId,
+                        id: insertId
                     });
                     return next();
                 };
@@ -183,7 +265,7 @@ server.post('/user/address/create', (req, res, next) => {
                     // register this address as the default address for that user
                     return db.users.collection('users').findOneAndUpdate(
                         {
-                            _id: userData._id
+                            _id: user
                         },
                         {
                             $set: {
@@ -201,30 +283,19 @@ server.post('/user/address/create', (req, res, next) => {
     });
 });
 
-server.post('/user/quota', (req, res, next) => {
+server.put('/users/:user/addresses/:address', (req, res, next) => {
     res.charSet('utf-8');
 
     const schema = Joi.object().keys({
-        username: Joi.string().alphanum().lowercase().min(3).max(30).required(),
-        quota: Joi.number().min(0).optional(),
-        recipients: Joi.number().min(0).max(1000000).optional(),
-        forwards: Joi.number().min(0).max(1000000).optional()
+        user: Joi.string().hex().lowercase().length(24).required(),
+        address: Joi.string().hex().lowercase().length(24).required(),
+        main: Joi.boolean().truthy(['Y', 'true', 'yes', 1]).required()
     });
 
-    const result = Joi.validate(
-        {
-            username: req.params.username,
-            quota: req.params.quota,
-            recipients: req.params.recipients,
-            forwards: req.params.forwards
-        },
-        schema,
-        {
-            abortEarly: false,
-            convert: true,
-            allowUnknown: true
-        }
-    );
+    const result = Joi.validate(req.params, schema, {
+        abortEarly: false,
+        convert: true
+    });
 
     if (result.error) {
         res.json({
@@ -233,81 +304,99 @@ server.post('/user/quota', (req, res, next) => {
         return next();
     }
 
-    let username = result.value.username;
-    let quota = result.value.quota;
-    let recipients = result.value.recipients;
-    let forwards = result.value.forwards;
+    let user = new ObjectID(result.value.user);
+    let address = new ObjectID(result.value.address);
+    let main = result.value.main;
 
-    let $set = {};
-    if (quota) {
-        $set.quota = quota;
-    }
-    if (recipients) {
-        $set.recipients = recipients;
-    }
-    if (forwards) {
-        $set.forwards = forwards;
-    }
-
-    if (!quota && !recipients && !forwards) {
+    if (!main) {
         res.json({
-            error: 'Nothing was updated'
+            error: 'Cannot unset main status'
         });
         return next();
     }
 
-    db.users.collection('users').findOneAndUpdate({
-        username
+    db.users.collection('users').findOne({
+        _id: user
     }, {
-        $set
-    }, {
-        returnOriginal: false
-    }, (err, result) => {
+        fields: {
+            address: true
+        }
+    }, (err, userData) => {
         if (err) {
             res.json({
-                error: 'MongoDB Error: ' + err.message,
-                username
+                error: 'MongoDB Error: ' + err.message
             });
             return next();
         }
-
-        if (!result || !result.value) {
+        if (!userData) {
             res.json({
-                error: 'This user does not exist',
-                username
+                error: 'This user does not exist'
             });
             return next();
         }
 
-        res.json({
-            success: true,
-            username,
-            quota: Number(result.value.quota) || 0,
-            recipients: Number(result.value.recipients) || 0,
-            forwards: Number(result.value.forwards) || 0
+        db.users.collection('addresses').findOne({
+            _id: address
+        }, (err, addressData) => {
+            if (err) {
+                res.json({
+                    error: 'MongoDB Error: ' + err.message
+                });
+                return next();
+            }
+
+            if (!addressData || addressData.user.toString() !== user.toString()) {
+                res.json({
+                    error: 'Invalid or unknown email address identifier'
+                });
+                return next();
+            }
+
+            if (addressData.address === userData.address) {
+                res.json({
+                    error: 'Selected address is already the main email address for the user'
+                });
+                return next();
+            }
+
+            // insert alias address to email address registry
+            db.users.collection('users').findOneAndUpdate({
+                _id: user
+            }, {
+                $set: {
+                    address: addressData.address
+                }
+            }, {
+                returnOriginal: false
+            }, (err, r) => {
+                if (err) {
+                    res.json({
+                        error: 'MongoDB Error: ' + err.message
+                    });
+                    return next();
+                }
+
+                res.json({
+                    success: !!r.value
+                });
+                return next();
+            });
         });
-        return next();
     });
 });
 
-server.post('/user/quota/reset', (req, res, next) => {
+server.del('/users/:user/addresses/:address', (req, res, next) => {
     res.charSet('utf-8');
 
     const schema = Joi.object().keys({
-        username: Joi.string().alphanum().lowercase().min(3).max(30).required()
+        user: Joi.string().hex().lowercase().length(24).required(),
+        address: Joi.string().hex().lowercase().length(24).required()
     });
 
-    const result = Joi.validate(
-        {
-            username: req.params.username
-        },
-        schema,
-        {
-            abortEarly: false,
-            convert: true,
-            allowUnknown: true
-        }
-    );
+    const result = Joi.validate(req.params, schema, {
+        abortEarly: false,
+        convert: true
+    });
 
     if (result.error) {
         res.json({
@@ -316,23 +405,111 @@ server.post('/user/quota/reset', (req, res, next) => {
         return next();
     }
 
-    let username = result.value.username;
+    let user = new ObjectID(result.value.user);
+    let address = new ObjectID(result.value.address);
 
     db.users.collection('users').findOne({
-        username
-    }, (err, user) => {
+        _id: user
+    }, {
+        fields: {
+            address: true
+        }
+    }, (err, userData) => {
         if (err) {
             res.json({
-                error: 'MongoDB Error: ' + err.message,
-                username
+                error: 'MongoDB Error: ' + err.message
+            });
+            return next();
+        }
+        if (!userData) {
+            res.json({
+                error: 'This user does not exist'
             });
             return next();
         }
 
-        if (!user) {
+        db.users.collection('addresses').findOne({
+            _id: address
+        }, (err, addressData) => {
+            if (err) {
+                res.json({
+                    error: 'MongoDB Error: ' + err.message
+                });
+                return next();
+            }
+
+            if (!addressData || addressData.user.toString() !== user.toString()) {
+                res.json({
+                    error: 'Invalid or unknown email address identifier'
+                });
+                return next();
+            }
+
+            if (addressData.address === userData.address) {
+                res.json({
+                    error: 'Trying to delete main address. Set a new main address first'
+                });
+                return next();
+            }
+
+            // insert alias address to email address registry
+            db.users.collection('addresses').deleteOne({
+                _id: address
+            }, (err, r) => {
+                if (err) {
+                    res.json({
+                        error: 'MongoDB Error: ' + err.message
+                    });
+                    return next();
+                }
+
+                res.json({
+                    success: !!r.deletedCount
+                });
+                return next();
+            });
+        });
+    });
+});
+
+server.post('/users/:user/quota/reset', (req, res, next) => {
+    res.charSet('utf-8');
+
+    const schema = Joi.object().keys({
+        user: Joi.string().hex().lowercase().length(24).required()
+    });
+
+    const result = Joi.validate(req.params, schema, {
+        abortEarly: false,
+        convert: true
+    });
+
+    if (result.error) {
+        res.json({
+            error: result.error.message
+        });
+        return next();
+    }
+
+    let user = new ObjectID(result.value.iuserd);
+
+    db.users.collection('users').findOne({
+        _id: user
+    }, {
+        fields: {
+            storageUsed: true
+        }
+    }, (err, userData) => {
+        if (err) {
             res.json({
-                error: 'This user does not exist',
-                username
+                error: 'MongoDB Error: ' + err.messageusername
+            });
+            return next();
+        }
+
+        if (!userData) {
+            res.json({
+                error: 'This user does not exist'
             });
             return next();
         }
@@ -344,7 +521,7 @@ server.post('/user/quota/reset', (req, res, next) => {
                 [
                     {
                         $match: {
-                            user: user._id
+                            user
                         }
                     },
                     {
@@ -367,8 +544,7 @@ server.post('/user/quota/reset', (req, res, next) => {
             .toArray((err, result) => {
                 if (err) {
                     res.json({
-                        error: 'MongoDB Error: ' + err.message,
-                        username
+                        error: 'MongoDB Error: ' + err.message
                     });
                     return next();
                 }
@@ -377,7 +553,7 @@ server.post('/user/quota/reset', (req, res, next) => {
 
                 // update quota counter
                 db.users.collection('users').findOneAndUpdate({
-                    _id: user._id
+                    _id: userData._id
                 }, {
                     $set: {
                         storageUsed: Number(storageUsed) || 0
@@ -387,24 +563,20 @@ server.post('/user/quota/reset', (req, res, next) => {
                 }, (err, result) => {
                     if (err) {
                         res.json({
-                            error: 'MongoDB Error: ' + err.message,
-                            username
+                            error: 'MongoDB Error: ' + err.message
                         });
                         return next();
                     }
 
                     if (!result || !result.value) {
                         res.json({
-                            error: 'This user does not exist',
-                            username
+                            error: 'This user does not exist'
                         });
                         return next();
                     }
 
                     res.json({
                         success: true,
-                        username,
-                        previousStorageUsed: user.storageUsed,
                         storageUsed: Number(result.value.storageUsed) || 0
                     });
                     return next();
@@ -413,26 +585,17 @@ server.post('/user/quota/reset', (req, res, next) => {
     });
 });
 
-server.post('/user/password', (req, res, next) => {
+server.get('/users/:user', (req, res, next) => {
     res.charSet('utf-8');
 
     const schema = Joi.object().keys({
-        username: Joi.string().alphanum().lowercase().min(3).max(30).required(),
-        password: Joi.string().min(3).max(100).required()
+        user: Joi.string().hex().lowercase().length(24).required()
     });
 
-    const result = Joi.validate(
-        {
-            username: req.params.username,
-            password: req.params.password
-        },
-        schema,
-        {
-            abortEarly: false,
-            convert: true,
-            allowUnknown: true
-        }
-    );
+    const result = Joi.validate(req.params, schema, {
+        abortEarly: false,
+        convert: true
+    });
 
     if (result.error) {
         res.json({
@@ -441,83 +604,115 @@ server.post('/user/password', (req, res, next) => {
         return next();
     }
 
-    let username = result.value.username;
-    let password = result.value.password;
-
-    db.users.collection('users').findOneAndUpdate({
-        username
-    }, {
-        $set: {
-            password: bcrypt.hashSync(password, 11)
-        }
-    }, (err, result) => {
-        if (err) {
-            res.json({
-                error: 'MongoDB Error: ' + err.message,
-                username
-            });
-            return next();
-        }
-
-        if (!result || !result.value) {
-            res.json({
-                error: 'This user does not exist',
-                username
-            });
-            return next();
-        }
-
-        res.json({
-            success: true,
-            username
-        });
-
-        return next();
-    });
-});
-
-server.get('/user', (req, res, next) => {
-    res.charSet('utf-8');
-
-    const schema = Joi.object().keys({
-        username: Joi.string().alphanum().lowercase().min(3).max(30).required()
-    });
-
-    const result = Joi.validate(
-        {
-            username: req.query.username
-        },
-        schema,
-        {
-            abortEarly: false,
-            convert: true,
-            allowUnknown: true
-        }
-    );
-
-    if (result.error) {
-        res.json({
-            error: result.error.message
-        });
-        return next();
-    }
-
-    let username = result.value.username;
+    let user = new ObjectID(result.value.user);
 
     db.users.collection('users').findOne({
-        username
+        _id: user
     }, (err, userData) => {
         if (err) {
             res.json({
-                error: 'MongoDB Error: ' + err.message,
-                username
+                error: 'MongoDB Error: ' + err.message
             });
             return next();
         }
         if (!userData) {
             res.json({
-                error: 'This user does not exist',
-                username
+                error: 'This user does not exist'
+            });
+            return next();
+        }
+
+        db.redis
+            .multi()
+            // sending counters are stored in Redis
+            .get('wdr:' + userData._id.toString())
+            .ttl('wdr:' + userData._id.toString())
+            .get('wdf:' + userData._id.toString())
+            .ttl('wdf:' + userData._id.toString())
+            .exec((err, result) => {
+                if (err) {
+                    // ignore
+                }
+                let recipients = Number(userData.recipients) || config.maxRecipients;
+                let forwards = Number(userData.forwards) || config.maxForwards;
+
+                let recipientsSent = Number(result && result[0]) || 0;
+                let recipientsTtl = Number(result && result[1]) || 0;
+
+                let forwardsSent = Number(result && result[2]) || 0;
+                let forwardsTtl = Number(result && result[3]) || 0;
+
+                res.json({
+                    success: true,
+                    id: user,
+
+                    username: userData.username,
+
+                    language: userData.language,
+                    retention: userData.retention || false,
+
+                    limits: {
+                        quota: {
+                            allowed: Number(userData.quota) || config.maxStorage * 1024 * 1024,
+                            used: Math.max(Number(userData.storageUsed) || 0, 0)
+                        },
+                        recipients: {
+                            allowed: recipients,
+                            used: recipientsSent,
+                            ttl: recipientsTtl >= 0 ? recipientsTtl : false
+                        },
+                        forwards: {
+                            allowed: forwards,
+                            used: forwardsSent,
+                            ttl: forwardsTtl >= 0 ? forwardsTtl : false
+                        }
+                    },
+
+                    address: userData.address
+                });
+
+                return next();
+            });
+    });
+});
+
+server.get('/users/:user/addresses', (req, res, next) => {
+    res.charSet('utf-8');
+
+    const schema = Joi.object().keys({
+        user: Joi.string().hex().lowercase().length(24).required()
+    });
+
+    const result = Joi.validate(req.params, schema, {
+        abortEarly: false,
+        convert: true
+    });
+
+    if (result.error) {
+        res.json({
+            error: result.error.message
+        });
+        return next();
+    }
+
+    let user = new ObjectID(result.value.user);
+
+    db.users.collection('users').findOne({
+        _id: user
+    }, {
+        fields: {
+            address: true
+        }
+    }, (err, userData) => {
+        if (err) {
+            res.json({
+                error: 'MongoDB Error: ' + err.message
+            });
+            return next();
+        }
+        if (!userData) {
+            res.json({
+                error: 'This user does not exist'
             });
             return next();
         }
@@ -525,7 +720,7 @@ server.get('/user', (req, res, next) => {
         db.users
             .collection('addresses')
             .find({
-                user: userData._id
+                user
             })
             .sort({
                 address: 1
@@ -533,8 +728,7 @@ server.get('/user', (req, res, next) => {
             .toArray((err, addresses) => {
                 if (err) {
                     res.json({
-                        error: 'MongoDB Error: ' + err.message,
-                        username
+                        error: 'MongoDB Error: ' + err.message
                     });
                     return next();
                 }
@@ -543,54 +737,92 @@ server.get('/user', (req, res, next) => {
                     addresses = [];
                 }
 
-                db.redis
-                    .multi()
-                    .get('wdr:' + userData._id.toString())
-                    .ttl('wdr:' + userData._id.toString())
-                    .get('wdf:' + userData._id.toString())
-                    .ttl('wdf:' + userData._id.toString())
-                    .exec((err, result) => {
-                        if (err) {
-                            // ignore
-                        }
-                        let recipients = Number(userData.recipients) || 0;
-                        let forwards = Number(userData.forwards) || 0;
+                res.json({
+                    success: true,
 
-                        let recipientsSent = Number(result && result[0]) || 0;
-                        let recipientsTtl = Number(result && result[1]) || 0;
+                    addresses: addresses.map(address => ({
+                        id: address._id,
+                        address: address.address,
+                        main: address.address === userData.address,
+                        created: address.created
+                    }))
+                });
 
-                        let forwardsSent = Number(result && result[2]) || 0;
-                        let forwardsTtl = Number(result && result[3]) || 0;
-
-                        res.json({
-                            success: true,
-                            username,
-
-                            quota: Number(userData.quota) || config.maxStorage * 1024 * 1024,
-                            storageUsed: Math.max(Number(userData.storageUsed) || 0, 0),
-
-                            recipients,
-                            recipientsSent,
-
-                            forwards,
-                            forwardsSent,
-
-                            recipientsLimited: recipients ? recipients <= recipientsSent : false,
-                            recipientsTtl: recipientsTtl >= 0 ? recipientsTtl : false,
-
-                            forwardsLimited: forwards ? forwards <= forwardsSent : false,
-                            forwardsTtl: forwardsTtl >= 0 ? forwardsTtl : false,
-
-                            addresses: addresses.map(address => ({
-                                id: address._id.toString(),
-                                address: address.address,
-                                main: address.address === userData.address,
-                                created: address.created
-                            }))
-                        });
-                        return next();
-                    });
+                return next();
             });
+    });
+});
+
+server.get('/users/:user/addresses/:address', (req, res, next) => {
+    res.charSet('utf-8');
+
+    const schema = Joi.object().keys({
+        user: Joi.string().hex().lowercase().length(24).required(),
+        address: Joi.string().hex().lowercase().length(24).required()
+    });
+
+    const result = Joi.validate(req.params, schema, {
+        abortEarly: false,
+        convert: true
+    });
+
+    if (result.error) {
+        res.json({
+            error: result.error.message
+        });
+        return next();
+    }
+
+    let user = new ObjectID(result.value.user);
+    let address = new ObjectID(result.value.address);
+
+    db.users.collection('users').findOne({
+        _id: user
+    }, {
+        fields: {
+            address: true
+        }
+    }, (err, userData) => {
+        if (err) {
+            res.json({
+                error: 'MongoDB Error: ' + err.message
+            });
+            return next();
+        }
+        if (!userData) {
+            res.json({
+                error: 'This user does not exist'
+            });
+            return next();
+        }
+
+        db.users.collection('addresses').findOne({
+            _id: address,
+            user
+        }, (err, addressData) => {
+            if (err) {
+                res.json({
+                    error: 'MongoDB Error: ' + err.message
+                });
+                return next();
+            }
+            if (!addressData) {
+                res.json({
+                    error: 'Invalid or unknown address'
+                });
+                return next();
+            }
+
+            res.json({
+                success: true,
+                id: addressData._id,
+                address: addressData.address,
+                main: addressData.address === userData.address,
+                created: addressData.created
+            });
+
+            return next();
+        });
     });
 });
 

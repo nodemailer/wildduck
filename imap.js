@@ -182,6 +182,7 @@ function clearExpiredMessages() {
             return deleteOrphanedAttachments(() => done(null, true));
         }
 
+        // find and delete all messages that are expired
         // NB! scattered query
         let cursor = db.database
             .collection('messages')
@@ -218,6 +219,7 @@ function clearExpiredMessages() {
 
         let processNext = () => {
             if (Date.now() - startTime > consts.GC_INTERVAL * 0.8) {
+                // deleting expired messages has taken too long time, cancel
                 return clear();
             }
 
@@ -287,7 +289,8 @@ module.exports = done => {
 
         // setup notification system for updates
         server.notifier = new ImapNotifier({
-            database: db.database
+            database: db.database,
+            redis: db.redis
         });
 
         let started = false;

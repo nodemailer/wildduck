@@ -41,7 +41,7 @@ Or if you want to override default configuration options with your own, run the 
 node server.js --config=/etc/wildduck.toml
 ```
 
-> For additional config options, see the *wild-config* [documentation](https://github.com/wildduck-email/wild-config).
+> For additional config options, see the _wild-config_ [documentation](https://github.com/wildduck-email/wild-config).
 
 ### Step 4\. Create an user account
 
@@ -150,219 +150,328 @@ If a messages is deleted by a client this message gets marked as Seen and moved 
 
 ## HTTP API
 
-> **NB!** The HTTP API is being re-designed, do not build apps against the current API for now
+> **NB!** The HTTP API is being re-designed
 
 Users, mailboxes and messages can be managed with HTTP requests against Wild Duck API
 
 TODO:
 
 1. Expose counters (seen/unseen messages, message count in mailbox etc.)
-2. Search messages
+2. Search/list messages
 3. Expose journal updates through WebSocket or similar
 
-### POST /user/create
+#### Responses
 
-Creates a new user.
-
-Arguments
-
-- **username** is the username of the user. This is not an email address but authentication username, use only letters and numbers
-- **password** is the password for the user
-- **quota** (optional) is the maximum storage in bytes allowed for this user. If not set then the default value is used
-- **retention** (optional) is the default retention time in ms for mailboxes. Messages in Trash and Junk folders have a maximum retention time of 30 days.
-
-**Example**
-
-```
-curl -XPOST "http://localhost:8080/user/create" -H 'content-type: application/json' -d '{
-  "username": "testuser",
-  "password": "secretpass"
-}'
-```
-
-The response for successful operation should look like this:
+All failed responses look like the following:
 
 ```json
 {
-  "success": true,
-  "username": "testuser"
+    "error": "Some error message"
 }
 ```
 
-After you have created an user you can use these credentials to log in to the IMAP server. To be able to receive mail for that user you need to register an email address.
+### Users
 
-### POST /user/address/create
+User accounts
 
-Creates a new email address alias for an existing user. You can use internationalized email addresses like _андрис@уайлддак.орг_.
+#### Get one user
 
-Arguments
+##### GET /users/{user}
 
-- **username** is the username
-- **address** is the email address to use as an alias for this user
-- **main** (either _true_ or _false_, defaults to _false_) indicates that this is the default address for that user
+Returns data about a specific user
 
-First added address becomes _main_ by default
+**Parameters**
+
+- **user** is the ID of the user
 
 **Example**
 
 ```
-curl -XPOST "http://localhost:8080/user/address/create" -H 'content-type: application/json' -d '{
-  "username": "testuser",
-  "address": "user@example.com"
-}'
+curl "http://localhost:8080/users/59467f27535f8f0f067ba8e6"
 ```
 
-The response for successful operation should look like this:
+Response for a successful operation:
 
 ```json
 {
   "success": true,
+  "id": "59467f27535f8f0f067ba8e6",
   "username": "testuser",
-  "address": "user@example.com"
+  "address": "testuser@example.com",
+  "retention": false,
+  "limits": {
+    "quota": {
+      "allowed": 1024,
+      "used": 128
+    },
+    "recipients": {
+      "allowed": 1024,
+      "used": 15,
+      "ttl": false
+    },
+    "forwards": {
+      "allowed": 2000,
+      "used": 8,
+      "ttl": false
+    }
+  }
 }
 ```
 
-After you have registered a new address then LMTP maildrop server starts accepting mail for it and store the messages to the users mailbox.
+Recipient/forward limits assume that messages are sent using ZoneMTA with [zonemta-wildduck](https://github.com/wildduck-email/zonemta-wildduck) plugin, otherwise the counters are not updated.
 
-### POST /user/quota
+#### Add a new user
 
-Updates maximum allowed quota for an user
+##### POST /users
 
-Arguments
+Creates a new user, returns the ID upon success.
 
-- **username** is the username of the user to modify
-- **quota** (optional) is the maximum storage in bytes allowed for this user
-- **recipients** (optional) is the maximum sending recipients per 24h allowed for this user. Assumes ZoneMTA with [zonemta-wildduck](https://github.com/wildduck-email/zonemta-wildduck) plugin
-- **forwards** (optional) is the maximum forwarded recipients per 24h allowed for this user.
+**Parameters**
 
-> At least one limit value must be set
+- **username** (required) is the username of the user. This is not an email address but authentication username, use only letters and numbers
+- **password** (required) is the password for the user
+- **address** is the main email address for the user. If address is not set then a new one is generated based on the username and current domain name
+- **quota** is the maximum storage in bytes allowed for this user. If not set then the default value is used
+- **retention** is the default retention time in ms for mailboxes. Messages in Trash and Junk folders have a capped retention time of 30 days.
+- **language** is the language code for the user, eg. "en" or "et". Mailbox names for the default mailboxes (eg. "Trash") depend on the language
+- **recipients** is the maximum number of recipients allowed to send mail to in a 24h window. Requires ZoneMTA with the Wild Duck plugin
+- **forwards** is the maximum number of forwarded emails in a 24h window. Requires ZoneMTA with the Wild Duck plugin
 
 **Example**
 
 ```
-curl -XPOST "http://localhost:8080/user/quota" -H 'content-type: application/json' -d '{
+curl -XPOST "http://localhost:8080/users" -H 'content-type: application/json' -d '{
   "username": "testuser",
-  "quota": 1234567,
-  "recipients": 500
+  "password": "secretpass",
+  "address": "testuser@example.com"
 }'
 ```
 
-The response for successful operation should look like this:
+Response for a successful operation:
 
 ```json
 {
   "success": true,
-  "username": "testuser",
-  "quota": 1234567,
-  "recipients": 500
+  "id": "59467f27535f8f0f067ba8e6"
 }
 ```
 
-Quota changes apply immediately.
+After you have created an user you can use these credentials to log in to the IMAP server.
 
-### POST /user/quota/reset
+#### Update user details
 
-Recalculates used storage for an user. Use this when it seems that quota counters for an user do not match with reality.
+##### PUT /users/{user}
 
-Arguments
+Updates the properties of an user. Only specify these fields that you want to be updated.
 
-- **username** is the username of the user to check
+**Parameters**
+
+- **user** (required) is the ID of the user
+- **password** is the updated password for the user (do not set if you do not want to change user password)
+- **quota** is the maximum storage in bytes allowed for this user
+- **retention** is the default retention time in ms for mailboxes. Messages in Trash and Junk folders have a capped retention time of 30 days.
+- **language** is the language code for the user, eg. "en" or "et". Mailbox names for the default mailboxes (eg. "Trash") depend on the language
+- **recipients** is the maximum number of recipients allowed to send mail to in a 24h window. Requires ZoneMTA with the Wild Duck plugin
+- **forwards** is the maximum number of forwarded emails in a 24h window. Requires ZoneMTA with the Wild Duck plugin
 
 **Example**
 
+Set user quota to 1 kilobyte:
+
 ```
-curl -XPOST "http://localhost:8080/user/quota/reset" -H 'content-type: application/json' -d '{
-  "username": "testuser"
+curl -XPUT "http://localhost:8080/users/59467f27535f8f0f067ba8e6" -H 'content-type: application/json' -d '{
+  "quota": 1024
 }'
 ```
 
-The response for successful operation should look like this:
+Response for a successful operation:
 
 ```json
 {
-  "success": true,
-  "username": "testuser",
-  "previousStorageUsed": 1000,
-  "storageUsed": 800
+  "success": true
 }
 ```
 
-Be aware though that this method is not atomic and should be done only if quota counters are way off.
+### UserAddresses
 
-### POST /user/password
+Manage email addresses and aliases for an user.
 
-Updates password for an user
+#### List addresses
 
-Arguments
+##### GET /users/{user}/addresses
 
-- **username** is the username of the user to modify
-- **password** is the new password for the user
+Lists all registered email addresses for an user.
+
+**Parameters**
+
+- **user** (required) is the ID of the user
 
 **Example**
 
 ```
-curl -XPOST "http://localhost:8080/user/password" -H 'content-type: application/json' -d '{
-  "username": "testuser",
-  "password": "newpass"
-}'
+curl "http://localhost:8080/users/59467f27535f8f0f067ba8e6/addresses"
 ```
 
-The response for successful operation should look like this:
+Response for a successful operation:
 
 ```json
 {
   "success": true,
-  "username": "testuser"
-}
-```
-
-Password change applies immediately.
-
-### GET /user
-
-Returns user information including quota usage and registered addresses
-
-Arguments
-
-- **username** is the username of the user to modify
-
-**Example**
-
-```
-curl "http://localhost:8080/user?username=testuser"
-```
-
-The response for successful operation should look like this:
-
-```json
-{
-  "success": true,
-  "username": "testuser",
-  "quota": 1234567,
-  "storageUsed": 1822,
-  "recipients": 500,
-  "recipientsLimited": false,
-  "recipientsSent": 47,
-  "recipientsTtl": 3392,
   "addresses": [
     {
-      "id": "58d8fccb645b0deb23d6c37d",
-      "address": "user@example.com",
+      "id": "596c9c37ef2213165daadc6b",
+      "address": "testuser@example.com",
       "main": true,
-      "created": "2017-03-27T11:51:39.639Z"
+      "created": "2017-07-17T11:15:03.841Z"
+    },
+    {
+      "id": "596c9dd31b201716e764efc2",
+      "address": "user@example.com",
+      "main": false,
+      "created": "2017-07-17T11:21:55.960Z"
     }
   ]
 }
 ```
 
-Where
+#### Get one address
 
-- **recipients** – is the count of maximum recipients for 24 hour period (starts with the first message)
-- **recipientsLimited** – if _true_ then sending is currently disabled as recipient limit has been reached
-- **recipientsSent** – how many recipients has been used in the current 24 hour period
-- **recipientsTtl** – seconds until the end of current period
+##### GET /users/{user}/addresses/{address}
 
-Recipient limits assume that messages are sent using ZoneMTA with [zonemta-wildduck](https://github.com/wildduck-email/zonemta-wildduck) plugin, otherwise the counters are not updated.
+Returns data about a specific address.
+
+**Parameters**
+
+- **user** (required) is the ID of the user
+- **address** (required) is the ID of the address
+
+**Example**
+
+```
+curl "http://localhost:8080/users/59467f27535f8f0f067ba8e6/addresses/596c9c37ef2213165daadc6b"
+```
+
+Response for a successful operation:
+
+```json
+{
+  "success": true,
+  "id": "596c9c37ef2213165daadc6b",
+  "address": "testuser@example.com",
+  "main": true,
+  "created": "2017-07-17T11:15:03.841Z"
+}
+```
+
+#### Add a new address
+
+##### POST /users/{user}/addresses
+
+Creates a new email address alias for an existing user, returns the ID upon success.
+
+**Parameters**
+
+- **user** (required) is the ID of the user
+- **address** (required) is the email address to use as an alias for this user. You can also use internationalized email addresses like _андрис@уайлддак.орг_.
+- **main** indicates that this is the default address for that user (defaults to _false_)
+
+**Example**
+
+```
+curl -XPOST "http://localhost:8080/users/59467f27535f8f0f067ba8e6/addresses" -H 'content-type: application/json' -d '{
+  "address": "user@example.com"
+}'
+```
+
+Response for a successful operation:
+
+```json
+{
+  "success": true,
+  "id": "596c9dd31b201716e764efc2"
+}
+```
+
+After you have registered a new address then LMTP maildrop server starts accepting mail for it and stores messages to the users mailbox.
+
+#### Update address details
+
+##### PUT /users/{user}/addresses/{address}
+
+Updates the properties of an address. Currently, only `main` can be updated.
+
+**Parameters**
+
+- **user** (required) is the ID of the user
+- **address** (required) is the ID of the address
+- **main** must be true. Indicates that this is the default address for that user
+
+**Example**
+
+```
+curl -XPUT "http://localhost:8080/users/59467f27535f8f0f067ba8e6/addresses/596c9dd31b201716e764efc2" -H 'content-type: application/json' -d '{
+  "main": true
+}'
+```
+
+Response for a successful operation:
+
+```json
+{
+  "success": true
+}
+```
+#### Delete an alias address
+
+##### DELETE /users/{user}/addresses/{address}
+
+Deletes an email address alias from an existing user.
+
+**Parameters**
+
+- **user** (required) is the ID of the user
+- **address** (required) is the ID of the address
+
+**Example**
+
+```
+curl -XDELETE "http://localhost:8080/users/59467f27535f8f0f067ba8e6/addresses/596c9dd31b201716e764efc2"
+```
+
+Response for a successful operation:
+
+```json
+{
+  "success": true
+}
+```
+
+#### Recalculate user quota
+
+##### POST /users/{user}/quota/reset
+
+Recalculates used storage for an user. Use this when it seems that quota counters for an user do not match with reality.
+
+**Parameters**
+
+- **user** (required) is the ID of the user
+
+**Example**
+
+```
+curl -XPOST "http://localhost:8080/users/59467f27535f8f0f067ba8e6/quota/reset" -H 'content-type: application/json' -d '{}'
+```
+
+Response for a successful operation:
+
+```json
+{
+  "success":true,
+  "storageUsed": 128
+}
+```
+
+Be aware though that this method is not atomic and should be done only if quota counters are way off.
 
 ## Message filtering
 
@@ -479,6 +588,7 @@ Use [Haraka](http://haraka.github.io/) with [queue/lmtp](http://haraka.github.io
 - CPU usage seems a bit too high, there is probably a ton of profiling to do
 - Maybe allow some kind of message manipulation through plugins?
 - Wild Duck does not plan to be the most feature-rich IMAP client in the world. Most IMAP extensions are useless because there aren't too many clients that are able to benefit from these extensions. There are a few extensions though that would make sense to be added to Wild Duck:
+
   - IMAP4 non-synchronizing literals, LITERAL- ([RFC7888](https://tools.ietf.org/html/rfc7888)). Synchronized literals are needed for APPEND to check mailbox quota, small values could go with the non-synchronizing version.
   - LIST-STATUS ([RFC5819](https://tools.ietf.org/html/rfc5819))
   - _What else?_ (definitely not NOTIFY nor QRESYNC)
