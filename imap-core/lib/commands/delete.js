@@ -56,7 +56,7 @@ module.exports = {
                 });
             }
 
-            this._server.notifier.fire(this.session.user.username, mailbox, {
+            this._server.notifier.fire(this.session.user.id, mailbox, {
                 action: 'DELETE',
                 mailbox
             });

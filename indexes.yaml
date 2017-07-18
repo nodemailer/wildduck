@@ -151,16 +151,18 @@ indexes:
       text: 5
 - collection: messages
   index:
-    name: mailbox_seen_flag
+    # in most cases we only care about unseen, not seen messages
+    name: mailbox_unseen_flag
     key:
       mailbox: 1
-      seen: 1
+      unseen: 1
 - collection: messages
   index:
-    name: mailbox_deleted_flag
+    # some mail agents list messages that do not have the \Deleted flag set
+    name: mailbox_undeleted_flag
     key:
       mailbox: 1
-      deleted: 1
+      undeleted: 1
 - collection: messages
   index:
     name: mailbox_flagged_flag
@@ -219,10 +221,25 @@ indexes:
 
 - collection: journal
   index:
+    # this index is used to apply changes in a mailbox for IMAP session
     name: mailbox_modseq
     key:
       mailbox: 1
       modseq: 1
+- collection: journal
+  index:
+    # this index is used to send updates to a logged in webmail user
+    name: user_limit_id
+    key:
+      user: 1
+      _id: 1
+- collection: journal
+  index:
+    # this index is used to find the latest journal entry
+    name: user_limit_id_reverse
+    key:
+      user: 1
+      _id: -1
 - collection: journal
   index:
     name: autoexpire

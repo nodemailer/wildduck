@@ -279,7 +279,7 @@ module.exports = function(options) {
             uidNext: folder.uidNext,
             uidValidity: folder.uidValidity,
             highestModseq: folder.modifyIndex,
-            unseen: folder.messages.filter(message => message.flags.indexOf('\\Seen') < 0).length
+            unseen: folder.messages.filter(message => !message.flags.includes('\\Seen')).length
         });
     };
 
@@ -313,7 +313,7 @@ module.exports = function(options) {
                 uid: message.uid
             },
             () => {
-                this.notifier.fire(session.user.username, mailbox);
+                this.notifier.fire(session.user.id, mailbox);
 
                 return callback(null, true, {
                     uidValidity: folder.uidValidity,
@@ -339,7 +339,7 @@ module.exports = function(options) {
 
         let processMessages = () => {
             if (i >= folder.messages.length) {
-                this.notifier.fire(session.user.username, mailbox);
+                this.notifier.fire(session.user.id, mailbox);
                 return callback(null, true, modified);
             }
 
@@ -445,7 +445,7 @@ module.exports = function(options) {
         }
 
         let entries = [];
-        for ((i = 0), (len = deleted.length); i < len; i++) {
+        for (i = 0, len = deleted.length; i < len; i++) {
             entries.push({
                 command: 'EXPUNGE',
                 ignore: session.id,
@@ -457,7 +457,7 @@ module.exports = function(options) {
         }
 
         this.notifier.addEntries(session.user.username, mailbox, entries, () => {
-            this.notifier.fire(session.user.username, mailbox);
+            this.notifier.fire(session.user.id, mailbox);
             return callback(null, true);
         });
     };
@@ -490,7 +490,7 @@ module.exports = function(options) {
             }
         }
 
-        for ((i = 0), (len = messages.length); i < len; i++) {
+        for (i = 0, len = messages.length; i < len; i++) {
             messages[i].uid = destinationFolder.uidNext++;
             destinationUid.push(messages[i].uid);
             destinationFolder.messages.push(messages[i]);
@@ -532,7 +532,7 @@ module.exports = function(options) {
                 }
 
                 // if BODY[] is touched, then add \Seen flag and notify other clients
-                if (message.flags.indexOf('\\Seen') < 0) {
+                if (!message.flags.includes('\\Seen')) {
                     message.flags.unshift('\\Seen');
                     entries.push({
                         command: 'FETCH',
@@ -549,7 +549,7 @@ module.exports = function(options) {
             let processMessage = () => {
                 if (pos >= folder.messages.length) {
                     // once messages are processed show relevant updates
-                    this.notifier.fire(session.user.username, mailbox);
+                    this.notifier.fire(session.user.id, mailbox);
                     return callback(null, true);
                 }
                 let message = folder.messages[pos++];

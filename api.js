@@ -5,9 +5,11 @@ const restify = require('restify');
 const log = require('npmlog');
 const Joi = require('joi');
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 const tools = require('./lib/tools');
 const consts = require('./lib/consts');
 const UserHandler = require('./lib/user-handler');
+const ImapNotifier = require('./lib/imap-notifier');
 const db = require('./lib/db');
 const certs = require('./lib/certs').get('api');
 const ObjectID = require('mongodb').ObjectID;
@@ -27,6 +29,7 @@ if (certs && config.api.secure) {
 const server = restify.createServer(serverOptions);
 
 let userHandler;
+let notifier;
 
 server.use(restify.plugins.queryParser());
 server.use(
@@ -1034,6 +1037,161 @@ server.get('/users/:user/mailboxes/:mailbox', (req, res, next) => {
     });
 });
 
+server.get('/users/:user/updates', (req, res, next) => {
+    res.charSet('utf-8');
+
+    const schema = Joi.object().keys({
+        user: Joi.string().hex().lowercase().length(24).required(),
+        'Last-Event-ID': Joi.string().hex().lowercase().length(24)
+    });
+
+    if (req.header('Last-Event-ID')) {
+        req.params['Last-Event-ID'] = req.header('Last-Event-ID');
+    }
+
+    const result = Joi.validate(req.params, schema, {
+        abortEarly: false,
+        convert: true
+    });
+
+    if (result.error) {
+        res.json({
+            error: result.error.message
+        });
+        return next();
+    }
+
+    let user = new ObjectID(result.value.user);
+    let lastEventId = result.value['Last-Event-ID'] ? new ObjectID(result.value['Last-Event-ID']) : false;
+
+    db.users.collection('users').findOne({
+        _id: user
+    }, {
+        fields: {
+            username: true,
+            address: true
+        }
+    }, (err, userData) => {
+        if (err) {
+            res.json({
+                error: 'MongoDB Error: ' + err.message
+            });
+            return next();
+        }
+        if (!userData) {
+            res.json({
+                error: 'This user does not exist'
+            });
+            return next();
+        }
+
+        let session = { id: crypto.randomBytes(10).toString('base64'), user: { id: userData._id, username: userData.username } };
+
+        let journalReading = false;
+        let journalReader = () => {
+            if (journalReading) {
+                return;
+            }
+            journalReading = true;
+            loadJournalStream(req, res, user, lastEventId, (err, info) => {
+                if (err) {
+                    // ignore?
+                }
+                lastEventId = info && info.lastEventId;
+                journalReading = false;
+            });
+        };
+
+        let close = () => {
+            notifier.removeListener(session, '*', journalReader);
+        };
+
+        let setup = () => {
+            notifier.addListener(session, '*', journalReader);
+
+            let finished = false;
+            let done = () => {
+                if (finished) {
+                    return;
+                }
+                finished = true;
+                close();
+                return next();
+            };
+
+            req.connection.setTimeout(30 * 60 * 1000, done);
+            req.connection.on('end', done);
+        };
+
+        res.writeHead(200, { 'Content-Type': 'text/event-stream', Connection: 'close' });
+
+        if (lastEventId) {
+            loadJournalStream(req, res, user, lastEventId, setup);
+        } else {
+            db.database.collection('journal').findOne({ user }, { sort: { _id: -1 } }, (err, latest) => {
+                if (!err && latest) {
+                    lastEventId = latest._id;
+                }
+                setup();
+            });
+        }
+    });
+});
+
+function formatJournalData(e) {
+    let data = {};
+    Object.keys(e).forEach(key => {
+        if (!['_id', 'ignore', 'user'].includes(key)) {
+            data[key] = e[key];
+        }
+    });
+
+    let response = [];
+    response.push('data: ' + JSON.stringify(data));
+    response.push('id: ' + e._id.toString());
+
+    return response.join('\n') + '\n\n';
+}
+
+function loadJournalStream(req, res, user, lastEventId, done) {
+    let query = { user };
+    if (lastEventId) {
+        query._id = { $gt: lastEventId };
+    }
+    let cursor = db.database.collection('journal').find(query).sort({ _id: 1 });
+    let processed = 0;
+    let processNext = () => {
+        cursor.next((err, e) => {
+            if (err) {
+                return done(err);
+            }
+            if (!e) {
+                return cursor.close(() => {
+                    // delete all attachments that do not have any active links to message objects
+                    done(null, {
+                        lastEventId,
+                        processed
+                    });
+                });
+            }
+
+            lastEventId = e._id;
+
+            if (!e || !e.command) {
+                // skip
+                return processNext();
+            }
+
+            res.write(formatJournalData(e));
+
+            processed++;
+            processNext();
+        });
+    };
+
+    processNext();
+}
+
 module.exports = done => {
     if (!config.imap.enabled) {
         return setImmediate(() => done(null, false));
@@ -1042,6 +1200,10 @@ module.exports = done => {
     let started = false;
 
     userHandler = new UserHandler({ database: db.database, users: db.users, redis: db.redis });
+    notifier = new ImapNotifier({
+        database: db.database,
+        redis: db.redis
+    });
 
     server.on('error', err => {
         if (!started) {

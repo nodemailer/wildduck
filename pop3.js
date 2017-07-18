@@ -93,7 +93,7 @@ const serverOptions = {
                     mailbox: true,
                     // required to decide if we need to update flags after RETR
                     flags: true,
-                    seen: true
+                    unseen: true
                 })
                 .sort([['uid', -1]])
                 .limit(config.pop3.maxMessages || MAX_MESSAGES)
@@ -113,7 +113,7 @@ const serverOptions = {
                                 mailbox: message.mailbox,
                                 size: message.size,
                                 flags: message.flags,
-                                seen: message.seen
+                                seen: !message.unseen
                             })),
                         count: messages.length,
                         size: messages.reduce((acc, message) => acc + message.size, 0)
@@ -263,7 +263,7 @@ function markAsSeen(session, messages, callback) {
         }, {
             $set: {
                 modseq: mailboxData.modifyIndex,
-                seen: true
+                unseen: false
             },
             $addToSet: {
                 flags: '\\Seen'

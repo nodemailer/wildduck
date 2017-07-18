@@ -148,7 +148,7 @@ If a messages is downloaded by a client this message gets marked as _Seen_
 
 If a messages is deleted by a client this message gets marked as Seen and moved to Trash folder
 
-## HTTP API
+# HTTP API
 
 > **NB!** The HTTP API is being re-designed
 
@@ -160,7 +160,7 @@ TODO:
 2. Search/list messages
 3. Expose journal updates through WebSocket or similar
 
-#### Responses
+### Responses
 
 All failed responses look like the following:
 
@@ -170,13 +170,13 @@ All failed responses look like the following:
 }
 ```
 
-### Users
+## Users
 
 User accounts
 
-#### Get one user
+### Get one user
 
-##### GET /users/{user}
+#### GET /users/{user}
 
 Returns data about a specific user
 
@@ -220,9 +220,9 @@ Response for a successful operation:
 
 Recipient/forward limits assume that messages are sent using ZoneMTA with [zonemta-wildduck](https://github.com/wildduck-email/zonemta-wildduck) plugin, otherwise the counters are not updated.
 
-#### Add a new user
+### Add a new user
 
-##### POST /users
+#### POST /users
 
 Creates a new user, returns the ID upon success.
 
@@ -258,9 +258,9 @@ Response for a successful operation:
 
 After you have created an user you can use these credentials to log in to the IMAP server.
 
-#### Update user details
+### Update user details
 
-##### PUT /users/{user}
+#### PUT /users/{user}
 
 Updates the properties of an user. Only specify these fields that you want to be updated.
 
@@ -292,13 +292,13 @@ Response for a successful operation:
 }
 ```
 
-### UserAddresses
+## UserAddresses
 
 Manage email addresses and aliases for an user.
 
-#### List addresses
+### List addresses
 
-##### GET /users/{user}/addresses
+#### GET /users/{user}/addresses
 
 Lists all registered email addresses for an user.
 
@@ -334,9 +334,9 @@ Response for a successful operation:
 }
 ```
 
-#### Get one address
+### Get one address
 
-##### GET /users/{user}/addresses/{address}
+#### GET /users/{user}/addresses/{address}
 
 Returns data about a specific address.
 
@@ -363,9 +363,9 @@ Response for a successful operation:
 }
 ```
 
-#### Add a new address
+### Add a new address
 
-##### POST /users/{user}/addresses
+#### POST /users/{user}/addresses
 
 Creates a new email address alias for an existing user, returns the ID upon success.
 
@@ -394,9 +394,9 @@ Response for a successful operation:
 
 After you have registered a new address then LMTP maildrop server starts accepting mail for it and stores messages to the users mailbox.
 
-#### Update address details
+### Update address details
 
-##### PUT /users/{user}/addresses/{address}
+#### PUT /users/{user}/addresses/{address}
 
 Updates the properties of an address. Currently, only `main` can be updated.
 
@@ -421,9 +421,9 @@ Response for a successful operation:
   "success": true
 }
 ```
-#### Delete an alias address
+### Delete an alias address
 
-##### DELETE /users/{user}/addresses/{address}
+#### DELETE /users/{user}/addresses/{address}
 
 Deletes an email address alias from an existing user.
 
@@ -446,9 +446,11 @@ Response for a successful operation:
 }
 ```
 
-#### Recalculate user quota
+## UserQuota
 
-##### POST /users/{user}/quota/reset
+### Recalculate user quota
+
+#### POST /users/{user}/quota/reset
 
 Recalculates used storage for an user. Use this when it seems that quota counters for an user do not match with reality.
 
@@ -472,6 +474,40 @@ Response for a successful operation:
 ```
 
 Be aware though that this method is not atomic and should be done only if quota counters are way off.
+
+## UserUpdates
+
+Get user related events as an Event Source stream
+
+### Stream update events
+
+#### GET /users/{user}/updates
+
+Streams changes in user account as EventSource stream
+
+**Parameters**
+
+- **user** (required) is the ID of the user
+
+**Example**
+
+```
+curl "http://localhost:8080/users/59467f27535f8f0f067ba8e6/updates"
+```
+
+Response stream:
+
+```
+data: {"command":"EXISTS", "message":"596e0703f0bdd512aeac3600", "mailbox":"596c9c37ef2213165daadc65",...}
+id: 596e0703f0bdd512aeac3605
+
+data: {"command":"CREATE","mailbox":"596e09853f845a14f3620b5c","name":"My Mail",...}
+id: 596e09853f845a14f3620b5d
+```
+
+First entry in the event stream indicates that a message with id `596e0703f0bdd512aeac3600` was added to mailbox `596c9c37ef2213165daadc65`, second entry indicates that a new mailbox called *"My Mail"* with id `596e09853f845a14f3620b5c` was created.
+
+Be aware though that this connection needs to be properly closed if you do not want to end up with memory leaks.
 
 ## Message filtering
 
@@ -514,7 +550,7 @@ Filters are configuration objects stored in the `filters` array of the users obj
     action: {
 
         // mark message as seen
-        seen: true,
+        unseen: false,
 
         // mark message as flagged
         flag: true,
