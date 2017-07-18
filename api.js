@@ -6,6 +6,7 @@ const log = require('npmlog');
 const Joi = require('joi');
 const bcrypt = require('bcryptjs');
 const tools = require('./lib/tools');
+const consts = require('./lib/consts');
 const UserHandler = require('./lib/user-handler');
 const db = require('./lib/db');
 const certs = require('./lib/certs').get('api');
@@ -819,6 +820,213 @@ server.get('/users/:user/addresses/:address', (req, res, next) => {
                 address: addressData.address,
                 main: addressData.address === userData.address,
                 created: addressData.created
+            });
+
+            return next();
+        });
+    });
+});
+
+server.get('/users/:user/mailboxes', (req, res, next) => {
+    res.charSet('utf-8');
+
+    const schema = Joi.object().keys({
+        user: Joi.string().hex().lowercase().length(24).required()
+    });
+
+    const result = Joi.validate(req.params, schema, {
+        abortEarly: false,
+        convert: true
+    });
+
+    if (result.error) {
+        res.json({
+            error: result.error.message
+        });
+        return next();
+    }
+
+    let user = new ObjectID(result.value.user);
+
+    db.users.collection('users').findOne({
+        _id: user
+    }, {
+        fields: {
+            address: true
+        }
+    }, (err, userData) => {
+        if (err) {
+            res.json({
+                error: 'MongoDB Error: ' + err.message
+            });
+            return next();
+        }
+        if (!userData) {
+            res.json({
+                error: 'This user does not exist'
+            });
+            return next();
+        }
+
+        db.database
+            .collection('mailboxes')
+            .find({
+                user
+            })
+            .toArray((err, mailboxes) => {
+                if (err) {
+                    res.json({
+                        error: 'MongoDB Error: ' + err.message
+                    });
+                    return next();
+                }
+
+                if (!mailboxes) {
+                    mailboxes = [];
+                }
+
+                let list = new Map();
+
+                mailboxes = mailboxes
+                    .map(mailbox => {
+                        list.set(mailbox.path, mailbox);
+                        return mailbox;
+                    })
+                    .sort((a, b) => {
+                        if (a.path === 'INBOX') {
+                            return -1;
+                        }
+                        if (b.path === 'INBOX') {
+                            return 1;
+                        }
+                        if (a.subscribed !== b.subscribed) {
+                            return (a.subscribed ? 0 : 1) - (b.subscribed ? 0 : 1);
+                        }
+                        return a.path.localeCompare(b.path);
+                    });
+
+                res.json({
+                    success: true,
+
+                    mailboxes: mailboxes.map(mailbox => {
+                        let path = mailbox.path.split('/');
+                        let name = path.pop();
+
+                        return {
+                            id: mailbox._id,
+                            name,
+                            path: mailbox.path,
+                            specialUse: mailbox.specialUse,
+                            modifyIndex: mailbox.modifyIndex
+                        };
+                    })
+                });
+
+                return next();
+            });
+    });
+});
+
+server.get('/users/:user/mailboxes/:mailbox', (req, res, next) => {
+    res.charSet('utf-8');
+
+    const schema = Joi.object().keys({
+        user: Joi.string().hex().lowercase().length(24).required(),
+        mailbox: Joi.string().hex().lowercase().length(24).required()
+    });
+
+    const result = Joi.validate(req.params, schema, {
+        abortEarly: false,
+        convert: true
+    });
+
+    if (result.error) {
+        res.json({
+            error: result.error.message
+        });
+        return next();
+    }
+
+    let user = new ObjectID(result.value.user);
+    let mailbox = new ObjectID(result.value.mailbox);
+
+    db.users.collection('users').findOne({
+        _id: user
+    }, {
+        fields: {
+            address: true
+        }
+    }, (err, userData) => {
+        if (err) {
+            res.json({
+                error: 'MongoDB Error: ' + err.message
+            });
+            return next();
+        }
+        if (!userData) {
+            res.json({
+                error: 'This user does not exist'
+            });
+            return next();
+        }
+
+        db.database.collection('mailboxes').findOne({
+            _id: mailbox,
+            user
+        }, (err, mailboxData) => {
+            if (err) {
+                res.json({
+                    error: 'MongoDB Error: ' + err.message
+                });
+                return next();
+            }
+            if (!mailboxData) {
+                res.json({
+                    error: 'This mailbox does not exist'
+                });
+                return next();
+            }
+
+            let getCounter = (mailbox, done) => {
+                db.redis.get('sum:' + mailbox.toString(), (err, sum) => {
+                    if (err) {
+                        return done(err);
+                    }
+
+                    if (sum !== null) {
+                        return done(null, sum);
+                    }
+
+                    // calculate sum
+                    db.database.collection('messages').count({ mailbox }, (err, sum) => {
+                        if (err) {
+                            return done(err);
+                        }
+
+                        // cache calculated sum in redis
+                        db.redis.multi().set('sum:' + mailbox.toString(), sum).expire('sum:' + mailbox.toString(), consts.MAILBOX_COUNTER_TTL).exec(() => {
+                            done(null, sum);
+                        });
+                    });
+                });
+            };
+
+            let path = mailboxData.path.split('/');
+            let name = path.pop();
+
+            getCounter(mailbox, (err, sum) => {
+                if (err) {
+                    // ignore
+                }
+                res.json({
+                    success: true,
+                    id: mailbox,
+                    name,
+                    path: mailboxData.path,
+                    specialUse: mailboxData.specialUse,
+                    modifyIndex: mailboxData.modifyIndex,
+                    messages: sum
+                });
             });
 
             return next();
