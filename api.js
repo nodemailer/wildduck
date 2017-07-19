@@ -15,7 +15,8 @@ const certs = require('./lib/certs').get('api');
 const ObjectID = require('mongodb').ObjectID;
 
 const serverOptions = {
-    name: 'Wild Duck API'
+    name: 'Wild Duck API',
+    strictRouting: true
 };
 
 if (certs && config.api.secure) {
@@ -38,6 +39,13 @@ server.use(
         mapParams: true,
         mapFiles: false,
         overrideParams: false
+    })
+);
+server.get(
+    /\/public\/?.*/,
+    restify.plugins.serveStatic({
+        directory: __dirname,
+        default: 'index.html'
     })
 );
 
@@ -1086,10 +1094,30 @@ server.get('/users/:user/updates', (req, res, next) => {
         }
 
         let session = { id: crypto.randomBytes(10).toString('base64'), user: { id: userData._id, username: userData.username } };
+        let closed = false;
+        let idleTimer = false;
+        let idleCounter = 0;
+
+        let sendIdleComment = () => {
+            clearTimeout(idleTimer);
+            if (closed) {
+                return;
+            }
+            res.write(': idling ' + ++idleCounter + '\n\n');
+            idleTimer = setTimeout(sendIdleComment, 15 * 1000);
+        };
+
+        let resetIdleComment = () => {
+            clearTimeout(idleTimer);
+            if (closed) {
+                return;
+            }
+            idleTimer = setTimeout(sendIdleComment, 15 * 1000);
+        };
 
         let journalReading = false;
         let journalReader = () => {
-            if (journalReading) {
+            if (journalReading || closed) {
                 return;
             }
             journalReading = true;
@@ -1099,10 +1127,15 @@ server.get('/users/:user/updates', (req, res, next) => {
                 }
                 lastEventId = info && info.lastEventId;
                 journalReading = false;
+                if (info && info.processed) {
+                    resetIdleComment();
+                }
             });
         };
 
         let close = () => {
+            closed = true;
+            clearTimeout(idleTimer);
             notifier.removeListener(session, '*', journalReader);
         };
 
@@ -1123,16 +1156,28 @@ server.get('/users/:user/updates', (req, res, next) => {
             req.connection.on('end', done);
         };
 
-        res.writeHead(200, { 'Content-Type': 'text/event-stream', Connection: 'close' });
+        res.writeHead(200, { 'Content-Type': 'text/event-stream' });
 
         if (lastEventId) {
-            loadJournalStream(req, res, user, lastEventId, setup);
+            loadJournalStream(req, res, user, lastEventId, (err, info) => {
+                if (err) {
+                    res.write('event: error\ndata: ' + err.message.split('\n').join('\ndata: ') + '\n\n');
+                    // ignore
+                }
+                setup();
+                if (info && info.processed) {
+                    resetIdleComment();
+                } else {
+                    sendIdleComment();
+                }
+            });
         } else {
             db.database.collection('journal').findOne({ user }, { sort: { _id: -1 } }, (err, latest) => {
                 if (!err && latest) {
                     lastEventId = latest._id;
                 }
                 setup();
+                sendIdleComment();
             });
         }
     });
@@ -1147,7 +1192,7 @@ function formatJournalData(e) {
     });
 
     let response = [];
-    response.push('data: ' + JSON.stringify(data));
+    response.push('data: ' + JSON.stringify(data, false, 2).split('\n').join('\ndata: '));
     response.push('id: ' + e._id.toString());
 
     return response.join('\n') + '\n\n';

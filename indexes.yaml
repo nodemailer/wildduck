@@ -241,9 +241,10 @@ indexes:
       user: 1
       _id: -1
 - collection: journal
+  # delete journal entries after 3 hours
   index:
-    name: autoexpire
-    expireAfterSeconds: 21600
+    name: journal_autoexpire
+    expireAfterSeconds: 10800
     key:
       created: 1
 
@@ -262,8 +263,8 @@ indexes:
       ids: 1
 - collection: threads
   index:
-    name: autoexpire
-    # autoremove thread indexes after 1 year of inactivity
-    expireAfterSeconds: 31104000
+    name: threa_autoexpire
+    # autoremove thread indexes after 180 days of inactivity
+    expireAfterSeconds: 15552000
     key:
       updated: 1

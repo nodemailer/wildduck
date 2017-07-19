@@ -1,6 +1,6 @@
 # Agent Wild Duck
 
-![](https://cldup.com/qlZnwOz0na.jpg)
+![](https://cldup.com/H2IiqjUoGy.png)
 
 Wild Duck is a distributed IMAP/POP3 server built with Node.js, MongoDB and Redis. Node.js runs the application, MongoDB is used as the mail store and Redis is used for ephemeral actions like publish/subscribe, locking and caching.
 
@@ -508,6 +508,8 @@ id: 596e09853f845a14f3620b5d
 First entry in the event stream indicates that a message with id `596e0703f0bdd512aeac3600` was added to mailbox `596c9c37ef2213165daadc65`, second entry indicates that a new mailbox called *"My Mail"* with id `596e09853f845a14f3620b5c` was created.
 
 Be aware though that this connection needs to be properly closed if you do not want to end up with memory leaks.
+
+You can see a demo of catching user events when navigating to http://localhost:8080/public/ (assuming localhost:8080 is your API host).
 
 ## Message filtering
 

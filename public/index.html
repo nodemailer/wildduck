@@ -1,0 +1,53 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Wild Duck API</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/public/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="96x96" href="/public/favicon-96x96.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/public/favicon-16x16.png">
+</head>
+<body>
+    <h1>Data stream demo</h1>
+
+    <div>
+        <form onsubmit="createEventSource(); return false;">
+            User ID:<input type="search" id="user" size="40" placeholder="24 byte hex"/>
+            <button type="submit">Start listening ...</button>
+        </form>
+    </div>
+
+    <ul id="output"></ul>
+
+    <script>
+var currentStream = false;
+function createEventSource() {
+    var user = document.getElementById('user').value.trim();
+    if (!/^[0-9a-f]{24}$/i.test(user)) {
+        alert('Invalid user ID format!');
+        document.getElementById('user').focus();
+        return;
+    }
+
+    var print = function(str) {
+        var newElement = document.createElement('li');
+        newElement.textContent = str;
+        eventList.appendChild(newElement);
+    };
+
+    if (currentStream) {
+        print('Closing existing stream');
+        currentStream.close();
+    }
+
+    currentStream = new EventSource('/users/' + user + '/updates');
+    var eventList = document.querySelector('#output');
+
+    currentStream.onmessage = function(e) {
+        print('message: ' + e.data);
+    };
+    print('Listening events for user ' + user);
+}
+</script>
+</body>
+</html>
