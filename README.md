@@ -67,7 +67,7 @@ Yes, it does. You can run the server and get working IMAP and POP3 servers for m
 ### What are the killer features?
 
 1. **Stateless.** Start as many instances as you want. You can start multiple Wild Duck instances in different machines and as long as they share the same MongoDB and Redis settings, users can connect to any instances. This is very different from the traditional IMAP servers where a single user always needs to connect (or be proxied) to the same IMAP server. Wild Duck keeps all required state information in MongoDB, so it does not matter which IMAP instance you use.
-2. **Centralized logging** which allows modern features like 2FA, application specific passwords, authentication scopes, revoking authentication tokens, audit logging and even profile files to auto configure Apple email clients without providing master password
+2. **Centralized authentication** which allows modern features like 2FA, application specific passwords, authentication scopes, revoking authentication tokens, audit logging and even profile files to auto configure Apple email clients without providing master password
 3. **Works on any OS including Windows.** At least if you get MongoDB and Redis running first.
 4. Focus on **internationalization**, ie. supporting email addresses with non-ascii characters
 5. **De-duplication of attachments.** If the same attachment is referenced by different messages then only a single copy of the attachment is stored. Attachment is stored in the encoded form (eg. encoded in base64) to not break any signatures so the resulting encoding must match as well.
@@ -83,15 +83,15 @@ Notice the word "relational"? In fact document stores like MongoDB work very wel
 
 Here's a list of alternative email/IMAP servers that also use a database for storing email messages:
 
-- [DBMail](http://www.dbmail.org/) (IMAP)
-- [Archiveopteryx](http://archiveopteryx.org/) (IMAP)
-- [ElasticInbox](http://www.elasticinbox.com/) (POP3)
+- [DBMail](http://www.dbmail.org/) (MySQL, IMAP)
+- [Archiveopteryx](http://archiveopteryx.org/) (PostgreSQL, IMAP)
+- [ElasticInbox](http://www.elasticinbox.com/) (Cassandra, POP3)
 
 ### How does it work?
 
 Whenever a message is received Wild Duck parses it into a tree-like structure based on the MIME tree and stores this tree to MongoDB. Attachments are removed from the tree and stored separately in GridStore. If a message needs to be loaded then Wild Duck fetches the tree structure first and, if needed, loads attachments from GridStore and then compiles it back into the original RFC822 message. The result should be identical to the original messages unless the original message used unix newlines, these might be partially replaced with windows newlines.
 
-Wild Duck tries to keep minimal state for sessions (basically just a list of currently known UIDs and latest MODSEQ value) to be able to distribute sessions between different hosts. Whenever a mailbox is opened the entire message list is loaded as an array of UID values. The first UID in the array element points to the message #1 in IMAP, second one points to message #2 etc.
+Wild Duck tries to keep minimal state for sessions (basically just a list of currently known UIDs and latest MODSEQ value) to be able to distribute sessions between different hosts. Whenever a mailbox is opened the entire message list is loaded as an array of UID values. The first UID in the array element points to the message nr. 1 in IMAP, second one points to message nr. 2 etc.
 
 Actual update data (information about new and deleted messages, flag updates and such) is stored to a journal log and an update beacon is propagated through Redis pub/sub whenever something happens. If a session detects that there have been some changes in the current mailbox and it is possible to notify the user about it (eg. a NOOP call was made), journaled log is loaded from the database and applied to the UID array one action at a time. Once all journaled updates have applied then the result should match the latest state. If it is not possible to notify the user (eg a FETCH call was made), then journal log is not loaded and the user continues to see the old state.
 
@@ -115,7 +115,20 @@ Wild Duck IMAP server supports the following IMAP standards:
 - **QUOTA** ([RFC2087](https://tools.ietf.org/html/rfc2087)) – Quota size is global for an account, using a single quota root. Be aware that quota size does not mean actual byte storage in disk, it is calculated as the sum of the [RFC822](https://tools.ietf.org/html/rfc822) sources of stored messages. Actual disk usage is larger as there are database overhead per every message.
 - **COMPRESS=DEFLATE** ([RFC4978](https://tools.ietf.org/html/rfc4978)) – Compress traffic between the client and the server
 
-Wild Duck more or less passes the [ImapTest](https://www.imapwiki.org/ImapTest/TestFeatures). Common errors that arise in the test are unknown labels (Wild Duck doesn't send unsolicited `FLAGS` updates even though it does send unsolicited `FETCH FLAGS` updates) and sometimes NO for `STORE` (messages deleted in one session can not be updated in another).
+Wild Duck more or less passes the [ImapTest](https://www.imapwiki.org/ImapTest/TestFeatures) Stress Testing run. Common errors that arise in the test are unknown labels (Wild Duck doesn't send unsolicited `FLAGS` updates even though it does send unsolicited `FETCH FLAGS` updates) and sometimes NO for `STORE` (messages deleted in one session can not be updated in another).
+
+For testing I did a test run of 3 million sessions. Here's the test script:
+
+```bash
+while true
+do
+  imaptest host=127.0.0.1 port=143 \
+           user="user%d" pass="test" \
+           mbox="dovecot-crlf" rawlog \
+           clients=30 msgs=100 copybox="Junk" \
+           own_msgs own_flags random
+done
+```
 
 ### POP3 Support
 
