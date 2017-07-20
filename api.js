@@ -1398,7 +1398,10 @@ server.get('/users/:user/updates', (req, res, next) => {
 function formatJournalData(e) {
     let data = {};
     Object.keys(e).forEach(key => {
-        if (!['_id', 'ignore', 'user'].includes(key)) {
+        if (!['_id', 'ignore', 'user', 'modseq', 'unseenChange', 'created'].includes(key)) {
+            if (e.command !== 'COUNTERS' && key === 'unseen') {
+                return;
+            }
             data[key] = e[key];
         }
     });
@@ -1413,7 +1416,6 @@ function formatJournalData(e) {
 }
 
 function loadJournalStream(req, res, user, lastEventId, done) {
-    console.log('READ');
     let query = { user };
     if (lastEventId) {
         query._id = { $gt: lastEventId };
@@ -1446,7 +1448,7 @@ function loadJournalStream(req, res, user, lastEventId, done) {
                                 processed
                             });
                         }
-                        let mailbox = mailboxes[mailboxPos++];
+                        let mailbox = new ObjectID(mailboxes[mailboxPos++]);
                         getMailboxCounter(mailbox, false, (err, total) => {
                             if (err) {
                                 // ignore
@@ -1502,11 +1504,13 @@ function loadJournalStream(req, res, user, lastEventId, done) {
 }
 
 function getMailboxCounter(mailbox, type, done) {
-    let prefix = type ? type : 'sum';
+    let prefix = type ? type : 'total';
     db.redis.get(prefix + ':' + mailbox.toString(), (err, sum) => {
         if (err) {
             return done(err);
         }
+
+        console.log(prefix + ':' + mailbox.toString(), err, sum);
 
         if (sum !== null) {
             return done(null, Number(sum));
@@ -1517,10 +1521,13 @@ function getMailboxCounter(mailbox, type, done) {
         if (type) {
             query[type] = true;
         }
+
         db.database.collection('messages').count(query, (err, sum) => {
             if (err) {
                 return done(err);
             }
+
+            console.log(query, err, sum);
 
             // cache calculated sum in redis
             db.redis.multi().set(prefix + ':' + mailbox.toString(), sum).expire(prefix + ':' + mailbox.toString(), consts.MAILBOX_COUNTER_TTL).exec(() => {
