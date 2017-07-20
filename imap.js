@@ -198,7 +198,8 @@ function clearExpiredMessages() {
                 uid: true,
                 size: true,
                 map: true,
-                magic: true
+                magic: true,
+                unseen: true
             });
 
         let deleted = 0;

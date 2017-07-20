@@ -284,7 +284,9 @@ function markAsSeen(session, messages, callback) {
                         uid: message.uid,
                         flags: message.flags.concat('\\Seen'),
                         message: new ObjectID(message.id),
-                        modseq: mailboxData.modifyIndex
+                        modseq: mailboxData.modifyIndex,
+                        // Indicate that unseen values are changed. Not sure how much though
+                        unseenChange: true
                     };
                     return result;
                 }),

@@ -20,7 +20,7 @@ const serverOptions = {
     strictRouting: true,
     formatters: {
         'application/json; q=0.4': (req, res, body) => {
-            let data = body ? JSON.stringify(body, false, 2) : 'null';
+            let data = body ? JSON.stringify(body, false, 2) + '\n' : 'null';
             res.setHeader('Content-Length', Buffer.byteLength(data));
             return data;
         }
@@ -123,7 +123,7 @@ server.get({ name: 'users', path: '/users' }, (req, res, next) => {
                 address: true,
                 storageUsed: true,
                 quota: true,
-                setup: true
+                disabled: true
             },
             sortAscending: true
         };
@@ -152,6 +152,7 @@ server.get({ name: 'users', path: '/users' }, (req, res, next) => {
             let nextUrl = result.hasNext ? server.router.render('users', {}, { next: result.previous, limit, query: query || '', page: page + 1 }) : false;
 
             let response = {
+                success: true,
                 query,
                 total,
                 page,
@@ -161,12 +162,11 @@ server.get({ name: 'users', path: '/users' }, (req, res, next) => {
                     id: userData._id.toString(),
                     username: userData.username,
                     address: userData.address,
-                    storageUsed: Math.max(userData.storageUsed, 0),
                     quota: {
                         allowed: Number(userData.quota) || config.maxStorage * 1024 * 1024,
                         used: Math.max(Number(userData.storageUsed) || 0, 0)
                     },
-                    activated: userData.setup
+                    disabled: userData.disabled
                 }))
             };
 
@@ -258,6 +258,7 @@ server.get({ name: 'addresses', path: '/addresses' }, (req, res, next) => {
             let nextUrl = result.hasNext ? server.router.render('addresses', {}, { next: result.previous, limit, query: query || '', page: page + 1 }) : false;
 
             let response = {
+                success: true,
                 query,
                 total,
                 page,
@@ -887,6 +888,8 @@ server.get('/users/:user', (req, res, next) => {
 
                     username: userData.username,
 
+                    address: userData.address,
+
                     language: userData.language,
                     retention: userData.retention || false,
 
@@ -907,7 +910,8 @@ server.get('/users/:user', (req, res, next) => {
                         }
                     },
 
-                    address: userData.address
+                    activated: userData.activated,
+                    disabled: userData.disabled
                 });
 
                 return next();
@@ -1225,49 +1229,30 @@ server.get('/users/:user/mailboxes/:mailbox', (req, res, next) => {
                 return next();
             }
 
-            let getCounter = (mailbox, done) => {
-                db.redis.get('sum:' + mailbox.toString(), (err, sum) => {
-                    if (err) {
-                        return done(err);
-                    }
-
-                    if (sum !== null) {
-                        return done(null, sum);
-                    }
-
-                    // calculate sum
-                    db.database.collection('messages').count({ mailbox }, (err, sum) => {
-                        if (err) {
-                            return done(err);
-                        }
-
-                        // cache calculated sum in redis
-                        db.redis.multi().set('sum:' + mailbox.toString(), sum).expire('sum:' + mailbox.toString(), consts.MAILBOX_COUNTER_TTL).exec(() => {
-                            done(null, sum);
-                        });
-                    });
-                });
-            };
-
             let path = mailboxData.path.split('/');
             let name = path.pop();
 
-            getCounter(mailbox, (err, sum) => {
+            getMailboxCounter(mailbox, false, (err, total) => {
                 if (err) {
                     // ignore
                 }
-                res.json({
-                    success: true,
-                    id: mailbox,
-                    name,
-                    path: mailboxData.path,
-                    specialUse: mailboxData.specialUse,
-                    modifyIndex: mailboxData.modifyIndex,
-                    messages: sum
+                getMailboxCounter(mailbox, 'unseen', (err, unseen) => {
+                    if (err) {
+                        // ignore
+                    }
+                    res.json({
+                        success: true,
+                        id: mailbox,
+                        name,
+                        path: mailboxData.path,
+                        specialUse: mailboxData.specialUse,
+                        modifyIndex: mailboxData.modifyIndex,
+                        total,
+                        unseen
+                    });
+                    return next();
                 });
             });
-
-            return next();
         });
     });
 });
@@ -1420,16 +1405,22 @@ function formatJournalData(e) {
 
     let response = [];
     response.push('data: ' + JSON.stringify(data, false, 2).split('\n').join('\ndata: '));
-    response.push('id: ' + e._id.toString());
+    if (e._id) {
+        response.push('id: ' + e._id.toString());
+    }
 
     return response.join('\n') + '\n\n';
 }
 
 function loadJournalStream(req, res, user, lastEventId, done) {
+    console.log('READ');
     let query = { user };
     if (lastEventId) {
         query._id = { $gt: lastEventId };
     }
+
+    let mailboxes = new Set();
+
     let cursor = db.database.collection('journal').find(query).sort({ _id: 1 });
     let processed = 0;
     let processNext = () => {
@@ -1439,11 +1430,47 @@ function loadJournalStream(req, res, user, lastEventId, done) {
             }
             if (!e) {
                 return cursor.close(() => {
-                    // delete all attachments that do not have any active links to message objects
-                    done(null, {
-                        lastEventId,
-                        processed
-                    });
+                    if (!mailboxes.size) {
+                        return done(null, {
+                            lastEventId,
+                            processed
+                        });
+                    }
+
+                    mailboxes = Array.from(mailboxes);
+                    let mailboxPos = 0;
+                    let emitCounters = () => {
+                        if (mailboxPos >= mailboxes.length) {
+                            return done(null, {
+                                lastEventId,
+                                processed
+                            });
+                        }
+                        let mailbox = mailboxes[mailboxPos++];
+                        getMailboxCounter(mailbox, false, (err, total) => {
+                            if (err) {
+                                // ignore
+                            }
+                            getMailboxCounter(mailbox, 'unseen', (err, unseen) => {
+                                if (err) {
+                                    // ignore
+                                }
+
+                                res.write(
+                                    formatJournalData({
+                                        command: 'COUNTERS',
+                                        _id: lastEventId,
+                                        mailbox,
+                                        total,
+                                        unseen
+                                    })
+                                );
+
+                                setImmediate(emitCounters);
+                            });
+                        });
+                    };
+                    emitCounters();
                 });
             }
 
@@ -1454,6 +1481,16 @@ function loadJournalStream(req, res, user, lastEventId, done) {
                 return processNext();
             }
 
+            switch (e.command) {
+                case 'FETCH':
+                case 'EXISTS':
+                case 'EXPUNGE':
+                    if (e.mailbox) {
+                        mailboxes.add(e.mailbox.toString());
+                    }
+                    break;
+            }
+
             res.write(formatJournalData(e));
 
             processed++;
@@ -1462,6 +1499,35 @@ function loadJournalStream(req, res, user, lastEventId, done) {
     };
 
     processNext();
+}
+
+function getMailboxCounter(mailbox, type, done) {
+    let prefix = type ? type : 'sum';
+    db.redis.get(prefix + ':' + mailbox.toString(), (err, sum) => {
+        if (err) {
+            return done(err);
+        }
+
+        if (sum !== null) {
+            return done(null, Number(sum));
+        }
+
+        // calculate sum
+        let query = { mailbox };
+        if (type) {
+            query[type] = true;
+        }
+        db.database.collection('messages').count(query, (err, sum) => {
+            if (err) {
+                return done(err);
+            }
+
+            // cache calculated sum in redis
+            db.redis.multi().set(prefix + ':' + mailbox.toString(), sum).expire(prefix + ':' + mailbox.toString(), consts.MAILBOX_COUNTER_TTL).exec(() => {
+                done(null, sum);
+            });
+        });
+    });
 }
 
 module.exports = done => {
