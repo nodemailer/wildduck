@@ -1510,8 +1510,6 @@ function getMailboxCounter(mailbox, type, done) {
             return done(err);
         }
 
-        console.log(prefix + ':' + mailbox.toString(), err, sum);
-
         if (sum !== null) {
             return done(null, Number(sum));
         }
@@ -1526,8 +1524,6 @@ function getMailboxCounter(mailbox, type, done) {
             if (err) {
                 return done(err);
             }
-
-            console.log(query, err, sum);
 
             // cache calculated sum in redis
             db.redis.multi().set(prefix + ':' + mailbox.toString(), sum).expire(prefix + ':' + mailbox.toString(), consts.MAILBOX_COUNTER_TTL).exec(() => {
