@@ -8,6 +8,7 @@ const ImapNotifier = require('./lib/imap-notifier');
 const Indexer = require('./imap-core/lib/indexer/indexer');
 const MessageHandler = require('./lib/message-handler');
 const UserHandler = require('./lib/user-handler');
+const MailboxHandler = require('./lib/mailbox-handler');
 const db = require('./lib/db');
 const consts = require('./lib/consts');
 const RedFour = require('redfour');
@@ -79,6 +80,7 @@ const server = new IMAPServer(serverOptions);
 
 let messageHandler;
 let userHandler;
+let mailboxHandler;
 let gcTimeout;
 let gcLock;
 
@@ -281,9 +283,6 @@ module.exports = done => {
     gcTimeout.unref();
 
     let start = () => {
-        messageHandler = new MessageHandler({ database: db.database, gridfs: db.gridfs, redis: db.redis });
-        userHandler = new UserHandler({ database: db.database, users: db.users, redis: db.redis });
-
         server.indexer = new Indexer({
             database: db.database
         });
@@ -293,6 +292,10 @@ module.exports = done => {
             database: db.database,
             redis: db.redis
         });
+
+        messageHandler = new MessageHandler({ database: db.database, gridfs: db.gridfs, redis: db.redis });
+        userHandler = new UserHandler({ database: db.database, users: db.users, redis: db.redis });
+        mailboxHandler = new MailboxHandler({ database: db.database, users: db.users, redis: db.redis, notifier: server.notifier });
 
         let started = false;
 
@@ -325,9 +328,9 @@ module.exports = done => {
         server.onLsub = onLsub(server);
         server.onSubscribe = onSubscribe(server);
         server.onUnsubscribe = onUnsubscribe(server);
-        server.onCreate = onCreate(server);
-        server.onRename = onRename(server);
-        server.onDelete = onDelete(server);
+        server.onCreate = onCreate(server, mailboxHandler);
+        server.onRename = onRename(server, mailboxHandler);
+        server.onDelete = onDelete(server, mailboxHandler);
         server.onOpen = onOpen(server);
         server.onStatus = onStatus(server);
         server.onAppend = onAppend(server, messageHandler);

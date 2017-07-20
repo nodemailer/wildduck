@@ -9,11 +9,13 @@ const crypto = require('crypto');
 const tools = require('./lib/tools');
 const consts = require('./lib/consts');
 const UserHandler = require('./lib/user-handler');
+const MailboxHandler = require('./lib/mailbox-handler');
 const ImapNotifier = require('./lib/imap-notifier');
 const db = require('./lib/db');
 const MongoPaging = require('mongo-cursor-pagination');
 const certs = require('./lib/certs').get('api');
 const ObjectID = require('mongodb').ObjectID;
+const imapTools = require('./imap-core/lib/imap-tools');
 
 const serverOptions = {
     name: 'Wild Duck API',
@@ -38,6 +40,7 @@ if (certs && config.api.secure) {
 const server = restify.createServer(serverOptions);
 
 let userHandler;
+let mailboxHandler;
 let notifier;
 
 // disable compression for EventSource response
@@ -1073,8 +1076,13 @@ server.get('/users/:user/mailboxes', (req, res, next) => {
     res.charSet('utf-8');
 
     const schema = Joi.object().keys({
-        user: Joi.string().hex().lowercase().length(24).required()
+        user: Joi.string().hex().lowercase().length(24).required(),
+        counters: Joi.boolean().truthy(['Y', 'true', 'yes', 1]).default(false)
     });
+
+    if (req.query.counters) {
+        req.params.counters = req.query.counters;
+    }
 
     const result = Joi.validate(req.params, schema, {
         abortEarly: false,
@@ -1089,6 +1097,7 @@ server.get('/users/:user/mailboxes', (req, res, next) => {
     }
 
     let user = new ObjectID(result.value.user);
+    let counters = result.value.counters;
 
     db.users.collection('users').findOne({
         _id: user
@@ -1147,25 +1156,108 @@ server.get('/users/:user/mailboxes', (req, res, next) => {
                         return a.path.localeCompare(b.path);
                     });
 
-                res.json({
-                    success: true,
+                let responses = [];
+                let position = 0;
+                let checkMailboxes = () => {
+                    if (position >= mailboxes.length) {
+                        res.json({
+                            success: true,
+                            mailboxes: responses
+                        });
 
-                    mailboxes: mailboxes.map(mailbox => {
-                        let path = mailbox.path.split('/');
-                        let name = path.pop();
+                        return next();
+                    }
 
-                        return {
-                            id: mailbox._id,
-                            name,
-                            path: mailbox.path,
-                            specialUse: mailbox.specialUse,
-                            modifyIndex: mailbox.modifyIndex
-                        };
-                    })
-                });
+                    let mailbox = mailboxes[position++];
+                    let path = mailbox.path.split('/');
+                    let name = path.pop();
 
-                return next();
+                    let response = {
+                        id: mailbox._id,
+                        name,
+                        path: mailbox.path,
+                        specialUse: mailbox.specialUse,
+                        modifyIndex: mailbox.modifyIndex,
+                        subscribed: mailbox.subscribed
+                    };
+
+                    if (!counters) {
+                        responses.push(response);
+                        return setImmediate(checkMailboxes);
+                    }
+
+                    getMailboxCounter(mailbox._id, false, (err, total) => {
+                        if (err) {
+                            // ignore
+                        }
+                        getMailboxCounter(mailbox._id, 'unseen', (err, unseen) => {
+                            if (err) {
+                                // ignore
+                            }
+                            response.total = total;
+                            response.unseen = unseen;
+                            responses.push(response);
+                            return setImmediate(checkMailboxes);
+                        });
+                    });
+                };
+                checkMailboxes();
             });
+    });
+});
+
+server.post('/users/:user/mailboxes', (req, res, next) => {
+    res.charSet('utf-8');
+
+    const schema = Joi.object().keys({
+        user: Joi.string().hex().lowercase().length(24).required(),
+        path: Joi.string().regex(/\/{2,}|\/$/g, { invert: true }).required(),
+        retention: Joi.number().min(0)
+    });
+
+    const result = Joi.validate(req.params, schema, {
+        abortEarly: false,
+        convert: true
+    });
+
+    if (result.error) {
+        res.json({
+            error: result.error.message
+        });
+        return next();
+    }
+
+    let user = new ObjectID(result.value.user);
+    let path = imapTools.normalizeMailbox(result.value.path);
+    let retention = result.value.retention;
+
+    let opts = {
+        subscribed: true
+    };
+    if (retention) {
+        opts.retention = retention;
+    }
+
+    mailboxHandler.create(user, path, opts, (err, status, id) => {
+        if (err) {
+            res.json({
+                error: err.message
+            });
+            return next();
+        }
+
+        if (typeof status === 'string') {
+            res.json({
+                error: 'Mailbox creation failed with code ' + status
+            });
+            return next();
+        }
+
+        res.json({
+            success: !!status,
+            id
+        });
+        return next();
     });
 });
 
@@ -1247,6 +1339,7 @@ server.get('/users/:user/mailboxes/:mailbox', (req, res, next) => {
                         path: mailboxData.path,
                         specialUse: mailboxData.specialUse,
                         modifyIndex: mailboxData.modifyIndex,
+                        subscribed: mailboxData.subscribed,
                         total,
                         unseen
                     });
@@ -1254,6 +1347,115 @@ server.get('/users/:user/mailboxes/:mailbox', (req, res, next) => {
                 });
             });
         });
+    });
+});
+
+server.put('/users/:user/mailboxes/:mailbox', (req, res, next) => {
+    res.charSet('utf-8');
+
+    const schema = Joi.object().keys({
+        user: Joi.string().hex().lowercase().length(24).required(),
+        mailbox: Joi.string().hex().lowercase().length(24).required(),
+        path: Joi.string().regex(/\/{2,}|\/$/g, { invert: true }),
+        retention: Joi.number().min(0),
+        subscribed: Joi.boolean().truthy(['Y', 'true', 'yes', 1])
+    });
+
+    const result = Joi.validate(req.params, schema, {
+        abortEarly: false,
+        convert: true
+    });
+
+    if (result.error) {
+        res.json({
+            error: result.error.message
+        });
+        return next();
+    }
+
+    let user = new ObjectID(result.value.user);
+    let mailbox = new ObjectID(result.value.mailbox);
+
+    let updates = {};
+    let update = false;
+    Object.keys(result.value || {}).forEach(key => {
+        if (!['user', 'mailbox'].includes(key)) {
+            updates[key] = result.value[key];
+            update = true;
+        }
+    });
+
+    if (!update) {
+        res.json({
+            error: 'Nothing was changed'
+        });
+        return next();
+    }
+
+    mailboxHandler.update(user, mailbox, updates, (err, status) => {
+        if (err) {
+            res.json({
+                error: err.message
+            });
+            return next();
+        }
+
+        if (typeof status === 'string') {
+            res.json({
+                error: 'Mailbox update failed with code ' + status
+            });
+            return next();
+        }
+
+        res.json({
+            success: true
+        });
+        return next();
+    });
+});
+
+server.del('/users/:user/mailboxes/:mailbox', (req, res, next) => {
+    res.charSet('utf-8');
+
+    const schema = Joi.object().keys({
+        user: Joi.string().hex().lowercase().length(24).required(),
+        mailbox: Joi.string().hex().lowercase().length(24).required()
+    });
+
+    const result = Joi.validate(req.params, schema, {
+        abortEarly: false,
+        convert: true
+    });
+
+    if (result.error) {
+        res.json({
+            error: result.error.message
+        });
+        return next();
+    }
+
+    let user = new ObjectID(result.value.user);
+    let mailbox = new ObjectID(result.value.mailbox);
+
+    mailboxHandler.del(user, mailbox, (err, status) => {
+        if (err) {
+            res.json({
+                error: err.message
+            });
+            return next();
+        }
+
+        if (typeof status === 'string') {
+            res.json({
+                error: 'Mailbox deletion failed with code ' + status
+            });
+            return next();
+        }
+
+        res.json({
+            success: true
+        });
+        return next();
     });
 });
 
@@ -1540,11 +1742,12 @@ module.exports = done => {
 
     let started = false;
 
-    userHandler = new UserHandler({ database: db.database, users: db.users, redis: db.redis });
     notifier = new ImapNotifier({
         database: db.database,
         redis: db.redis
     });
+    userHandler = new UserHandler({ database: db.database, users: db.users, redis: db.redis });
+    mailboxHandler = new MailboxHandler({ database: db.database, users: db.users, redis: db.redis, notifier });
 
     server.on('error', err => {
         if (!started) {
