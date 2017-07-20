@@ -6,7 +6,6 @@ let EventEmitter = require('events').EventEmitter;
 // Expects that the folder listing is a Map
 
 class MemoryNotifier extends EventEmitter {
-
     constructor(options) {
         super();
         this.folders = options.folders || new Map();
@@ -49,10 +48,10 @@ class MemoryNotifier extends EventEmitter {
      * @param {Function} handler Function to run once there are new entries in the journal
      */
     addListener(session, mailbox, handler) {
-        let eventName = this._eventName(session.user.username, mailbox);
+        let eventName = this._eventName(session.user.id, mailbox);
         this._listeners.addListener(eventName, handler);
 
-        this.logger.debug('[%s] New journal listener for %s ("%s:%s")', session.id, eventName, session.user.username, mailbox);
+        this.logger.debug('[%s] New journal listener for %s ("%s:%s")', session.id, eventName, session.user.id, mailbox);
     }
 
     /**
@@ -63,10 +62,10 @@ class MemoryNotifier extends EventEmitter {
      * @param {Function} handler Function to run once there are new entries in the journal
      */
     removeListener(session, mailbox, handler) {
-        let eventName = this._eventName(session.user.username, mailbox);
+        let eventName = this._eventName(session.user.id, mailbox);
         this._listeners.removeListener(eventName, handler);
 
-        this.logger.debug('[%s] Removed journal listener from %s ("%s:%s")', session.id, eventName, session.user.username, mailbox);
+        this.logger.debug('[%s] Removed journal listener from %s ("%s:%s")', session.id, eventName, session.user.id, mailbox);
     }
 
     /**
@@ -144,7 +143,6 @@ class MemoryNotifier extends EventEmitter {
 
         return callback(null, folder.journal.slice(minIndex));
     }
-
 }
 
 module.exports = MemoryNotifier;

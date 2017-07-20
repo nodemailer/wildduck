@@ -131,6 +131,7 @@ module.exports = function(options) {
 
         callback(null, {
             user: {
+                id: 'id.' + login.username,
                 username: login.username
             }
         });
@@ -306,7 +307,7 @@ module.exports = function(options) {
 
         // do not write directly to stream, use notifications as the currently selected mailbox might not be the one that receives the message
         this.notifier.addEntries(
-            session.user.username,
+            session.user.id,
             mailbox,
             {
                 command: 'EXISTS',
@@ -404,7 +405,7 @@ module.exports = function(options) {
                 }
 
                 this.notifier.addEntries(
-                    session.user.username,
+                    session.user.id,
                     mailbox,
                     {
                         command: 'FETCH',
@@ -456,7 +457,7 @@ module.exports = function(options) {
             }
         }
 
-        this.notifier.addEntries(session.user.username, mailbox, entries, () => {
+        this.notifier.addEntries(session.user.id, mailbox, entries, () => {
             this.notifier.fire(session.user.id, mailbox);
             return callback(null, true);
         });
@@ -502,8 +503,8 @@ module.exports = function(options) {
             });
         }
 
-        this.notifier.addEntries(update.destination, session.user.username, entries, () => {
-            this.notifier.fire(update.destination, session.user.username);
+        this.notifier.addEntries(update.destination, session.user.id, entries, () => {
+            this.notifier.fire(session.user.id, update.destination);
 
             return callback(null, true, {
                 uidValidity: destinationFolder.uidValidity,
@@ -544,7 +545,7 @@ module.exports = function(options) {
             });
         }
 
-        this.notifier.addEntries(session.user.username, mailbox, entries, () => {
+        this.notifier.addEntries(session.user.id, mailbox, entries, () => {
             let pos = 0;
             let processMessage = () => {
                 if (pos >= folder.messages.length) {

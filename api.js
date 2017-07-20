@@ -11,12 +11,20 @@ const consts = require('./lib/consts');
 const UserHandler = require('./lib/user-handler');
 const ImapNotifier = require('./lib/imap-notifier');
 const db = require('./lib/db');
+const MongoPaging = require('mongo-cursor-pagination');
 const certs = require('./lib/certs').get('api');
 const ObjectID = require('mongodb').ObjectID;
 
 const serverOptions = {
     name: 'Wild Duck API',
-    strictRouting: true
+    strictRouting: true,
+    formatters: {
+        'application/json; q=0.4': (req, res, body) => {
+            let data = body ? JSON.stringify(body, false, 2) : 'null';
+            res.setHeader('Content-Length', Buffer.byteLength(data));
+            return data;
+        }
+    }
 };
 
 if (certs && config.api.secure) {
@@ -31,6 +39,16 @@ const server = restify.createServer(serverOptions);
 
 let userHandler;
 let notifier;
+
+// disable compression for EventSource response
+// this needs to be called before gzipResponse
+server.use((req, res, next) => {
+    if (req.route.path === '/users/:user/updates') {
+        req.headers['accept-encoding'] = '';
+    }
+    next();
+});
+server.use(restify.plugins.gzipResponse());
 
 server.use(restify.plugins.queryParser());
 server.use(
@@ -48,6 +66,215 @@ server.get(
         default: 'index.html'
     })
 );
+
+server.get({ name: 'users', path: '/users' }, (req, res, next) => {
+    res.charSet('utf-8');
+
+    const schema = Joi.object().keys({
+        query: Joi.string().alphanum().lowercase().empty('').max(100),
+        limit: Joi.number().default(20).min(1).max(250),
+        next: Joi.string().alphanum().max(100),
+        prev: Joi.string().alphanum().max(100),
+        page: Joi.number().default(1)
+    });
+
+    const result = Joi.validate(req.query, schema, {
+        abortEarly: false,
+        convert: true,
+        allowUnknown: true
+    });
+
+    if (result.error) {
+        res.json({
+            error: result.error.message
+        });
+        return next();
+    }
+
+    let query = result.value.query;
+    let limit = result.value.limit;
+    let page = result.value.page;
+    let pageNext = result.value.next;
+    let pagePrev = result.value.prev;
+
+    let filter = query
+        ? {
+            username: {
+                $regex: query,
+                $options: ''
+            }
+        }
+        : {};
+
+    db.users.collection('users').count(filter, (err, total) => {
+        if (err) {
+            res.json({
+                error: result.error.message
+            });
+            return next();
+        }
+
+        let opts = {
+            limit,
+            query: filter,
+            fields: {
+                _id: true,
+                username: true,
+                address: true,
+                storageUsed: true,
+                quota: true,
+                setup: true
+            },
+            sortAscending: true
+        };
+
+        if (pageNext) {
+            opts.next = pageNext;
+        } else if (pagePrev) {
+            opts.prev = pagePrev;
+        }
+
+        MongoPaging.find(db.users.collection('users'), opts, (err, result) => {
+            if (err) {
+                res.json({
+                    error: result.error.message
+                });
+                return next();
+            }
+
+            if (!result.hasPrevious) {
+                page = 1;
+            }
+
+            let prevUrl = result.hasPrevious
+                ? server.router.render('users', {}, { prev: result.previous, limit, query: query || '', page: Math.max(page - 1, 1) })
+                : false;
+            let nextUrl = result.hasNext ? server.router.render('users', {}, { next: result.previous, limit, query: query || '', page: page + 1 }) : false;
+
+            let response = {
+                query,
+                total,
+                page,
+                prev: prevUrl,
+                next: nextUrl,
+                results: (result.results || []).map(userData => ({
+                    id: userData._id.toString(),
+                    username: userData.username,
+                    address: userData.address,
+                    storageUsed: Math.max(userData.storageUsed, 0),
+                    quota: {
+                        allowed: Number(userData.quota) || config.maxStorage * 1024 * 1024,
+                        used: Math.max(Number(userData.storageUsed) || 0, 0)
+                    },
+                    activated: userData.setup
+                }))
+            };
+
+            res.json(response);
+            return next();
+        });
+    });
+});
+
+server.get({ name: 'addresses', path: '/addresses' }, (req, res, next) => {
+    res.charSet('utf-8');
+
+    const schema = Joi.object().keys({
+        query: Joi.string().empty('').max(255),
+        limit: Joi.number().default(20).min(1).max(250),
+        next: Joi.string().alphanum().max(100),
+        prev: Joi.string().alphanum().max(100),
+        page: Joi.number().default(1)
+    });
+
+    const result = Joi.validate(req.query, schema, {
+        abortEarly: false,
+        convert: true,
+        allowUnknown: true
+    });
+
+    if (result.error) {
+        res.json({
+            error: result.error.message
+        });
+        return next();
+    }
+
+    let query = result.value.query;
+    let limit = result.value.limit;
+    let page = result.value.page;
+    let pageNext = result.value.next;
+    let pagePrev = result.value.prev;
+
+    let filter = query
+        ? {
+            address: {
+                $regex: query.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&'),
+                $options: ''
+            }
+        }
+        : {};
+
+    db.users.collection('addresses').count(filter, (err, total) => {
+        if (err) {
+            res.json({
+                error: result.error.message
+            });
+            return next();
+        }
+
+        let opts = {
+            limit,
+            query: filter,
+            fields: {
+                _id: true,
+                address: true,
+                user: true
+            },
+            sortAscending: true
+        };
+
+        if (pageNext) {
+            opts.next = pageNext;
+        } else if (pagePrev) {
+            opts.prev = pagePrev;
+        }
+
+        MongoPaging.find(db.users.collection('addresses'), opts, (err, result) => {
+            if (err) {
+                res.json({
+                    error: result.error.message
+                });
+                return next();
+            }
+
+            if (!result.hasPrevious) {
+                page = 1;
+            }
+
+            let prevUrl = result.hasPrevious
+                ? server.router.render('addresses', {}, { prev: result.previous, limit, query: query || '', page: Math.max(page - 1, 1) })
+                : false;
+            let nextUrl = result.hasNext ? server.router.render('addresses', {}, { next: result.previous, limit, query: query || '', page: page + 1 }) : false;
+
+            let response = {
+                query,
+                total,
+                page,
+                prev: prevUrl,
+                next: nextUrl,
+                results: (result.results || []).map(addressData => ({
+                    id: addressData._id.toString(),
+                    address: addressData.address,
+                    user: addressData.user.toString()
+                }))
+            };
+
+            res.json(response);
+            return next();
+        });
+    });
+});
 
 server.post('/users', (req, res, next) => {
     res.charSet('utf-8');
