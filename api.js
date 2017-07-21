@@ -2250,7 +2250,7 @@ server.del('/users/:user/mailboxes/:mailbox/messages/:message', (req, res, next)
                 mailbox: { user, mailbox },
                 message: messageData
             },
-            (err, result, info) => {
+            err => {
                 if (err) {
                     res.json({
                         error: err.message
