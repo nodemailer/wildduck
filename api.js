@@ -1809,8 +1809,13 @@ server.get('/users/:user/mailboxes/:mailbox/messages/:message', (req, res, next)
     const schema = Joi.object().keys({
         user: Joi.string().hex().lowercase().length(24).required(),
         mailbox: Joi.string().hex().lowercase().length(24).required(),
-        message: Joi.string().regex(/^[0-9a-f]{24}:\d{1,10}/).lowercase().required()
+        message: Joi.string().regex(/^[0-9a-f]{24}:\d{1,10}/).lowercase().required(),
+        replaceCidLinks: Joi.boolean().truthy(['Y', 'true', 'yes', 1]).default(false)
     });
+
+    if (req.query.replaceCidLinks) {
+        req.params.replaceCidLinks = req.query.replaceCidLinks;
+    }
 
     const result = Joi.validate(req.params, schema, {
         abortEarly: false,
@@ -1829,6 +1834,7 @@ server.get('/users/:user/mailboxes/:mailbox/messages/:message', (req, res, next)
     let mailbox = new ObjectID(result.value.mailbox);
     let message = new ObjectID(messageparts[0]);
     let uid = Number(messageparts[1]);
+    let replaceCidLinks = result.value.replaceCidLinks;
 
     db.users.collection('messages').findOne({
         _id: message,
@@ -1919,6 +1925,16 @@ server.get('/users/:user/mailboxes/:mailbox/messages/:message', (req, res, next)
         let expires;
         if (messageData.exp) {
             expires = new Date(messageData.rdate).toISOString();
+        }
+
+        if (replaceCidLinks) {
+            messageData.html = (messageData.html || [])
+                .map(html =>
+                    html.replace(
+                        /attachment:([a-f0-9]+)\/(ATT\d+)/g,
+                        (str, mid, aid) => '/users/' + user + '/mailboxes/' + mailbox + '/messages/' + message + ':' + uid + '/attachments/' + aid
+                    )
+                );
         }
 
         res.json({
