@@ -20,6 +20,9 @@ const imapTools = require('./imap-core/lib/imap-tools');
 const libmime = require('libmime');
 const addressparser = require('addressparser');
 const punycode = require('punycode');
+const GridFSBucket = require('mongodb').GridFSBucket;
+const libbase64 = require('libbase64');
+const libqp = require('libqp');
 
 const serverOptions = {
     name: 'Wild Duck API',
@@ -1850,7 +1853,6 @@ server.get('/users/:user/mailboxes/:mailbox/messages/:message', (req, res, next)
             flagged: true,
             draft: true,
             attachments: true,
-            map: true,
             html: true
         }
     }, (err, messageData) => {
@@ -1936,23 +1938,109 @@ server.get('/users/:user/mailboxes/:mailbox/messages/:message', (req, res, next)
             flagged: messageData.flagged,
             draft: messageData.draft,
             html: messageData.html,
-            attachments: (messageData.attachments || [])
-                .map(attachment => {
-                    let id = messageData.map[attachment.id];
-                    if (!id) {
-                        return false;
-                    }
-                    return {
-                        id,
-                        fileName: attachment.fileName,
-                        contentType: attachment.contentType,
-                        related: attachment.related,
-                        sizeKb: attachment.sizeKb
-                    };
-                })
-                .filter(attachment => attachment)
+            attachments: messageData.attachments || []
         });
         return next();
+    });
+});
+
+server.get('/users/:user/mailboxes/:mailbox/messages/:message/attachments/:attachment', (req, res, next) => {
+    res.charSet('utf-8');
+
+    const schema = Joi.object().keys({
+        user: Joi.string().hex().lowercase().length(24).required(),
+        mailbox: Joi.string().hex().lowercase().length(24).required(),
+        message: Joi.string().regex(/^[0-9a-f]{24}:\d{1,10}/).lowercase().required(),
+        attachment: Joi.string().regex(/^ATT\d+$/i).uppercase().required()
+    });
+
+    const result = Joi.validate(req.params, schema, {
+        abortEarly: false,
+        convert: true
+    });
+
+    if (result.error) {
+        res.json({
+            error: result.error.message
+        });
+        return next();
+    }
+
+    let messageparts = result.value.message.split(':');
+    let user = new ObjectID(result.value.user);
+    let mailbox = new ObjectID(result.value.mailbox);
+    let message = new ObjectID(messageparts[0]);
+    let uid = Number(messageparts[1]);
+    let attachment = result.value.attachment;
+
+    db.users.collection('messages').findOne({
+        _id: message,
+        mailbox,
+        uid,
+        user
+    }, {
+        fields: {
+            _id: true,
+            attachments: true,
+            map: true
+        }
+    }, (err, messageData) => {
+        if (err) {
+            res.json({
+                error: 'MongoDB Error: ' + err.message
+            });
+            return next();
+        }
+        if (!messageData) {
+            res.json({
+                error: 'This message does not exist'
+            });
+            return next();
+        }
+
+        let attachmentId = messageData.map[attachment];
+        if (!attachmentId) {
+            res.json({
+                error: 'This attachment does not exist'
+            });
+            return next();
+        }
+
+        db.database.collection('attachments.files').findOne({
+            _id: attachmentId
+        }, (err, attachmentData) => {
+            if (err) {
+                res.json({
+                    error: err.message
+                });
+                return next();
+            }
+            if (!attachmentData) {
+                res.json({
+                    error: 'This attachment does not exist'
+                });
+                return next();
+            }
+
+            res.writeHead(200, {
+                'Content-Type': attachmentData.contentType || 'application/octet-stream'
+            });
+
+            let bucket = new GridFSBucket(db.gridfs, {
+                bucketName: 'attachments'
+            });
+            let attachmentStream = bucket.openDownloadStream(attachmentId);
+
+            attachmentStream.once('error', err => res.emit('error', err));
+
+            if (attachmentData.metadata.transferEncoding === 'base64') {
+                attachmentStream.pipe(new libbase64.Decoder()).pipe(res);
+            } else if (attachmentData.metadata.transferEncoding === 'quoted-printable') {
+                attachmentStream.pipe(new libqp.Decoder()).pipe(res);
+            } else {
+                attachmentStream.pipe(res);
+            }
+        });
     });
 });
 
@@ -2377,6 +2465,7 @@ server.get('/users/:user/updates', (req, res, next) => {
 
             req.connection.setTimeout(30 * 60 * 1000, done);
             req.connection.on('end', done);
+            req.connection.on('error', done);
         };
 
         res.writeHead(200, { 'Content-Type': 'text/event-stream' });
