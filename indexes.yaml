@@ -69,6 +69,15 @@ indexes:
     key:
       mailbox: 1
       uid: 1
+      _id: 1
+- collection: messages
+  index:
+    # use also as sharding key
+    name: mailbox_uid_reverse
+    key:
+      mailbox: 1
+      uid: -1
+      _id: -1
 
 - collection: messages
   index:
@@ -110,14 +119,6 @@ indexes:
     key:
       mailbox: 1
       idate: 1
-      _id: 1
-- collection: messages
-  index:
-    name: by_idate_newer
-    key:
-      mailbox: 1
-      idate: -1
-      _id: -1
 - collection: messages
   index:
     name: by_hdate
