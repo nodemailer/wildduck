@@ -1757,6 +1757,7 @@ server.get({ name: 'search', path: '/users/:user/search' }, (req, res, next) => 
 
                 let response = {
                     success: true,
+                    query,
                     total,
                     page,
                     prev: prevUrl,
