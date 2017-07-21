@@ -17,6 +17,7 @@ const certs = require('./lib/certs').get('api');
 const ObjectID = require('mongodb').ObjectID;
 const imapTools = require('./imap-core/lib/imap-tools');
 const libmime = require('libmime');
+const addressparser = require('addressparser');
 const punycode = require('punycode');
 
 const serverOptions = {
@@ -154,7 +155,7 @@ server.get({ name: 'users', path: '/users' }, (req, res, next) => {
             let prevUrl = result.hasPrevious
                 ? server.router.render('users', {}, { prev: result.previous, limit, query: query || '', page: Math.max(page - 1, 1) })
                 : false;
-            let nextUrl = result.hasNext ? server.router.render('users', {}, { next: result.previous, limit, query: query || '', page: page + 1 }) : false;
+            let nextUrl = result.hasNext ? server.router.render('users', {}, { next: result.next, limit, query: query || '', page: page + 1 }) : false;
 
             let response = {
                 success: true,
@@ -260,7 +261,7 @@ server.get({ name: 'addresses', path: '/addresses' }, (req, res, next) => {
             let prevUrl = result.hasPrevious
                 ? server.router.render('addresses', {}, { prev: result.previous, limit, query: query || '', page: Math.max(page - 1, 1) })
                 : false;
-            let nextUrl = result.hasNext ? server.router.render('addresses', {}, { next: result.previous, limit, query: query || '', page: page + 1 }) : false;
+            let nextUrl = result.hasNext ? server.router.render('addresses', {}, { next: result.next, limit, query: query || '', page: page + 1 }) : false;
 
             let response = {
                 success: true,
@@ -1503,8 +1504,7 @@ server.get({ name: 'messages', path: '/users/:user/mailboxes/:mailbox/messages' 
         user
     }, {
         fields: {
-            username: true,
-            address: true,
+            path: true,
             specialUse: true
         }
     }, (err, mailboxData) => {
@@ -1540,7 +1540,7 @@ server.get({ name: 'messages', path: '/users/:user/mailboxes/:mailbox/messages' 
                     _id: true,
                     uid: true,
                     'meta.from': true,
-                    idate: true,
+                    hdate: true,
                     subject: true,
                     'mimeTree.parsedHeader.from': true,
                     'mimeTree.parsedHeader.sender': true,
@@ -1583,7 +1583,7 @@ server.get({ name: 'messages', path: '/users/:user/mailboxes/:mailbox/messages' 
                     ? server.router.render(
                         'messages',
                         { user: user.toString(), mailbox: mailbox.toString() },
-                        { next: result.previous, limit, order: sortAscending ? 'asc' : 'desc', page: page + 1 }
+                        { next: result.next, limit, order: sortAscending ? 'asc' : 'desc', page: page + 1 }
                     )
                     : false;
 
@@ -1609,10 +1609,169 @@ server.get({ name: 'messages', path: '/users/:user/mailboxes/:mailbox/messages' 
                             // we need that uid value for sharding
                             // uid in a mailbox is immutable
                             id: messageData._id.toString() + ':' + messageData.uid,
+                            mailbox,
                             thread: messageData.thread,
                             from: from && from[0],
                             subject: messageData.subject,
-                            date: messageData.idate.toISOString(),
+                            date: messageData.hdate.toISOString(),
+                            intro: messageData.intro,
+                            attachments: !!messageData.ha,
+                            unseen: messageData.unseen,
+                            flagged: messageData.flagged
+                        };
+                        return response;
+                    })
+                };
+
+                res.json(response);
+                return next();
+            });
+        });
+    });
+});
+
+server.get({ name: 'search', path: '/users/:user/search' }, (req, res, next) => {
+    res.charSet('utf-8');
+
+    const schema = Joi.object().keys({
+        user: Joi.string().hex().lowercase().length(24).required(),
+        query: Joi.string().max(255).required(),
+        limit: Joi.number().default(20).min(1).max(250),
+        next: Joi.string().alphanum().max(100),
+        prev: Joi.string().alphanum().max(100),
+        page: Joi.number().default(1)
+    });
+
+    req.query.user = req.params.user;
+
+    const result = Joi.validate(req.query, schema, {
+        abortEarly: false,
+        convert: true,
+        allowUnknown: true
+    });
+
+    if (result.error) {
+        res.json({
+            error: result.error.message
+        });
+        return next();
+    }
+
+    let user = new ObjectID(result.value.user);
+    let query = result.value.query;
+    let limit = result.value.limit;
+    let page = result.value.page;
+    let pageNext = result.value.next;
+    let pagePrev = result.value.prev;
+
+    db.database.collection('users').findOne({
+        _id: user
+    }, {
+        fields: {
+            username: true,
+            address: true,
+            specialUse: true
+        }
+    }, (err, userData) => {
+        if (err) {
+            res.json({
+                error: 'MongoDB Error: ' + err.message
+            });
+            return next();
+        }
+        if (!userData) {
+            res.json({
+                error: 'This user does not exist'
+            });
+            return next();
+        }
+
+        let filter = {
+            user,
+            $text: { $search: query, $language: 'none' }
+        };
+
+        getFilteredMessageCount(filter, (err, total) => {
+            if (err) {
+                res.json({
+                    error: err.message
+                });
+                return next();
+            }
+
+            let opts = {
+                limit,
+                query: filter,
+                fields: {
+                    _id: true,
+                    uid: true,
+                    mailbox: true,
+                    'meta.from': true,
+                    hdate: true,
+                    subject: true,
+                    'mimeTree.parsedHeader.from': true,
+                    'mimeTree.parsedHeader.sender': true,
+                    ha: true,
+                    intro: true,
+                    unseen: true,
+                    flagged: true,
+                    thread: true
+                },
+                paginatedField: '_id',
+                sortAscending: false
+            };
+
+            if (pageNext) {
+                opts.next = pageNext;
+            } else if (pagePrev) {
+                opts.prev = pagePrev;
+            }
+
+            MongoPaging.find(db.users.collection('messages'), opts, (err, result) => {
+                if (err) {
+                    res.json({
+                        error: result.error.message
+                    });
+                    return next();
+                }
+
+                if (!result.hasPrevious) {
+                    page = 1;
+                }
+
+                let prevUrl = result.hasPrevious
+                    ? server.router.render('search', { user: user.toString() }, { prev: result.previous, limit, query, page: Math.max(page - 1, 1) })
+                    : false;
+                let nextUrl = result.hasNext
+                    ? server.router.render('search', { user: user.toString() }, { next: result.next, limit, query, page: page + 1 })
+                    : false;
+
+                let response = {
+                    success: true,
+                    total,
+                    page,
+                    prev: prevUrl,
+                    next: nextUrl,
+                    results: (result.results || []).map(messageData => {
+                        let parsedHeader = (messageData.mimeTree && messageData.mimeTree.parsedHeader) || {};
+                        let from = parsedHeader.from ||
+                        parsedHeader.sender || [
+                                {
+                                    name: '',
+                                    address: (messageData.meta && messageData.meta.from) || ''
+                                }
+                            ];
+                        decodeAddresses(from);
+
+                        let response = {
+                            // we need that uid value for sharding
+                            // uid in a mailbox is immutable
+                            id: messageData._id.toString() + ':' + messageData.uid,
+                            mailbox: messageData.mailbox,
+                            thread: messageData.thread,
+                            from: from && from[0],
+                            subject: messageData.subject,
+                            date: messageData.hdate.toISOString(),
                             intro: messageData.intro,
                             attachments: !!messageData.ha,
                             unseen: messageData.unseen,
@@ -1667,13 +1826,8 @@ server.get('/users/:user/mailboxes/:mailbox/messages/:message', (req, res, next)
             thread: true,
             'meta.from': true,
             'meta.to': true,
-            idate: true,
-            'mimeTree.parsedHeader.from': true,
-            'mimeTree.parsedHeader.sender': true,
-            'mimeTree.parsedHeader.to': true,
-            'mimeTree.parsedHeader.cc': true,
-            'mimeTree.parsedHeader.bcc': true,
-            'mimeTree.parsedHeader.reply-to': true,
+            hdate: true,
+            'mimeTree.parsedHeader': true,
             subject: true,
             msgid: true,
             ha: true,
@@ -1723,6 +1877,27 @@ server.get('/users/:user/mailboxes/:mailbox/messages/:message', (req, res, next)
             decodeAddresses(cc);
         }
 
+        let list;
+        if (parsedHeader['list-id'] || parsedHeader['list-unsubscribe']) {
+            let listId = parsedHeader['list-id'];
+            if (listId) {
+                listId = addressparser(listId);
+                decodeAddresses(listId);
+                listId = listId.shift();
+            }
+
+            let listUnsubscribe = parsedHeader['list-unsubscribe'];
+            if (listUnsubscribe) {
+                listUnsubscribe = addressparser(listUnsubscribe);
+                decodeAddresses(listUnsubscribe);
+            }
+
+            list = {
+                id: listId,
+                unsubscribe: listUnsubscribe
+            };
+        }
+
         res.json({
             success: true,
             id: message.toString() + ':' + uid,
@@ -1732,7 +1907,8 @@ server.get('/users/:user/mailboxes/:mailbox/messages/:message', (req, res, next)
             cc,
             subject: messageData.subject,
             messageId: messageData.msgid,
-            date: messageData.idate.toISOString(),
+            date: messageData.hdate.toISOString(),
+            list,
             html: messageData.html,
             attachments: (messageData.attachments || [])
                 .map(attachment => {
@@ -2035,6 +2211,7 @@ function getFilteredMessageCount(filter, done) {
         // try to use cached value to get the count
         return getMailboxCounter(filter.mailbox, false, done);
     }
+
     db.database.collection('messages').count(filter, (err, total) => {
         if (err) {
             return done(err);

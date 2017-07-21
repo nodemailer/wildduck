@@ -145,6 +145,7 @@ indexes:
     name: fulltext
     key:
       user: 1
+      headers.value: text
       subject: text
       text: text
     weights:
