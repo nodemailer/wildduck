@@ -1688,6 +1688,7 @@ server.get({ name: 'search', path: '/users/:user/search' }, (req, res, next) => 
 
         let filter = {
             user,
+            searchable: true,
             $text: { $search: query, $language: 'none' }
         };
 

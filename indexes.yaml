@@ -145,12 +145,10 @@ indexes:
     name: fulltext
     key:
       user: 1
+      searchable: 1
       headers.value: text
-      subject: text
       text: text
-    weights:
-      subject: 10
-      text: 5
+    sparse: true
 - collection: messages
   index:
     # in most cases we only care about unseen, not seen messages
