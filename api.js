@@ -1547,7 +1547,9 @@ server.get({ name: 'messages', path: '/users/:user/mailboxes/:mailbox/messages' 
                     ha: true,
                     intro: true,
                     unseen: true,
+                    undeleted: true,
                     flagged: true,
+                    draft: true,
                     thread: true
                 },
                 paginatedField: 'uid',
@@ -1616,8 +1618,10 @@ server.get({ name: 'messages', path: '/users/:user/mailboxes/:mailbox/messages' 
                             date: messageData.hdate.toISOString(),
                             intro: messageData.intro,
                             attachments: !!messageData.ha,
-                            unseen: messageData.unseen,
-                            flagged: messageData.flagged
+                            seen: !messageData.unseen,
+                            deleted: !messageData.undeleted,
+                            flagged: messageData.flagged,
+                            draft: messageData.draft
                         };
                         return response;
                     })
@@ -1715,7 +1719,9 @@ server.get({ name: 'search', path: '/users/:user/search' }, (req, res, next) => 
                     ha: true,
                     intro: true,
                     unseen: true,
+                    undeleted: true,
                     flagged: true,
+                    draft: true,
                     thread: true
                 },
                 paginatedField: '_id',
@@ -1775,8 +1781,10 @@ server.get({ name: 'search', path: '/users/:user/search' }, (req, res, next) => 
                             date: messageData.hdate.toISOString(),
                             intro: messageData.intro,
                             attachments: !!messageData.ha,
-                            unseen: messageData.unseen,
-                            flagged: messageData.flagged
+                            seen: !messageData.unseen,
+                            deleted: !messageData.undeleted,
+                            flagged: messageData.flagged,
+                            draft: messageData.draft
                         };
                         return response;
                     })
@@ -1831,9 +1839,13 @@ server.get('/users/:user/mailboxes/:mailbox/messages/:message', (req, res, next)
             'mimeTree.parsedHeader': true,
             subject: true,
             msgid: true,
+            exp: true,
+            rdate: true,
             ha: true,
             unseen: true,
+            undeleted: true,
             flagged: true,
+            draft: true,
             attachments: true,
             map: true,
             html: true
@@ -1899,6 +1911,11 @@ server.get('/users/:user/mailboxes/:mailbox/messages/:message', (req, res, next)
             };
         }
 
+        let expires;
+        if (messageData.exp) {
+            expires = new Date(messageData.rdate).toISOString();
+        }
+
         res.json({
             success: true,
             id: message.toString() + ':' + uid,
@@ -1910,6 +1927,11 @@ server.get('/users/:user/mailboxes/:mailbox/messages/:message', (req, res, next)
             messageId: messageData.msgid,
             date: messageData.hdate.toISOString(),
             list,
+            expires,
+            seen: !messageData.unseen,
+            deleted: !messageData.undeleted,
+            flagged: messageData.flagged,
+            draft: messageData.draft,
             html: messageData.html,
             attachments: (messageData.attachments || [])
                 .map(attachment => {
@@ -1928,6 +1950,202 @@ server.get('/users/:user/mailboxes/:mailbox/messages/:message', (req, res, next)
                 .filter(attachment => attachment)
         });
         return next();
+    });
+});
+
+server.put('/users/:user/mailboxes/:mailbox/messages/:message', (req, res, next) => {
+    res.charSet('utf-8');
+
+    const schema = Joi.object().keys({
+        user: Joi.string().hex().lowercase().length(24).required(),
+        mailbox: Joi.string().hex().lowercase().length(24).required(),
+        message: Joi.string().regex(/^[0-9a-f]{24}:\d{1,10}/).lowercase().required(),
+        seen: Joi.boolean().truthy(['Y', 'true', 'yes', 1]),
+        deleted: Joi.boolean().truthy(['Y', 'true', 'yes', 1]),
+        flagged: Joi.boolean().truthy(['Y', 'true', 'yes', 1]),
+        draft: Joi.boolean().truthy(['Y', 'true', 'yes', 1]),
+        expires: Joi.alternatives().try(Joi.date(), Joi.boolean().truthy(['Y', 'true', 'yes', 1]).allow(false))
+    });
+
+    const result = Joi.validate(req.params, schema, {
+        abortEarly: false,
+        convert: true
+    });
+
+    if (result.error) {
+        res.json({
+            error: result.error.message
+        });
+        return next();
+    }
+
+    let messageparts = result.value.message.split(':');
+    let user = new ObjectID(result.value.user);
+    let mailbox = new ObjectID(result.value.mailbox);
+    let message = new ObjectID(messageparts[0]);
+    let uid = Number(messageparts[1]);
+
+    let updates = { $set: {} };
+    let update = false;
+    let addFlags = [];
+    let removeFlags = [];
+
+    Object.keys(result.value || {}).forEach(key => {
+        switch (key) {
+            case 'seen':
+                updates.$set.unseen = !result.value.seen;
+                if (result.value.seen) {
+                    addFlags.push('\\Seen');
+                } else {
+                    removeFlags.push('\\Seen');
+                }
+                update = true;
+                break;
+
+            case 'deleted':
+                updates.$set.undeleted = !result.value.deleted;
+                if (result.value.deleted) {
+                    addFlags.push('\\Deleted');
+                } else {
+                    removeFlags.push('\\Deleted');
+                }
+                update = true;
+                break;
+
+            case 'flagged':
+                updates.$set.flagged = result.value.flagged;
+                if (result.value.flagged) {
+                    addFlags.push('\\Flagged');
+                } else {
+                    removeFlags.push('\\Flagged');
+                }
+                update = true;
+                break;
+
+            case 'draft':
+                updates.$set.flagged = result.value.draft;
+                if (result.value.draft) {
+                    addFlags.push('\\Draft');
+                } else {
+                    removeFlags.push('\\Draft');
+                }
+                update = true;
+                break;
+
+            case 'expires':
+                if (result.value.expires) {
+                    updates.$set.exp = true;
+                    updates.$set.rdate = result.value.expires.getTime();
+                } else {
+                    updates.$set.exp = false;
+                }
+                update = true;
+                break;
+        }
+    });
+
+    if (!update) {
+        res.json({
+            error: 'Nothing was changed'
+        });
+        return next();
+    }
+
+    if (addFlags.length) {
+        if (!updates.$addToSet) {
+            updates.$addToSet = {};
+        }
+        updates.$addToSet.flags = { $each: addFlags };
+    }
+
+    if (removeFlags.length) {
+        if (!updates.$pull) {
+            updates.$pull = {};
+        }
+        updates.$pull.flags = { $in: removeFlags };
+    }
+
+    // acquire new MODSEQ
+    db.database.collection('mailboxes').findOneAndUpdate({
+        _id: mailbox,
+        user
+    }, {
+        $inc: {
+            // allocate new MODSEQ value
+            modifyIndex: 1
+        }
+    }, {
+        returnOriginal: false
+    }, (err, item) => {
+        if (err) {
+            res.json({
+                error: err.message
+            });
+            return next();
+        }
+
+        if (!item || !item.value) {
+            // was not able to acquire a lock
+            res.json({
+                error: 'Mailbox is missing'
+            });
+            return next();
+        }
+
+        let mailboxData = item.value;
+
+        updates.$set.modseq = mailboxData.modifyIndex;
+
+        db.database.collection('messages').findOneAndUpdate({
+            _id: message,
+            // hash key
+            mailbox,
+            uid
+        }, updates, {
+            projection: {
+                flags: true,
+                exp: true,
+                rdate: true
+            },
+            returnOriginal: false
+        }, (err, item) => {
+            if (err) {
+                res.json({
+                    error: err.message
+                });
+                return next();
+            }
+
+            if (!item || !item.value) {
+                // message was not found for whatever reason
+                res.json({
+                    error: 'Message was not found'
+                });
+                return next();
+            }
+
+            let messageData = item.value;
+
+            notifier.addEntries(
+                mailboxData,
+                false,
+                {
+                    command: 'FETCH',
+                    uid,
+                    flags: messageData.flags,
+                    message: message._id,
+                    unseenChange: !!result.value.unseen
+                },
+                () => {
+                    notifier.fire(mailboxData.user, mailboxData.path);
+
+                    res.json({
+                        success: true
+                    });
+                    return next();
+                }
+            );
+        });
     });
 });
 
@@ -2158,10 +2376,14 @@ function loadJournalStream(req, res, user, lastEventId, done) {
             }
 
             switch (e.command) {
-                case 'FETCH':
                 case 'EXISTS':
                 case 'EXPUNGE':
                     if (e.mailbox) {
+                        mailboxes.add(e.mailbox.toString());
+                    }
+                    break;
+                case 'FETCH':
+                    if (e.mailbox && (e.unseen || e.unseenChange)) {
                         mailboxes.add(e.mailbox.toString());
                     }
                     break;
