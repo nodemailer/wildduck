@@ -10,6 +10,7 @@ const tools = require('./lib/tools');
 const consts = require('./lib/consts');
 const UserHandler = require('./lib/user-handler');
 const MailboxHandler = require('./lib/mailbox-handler');
+const MessageHandler = require('./lib/message-handler');
 const ImapNotifier = require('./lib/imap-notifier');
 const db = require('./lib/db');
 const MongoPaging = require('mongo-cursor-pagination');
@@ -44,6 +45,7 @@ const server = restify.createServer(serverOptions);
 
 let userHandler;
 let mailboxHandler;
+let messageHandler;
 let notifier;
 
 // disable compression for EventSource response
@@ -1894,14 +1896,14 @@ server.get('/users/:user/mailboxes/:mailbox/messages/:message', (req, res, next)
         if (parsedHeader['list-id'] || parsedHeader['list-unsubscribe']) {
             let listId = parsedHeader['list-id'];
             if (listId) {
-                listId = addressparser(listId);
+                listId = addressparser(listId.toString());
                 decodeAddresses(listId);
                 listId = listId.shift();
             }
 
             let listUnsubscribe = parsedHeader['list-unsubscribe'];
             if (listUnsubscribe) {
-                listUnsubscribe = addressparser(listUnsubscribe);
+                listUnsubscribe = addressparser(listUnsubscribe.toString());
                 decodeAddresses(listUnsubscribe);
             }
 
@@ -1959,6 +1961,7 @@ server.put('/users/:user/mailboxes/:mailbox/messages/:message', (req, res, next)
     const schema = Joi.object().keys({
         user: Joi.string().hex().lowercase().length(24).required(),
         mailbox: Joi.string().hex().lowercase().length(24).required(),
+        newMailbox: Joi.string().hex().lowercase().length(24),
         message: Joi.string().regex(/^[0-9a-f]{24}:\d{1,10}/).lowercase().required(),
         seen: Joi.boolean().truthy(['Y', 'true', 'yes', 1]),
         deleted: Joi.boolean().truthy(['Y', 'true', 'yes', 1]),
@@ -1982,8 +1985,44 @@ server.put('/users/:user/mailboxes/:mailbox/messages/:message', (req, res, next)
     let messageparts = result.value.message.split(':');
     let user = new ObjectID(result.value.user);
     let mailbox = new ObjectID(result.value.mailbox);
+    let newMailbox = result.value.newMailbox ? new ObjectID(result.value.newMailbox) : false;
     let message = new ObjectID(messageparts[0]);
     let uid = Number(messageparts[1]);
+
+    if (newMailbox) {
+        return messageHandler.move(
+            {
+                user,
+                source: { user, mailbox },
+                destination: { user, mailbox: newMailbox },
+                updates: result.value,
+                returnIds: true,
+                messages: [uid]
+            },
+            (err, result, info) => {
+                if (err) {
+                    res.json({
+                        error: err.message
+                    });
+                    return next();
+                }
+
+                if (!info || !info.destinationUid || !info.destinationUid.length) {
+                    res.json({
+                        error: 'Could not move message, check if message exists'
+                    });
+                    return next();
+                }
+
+                res.json({
+                    success: true,
+                    mailbox: newMailbox,
+                    id: info && info.destinationUid && info.destinationUid[0]
+                });
+                return next();
+            }
+        );
+    }
 
     let updates = { $set: {} };
     let update = false;
@@ -2146,6 +2185,85 @@ server.put('/users/:user/mailboxes/:mailbox/messages/:message', (req, res, next)
                 }
             );
         });
+    });
+});
+
+server.del('/users/:user/mailboxes/:mailbox/messages/:message', (req, res, next) => {
+    res.charSet('utf-8');
+
+    const schema = Joi.object().keys({
+        user: Joi.string().hex().lowercase().length(24).required(),
+        mailbox: Joi.string().hex().lowercase().length(24).required(),
+        message: Joi.string().regex(/^[0-9a-f]{24}:\d{1,10}/).lowercase().required()
+    });
+
+    const result = Joi.validate(req.params, schema, {
+        abortEarly: false,
+        convert: true
+    });
+
+    if (result.error) {
+        res.json({
+            error: result.error.message
+        });
+        return next();
+    }
+
+    let messageparts = result.value.message.split(':');
+    let user = new ObjectID(result.value.user);
+    let mailbox = new ObjectID(result.value.mailbox);
+    let message = new ObjectID(messageparts[0]);
+    let uid = Number(messageparts[1]);
+
+    db.database.collection('messages').findOne({
+        _id: message,
+        mailbox,
+        uid
+    }, {
+        fields: {
+            _id: true,
+            mailbox: true,
+            uid: true,
+            size: true,
+            map: true,
+            magic: true,
+            unseen: true
+        }
+    }, (err, messageData) => {
+        if (err) {
+            res.json({
+                error: err.message
+            });
+            return next();
+        }
+
+        if (!messageData) {
+            res.json({
+                error: 'Message was not found'
+            });
+            return next();
+        }
+
+        return messageHandler.del(
+            {
+                user,
+                mailbox: { user, mailbox },
+                message: messageData
+            },
+            (err, result, info) => {
+                if (err) {
+                    res.json({
+                        error: err.message
+                    });
+                    return next();
+                }
+
+                res.json({
+                    success: true
+                });
+                return next();
+            }
+        );
     });
 });
 
@@ -2477,6 +2595,7 @@ module.exports = done => {
     });
     userHandler = new UserHandler({ database: db.database, users: db.users, redis: db.redis });
     mailboxHandler = new MailboxHandler({ database: db.database, users: db.users, redis: db.redis, notifier });
+    messageHandler = new MessageHandler({ database: db.database, gridfs: db.gridfs, redis: db.redis });
 
     server.on('error', err => {
         if (!started) {
