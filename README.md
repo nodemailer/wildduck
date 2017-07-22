@@ -6,6 +6,16 @@ Wild Duck tries to follow Gmail in architectural design. If there's a decision t
 
 > **NB!** Wild Duck is currently in **beta**. Use it on your own responsibility.
 
+## Requirements
+
+* *MongoDB* to store all data
+* *Redis* for pubsub and counters
+* *Node.js*, at least version 6.0.0
+
+**Optional requirements**
+
+* Build tools to install optional dependencies that need compiling
+
 ## Usage
 
 Assuming you have MongoDB and Redis running somewhere.
@@ -13,7 +23,7 @@ Assuming you have MongoDB and Redis running somewhere.
 ### Step 1\. Get the code from github
 
 ```
-$ git clone git://github.com/wildduck-email/wildduck.git
+$ git clone git://github.com/nodemailer/wildduck.git
 $ cd wildduck
 ```
 
@@ -39,11 +49,11 @@ Or if you want to override default configuration options with your own, run the 
 node server.js --config=/etc/wildduck.toml
 ```
 
-> For additional config options, see the _wild-config_ [documentation](https://github.com/wildduck-email/wild-config).
+> For additional config options, see the _wild-config_ [documentation](https://github.com/nodemailer/wild-config).
 
 ### Step 4\. Create an user account
 
-See see [API Reference](https://github.com/wildduck-email/wildduck/wiki/API-Docs#add-a-new-user) for details about creating new user accounts
+See see [API Reference](https://github.com/nodemailer/wildduck/wiki/API-Docs#add-a-new-user) for details about creating new user accounts
 
 ### Step 5\. Use an IMAP/POP3 client to log in
 
@@ -176,7 +186,7 @@ TODO:
 2. Search/list messages
 3. Expose journal updates through WebSocket or similar
 
-[API REFERENCE](https://github.com/wildduck-email/wildduck/wiki/API-Docs)
+[API REFERENCE](https://github.com/nodemailer/wildduck/wiki/API-Docs)
 
 ## Message filtering
 
@@ -279,7 +289,7 @@ This should "deliver" a new message to the INBOX of _username@example.com_ by us
 
 ## Outbound SMTP
 
-Use [ZoneMTA](https://github.com/zone-eu/zone-mta) with the [ZoneMTA-WildDuck](https://github.com/wildduck-email/zonemta-wildduck) plugin. This gives you an outbound SMTP server that uses Wild Duck accounts for authentication.
+Use [ZoneMTA](https://github.com/zone-eu/zone-mta) with the [ZoneMTA-WildDuck](https://github.com/nodemailer/zonemta-wildduck) plugin. This gives you an outbound SMTP server that uses Wild Duck accounts for authentication.
 
 ## Inbound SMTP
 
