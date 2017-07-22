@@ -16,6 +16,8 @@ Wild Duck tries to follow Gmail in architectural design. If there's a decision t
 
 * Build tools to install optional dependencies that need compiling
 
+Wild Duck can be installed on any Node.js compatible platform.
+
 ## Usage
 
 Assuming you have MongoDB and Redis running somewhere.
