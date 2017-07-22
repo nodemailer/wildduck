@@ -287,11 +287,9 @@ Use [Haraka](http://haraka.github.io/) with [queue/lmtp](http://haraka.github.io
 
 ## Future considerations
 
-- Add interoperability with current servers, for example by fetching authentication data from MySQL
 - Optimize FETCH queries to load only partial data for BODY subparts
 - Parse incoming message into the mime tree as a stream. Currently the entire message is buffered in memory before being parsed.
-- CPU usage seems a bit too high, there is probably a ton of profiling to do
-- Maybe allow some kind of message manipulation through plugins?
+- Maybe allow some kind of message manipulation through plugins
 - Wild Duck does not plan to be the most feature-rich IMAP client in the world. Most IMAP extensions are useless because there aren't too many clients that are able to benefit from these extensions. There are a few extensions though that would make sense to be added to Wild Duck:
 
   - IMAP4 non-synchronizing literals, LITERAL- ([RFC7888](https://tools.ietf.org/html/rfc7888)). Synchronized literals are needed for APPEND to check mailbox quota, small values could go with the non-synchronizing version.
