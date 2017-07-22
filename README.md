@@ -1,12 +1,10 @@
-# Agent Wild Duck
+# Wild Duck Mail Server
 
-![](https://cldup.com/H2IiqjUoGy.png)
+Wild Duck is a distributed IMAP/POP3 mail server. _Distributed_ means that Wild Duck uses a distributed database (sharded + replicated MongoDB) as a backend for storing all data, including emails. Wild Duck instances are stateless, any user can connect to any Wild Duck instance. Wild Duck uses a write ahead log to keep IMAP sessions between different instances in sync.
 
-Wild Duck is a distributed IMAP/POP3 server built with Node.js, MongoDB and Redis. Node.js runs the application, MongoDB is used as the mail store and Redis is used for ephemeral actions like publish/subscribe, locking and caching.
+Wild Duck tries to follow Gmail in architectural design. If there's a decision to be made then usually the answer is to do whatever Gmail has done.
 
 > **NB!** Wild Duck is currently in **beta**. Use it on your own responsibility.
-
-_Distributed_ means that Wild Duck uses a distributed database (sharded+replicated MongoDB) as a backend for storing all data, including emails. Wild Duck instances are stateless, you can have multiple IMAP server instances running and a client can connect to any of these. Wild Duck uses a write ahead log to keep IMAP sessions in sync.
 
 ## Usage
 
