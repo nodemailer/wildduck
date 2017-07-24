@@ -68,7 +68,13 @@ Any IMAP or POP3 client will do. Use the credentials from step 4\. to log in.
 3. Provide Gmail-like features like pushing sent messages automatically to Sent Mail folder or notifying about messages moved to Junk folder so these could be marked as spam
 4. Provide parsed mailbox and message data over HTTP. This should make creating webmail interfaces super easy, no need to parse RFC822 messages to get text content or attachments
 
-## FAQ
+# HTTP API
+
+Users, mailboxes and messages can be managed with HTTP requests against Wild Duck API
+
+### [API Reference](https://github.com/nodemailer/wildduck/wiki/API-Docs)
+
+# FAQ
 
 ### Does it work?
 
@@ -167,20 +173,6 @@ If a messages is downloaded by a client this message gets marked as _Seen_
 ##### DELE
 
 If a messages is deleted by a client this message gets marked as Seen and moved to Trash folder
-
-# HTTP API
-
-> **NB!** The HTTP API is being re-designed
-
-Users, mailboxes and messages can be managed with HTTP requests against Wild Duck API
-
-TODO:
-
-1. Expose counters (seen/unseen messages, message count in mailbox etc.)
-2. Search/list messages
-3. Expose journal updates through WebSocket or similar
-
-[API REFERENCE](https://github.com/nodemailer/wildduck/wiki/API-Docs)
 
 ## Message filtering
 
