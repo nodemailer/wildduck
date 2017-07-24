@@ -50,7 +50,7 @@ indexes:
     name: user
     key:
       user: 1
-      created: -1
+      _id: -1
 - collection: authlog
   type: users # index applies to users database
   index:

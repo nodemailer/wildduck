@@ -300,6 +300,10 @@ server.post('/users', (req, res, next) => {
         language: Joi.string().min(2).max(20).lowercase(),
         retention: Joi.number().min(0).default(0),
 
+        name: Joi.string().max(256),
+        forward: Joi.string().email(),
+        targetUrl: Joi.string().max(256),
+
         quota: Joi.number().min(0).default(0),
         recipients: Joi.number().min(0).default(0),
         forwards: Joi.number().min(0).default(0),
@@ -309,6 +313,13 @@ server.post('/users', (req, res, next) => {
             cidr: 'forbidden'
         })
     });
+
+    let forward = req.params.forward ? tools.normalizeAddress(req.params.forward) : false;
+
+    if (forward && /[\u0080-\uFFFF]/.test(forward)) {
+        // replace unicode characters in email addresses before validation
+        req.params.forward = forward.replace(/[\u0080-\uFFFF]/g, 'x');
+    }
 
     const result = Joi.validate(req.params, schema, {
         abortEarly: false,
@@ -320,6 +331,10 @@ server.post('/users', (req, res, next) => {
             error: result.error.message
         });
         return next();
+    }
+
+    if (forward) {
+        result.value.forward = forward;
     }
 
     userHandler.create(result.value, (err, id) => {
@@ -390,7 +405,7 @@ server.post('/authenticate', (req, res, next) => {
 
         res.json({
             success: true,
-            id: authData._id,
+            id: authData.user,
             username: authData.username,
             scope: authData.scope,
             require2fa: authData.require2fa
@@ -414,7 +429,6 @@ server.put('/users/:user', (req, res, next) => {
         name: Joi.string().max(256),
         forward: Joi.string().email(),
         targetUrl: Joi.string().max(256),
-        autoreply: Joi.string().max(256),
 
         retention: Joi.number().min(0),
         quota: Joi.number().min(0),
@@ -954,6 +968,8 @@ server.get('/users/:user', (req, res, next) => {
 
                     language: userData.language,
                     retention: userData.retention || false,
+
+                    enabled2fa: userData.enabled2fa,
 
                     limits: {
                         quota: {
@@ -3162,7 +3178,11 @@ server.post('/users/:user/asps', (req, res, next) => {
     const schema = Joi.object().keys({
         user: Joi.string().hex().lowercase().length(24).required(),
         description: Joi.string().trim().max(255).required(),
-        scopes: Joi.array().items(Joi.string().valid('imap', 'pop3', 'smtp', '*').required()).unique()
+        scopes: Joi.array().items(Joi.string().valid('imap', 'pop3', 'smtp', '*').required()).unique(),
+        ip: Joi.string().ip({
+            version: ['ipv4', 'ipv6'],
+            cidr: 'forbidden'
+        })
     });
 
     const result = Joi.validate(req.params, schema, {
@@ -3178,10 +3198,8 @@ server.post('/users/:user/asps', (req, res, next) => {
     }
 
     let user = new ObjectID(result.value.user);
-    let description = result.value.description;
-    let scopes = result.value.scopes;
 
-    userHandler.generateASP(user, description, scopes, (err, result) => {
+    userHandler.generateASP(user, result.value, (err, result) => {
         if (err) {
             res.json({
                 error: err.message
@@ -3202,7 +3220,11 @@ server.del('/users/:user/asps/:asp', (req, res, next) => {
 
     const schema = Joi.object().keys({
         user: Joi.string().hex().lowercase().length(24).required(),
-        asp: Joi.string().hex().lowercase().length(24).required()
+        asp: Joi.string().hex().lowercase().length(24).required(),
+        ip: Joi.string().ip({
+            version: ['ipv4', 'ipv6'],
+            cidr: 'forbidden'
+        })
     });
 
     const result = Joi.validate(req.params, schema, {
@@ -3220,24 +3242,13 @@ server.del('/users/:user/asps/:asp', (req, res, next) => {
     let user = new ObjectID(result.value.user);
     let asp = new ObjectID(result.value.asp);
 
-    db.users.collection('asps').deleteOne({
-        _id: asp,
-        user
-    }, (err, r) => {
+    userHandler.deleteASP(user, asp, result.value, err => {
         if (err) {
             res.json({
-                error: 'MongoDB Error: ' + err.message
+                error: err.message
             });
             return next();
         }
-
-        if (!r.deletedCount) {
-            res.json({
-                error: 'Application Specific Password was not found'
-            });
-            return next();
-        }
-
         res.json({
             success: true
         });
@@ -3282,6 +3293,57 @@ server.post('/users/:user/2fa', (req, res, next) => {
         res.json({
             success: true,
             qrcode: result
+        });
+
+        return next();
+    });
+});
+
+server.get('/users/:user/2fa', (req, res, next) => {
+    res.charSet('utf-8');
+
+    const schema = Joi.object().keys({
+        user: Joi.string().hex().lowercase().length(24).required(),
+        token: Joi.string().length(6).required(),
+        ip: Joi.string().ip({
+            version: ['ipv4', 'ipv6'],
+            cidr: 'forbidden'
+        })
+    });
+
+    req.query.user = req.params.user;
+
+    const result = Joi.validate(req.query, schema, {
+        abortEarly: false,
+        convert: true
+    });
+
+    if (result.error) {
+        res.json({
+            error: result.error.message
+        });
+        return next();
+    }
+
+    let user = new ObjectID(result.value.user);
+
+    userHandler.check2fa(user, result.value, (err, result) => {
+        if (err) {
+            res.json({
+                error: err.message
+            });
+            return next();
+        }
+
+        if (!result) {
+            res.json({
+                error: 'Invalid authentication token'
+            });
+            return next();
+        }
+
+        res.json({
+            success: true
         });
 
         return next();
@@ -3348,7 +3410,9 @@ server.del('/users/:user/2fa', (req, res, next) => {
         })
     });
 
-    const result = Joi.validate(req.params, schema, {
+    req.query.user = req.params.user;
+
+    const result = Joi.validate(req.query, schema, {
         abortEarly: false,
         convert: true
     });
