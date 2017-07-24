@@ -10,7 +10,7 @@ Wild Duck tries to follow Gmail in architectural design. If there's a decision t
 
 * *MongoDB* to store all data
 * *Redis* for pubsub and counters
-* *Node.js*, at least version 6.0.0
+* *Node.js* at least version 6.0.0
 
 **Optional requirements**
 
@@ -55,7 +55,7 @@ node server.js --config=/etc/wildduck.toml
 
 ### Step 4\. Create an user account
 
-See see [API Reference](https://github.com/nodemailer/wildduck/wiki/API-Docs#add-a-new-user) for details about creating new user accounts
+See [API Docs](https://github.com/nodemailer/wildduck/wiki/API-Docs#add-a-new-user) for details about creating new user accounts
 
 ### Step 5\. Use an IMAP/POP3 client to log in
 
@@ -72,7 +72,7 @@ Any IMAP or POP3 client will do. Use the credentials from step 4\. to log in.
 
 Users, mailboxes and messages can be managed with HTTP requests against Wild Duck API
 
-### [API Reference](https://github.com/nodemailer/wildduck/wiki/API-Docs)
+### [API Docs](https://github.com/nodemailer/wildduck/wiki/API-Docs)
 
 # FAQ
 
@@ -176,63 +176,9 @@ If a messages is deleted by a client this message gets marked as Seen and moved 
 
 ## Message filtering
 
-> The filtering system is subject to change with the API updates. Most probably the filters are going to reside in separate collection and not as part of the user object.
-
 Wild Duck has built-in message filtering in LMTP server. This is somewhat similar to Sieve even though the filters are not scripts.
 
-Filters are configuration objects stored in the `filters` array of the users object.
-
-**Example filter**
-
-```javascript
-{
-    // identifier for this filter
-    id: ObjectId('abcdefghij...'),
-
-    // query to check messages against
-    query: {
-        // message must match all filter rules for the filter actions to apply
-        // all values are case insensitive
-        headers: {
-            // partial string match against decoded From: header
-            from: 'sender@example.com',
-            // partial string match against decoded To: header
-            to: 'recipient@example.com',
-            // partial string match against decoded Subject: header
-            subject: 'Väga tõrges'
-        },
-
-        // partial string match (case insensitive) against decoded plaintext message
-        text: 'Mõigu ristis oli mis?',
-
-        // positive: must have attachments, negative: no attachments
-        ha: 1,
-
-        // positive: larger than size, negative: smaller than abs(size)
-        size: 10
-    },
-    // what to do if the filter query matches the message
-    action: {
-
-        // mark message as seen
-        unseen: false,
-
-        // mark message as flagged
-        flag: true,
-
-        // set mailbox ID
-        mailbox: 'aaaaa', // must be ObjectID!
-
-        // positive spam, negative ham
-        spam: 1,
-
-        // if true, delete message
-        delete: false
-    }
-}
-```
-
-**NB!** If you do not care about an action field then do not set it, otherwise matches from other filters do not apply
+Filters can be managed via the [Wild Duck API](https://github.com/nodemailer/wildduck/wiki/API-Docs).
 
 ## Sharding
 
