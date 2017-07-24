@@ -39,6 +39,7 @@ const serverOptions = {
         userHandler.authenticate(
             auth.username,
             auth.password,
+            'pop3',
             {
                 protocol: 'POP3',
                 ip: session.remoteAddress
@@ -51,7 +52,7 @@ const serverOptions = {
                     return callback();
                 }
 
-                if (result.scope === 'master' && result.enabled2fa) {
+                if (result.scope === 'master' && result.require2fa) {
                     // master password not allowed if 2fa is enabled!
                     return callback();
                 }

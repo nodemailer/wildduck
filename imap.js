@@ -363,9 +363,9 @@ module.exports = done => {
                         err,
                         tnx: 'mongo'
                     },
-                    'Failed creating index %s %s. %s',
+                    'Failed creating index %s %s.%s. %s',
                     indexpos,
-                    JSON.stringify(index.index.name),
+                    JSON.stringify(index.collection + '.' + index.index.name),
                     err.message
                 );
             } else if (r.numIndexesAfter !== r.numIndexesBefore) {
@@ -375,7 +375,7 @@ module.exports = done => {
                     },
                     'Created index %s %s',
                     indexpos,
-                    JSON.stringify(index.index.name)
+                    JSON.stringify(index.collection + '.' + index.index.name)
                 );
             } else {
                 server.logger.debug(
@@ -384,7 +384,7 @@ module.exports = done => {
                     },
                     'Skipped index %s %s: %s',
                     indexpos,
-                    JSON.stringify(index.index.name),
+                    JSON.stringify(index.collection + '.' + index.index.name),
                     r.note || 'No index added'
                 );
             }

@@ -4,7 +4,6 @@ const config = require('wild-config');
 const restify = require('restify');
 const log = require('npmlog');
 const Joi = require('joi');
-const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const tools = require('./lib/tools');
 const consts = require('./lib/consts');
@@ -23,6 +22,7 @@ const punycode = require('punycode');
 const GridFSBucket = require('mongodb').GridFSBucket;
 const libbase64 = require('libbase64');
 const libqp = require('libqp');
+const urllib = require('url');
 
 const serverOptions = {
     name: 'Wild Duck API',
@@ -191,7 +191,7 @@ server.get({ name: 'addresses', path: '/addresses' }, (req, res, next) => {
     res.charSet('utf-8');
 
     const schema = Joi.object().keys({
-        query: Joi.string().empty('').max(255),
+        query: Joi.string().trim().empty('').max(255),
         limit: Joi.number().default(20).min(1).max(250),
         next: Joi.string().alphanum().max(100),
         prev: Joi.string().alphanum().max(100),
@@ -302,7 +302,12 @@ server.post('/users', (req, res, next) => {
 
         quota: Joi.number().min(0).default(0),
         recipients: Joi.number().min(0).default(0),
-        forwards: Joi.number().min(0).default(0)
+        forwards: Joi.number().min(0).default(0),
+
+        ip: Joi.string().ip({
+            version: ['ipv4', 'ipv6'],
+            cidr: 'forbidden'
+        })
     });
 
     const result = Joi.validate(req.params, schema, {
@@ -335,20 +340,20 @@ server.post('/users', (req, res, next) => {
     });
 });
 
-server.put('/users/:user', (req, res, next) => {
+server.post('/authenticate', (req, res, next) => {
     res.charSet('utf-8');
 
     const schema = Joi.object().keys({
-        user: Joi.string().hex().lowercase().length(24).required(),
+        username: Joi.string().alphanum().lowercase().min(3).max(30).required(),
+        password: Joi.string().max(256).required(),
 
-        password: Joi.string().max(256),
+        protocol: Joi.string().default('API'),
+        scope: Joi.string().default('master'),
 
-        language: Joi.string().min(2).max(20).lowercase(),
-
-        retention: Joi.number().min(0),
-        quota: Joi.number().min(0),
-        recipients: Joi.number().min(0),
-        forwards: Joi.number().min(0)
+        ip: Joi.string().ip({
+            version: ['ipv4', 'ipv6'],
+            cidr: 'forbidden'
+        })
     });
 
     const result = Joi.validate(req.params, schema, {
@@ -363,52 +368,98 @@ server.put('/users/:user', (req, res, next) => {
         return next();
     }
 
-    let user = new ObjectID(result.value.user);
+    let meta = {
+        protocol: result.value.protocol,
+        ip: result.value.ip
+    };
 
-    let $set = {};
-    let updates = false;
-    Object.keys(result.value).forEach(key => {
-        if (key === 'user') {
-            return;
+    userHandler.authenticate(result.value.username, result.value.password, result.value.scope, meta, (err, authData) => {
+        if (err) {
+            res.json({
+                error: err.message
+            });
+            return next();
         }
-        if (key === 'password') {
-            $set.password = bcrypt.hashSync(result.value[key], 11);
-            return;
+
+        if (!authData) {
+            res.json({
+                error: 'Authentication failed'
+            });
+            return next();
         }
-        $set[key] = result.value[key];
-        updates = true;
+
+        res.json({
+            success: true,
+            id: authData._id,
+            username: authData.username,
+            scope: authData.scope,
+            require2fa: authData.require2fa
+        });
+
+        return next();
+    });
+});
+
+server.put('/users/:user', (req, res, next) => {
+    res.charSet('utf-8');
+
+    const schema = Joi.object().keys({
+        user: Joi.string().hex().lowercase().length(24).required(),
+
+        existingPassword: Joi.string().min(1).max(256),
+        password: Joi.string().min(8).max(256),
+
+        language: Joi.string().min(2).max(20).lowercase(),
+
+        name: Joi.string().max(256),
+        forward: Joi.string().email(),
+        targetUrl: Joi.string().max(256),
+        autoreply: Joi.string().max(256),
+
+        retention: Joi.number().min(0),
+        quota: Joi.number().min(0),
+        recipients: Joi.number().min(0),
+        forwards: Joi.number().min(0),
+
+        ip: Joi.string().ip({
+            version: ['ipv4', 'ipv6'],
+            cidr: 'forbidden'
+        })
     });
 
-    if (!updates) {
+    let forward = req.params.forward ? tools.normalizeAddress(req.params.forward) : false;
+
+    if (forward && /[\u0080-\uFFFF]/.test(forward)) {
+        // replace unicode characters in email addresses before validation
+        req.params.forward = forward.replace(/[\u0080-\uFFFF]/g, 'x');
+    }
+
+    const result = Joi.validate(req.params, schema, {
+        abortEarly: false,
+        convert: true
+    });
+
+    if (result.error) {
         res.json({
-            error: 'Nothing was changed'
+            error: result.error.message
         });
         return next();
     }
 
-    db.users.collection('users').findOneAndUpdate({
-        _id: user
-    }, {
-        $set
-    }, {
-        returnOriginal: false
-    }, (err, result) => {
+    let user = new ObjectID(result.value.user);
+    if (forward) {
+        result.value.forward = forward;
+    }
+
+    userHandler.update(user, result.value, (err, success) => {
         if (err) {
             res.json({
-                error: 'MongoDB Error: ' + err.message
+                error: err.message
             });
             return next();
         }
-
-        if (!result || !result.value) {
-            res.json({
-                error: 'This user does not exist'
-            });
-            return next();
-        }
-
         res.json({
-            success: true
+            success
         });
         return next();
     });
@@ -703,7 +754,7 @@ server.del('/users/:user/addresses/:address', (req, res, next) => {
                 return next();
             }
 
-            // insert alias address to email address registry
+            // delete address from email address registry
             db.users.collection('addresses').deleteOne({
                 _id: address
             }, (err, r) => {
@@ -994,7 +1045,7 @@ server.get('/users/:user/addresses', (req, res, next) => {
                 res.json({
                     success: true,
 
-                    addresses: addresses.map(address => ({
+                    results: addresses.map(address => ({
                         id: address._id,
                         address: address.address,
                         main: address.address === userData.address,
@@ -1170,7 +1221,7 @@ server.get('/users/:user/mailboxes', (req, res, next) => {
                     if (position >= mailboxes.length) {
                         res.json({
                             success: true,
-                            mailboxes: responses
+                            results: responses
                         });
 
                         return next();
@@ -1644,7 +1695,7 @@ server.get({ name: 'search', path: '/users/:user/search' }, (req, res, next) => 
 
     const schema = Joi.object().keys({
         user: Joi.string().hex().lowercase().length(24).required(),
-        query: Joi.string().max(255).required(),
+        query: Joi.string().trim().max(255).required(),
         limit: Joi.number().default(20).min(1).max(250),
         next: Joi.string().alphanum().max(100),
         prev: Joi.string().alphanum().max(100),
@@ -1960,9 +2011,69 @@ server.get('/users/:user/mailboxes/:mailbox/messages/:message', (req, res, next)
     });
 });
 
-server.get('/users/:user/mailboxes/:mailbox/messages/:message/attachments/:attachment', (req, res, next) => {
-    res.charSet('utf-8');
+server.get('/users/:user/mailboxes/:mailbox/messages/:message/message.eml', (req, res, next) => {
+    const schema = Joi.object().keys({
+        user: Joi.string().hex().lowercase().length(24).required(),
+        mailbox: Joi.string().hex().lowercase().length(24).required(),
+        message: Joi.string().regex(/^[0-9a-f]{24}:\d{1,10}/).lowercase().required()
+    });
 
+    const result = Joi.validate(req.params, schema, {
+        abortEarly: false,
+        convert: true
+    });
+
+    if (result.error) {
+        res.json({
+            error: result.error.message
+        });
+        return next();
+    }
+
+    let messageparts = result.value.message.split(':');
+    let user = new ObjectID(result.value.user);
+    let mailbox = new ObjectID(result.value.mailbox);
+    let message = new ObjectID(messageparts[0]);
+    let uid = Number(messageparts[1]);
+
+    db.users.collection('messages').findOne({
+        _id: message,
+        mailbox,
+        uid,
+        user
+    }, {
+        fields: {
+            _id: true,
+            mimeTree: true
+        }
+    }, (err, messageData) => {
+        if (err) {
+            res.json({
+                error: 'MongoDB Error: ' + err.message
+            });
+            return next();
+        }
+        if (!messageData) {
+            res.json({
+                error: 'This message does not exist'
+            });
+            return next();
+        }
+
+        let response = messageHandler.indexer.rebuild(messageData.mimeTree);
+        if (!response || response.type !== 'stream' || !response.value) {
+            res.json({
+                error: 'This message does not exist'
+            });
+            return next();
+        }
+
+        res.setHeader('Content-Type', 'message/rfc822');
+        response.value.pipe(res);
+    });
+});
+
+server.get('/users/:user/mailboxes/:mailbox/messages/:message/attachments/:attachment', (req, res, next) => {
     const schema = Joi.object().keys({
         user: Joi.string().hex().lowercase().length(24).required(),
         mailbox: Joi.string().hex().lowercase().length(24).required(),
@@ -2372,6 +2483,1028 @@ server.del('/users/:user/mailboxes/:mailbox/messages/:message', (req, res, next)
     });
 });
 
+server.get('/users/:user/filters', (req, res, next) => {
+    res.charSet('utf-8');
+
+    const schema = Joi.object().keys({
+        user: Joi.string().hex().lowercase().length(24).required()
+    });
+
+    const result = Joi.validate(req.params, schema, {
+        abortEarly: false,
+        convert: true
+    });
+
+    if (result.error) {
+        res.json({
+            error: result.error.message
+        });
+        return next();
+    }
+
+    let user = new ObjectID(result.value.user);
+
+    db.users.collection('users').findOne({
+        _id: user
+    }, {
+        fields: {
+            address: true
+        }
+    }, (err, userData) => {
+        if (err) {
+            res.json({
+                error: 'MongoDB Error: ' + err.message
+            });
+            return next();
+        }
+        if (!userData) {
+            res.json({
+                error: 'This user does not exist'
+            });
+            return next();
+        }
+
+        db.database
+            .collection('mailboxes')
+            .find({
+                user
+            })
+            .project({ _id: 1, path: 1 })
+            .sort({ _id: 1 })
+            .toArray((err, mailboxes) => {
+                if (err) {
+                    res.json({
+                        error: 'MongoDB Error: ' + err.message
+                    });
+                    return next();
+                }
+
+                if (!mailboxes) {
+                    mailboxes = [];
+                }
+
+                db.users
+                    .collection('filters')
+                    .find({
+                        user
+                    })
+                    .sort({
+                        _id: 1
+                    })
+                    .toArray((err, filters) => {
+                        if (err) {
+                            res.json({
+                                error: 'MongoDB Error: ' + err.message
+                            });
+                            return next();
+                        }
+
+                        if (!filters) {
+                            filters = [];
+                        }
+
+                        res.json({
+                            success: true,
+
+                            results: filters.map(filter => {
+                                let descriptions = getFilterStrings(filter, mailboxes);
+                                return {
+                                    id: filter._id,
+                                    name: filter.name,
+                                    query: descriptions.query,
+                                    action: descriptions.action,
+                                    created: filter.created
+                                };
+                            })
+                        });
+
+                        return next();
+                    });
+            });
+    });
+});
+
+server.get('/users/:user/filters/:filter', (req, res, next) => {
+    res.charSet('utf-8');
+
+    const schema = Joi.object().keys({
+        user: Joi.string().hex().lowercase().length(24).required(),
+        filter: Joi.string().hex().lowercase().length(24).required()
+    });
+
+    const result = Joi.validate(req.params, schema, {
+        abortEarly: false,
+        convert: true
+    });
+
+    if (result.error) {
+        res.json({
+            error: result.error.message
+        });
+        return next();
+    }
+
+    let user = new ObjectID(result.value.user);
+    let filter = new ObjectID(result.value.filter);
+
+    db.database.collection('filters').findOne({
+        _id: filter,
+        user
+    }, (err, filterData) => {
+        if (err) {
+            res.json({
+                error: 'MongoDB Error: ' + err.message
+            });
+            return next();
+        }
+        if (!filterData) {
+            res.json({
+                error: 'This filter does not exist'
+            });
+            return next();
+        }
+
+        db.database
+            .collection('mailboxes')
+            .find({
+                user
+            })
+            .project({ _id: 1, path: 1 })
+            .sort({ _id: 1 })
+            .toArray((err, mailboxes) => {
+                if (err) {
+                    res.json({
+                        error: 'MongoDB Error: ' + err.message
+                    });
+                    return next();
+                }
+
+                if (!mailboxes) {
+                    mailboxes = [];
+                }
+
+                //let descriptions = getFilterStrings(filterData, mailboxes);
+
+                let result = {
+                    success: true,
+                    id: filterData._id,
+                    name: filterData.name,
+                    //query: descriptions.query,
+                    //action: descriptions.action,
+                    created: filterData.created
+                };
+
+                Object.keys((filterData.query && filterData.query.headers) || {}).forEach(key => {
+                    result['query:' + key] = filterData.query.headers[key];
+                });
+
+                Object.keys(filterData.query || {}).forEach(key => {
+                    if (key !== 'headers') {
+                        result['query:' + key] = filterData.query[key];
+                    }
+                });
+
+                Object.keys(filterData.action || {}).forEach(key => {
+                    result['action:' + key] = filterData.action[key];
+                });
+
+                res.json(result);
+
+                return next();
+            });
+    });
+});
+
+server.del('/users/:user/filters/:filter', (req, res, next) => {
+    res.charSet('utf-8');
+
+    const schema = Joi.object().keys({
+        user: Joi.string().hex().lowercase().length(24).required(),
+        filter: Joi.string().hex().lowercase().length(24).required()
+    });
+
+    const result = Joi.validate(req.params, schema, {
+        abortEarly: false,
+        convert: true
+    });
+
+    if (result.error) {
+        res.json({
+            error: result.error.message
+        });
+        return next();
+    }
+
+    let user = new ObjectID(result.value.user);
+    let filter = new ObjectID(result.value.filter);
+
+    db.database.collection('filters').deleteOne({
+        _id: filter,
+        user
+    }, (err, r) => {
+        if (err) {
+            res.json({
+                error: 'MongoDB Error: ' + err.message
+            });
+            return next();
+        }
+
+        if (!r.deletedCount) {
+            res.json({
+                error: 'Filter was not found'
+            });
+            return next();
+        }
+
+        res.json({
+            success: true
+        });
+        return next();
+    });
+});
+
+server.post('/users/:user/filters', (req, res, next) => {
+    res.charSet('utf-8');
+
+    const schema = Joi.object().keys({
+        user: Joi.string().hex().lowercase().length(24).required(),
+
+        name: Joi.string().trim().max(255).empty(''),
+
+        'query:from': Joi.string().trim().max(255).empty(''),
+        'query:to': Joi.string().trim().max(255).empty(''),
+        'query:subject': Joi.string().trim().max(255).empty(''),
+        'query:text': Joi.string().trim().max(255).empty(''),
+        'query:ha': Joi.boolean().truthy(['Y', 'true', 'yes', 1]).empty(''),
+        'query:size': Joi.number().empty(''),
+
+        'action:unseen': Joi.boolean().truthy(['Y', 'true', 'yes', 1]).empty(''),
+        'action:flag': Joi.boolean().truthy(['Y', 'true', 'yes', 1]).empty(''),
+        'action:delete': Joi.boolean().truthy(['Y', 'true', 'yes', 1]).empty(''),
+        'action:spam': Joi.boolean().truthy(['Y', 'true', 'yes', 1]).empty(''),
+
+        'action:mailbox': Joi.string().hex().lowercase().length(24).empty(''),
+        'action:forward': Joi.string().email().empty(''),
+        'action:targetUrl': Joi.string()
+            .uri({
+                scheme: ['http', 'https'],
+                allowRelative: false,
+                relativeOnly: false
+            })
+            .empty('')
+    });
+
+    const result = Joi.validate(req.params, schema, {
+        abortEarly: false,
+        convert: true
+    });
+
+    if (result.error) {
+        res.json({
+            error: result.error.message
+        });
+        return next();
+    }
+
+    let user = new ObjectID(result.value.user);
+    let filterData = {
+        _id: new ObjectID(),
+        user,
+        query: {
+            headers: {}
+        },
+        action: {},
+        created: new Date()
+    };
+
+    if (result.value.name) {
+        filterData.name = result.value.name;
+    }
+
+    let hasQuery = false;
+    let hasAction = false;
+
+    ['from', 'to', 'subject'].forEach(key => {
+        if (result.value['query:' + key]) {
+            filterData.query.headers[key] = result.value['query:' + key].replace(/\s+/g, ' ');
+            hasQuery = true;
+        }
+    });
+
+    if (result.value['query:text']) {
+        filterData.query.text = result.value['query:text'].replace(/\s+/g, ' ');
+        hasQuery = true;
+    }
+
+    if (typeof result.value['query:ha'] === 'boolean') {
+        filterData.query.ha = result.value['query:ha'];
+        hasQuery = true;
+    }
+
+    if (result.value['query:size']) {
+        filterData.query.size = result.value['query:size'];
+        hasQuery = true;
+    }
+
+    ['unseen', 'flag', 'delete', 'spam'].forEach(key => {
+        if (typeof result.value['action:' + key] === 'boolean') {
+            filterData.action[key] = result.value['action:' + key];
+            hasAction = true;
+        }
+    });
+
+    ['forward', 'targetUrl'].forEach(key => {
+        if (result.value['action:' + key]) {
+            filterData.action[key] = result.value['action:' + key];
+            hasAction = true;
+        }
+    });
+
+    let checkFilterMailbox = done => {
+        if (!result.value['action:mailbox']) {
+            return next();
+        }
+        db.database.collection('mailboxes').findOne({
+            _id: new ObjectID(result.value['action:mailbox']),
+            user
+        }, (err, mailboxData) => {
+            if (err) {
+                res.json({
+                    error: 'MongoDB Error: ' + err.message
+                });
+                return next();
+            }
+            if (!mailboxData) {
+                res.json({
+                    error: 'This mailbox does not exist'
+                });
+                return next();
+            }
+            filterData.action.mailbox = mailboxData._id;
+            hasAction = true;
+            done();
+        });
+    };
+
+    checkFilterMailbox(() => {
+        if (!hasQuery) {
+            res.json({
+                error: 'Empty filter query'
+            });
+            return next();
+        }
+
+        if (!hasAction) {
+            res.json({
+                error: 'Empty filter action'
+            });
+            return next();
+        }
+
+        db.users.collection('users').findOne({
+            _id: user
+        }, {
+            fields: {
+                address: true
+            }
+        }, (err, userData) => {
+            if (err) {
+                res.json({
+                    error: 'MongoDB Error: ' + err.message
+                });
+                return next();
+            }
+            if (!userData) {
+                res.json({
+                    error: 'This user does not exist'
+                });
+                return next();
+            }
+
+            db.users.collection('filters').insertOne(filterData, (err, r) => {
+                if (err) {
+                    res.json({
+                        error: 'MongoDB Error: ' + err.message
+                    });
+                    return next();
+                }
+
+                res.json({
+                    success: !!r.insertedCount,
+                    id: filterData._id
+                });
+                return next();
+            });
+        });
+    });
+});
+
+server.put('/users/:user/filters/:filter', (req, res, next) => {
+    res.charSet('utf-8');
+
+    const schema = Joi.object().keys({
+        user: Joi.string().hex().lowercase().length(24).required(),
+        filter: Joi.string().hex().lowercase().length(24).required(),
+
+        name: Joi.string().trim().max(255).empty(''),
+
+        'query:from': Joi.string().trim().max(255).empty(''),
+        'query:to': Joi.string().trim().max(255).empty(''),
+        'query:subject': Joi.string().trim().max(255).empty(''),
+        'query:text': Joi.string().trim().max(255).empty(''),
+        'query:ha': Joi.boolean().truthy(['Y', 'true', 'yes', 1]).empty(''),
+        'query:size': Joi.number().empty(''),
+
+        'action:unseen': Joi.boolean().truthy(['Y', 'true', 'yes', 1]).empty(''),
+        'action:flag': Joi.boolean().truthy(['Y', 'true', 'yes', 1]).empty(''),
+        'action:delete': Joi.boolean().truthy(['Y', 'true', 'yes', 1]).empty(''),
+        'action:spam': Joi.boolean().truthy(['Y', 'true', 'yes', 1]).empty(''),
+
+        'action:mailbox': Joi.string().hex().lowercase().length(24).empty(''),
+        'action:forward': Joi.string().email().empty(''),
+        'action:targetUrl': Joi.string()
+            .uri({
+                scheme: ['http', 'https'],
+                allowRelative: false,
+                relativeOnly: false
+            })
+            .empty('')
+    });
+
+    const result = Joi.validate(req.params, schema, {
+        abortEarly: false,
+        convert: true
+    });
+
+    if (result.error) {
+        res.json({
+            error: result.error.message
+        });
+        return next();
+    }
+
+    let user = new ObjectID(result.value.user);
+    let filter = new ObjectID(result.value.filter);
+
+    let $set = {};
+    let $unset = {};
+
+    if (result.value.name) {
+        $set.name = result.value.name;
+    }
+
+    let hasQuery = false;
+    let hasAction = false;
+
+    ['from', 'to', 'subject'].forEach(key => {
+        if (result.value['query:' + key]) {
+            $set['query.headers.' + key] = result.value['query:' + key].replace(/\s+/g, ' ');
+            hasQuery = true;
+        } else if ('query:' + key in req.params) {
+            $set['query.headers.' + key] = true;
+            hasQuery = true;
+        }
+    });
+
+    if (result.value['query:text']) {
+        $set['query.text'] = result.value['query:text'].replace(/\s+/g, ' ');
+        hasQuery = true;
+    } else if ('query:text' in req.params) {
+        $set['query.text'] = true;
+        hasQuery = true;
+    }
+
+    if (typeof result.value['query:ha'] === 'boolean') {
+        $set['query.ha'] = result.value['query:ha'];
+        hasQuery = true;
+    } else if ('query:ha' in req.params) {
+        $unset['query.ha'] = true;
+        hasQuery = true;
+    }
+
+    if (result.value['query:size']) {
+        $set['query.size'] = result.value['query:size'];
+        hasQuery = true;
+    } else if ('query:size' in req.params) {
+        $unset['query.size'] = true;
+        hasQuery = true;
+    }
+
+    ['unseen', 'flag', 'delete', 'spam'].forEach(key => {
+        if (typeof result.value['action:' + key] === 'boolean') {
+            $set['action.' + key] = result.value['action:' + key];
+            hasAction = true;
+        } else if ('action:' + key in req.params) {
+            $unset['action.' + key] = true;
+            hasAction = true;
+        }
+    });
+
+    ['forward', 'targetUrl'].forEach(key => {
+        if (result.value['action:' + key]) {
+            $set['action.' + key] = result.value['action:' + key];
+            hasAction = true;
+        } else if ('action:' + key in req.params) {
+            $unset['action.' + key] = true;
+            hasAction = true;
+        }
+    });
+
+    let checkFilterMailbox = done => {
+        if (!result.value['action:mailbox']) {
+            if ('action:mailbox' in req.params) {
+                $unset['action.mailbox'] = true;
+                hasAction = true;
+            }
+            return done();
+        }
+        db.database.collection('mailboxes').findOne({
+            _id: new ObjectID(result.value['action:mailbox']),
+            user
+        }, (err, mailboxData) => {
+            if (err) {
+                res.json({
+                    error: 'MongoDB Error: ' + err.message
+                });
+                return next();
+            }
+            if (!mailboxData) {
+                res.json({
+                    error: 'This mailbox does not exist'
+                });
+                return next();
+            }
+            $set['action.mailbox'] = mailboxData._id;
+            hasAction = true;
+            done();
+        });
+    };
+
+    checkFilterMailbox(() => {
+        if (!hasQuery && !hasAction) {
+            res.json({
+                error: 'No changes'
+            });
+            return next();
+        }
+
+        let update = {};
+
+        if (Object.keys($set).length) {
+            update.$set = $set;
+        }
+
+        if (Object.keys($unset).length) {
+            update.$unset = $unset;
+        }
+
+        db.users.collection('filters').findOneAndUpdate({ _id: filter, user }, update, (err, r) => {
+            if (err) {
+                res.json({
+                    error: 'MongoDB Error: ' + err.message
+                });
+                return next();
+            }
+
+            if (!r || !r.value || !r.value._id) {
+                res.json({
+                    error: 'Filter was not found'
+                });
+                return next();
+            }
+
+            res.json({
+                success: true
+            });
+            return next();
+        });
+    });
+});
+
+server.get('/users/:user/asps', (req, res, next) => {
+    res.charSet('utf-8');
+
+    const schema = Joi.object().keys({
+        user: Joi.string().hex().lowercase().length(24).required()
+    });
+
+    const result = Joi.validate(req.params, schema, {
+        abortEarly: false,
+        convert: true
+    });
+
+    if (result.error) {
+        res.json({
+            error: result.error.message
+        });
+        return next();
+    }
+
+    let user = new ObjectID(result.value.user);
+
+    db.users.collection('users').findOne({
+        _id: user
+    }, {
+        fields: {
+            address: true
+        }
+    }, (err, userData) => {
+        if (err) {
+            res.json({
+                error: 'MongoDB Error: ' + err.message
+            });
+            return next();
+        }
+        if (!userData) {
+            res.json({
+                error: 'This user does not exist'
+            });
+            return next();
+        }
+
+        db.users
+            .collection('asps')
+            .find({
+                user
+            })
+            .sort({ _id: 1 })
+            .toArray((err, asps) => {
+                if (err) {
+                    res.json({
+                        error: 'MongoDB Error: ' + err.message
+                    });
+                    return next();
+                }
+
+                if (!asps) {
+                    asps = [];
+                }
+
+                res.json({
+                    success: true,
+
+                    results: asps.map(asp => ({
+                        id: asp._id,
+                        description: asp.description,
+                        scopes: asp.scopes,
+                        created: asp.created
+                    }))
+                });
+
+                return next();
+            });
+    });
+});
+
+server.post('/users/:user/asps', (req, res, next) => {
+    res.charSet('utf-8');
+
+    const schema = Joi.object().keys({
+        user: Joi.string().hex().lowercase().length(24).required(),
+        description: Joi.string().trim().max(255).required(),
+        scopes: Joi.array().items(Joi.string().valid('imap', 'pop3', 'smtp', '*').required()).unique()
+    });
+
+    const result = Joi.validate(req.params, schema, {
+        abortEarly: false,
+        convert: true
+    });
+
+    if (result.error) {
+        res.json({
+            error: result.error.message
+        });
+        return next();
+    }
+
+    let user = new ObjectID(result.value.user);
+    let description = result.value.description;
+    let scopes = result.value.scopes;
+
+    userHandler.generateASP(user, description, scopes, (err, result) => {
+        if (err) {
+            res.json({
+                error: err.message
+            });
+            return next();
+        }
+        res.json({
+            success: true,
+            id: result.id,
+            password: result.password
+        });
+        return next();
+    });
+});
+
+server.del('/users/:user/asps/:asp', (req, res, next) => {
+    res.charSet('utf-8');
+
+    const schema = Joi.object().keys({
+        user: Joi.string().hex().lowercase().length(24).required(),
+        asp: Joi.string().hex().lowercase().length(24).required()
+    });
+
+    const result = Joi.validate(req.params, schema, {
+        abortEarly: false,
+        convert: true
+    });
+
+    if (result.error) {
+        res.json({
+            error: result.error.message
+        });
+        return next();
+    }
+
+    let user = new ObjectID(result.value.user);
+    let asp = new ObjectID(result.value.asp);
+
+    db.users.collection('asps').deleteOne({
+        _id: asp,
+        user
+    }, (err, r) => {
+        if (err) {
+            res.json({
+                error: 'MongoDB Error: ' + err.message
+            });
+            return next();
+        }
+
+        if (!r.deletedCount) {
+            res.json({
+                error: 'Application Specific Password was not found'
+            });
+            return next();
+        }
+
+        res.json({
+            success: true
+        });
+        return next();
+    });
+});
+
+server.post('/users/:user/2fa', (req, res, next) => {
+    res.charSet('utf-8');
+
+    const schema = Joi.object().keys({
+        user: Joi.string().hex().lowercase().length(24).required(),
+        issuer: Joi.string().trim().max(255).required(),
+        ip: Joi.string().ip({
+            version: ['ipv4', 'ipv6'],
+            cidr: 'forbidden'
+        })
+    });
+
+    const result = Joi.validate(req.params, schema, {
+        abortEarly: false,
+        convert: true
+    });
+
+    if (result.error) {
+        res.json({
+            error: result.error.message
+        });
+        return next();
+    }
+
+    let user = new ObjectID(result.value.user);
+
+    userHandler.setup2fa(user, result.value, (err, result) => {
+        if (err) {
+            res.json({
+                error: err.message
+            });
+            return next();
+        }
+
+        res.json({
+            success: true,
+            qrcode: result
+        });
+
+        return next();
+    });
+});
+
+server.put('/users/:user/2fa', (req, res, next) => {
+    res.charSet('utf-8');
+
+    const schema = Joi.object().keys({
+        user: Joi.string().hex().lowercase().length(24).required(),
+        token: Joi.string().length(6).required(),
+        ip: Joi.string().ip({
+            version: ['ipv4', 'ipv6'],
+            cidr: 'forbidden'
+        })
+    });
+
+    const result = Joi.validate(req.params, schema, {
+        abortEarly: false,
+        convert: true
+    });
+
+    if (result.error) {
+        res.json({
+            error: result.error.message
+        });
+        return next();
+    }
+
+    let user = new ObjectID(result.value.user);
+
+    userHandler.enable2fa(user, result.value, (err, result) => {
+        if (err) {
+            res.json({
+                error: err.message
+            });
+            return next();
+        }
+
+        if (!result) {
+            res.json({
+                error: 'Invalid authentication token'
+            });
+            return next();
+        }
+
+        res.json({
+            success: true
+        });
+
+        return next();
+    });
+});
+
+server.del('/users/:user/2fa', (req, res, next) => {
+    res.charSet('utf-8');
+
+    const schema = Joi.object().keys({
+        user: Joi.string().hex().lowercase().length(24).required(),
+        ip: Joi.string().ip({
+            version: ['ipv4', 'ipv6'],
+            cidr: 'forbidden'
+        })
+    });
+
+    const result = Joi.validate(req.params, schema, {
+        abortEarly: false,
+        convert: true
+    });
+
+    if (result.error) {
+        res.json({
+            error: result.error.message
+        });
+        return next();
+    }
+
+    let user = new ObjectID(result.value.user);
+
+    userHandler.disable2fa(user, result.value, (err, result) => {
+        if (err) {
+            res.json({
+                error: err.message
+            });
+            return next();
+        }
+
+        if (!result) {
+            res.json({
+                error: 'Invalid authentication token'
+            });
+            return next();
+        }
+
+        res.json({
+            success: true
+        });
+
+        return next();
+    });
+});
+
+server.get({ name: 'authlog', path: '/users/:user/authlog' }, (req, res, next) => {
+    res.charSet('utf-8');
+
+    const schema = Joi.object().keys({
+        user: Joi.string().hex().lowercase().length(24).required(),
+        limit: Joi.number().default(20).min(1).max(250),
+        next: Joi.string().alphanum().max(100),
+        prev: Joi.string().alphanum().max(100),
+        page: Joi.number().default(1)
+    });
+
+    req.query.user = req.params.user;
+
+    const result = Joi.validate(req.query, schema, {
+        abortEarly: false,
+        convert: true,
+        allowUnknown: true
+    });
+
+    if (result.error) {
+        res.json({
+            error: result.error.message
+        });
+        return next();
+    }
+
+    let user = new ObjectID(result.value.user);
+    let limit = result.value.limit;
+    let page = result.value.page;
+    let pageNext = result.value.next;
+    let pagePrev = result.value.prev;
+
+    db.database.collection('users').findOne({
+        _id: user
+    }, {
+        fields: {
+            _id: true
+        }
+    }, (err, userData) => {
+        if (err) {
+            res.json({
+                error: 'MongoDB Error: ' + err.message
+            });
+            return next();
+        }
+        if (!userData) {
+            res.json({
+                error: 'This user does not exist'
+            });
+            return next();
+        }
+
+        let filter = {
+            user
+        };
+
+        db.database.collection('authlog').count(filter, (err, total) => {
+            if (err) {
+                res.json({
+                    error: err.message
+                });
+                return next();
+            }
+
+            let opts = {
+                limit,
+                query: filter,
+                sortAscending: false
+            };
+
+            if (pageNext) {
+                opts.next = pageNext;
+            } else if (pagePrev) {
+                opts.prev = pagePrev;
+            }
+
+            MongoPaging.find(db.users.collection('authlog'), opts, (err, result) => {
+                if (err) {
+                    res.json({
+                        error: result.error.message
+                    });
+                    return next();
+                }
+
+                if (!result.hasPrevious) {
+                    page = 1;
+                }
+
+                let prevUrl = result.hasPrevious
+                    ? server.router.render('authlog', { user: user.toString() }, { prev: result.previous, limit, page: Math.max(page - 1, 1) })
+                    : false;
+                let nextUrl = result.hasNext ? server.router.render('authlog', { user: user.toString() }, { next: result.next, limit, page: page + 1 }) : false;
+
+                let response = {
+                    success: true,
+                    total,
+                    page,
+                    prev: prevUrl,
+                    next: nextUrl,
+                    results: (result.results || []).map(resultData => {
+                        let response = {
+                            id: resultData._id
+                        };
+
+                        Object.keys(resultData).forEach(key => {
+                            if (!['_id', 'user'].includes(key)) {
+                                response[key] = resultData[key];
+                            }
+                        });
+                        return response;
+                    })
+                };
+
+                res.json(response);
+                return next();
+            });
+        });
+    });
+});
+
 server.get('/users/:user/updates', (req, res, next) => {
     res.charSet('utf-8');
 
@@ -2621,6 +3754,96 @@ function loadJournalStream(req, res, user, lastEventId, done) {
     };
 
     processNext();
+}
+
+function getFilterStrings(filter, mailboxes) {
+    let query = Object.keys(filter.query.headers || {}).map(key => [key, '(' + filter.query.headers[key] + ')']);
+
+    if (filter.query.ha && filter.query.ha > 0) {
+        query.push(['has attachment']);
+    } else if (filter.query.ha && filter.query.ha < 0) {
+        query.push(['no attachments']);
+    }
+
+    if (filter.query.text) {
+        query.push([false, '"' + filter.query.text + '"']);
+    }
+
+    if (filter.query.size) {
+        let unit = 'B';
+        let size = Math.abs(filter.query.size || 0);
+        if (size) {
+            if (filter.query.size % (1024 * 1024) === 0) {
+                unit = 'MB';
+                size = Math.round(size / (1024 * 1024));
+            } else if (filter.query.size % 1024 === 0) {
+                unit = 'kB';
+                size = Math.round(size / 1024);
+            }
+        }
+        if (filter.query.size > 0) {
+            query.push(['larger', size + unit]);
+        } else if (filter.query.size < 0) {
+            query.push(['smaller', size + unit]);
+        }
+    }
+
+    // process actions
+    let action = Object.keys(filter.action || {})
+        .map(key => {
+            switch (key) {
+                case 'seen':
+                    if (filter.action[key]) {
+                        return ['mark as read'];
+                    } else {
+                        return ['do not mark as read'];
+                    }
+                case 'flag':
+                    if (filter.action[key]) {
+                        return ['flag it'];
+                    } else {
+                        return ['do not flag it'];
+                    }
+                case 'mailbox':
+                    if (filter.action[key]) {
+                        let target = mailboxes.find(mailbox => mailbox._id.toString() === filter.action[key].toString());
+                        return ['move to folder', target ? '"' + target.path + '"' : '?'];
+                    } else {
+                        return ['keep in INBOX'];
+                    }
+                case 'forward':
+                    if (filter.action[key]) {
+                        return ['forward to', filter.action[key]];
+                    }
+                    break;
+                case 'targetUrl':
+                    if (filter.action[key]) {
+                        let url = filter.action[key];
+                        let parsed = urllib.parse(url);
+                        return ['upload to', parsed.hostname || parsed.host];
+                    }
+                    break;
+                case 'spam':
+                    if (filter.action[key] > 0) {
+                        return ['mark it as spam'];
+                    } else if (filter.action[key] < 0) {
+                        return ['do not mark it as spam'];
+                    }
+                    break;
+                case 'delete':
+                    if (filter.action[key]) {
+                        return ['delete it'];
+                    } else {
+                        return ['do not delete it'];
+                    }
+            }
+            return false;
+        })
+        .filter(str => str);
+    return {
+        query,
+        action
+    };
 }
 
 function getMailboxCounter(mailbox, type, done) {

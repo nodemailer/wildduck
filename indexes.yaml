@@ -33,6 +33,42 @@ indexes:
     key:
       user: 1
 
+# Indexes for the application specific passwords collection
+
+- collection: asps
+  type: users # index applies to users database
+  index:
+    name: user
+    key:
+      user: 1
+
+# Indexes for the authentication log collection
+
+- collection: authlog
+  type: users # index applies to users database
+  index:
+    name: user
+    key:
+      user: 1
+      created: -1
+- collection: authlog
+  type: users # index applies to users database
+  index:
+    name: entry_autoexpire
+    # autoremove log entries after 30 days
+    expireAfterSeconds: 2592000
+    key:
+      created: 1
+
+# Indexes for the filters collection
+
+- collection: filters
+  type: users # index applies to users database
+  index:
+    name: user
+    key:
+      user: 1
+
 # Indexes for the mailboxes collection
 
 - collection: mailboxes
@@ -263,7 +299,7 @@ indexes:
       ids: 1
 - collection: threads
   index:
-    name: threa_autoexpire
+    name: thread_autoexpire
     # autoremove thread indexes after 180 days of inactivity
     expireAfterSeconds: 15552000
     key:
