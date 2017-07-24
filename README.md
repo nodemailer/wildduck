@@ -1,12 +1,22 @@
-# Agent Wild Duck
+# Wild Duck Mail Server
 
-![](https://cldup.com/H2IiqjUoGy.png)
+Wild Duck is a distributed IMAP/POP3 mail server. _Distributed_ means that Wild Duck uses a distributed database (sharded + replicated MongoDB) as a backend for storing all data, including emails. Wild Duck instances are stateless, any user can connect to any Wild Duck instance. Wild Duck uses a write ahead log to keep IMAP sessions between different instances in sync.
 
-Wild Duck is a distributed IMAP/POP3 server built with Node.js, MongoDB and Redis. Node.js runs the application, MongoDB is used as the mail store and Redis is used for ephemeral actions like publish/subscribe, locking and caching.
+Wild Duck tries to follow Gmail in architectural design. If there's a decision to be made then usually the answer is to do whatever Gmail has done.
 
 > **NB!** Wild Duck is currently in **beta**. Use it on your own responsibility.
 
-_Distributed_ means that Wild Duck uses a distributed database (sharded+replicated MongoDB) as a backend for storing all data, including emails. Wild Duck instances are stateless, you can have multiple IMAP server instances running and a client can connect to any of these. Wild Duck uses a write ahead log to keep IMAP sessions in sync.
+## Requirements
+
+* *MongoDB* to store all data
+* *Redis* for pubsub and counters
+* *Node.js*, at least version 6.0.0
+
+**Optional requirements**
+
+* Build tools to install optional dependencies that need compiling
+
+Wild Duck can be installed on any Node.js compatible platform.
 
 ## Usage
 
@@ -15,7 +25,7 @@ Assuming you have MongoDB and Redis running somewhere.
 ### Step 1\. Get the code from github
 
 ```
-$ git clone git://github.com/wildduck-email/wildduck.git
+$ git clone git://github.com/nodemailer/wildduck.git
 $ cd wildduck
 ```
 
@@ -41,11 +51,11 @@ Or if you want to override default configuration options with your own, run the 
 node server.js --config=/etc/wildduck.toml
 ```
 
-> For additional config options, see the _wild-config_ [documentation](https://github.com/wildduck-email/wild-config).
+> For additional config options, see the _wild-config_ [documentation](https://github.com/nodemailer/wild-config).
 
 ### Step 4\. Create an user account
 
-See see [API Reference](https://github.com/wildduck-email/wildduck/wiki/API-Docs#add-a-new-user) for details about creating new user accounts
+See see [API Reference](https://github.com/nodemailer/wildduck/wiki/API-Docs#add-a-new-user) for details about creating new user accounts
 
 ### Step 5\. Use an IMAP/POP3 client to log in
 
@@ -75,6 +85,7 @@ Yes, it does. You can run the server and get working IMAP and POP3 servers for m
 7. Built in **address labels**: _username+label@example.com_ is delivered to _username@example.com_
 8. **HTTP Event Source** to push modifications in user email account to browser for super snappy webmail clients
 9. **Super easy to tweak.** The entire codebase is pure JavaScript, so there's nothing to compile or anything platform specific. If you need to tweak something then change the code, restart the app and you're ready to go. If it works on one machine then most probably it works in every other machine as well.
+10. **Better disk usage**. Attachment de-duplication and MongoDB compression yield in about 40% smaller disk usage as the sum of all stored email sizes.
 
 **Demo video for HTTP push**
 
@@ -82,11 +93,11 @@ Yes, it does. You can run the server and get working IMAP and POP3 servers for m
 
 ### Isn't it bad to use a database as a mail store?
 
-Yes, historically it has been considered a bad practice to store emails in a database. And for a good reason. The data model of relational databases like MySQL does not work well with tree like structures (email mime tree) or large blobs (email source).
+Yes, historically it has [been considered a bad practice](http://www.memoryhole.net/~kyle/databaseemail.html) to store emails in a database. And for a good reason. The data model of relational databases like MySQL does not work well with tree like structures (email mime tree) or large blobs (email source).
 
 Notice the word "relational"? In fact document stores like MongoDB work very well with emails. Document store is great for storing tree-like structures and while GridFS is not as good as "real" object storage, it is good enough for storing the raw parts of the message. Additionally there's nothing too GridFS specific, so (at least in theory) it could be replaced with any object store.
 
-Here's a list of alternative email/IMAP servers that also use a database for storing email messages:
+Here's a list of alternative email servers that also use a database for storing email messages:
 
 - [DBMail](http://www.dbmail.org/) (MySQL, IMAP)
 - [Archiveopteryx](http://archiveopteryx.org/) (PostgreSQL, IMAP)
@@ -117,23 +128,14 @@ Wild Duck IMAP server supports the following IMAP standards:
 - **AUTHENTICATE PLAIN** ([RFC4959](https://tools.ietf.org/html/rfc4959)) and **SASL-IR**
 - **APPENDLIMIT** ([RFC7889](https://tools.ietf.org/html/rfc7889)) – maximum global allowed message size is advertised in CAPABILITY listing
 - **UTF8=ACCEPT** ([RFC6855](https://tools.ietf.org/html/rfc6855)) – this also means that Wild Duck natively supports unicode email usernames. For example [андрис@уайлддак.орг](mailto:андрис@уайлддак.орг) is a valid email address that is hosted by a test instance of Wild Duck
-- **QUOTA** ([RFC2087](https://tools.ietf.org/html/rfc2087)) – Quota size is global for an account, using a single quota root. Be aware that quota size does not mean actual byte storage in disk, it is calculated as the sum of the [RFC822](https://tools.ietf.org/html/rfc822) sources of stored messages. Actual disk usage is larger as there are database overhead per every message.
+- **QUOTA** ([RFC2087](https://tools.ietf.org/html/rfc2087)) – Quota size is global for an account, using a single quota root. Be aware that quota size does not mean actual byte storage in disk, it is calculated as the sum of the [RFC822](https://tools.ietf.org/html/rfc822) sources of stored messages.
 - **COMPRESS=DEFLATE** ([RFC4978](https://tools.ietf.org/html/rfc4978)) – Compress traffic between the client and the server
 
 Wild Duck more or less passes the [ImapTest](https://www.imapwiki.org/ImapTest/TestFeatures) Stress Testing run. Common errors that arise in the test are unknown labels (Wild Duck doesn't send unsolicited `FLAGS` updates even though it does send unsolicited `FETCH FLAGS` updates) and sometimes NO for `STORE` (messages deleted in one session can not be updated in another).
 
-For testing I did a test run of 3 million sessions. Here's the test script:
+In comparison Wild Duck is slower in processing single user than Dovecot. Especially when fetching messages, which is expected as Dovecot is reading directly from filesystem while Wild Duck is recomposing messages from different parts.
 
-```bash
-while true
-do
-  imaptest host=127.0.0.1 port=143 \
-           user="user%d" pass="test" \
-           mbox="dovecot-crlf" rawlog \
-           clients=30 msgs=100 copybox="Junk" \
-           own_msgs own_flags random
-done
-```
+Raw read/write speed for a single user is usually not relevant anyway as fetching entire mailbox content is not something that happens often. Wild Duck offers better parallelization through MongoDB sharding, so more users should not mean slower response times. It is also more important to offer fast synchronization speeds between clients (eg. notifications about new email and such) where Wild Duck excels due to the write ahead log and the ability to push this log to clients.
 
 ### POP3 Support
 
@@ -178,7 +180,7 @@ TODO:
 2. Search/list messages
 3. Expose journal updates through WebSocket or similar
 
-[API REFERENCE](https://github.com/wildduck-email/wildduck/wiki/API-Docs)
+[API REFERENCE](https://github.com/nodemailer/wildduck/wiki/API-Docs)
 
 ## Message filtering
 
@@ -281,7 +283,7 @@ This should "deliver" a new message to the INBOX of _username@example.com_ by us
 
 ## Outbound SMTP
 
-Use [ZoneMTA](https://github.com/zone-eu/zone-mta) with the [ZoneMTA-WildDuck](https://github.com/wildduck-email/zonemta-wildduck) plugin. This gives you an outbound SMTP server that uses Wild Duck accounts for authentication.
+Use [ZoneMTA](https://github.com/zone-eu/zone-mta) with the [ZoneMTA-WildDuck](https://github.com/nodemailer/zonemta-wildduck) plugin. This gives you an outbound SMTP server that uses Wild Duck accounts for authentication.
 
 ## Inbound SMTP
 
@@ -289,11 +291,9 @@ Use [Haraka](http://haraka.github.io/) with [queue/lmtp](http://haraka.github.io
 
 ## Future considerations
 
-- Add interoperability with current servers, for example by fetching authentication data from MySQL
 - Optimize FETCH queries to load only partial data for BODY subparts
 - Parse incoming message into the mime tree as a stream. Currently the entire message is buffered in memory before being parsed.
-- CPU usage seems a bit too high, there is probably a ton of profiling to do
-- Maybe allow some kind of message manipulation through plugins?
+- Maybe allow some kind of message manipulation through plugins
 - Wild Duck does not plan to be the most feature-rich IMAP client in the world. Most IMAP extensions are useless because there aren't too many clients that are able to benefit from these extensions. There are a few extensions though that would make sense to be added to Wild Duck:
 
   - IMAP4 non-synchronizing literals, LITERAL- ([RFC7888](https://tools.ietf.org/html/rfc7888)). Synchronized literals are needed for APPEND to check mailbox quota, small values could go with the non-synchronizing version.
