@@ -2624,7 +2624,7 @@ server.post('/users/:user/filters', (req, res, next) => {
         query_ha: Joi.boolean().truthy(['Y', 'true', 'yes', 1]).empty(''),
         query_size: Joi.number().empty(''),
 
-        action_unseen: Joi.boolean().truthy(['Y', 'true', 'yes', 1]).empty(''),
+        action_seen: Joi.boolean().truthy(['Y', 'true', 'yes', 1]).empty(''),
         action_flag: Joi.boolean().truthy(['Y', 'true', 'yes', 1]).empty(''),
         action_delete: Joi.boolean().truthy(['Y', 'true', 'yes', 1]).empty(''),
         action_spam: Joi.boolean().truthy(['Y', 'true', 'yes', 1]).empty(''),
@@ -2692,7 +2692,7 @@ server.post('/users/:user/filters', (req, res, next) => {
         hasQuery = true;
     }
 
-    ['unseen', 'flag', 'delete', 'spam'].forEach(key => {
+    ['seen', 'flag', 'delete', 'spam'].forEach(key => {
         if (typeof result.value['action_' + key] === 'boolean') {
             filterData.action[key] = result.value['action_' + key];
             hasAction = true;
@@ -2708,7 +2708,7 @@ server.post('/users/:user/filters', (req, res, next) => {
 
     let checkFilterMailbox = done => {
         if (!result.value.action_mailbox) {
-            return next();
+            return done();
         }
         db.database.collection('mailboxes').findOne({
             _id: new ObjectID(result.value.action_mailbox),
@@ -2801,7 +2801,7 @@ server.put('/users/:user/filters/:filter', (req, res, next) => {
         query_ha: Joi.boolean().truthy(['Y', 'true', 'yes', 1]).empty(''),
         query_size: Joi.number().empty(''),
 
-        action_unseen: Joi.boolean().truthy(['Y', 'true', 'yes', 1]).empty(''),
+        action_seen: Joi.boolean().truthy(['Y', 'true', 'yes', 1]).empty(''),
         action_flag: Joi.boolean().truthy(['Y', 'true', 'yes', 1]).empty(''),
         action_delete: Joi.boolean().truthy(['Y', 'true', 'yes', 1]).empty(''),
         action_spam: Joi.boolean().truthy(['Y', 'true', 'yes', 1]).empty(''),
@@ -2847,7 +2847,7 @@ server.put('/users/:user/filters/:filter', (req, res, next) => {
             $set['query.headers.' + key] = result.value['query_' + key].replace(/\s+/g, ' ');
             hasQuery = true;
         } else if ('query_' + key in req.params) {
-            $set['query.headers.' + key] = true;
+            $unset['query.headers.' + key] = true;
             hasQuery = true;
         }
     });
@@ -2856,7 +2856,7 @@ server.put('/users/:user/filters/:filter', (req, res, next) => {
         $set['query.text'] = result.value.query_text.replace(/\s+/g, ' ');
         hasQuery = true;
     } else if ('query_text' in req.params) {
-        $set['query.text'] = true;
+        $unset['query.text'] = true;
         hasQuery = true;
     }
 
@@ -2876,7 +2876,7 @@ server.put('/users/:user/filters/:filter', (req, res, next) => {
         hasQuery = true;
     }
 
-    ['unseen', 'flag', 'delete', 'spam'].forEach(key => {
+    ['seen', 'flag', 'delete', 'spam'].forEach(key => {
         if (typeof result.value['action_' + key] === 'boolean') {
             $set['action.' + key] = result.value['action_' + key];
             hasAction = true;
