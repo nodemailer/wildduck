@@ -2015,13 +2015,17 @@ server.get({ name: 'message', path: '/users/:user/mailboxes/:mailbox/messages/:m
             flagged: messageData.flagged,
             draft: messageData.draft,
             html: messageData.html,
-            attachments: messageData.attachments || []
+            attachments: (messageData.attachments || []).map(attachment => {
+                attachment.url = server.router.render('attachment', { user, mailbox, message, attachment: attachment.id });
+                return attachment;
+            }),
+            raw: server.router.render('attachment', { user, mailbox, message })
         });
         return next();
     });
 });
 
-server.get('/users/:user/mailboxes/:mailbox/messages/:message/message.eml', (req, res, next) => {
+server.get({ name: 'raw', path: '/users/:user/mailboxes/:mailbox/messages/:message/message.eml' }, (req, res, next) => {
     const schema = Joi.object().keys({
         user: Joi.string().hex().lowercase().length(24).required(),
         mailbox: Joi.string().hex().lowercase().length(24).required(),
