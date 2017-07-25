@@ -363,7 +363,7 @@ module.exports = done => {
                         err,
                         tnx: 'mongo'
                     },
-                    'Failed creating index %s %s.%s. %s',
+                    'Failed creating index %s %s. %s',
                     indexpos,
                     JSON.stringify(index.collection + '.' + index.index.name),
                     err.message

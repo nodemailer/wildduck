@@ -1680,9 +1680,7 @@ server.get({ name: 'messages', path: '/users/:user/mailboxes/:mailbox/messages' 
                         decodeAddresses(from);
 
                         let response = {
-                            // we need that uid value for sharding
-                            // uid in a mailbox is immutable
-                            id: messageData._id.toString() + ':' + messageData.uid,
+                            id: messageData.uid,
                             mailbox,
                             thread: messageData.thread,
                             from: from && from[0],
@@ -1693,7 +1691,8 @@ server.get({ name: 'messages', path: '/users/:user/mailboxes/:mailbox/messages' 
                             seen: !messageData.unseen,
                             deleted: !messageData.undeleted,
                             flagged: messageData.flagged,
-                            draft: messageData.draft
+                            draft: messageData.draft,
+                            url: server.router.render('message', { user, mailbox, message: messageData.uid })
                         };
                         return response;
                     })
@@ -1844,9 +1843,7 @@ server.get({ name: 'search', path: '/users/:user/search' }, (req, res, next) => 
                         decodeAddresses(from);
 
                         let response = {
-                            // we need that uid value for sharding
-                            // uid in a mailbox is immutable
-                            id: messageData._id.toString() + ':' + messageData.uid,
+                            id: messageData.uid,
                             mailbox: messageData.mailbox,
                             thread: messageData.thread,
                             from: from && from[0],
@@ -1857,7 +1854,8 @@ server.get({ name: 'search', path: '/users/:user/search' }, (req, res, next) => 
                             seen: !messageData.unseen,
                             deleted: !messageData.undeleted,
                             flagged: messageData.flagged,
-                            draft: messageData.draft
+                            draft: messageData.draft,
+                            url: server.router.render('message', { user, mailbox: messageData.mailbox, message: messageData.uid })
                         };
                         return response;
                     })
@@ -1870,13 +1868,13 @@ server.get({ name: 'search', path: '/users/:user/search' }, (req, res, next) => 
     });
 });
 
-server.get('/users/:user/mailboxes/:mailbox/messages/:message', (req, res, next) => {
+server.get({ name: 'message', path: '/users/:user/mailboxes/:mailbox/messages/:message' }, (req, res, next) => {
     res.charSet('utf-8');
 
     const schema = Joi.object().keys({
         user: Joi.string().hex().lowercase().length(24).required(),
         mailbox: Joi.string().hex().lowercase().length(24).required(),
-        message: Joi.string().regex(/^[0-9a-f]{24}:\d{1,10}/).lowercase().required(),
+        message: Joi.number().min(1).required(),
         replaceCidLinks: Joi.boolean().truthy(['Y', 'true', 'yes', 1]).default(false)
     });
 
@@ -1896,21 +1894,18 @@ server.get('/users/:user/mailboxes/:mailbox/messages/:message', (req, res, next)
         return next();
     }
 
-    let messageparts = result.value.message.split(':');
     let user = new ObjectID(result.value.user);
     let mailbox = new ObjectID(result.value.mailbox);
-    let message = new ObjectID(messageparts[0]);
-    let uid = Number(messageparts[1]);
+    let message = result.value.message;
     let replaceCidLinks = result.value.replaceCidLinks;
 
     db.users.collection('messages').findOne({
-        _id: message,
         mailbox,
-        uid,
-        user
+        uid: message
     }, {
         fields: {
             _id: true,
+            user: true,
             thread: true,
             'meta.from': true,
             'meta.to': true,
@@ -1935,7 +1930,7 @@ server.get('/users/:user/mailboxes/:mailbox/messages/:message', (req, res, next)
             });
             return next();
         }
-        if (!messageData) {
+        if (!messageData || messageData.user.toString() !== user.toString()) {
             res.json({
                 error: 'This message does not exist'
             });
@@ -1997,16 +1992,15 @@ server.get('/users/:user/mailboxes/:mailbox/messages/:message', (req, res, next)
         if (replaceCidLinks) {
             messageData.html = (messageData.html || [])
                 .map(html =>
-                    html.replace(
-                        /attachment:([a-f0-9]+)\/(ATT\d+)/g,
-                        (str, mid, aid) => '/users/' + user + '/mailboxes/' + mailbox + '/messages/' + message + ':' + uid + '/attachments/' + aid
+                    html.replace(/attachment:([a-f0-9]+)\/(ATT\d+)/g, (str, mid, aid) =>
+                        server.router.render('attachment', { user, mailbox, message, attachment: aid })
                     )
                 );
         }
 
         res.json({
             success: true,
-            id: message.toString() + ':' + uid,
+            id: message,
             from: from[0],
             replyTo,
             to,
@@ -2031,7 +2025,7 @@ server.get('/users/:user/mailboxes/:mailbox/messages/:message/message.eml', (req
     const schema = Joi.object().keys({
         user: Joi.string().hex().lowercase().length(24).required(),
         mailbox: Joi.string().hex().lowercase().length(24).required(),
-        message: Joi.string().regex(/^[0-9a-f]{24}:\d{1,10}/).lowercase().required()
+        message: Joi.number().min(1).required()
     });
 
     const result = Joi.validate(req.params, schema, {
@@ -2046,20 +2040,17 @@ server.get('/users/:user/mailboxes/:mailbox/messages/:message/message.eml', (req
         return next();
     }
 
-    let messageparts = result.value.message.split(':');
     let user = new ObjectID(result.value.user);
     let mailbox = new ObjectID(result.value.mailbox);
-    let message = new ObjectID(messageparts[0]);
-    let uid = Number(messageparts[1]);
+    let message = result.value.message;
 
     db.users.collection('messages').findOne({
-        _id: message,
         mailbox,
-        uid,
-        user
+        uid: message
     }, {
         fields: {
             _id: true,
+            user: true,
             mimeTree: true
         }
     }, (err, messageData) => {
@@ -2069,7 +2060,7 @@ server.get('/users/:user/mailboxes/:mailbox/messages/:message/message.eml', (req
             });
             return next();
         }
-        if (!messageData) {
+        if (!messageData || message.user.toString() !== user.toString()) {
             res.json({
                 error: 'This message does not exist'
             });
@@ -2089,11 +2080,11 @@ server.get('/users/:user/mailboxes/:mailbox/messages/:message/message.eml', (req
     });
 });
 
-server.get('/users/:user/mailboxes/:mailbox/messages/:message/attachments/:attachment', (req, res, next) => {
+server.get({ name: 'attachment', path: '/users/:user/mailboxes/:mailbox/messages/:message/attachments/:attachment' }, (req, res, next) => {
     const schema = Joi.object().keys({
         user: Joi.string().hex().lowercase().length(24).required(),
         mailbox: Joi.string().hex().lowercase().length(24).required(),
-        message: Joi.string().regex(/^[0-9a-f]{24}:\d{1,10}/).lowercase().required(),
+        message: Joi.number().min(1).required(),
         attachment: Joi.string().regex(/^ATT\d+$/i).uppercase().required()
     });
 
@@ -2109,21 +2100,19 @@ server.get('/users/:user/mailboxes/:mailbox/messages/:message/attachments/:attac
         return next();
     }
 
-    let messageparts = result.value.message.split(':');
     let user = new ObjectID(result.value.user);
     let mailbox = new ObjectID(result.value.mailbox);
-    let message = new ObjectID(messageparts[0]);
-    let uid = Number(messageparts[1]);
+    let message = result.value.message;
     let attachment = result.value.attachment;
 
     db.users.collection('messages').findOne({
-        _id: message,
         mailbox,
-        uid,
+        uid: message,
         user
     }, {
         fields: {
             _id: true,
+            user: true,
             attachments: true,
             map: true
         }
@@ -2134,7 +2123,7 @@ server.get('/users/:user/mailboxes/:mailbox/messages/:message/attachments/:attac
             });
             return next();
         }
-        if (!messageData) {
+        if (!messageData || messageData.user.toString() !== user.toString()) {
             res.json({
                 error: 'This message does not exist'
             });
@@ -2193,8 +2182,8 @@ server.put('/users/:user/mailboxes/:mailbox/messages/:message', (req, res, next)
     const schema = Joi.object().keys({
         user: Joi.string().hex().lowercase().length(24).required(),
         mailbox: Joi.string().hex().lowercase().length(24).required(),
-        newMailbox: Joi.string().hex().lowercase().length(24),
-        message: Joi.string().regex(/^[0-9a-f]{24}:\d{1,10}/).lowercase().required(),
+        moveTo: Joi.string().hex().lowercase().length(24),
+        message: Joi.string().regex(/^\d+(,\d+)*$|^\d+:\d+$|/i).required(),
         seen: Joi.boolean().truthy(['Y', 'true', 'yes', 1]),
         deleted: Joi.boolean().truthy(['Y', 'true', 'yes', 1]),
         flagged: Joi.boolean().truthy(['Y', 'true', 'yes', 1]),
@@ -2214,22 +2203,42 @@ server.put('/users/:user/mailboxes/:mailbox/messages/:message', (req, res, next)
         return next();
     }
 
-    let messageparts = result.value.message.split(':');
     let user = new ObjectID(result.value.user);
     let mailbox = new ObjectID(result.value.mailbox);
-    let newMailbox = result.value.newMailbox ? new ObjectID(result.value.newMailbox) : false;
-    let message = new ObjectID(messageparts[0]);
-    let uid = Number(messageparts[1]);
+    let moveTo = result.value.moveTo ? new ObjectID(result.value.moveTo) : false;
+    let message = result.value.message;
 
-    if (newMailbox) {
+    let messageQuery;
+
+    if (/^\d+$/.test(message)) {
+        messageQuery = Number(message);
+    } else if (/^\d+(,\d+)*$/.test(message)) {
+        messageQuery = { $in: message.split(',').map(uid => Number(uid)).sort((a, b) => a - b) };
+    } else if (/^\d+:\d+$/.test(message)) {
+        let parts = message.split(':').map(uid => Number(uid)).sort((a, b) => a - b);
+        if (parts[0] === parts[1]) {
+            messageQuery = parts[0];
+        } else {
+            messageQuery = {
+                $gte: parts[0],
+                $lte: parts[1]
+            };
+        }
+    } else {
+        res.json({
+            error: 'Invalid message identifier'
+        });
+        return next();
+    }
+
+    if (moveTo) {
         return messageHandler.move(
             {
                 user,
                 source: { user, mailbox },
-                destination: { user, mailbox: newMailbox },
+                destination: { user, mailbox: moveTo },
                 updates: result.value,
-                returnIds: true,
-                messages: [uid]
+                messageQuery
             },
             (err, result, info) => {
                 if (err) {
@@ -2248,106 +2257,15 @@ server.put('/users/:user/mailboxes/:mailbox/messages/:message', (req, res, next)
 
                 res.json({
                     success: true,
-                    mailbox: newMailbox,
-                    id: info && info.destinationUid && info.destinationUid[0]
+                    mailbox: moveTo,
+                    id: info && info.sourceUid && info.sourceUid.map((uid, i) => [uid, info.destinationUid && info.destinationUid[i]])
                 });
                 return next();
             }
         );
     }
 
-    let updates = { $set: {} };
-    let update = false;
-    let addFlags = [];
-    let removeFlags = [];
-
-    Object.keys(result.value || {}).forEach(key => {
-        switch (key) {
-            case 'seen':
-                updates.$set.unseen = !result.value.seen;
-                if (result.value.seen) {
-                    addFlags.push('\\Seen');
-                } else {
-                    removeFlags.push('\\Seen');
-                }
-                update = true;
-                break;
-
-            case 'deleted':
-                updates.$set.undeleted = !result.value.deleted;
-                if (result.value.deleted) {
-                    addFlags.push('\\Deleted');
-                } else {
-                    removeFlags.push('\\Deleted');
-                }
-                update = true;
-                break;
-
-            case 'flagged':
-                updates.$set.flagged = result.value.flagged;
-                if (result.value.flagged) {
-                    addFlags.push('\\Flagged');
-                } else {
-                    removeFlags.push('\\Flagged');
-                }
-                update = true;
-                break;
-
-            case 'draft':
-                updates.$set.flagged = result.value.draft;
-                if (result.value.draft) {
-                    addFlags.push('\\Draft');
-                } else {
-                    removeFlags.push('\\Draft');
-                }
-                update = true;
-                break;
-
-            case 'expires':
-                if (result.value.expires) {
-                    updates.$set.exp = true;
-                    updates.$set.rdate = result.value.expires.getTime();
-                } else {
-                    updates.$set.exp = false;
-                }
-                update = true;
-                break;
-        }
-    });
-
-    if (!update) {
-        res.json({
-            error: 'Nothing was changed'
-        });
-        return next();
-    }
-
-    if (addFlags.length) {
-        if (!updates.$addToSet) {
-            updates.$addToSet = {};
-        }
-        updates.$addToSet.flags = { $each: addFlags };
-    }
-
-    if (removeFlags.length) {
-        if (!updates.$pull) {
-            updates.$pull = {};
-        }
-        updates.$pull.flags = { $in: removeFlags };
-    }
-
-    // acquire new MODSEQ
-    db.database.collection('mailboxes').findOneAndUpdate({
-        _id: mailbox,
-        user
-    }, {
-        $inc: {
-            // allocate new MODSEQ value
-            modifyIndex: 1
-        }
-    }, {
-        returnOriginal: false
-    }, (err, item) => {
+    return messageHandler.update(user, mailbox, messageQuery, result.value, (err, updated) => {
         if (err) {
             res.json({
                 error: err.message
@@ -2355,68 +2273,18 @@ server.put('/users/:user/mailboxes/:mailbox/messages/:message', (req, res, next)
             return next();
         }
 
-        if (!item || !item.value) {
-            // was not able to acquire a lock
+        if (!updated) {
             res.json({
-                error: 'Mailbox is missing'
+                error: 'No message matched query'
             });
             return next();
         }
 
-        let mailboxData = item.value;
-
-        updates.$set.modseq = mailboxData.modifyIndex;
-
-        db.database.collection('messages').findOneAndUpdate({
-            _id: message,
-            // hash key
-            mailbox,
-            uid
-        }, updates, {
-            projection: {
-                flags: true,
-                exp: true,
-                rdate: true
-            },
-            returnOriginal: false
-        }, (err, item) => {
-            if (err) {
-                res.json({
-                    error: err.message
-                });
-                return next();
-            }
-
-            if (!item || !item.value) {
-                // message was not found for whatever reason
-                res.json({
-                    error: 'Message was not found'
-                });
-                return next();
-            }
-
-            let messageData = item.value;
-
-            notifier.addEntries(
-                mailboxData,
-                false,
-                {
-                    command: 'FETCH',
-                    uid,
-                    flags: messageData.flags,
-                    message: message._id,
-                    unseenChange: !!result.value.unseen
-                },
-                () => {
-                    notifier.fire(mailboxData.user, mailboxData.path);
-
-                    res.json({
-                        success: true
-                    });
-                    return next();
-                }
-            );
+        res.json({
+            success: true,
+            updated
         });
+        return next();
     });
 });
 
@@ -2426,7 +2294,7 @@ server.del('/users/:user/mailboxes/:mailbox/messages/:message', (req, res, next)
     const schema = Joi.object().keys({
         user: Joi.string().hex().lowercase().length(24).required(),
         mailbox: Joi.string().hex().lowercase().length(24).required(),
-        message: Joi.string().regex(/^[0-9a-f]{24}:\d{1,10}/).lowercase().required()
+        message: Joi.number().min(1).required()
     });
 
     const result = Joi.validate(req.params, schema, {
@@ -2441,19 +2309,17 @@ server.del('/users/:user/mailboxes/:mailbox/messages/:message', (req, res, next)
         return next();
     }
 
-    let messageparts = result.value.message.split(':');
     let user = new ObjectID(result.value.user);
     let mailbox = new ObjectID(result.value.mailbox);
-    let message = new ObjectID(messageparts[0]);
-    let uid = Number(messageparts[1]);
+    let message = result.value.message;
 
     db.database.collection('messages').findOne({
-        _id: message,
         mailbox,
-        uid
+        uid: message
     }, {
         fields: {
             _id: true,
+            user: true,
             mailbox: true,
             uid: true,
             size: true,
@@ -2469,7 +2335,7 @@ server.del('/users/:user/mailboxes/:mailbox/messages/:message', (req, res, next)
             return next();
         }
 
-        if (!messageData) {
+        if (!messageData || messageData.user.toString() !== user.toString()) {
             res.json({
                 error: 'Message was not found'
             });
@@ -2671,17 +2537,17 @@ server.get('/users/:user/filters/:filter', (req, res, next) => {
                 };
 
                 Object.keys((filterData.query && filterData.query.headers) || {}).forEach(key => {
-                    result['query:' + key] = filterData.query.headers[key];
+                    result['query_' + key] = filterData.query.headers[key];
                 });
 
                 Object.keys(filterData.query || {}).forEach(key => {
                     if (key !== 'headers') {
-                        result['query:' + key] = filterData.query[key];
+                        result['query_' + key] = filterData.query[key];
                     }
                 });
 
                 Object.keys(filterData.action || {}).forEach(key => {
-                    result['action:' + key] = filterData.action[key];
+                    result['action_' + key] = filterData.action[key];
                 });
 
                 res.json(result);
@@ -2747,21 +2613,21 @@ server.post('/users/:user/filters', (req, res, next) => {
 
         name: Joi.string().trim().max(255).empty(''),
 
-        'query:from': Joi.string().trim().max(255).empty(''),
-        'query:to': Joi.string().trim().max(255).empty(''),
-        'query:subject': Joi.string().trim().max(255).empty(''),
-        'query:text': Joi.string().trim().max(255).empty(''),
-        'query:ha': Joi.boolean().truthy(['Y', 'true', 'yes', 1]).empty(''),
-        'query:size': Joi.number().empty(''),
+        query_from: Joi.string().trim().max(255).empty(''),
+        query_to: Joi.string().trim().max(255).empty(''),
+        query_subject: Joi.string().trim().max(255).empty(''),
+        query_text: Joi.string().trim().max(255).empty(''),
+        query_ha: Joi.boolean().truthy(['Y', 'true', 'yes', 1]).empty(''),
+        query_size: Joi.number().empty(''),
 
-        'action:unseen': Joi.boolean().truthy(['Y', 'true', 'yes', 1]).empty(''),
-        'action:flag': Joi.boolean().truthy(['Y', 'true', 'yes', 1]).empty(''),
-        'action:delete': Joi.boolean().truthy(['Y', 'true', 'yes', 1]).empty(''),
-        'action:spam': Joi.boolean().truthy(['Y', 'true', 'yes', 1]).empty(''),
+        action_unseen: Joi.boolean().truthy(['Y', 'true', 'yes', 1]).empty(''),
+        action_flag: Joi.boolean().truthy(['Y', 'true', 'yes', 1]).empty(''),
+        action_delete: Joi.boolean().truthy(['Y', 'true', 'yes', 1]).empty(''),
+        action_spam: Joi.boolean().truthy(['Y', 'true', 'yes', 1]).empty(''),
 
-        'action:mailbox': Joi.string().hex().lowercase().length(24).empty(''),
-        'action:forward': Joi.string().email().empty(''),
-        'action:targetUrl': Joi.string()
+        action_mailbox: Joi.string().hex().lowercase().length(24).empty(''),
+        action_forward: Joi.string().email().empty(''),
+        action_targetUrl: Joi.string()
             .uri({
                 scheme: ['http', 'https'],
                 allowRelative: false,
@@ -2801,47 +2667,47 @@ server.post('/users/:user/filters', (req, res, next) => {
     let hasAction = false;
 
     ['from', 'to', 'subject'].forEach(key => {
-        if (result.value['query:' + key]) {
-            filterData.query.headers[key] = result.value['query:' + key].replace(/\s+/g, ' ');
+        if (result.value['query_' + key]) {
+            filterData.query.headers[key] = result.value['query_' + key].replace(/\s+/g, ' ');
             hasQuery = true;
         }
     });
 
-    if (result.value['query:text']) {
-        filterData.query.text = result.value['query:text'].replace(/\s+/g, ' ');
+    if (result.value.query_text) {
+        filterData.query.text = result.value.query_text.replace(/\s+/g, ' ');
         hasQuery = true;
     }
 
-    if (typeof result.value['query:ha'] === 'boolean') {
-        filterData.query.ha = result.value['query:ha'];
+    if (typeof result.value.query_ha === 'boolean') {
+        filterData.query.ha = result.value.query_ha;
         hasQuery = true;
     }
 
-    if (result.value['query:size']) {
-        filterData.query.size = result.value['query:size'];
+    if (result.value.query_size) {
+        filterData.query.size = result.value.query_size;
         hasQuery = true;
     }
 
     ['unseen', 'flag', 'delete', 'spam'].forEach(key => {
-        if (typeof result.value['action:' + key] === 'boolean') {
-            filterData.action[key] = result.value['action:' + key];
+        if (typeof result.value['action_' + key] === 'boolean') {
+            filterData.action[key] = result.value['action_' + key];
             hasAction = true;
         }
     });
 
     ['forward', 'targetUrl'].forEach(key => {
-        if (result.value['action:' + key]) {
-            filterData.action[key] = result.value['action:' + key];
+        if (result.value['action_' + key]) {
+            filterData.action[key] = result.value['action_' + key];
             hasAction = true;
         }
     });
 
     let checkFilterMailbox = done => {
-        if (!result.value['action:mailbox']) {
+        if (!result.value.action_mailbox) {
             return next();
         }
         db.database.collection('mailboxes').findOne({
-            _id: new ObjectID(result.value['action:mailbox']),
+            _id: new ObjectID(result.value.action_mailbox),
             user
         }, (err, mailboxData) => {
             if (err) {
@@ -2924,21 +2790,21 @@ server.put('/users/:user/filters/:filter', (req, res, next) => {
 
         name: Joi.string().trim().max(255).empty(''),
 
-        'query:from': Joi.string().trim().max(255).empty(''),
-        'query:to': Joi.string().trim().max(255).empty(''),
-        'query:subject': Joi.string().trim().max(255).empty(''),
-        'query:text': Joi.string().trim().max(255).empty(''),
-        'query:ha': Joi.boolean().truthy(['Y', 'true', 'yes', 1]).empty(''),
-        'query:size': Joi.number().empty(''),
+        query_from: Joi.string().trim().max(255).empty(''),
+        query_to: Joi.string().trim().max(255).empty(''),
+        query_subject: Joi.string().trim().max(255).empty(''),
+        query_text: Joi.string().trim().max(255).empty(''),
+        query_ha: Joi.boolean().truthy(['Y', 'true', 'yes', 1]).empty(''),
+        query_size: Joi.number().empty(''),
 
-        'action:unseen': Joi.boolean().truthy(['Y', 'true', 'yes', 1]).empty(''),
-        'action:flag': Joi.boolean().truthy(['Y', 'true', 'yes', 1]).empty(''),
-        'action:delete': Joi.boolean().truthy(['Y', 'true', 'yes', 1]).empty(''),
-        'action:spam': Joi.boolean().truthy(['Y', 'true', 'yes', 1]).empty(''),
+        action_unseen: Joi.boolean().truthy(['Y', 'true', 'yes', 1]).empty(''),
+        action_flag: Joi.boolean().truthy(['Y', 'true', 'yes', 1]).empty(''),
+        action_delete: Joi.boolean().truthy(['Y', 'true', 'yes', 1]).empty(''),
+        action_spam: Joi.boolean().truthy(['Y', 'true', 'yes', 1]).empty(''),
 
-        'action:mailbox': Joi.string().hex().lowercase().length(24).empty(''),
-        'action:forward': Joi.string().email().empty(''),
-        'action:targetUrl': Joi.string()
+        action_mailbox: Joi.string().hex().lowercase().length(24).empty(''),
+        action_forward: Joi.string().email().empty(''),
+        action_targetUrl: Joi.string()
             .uri({
                 scheme: ['http', 'https'],
                 allowRelative: false,
@@ -2973,69 +2839,69 @@ server.put('/users/:user/filters/:filter', (req, res, next) => {
     let hasAction = false;
 
     ['from', 'to', 'subject'].forEach(key => {
-        if (result.value['query:' + key]) {
-            $set['query.headers.' + key] = result.value['query:' + key].replace(/\s+/g, ' ');
+        if (result.value['query_' + key]) {
+            $set['query.headers.' + key] = result.value['query_' + key].replace(/\s+/g, ' ');
             hasQuery = true;
-        } else if ('query:' + key in req.params) {
+        } else if ('query_' + key in req.params) {
             $set['query.headers.' + key] = true;
             hasQuery = true;
         }
     });
 
-    if (result.value['query:text']) {
-        $set['query.text'] = result.value['query:text'].replace(/\s+/g, ' ');
+    if (result.value.query_text) {
+        $set['query.text'] = result.value.query_text.replace(/\s+/g, ' ');
         hasQuery = true;
-    } else if ('query:text' in req.params) {
+    } else if ('query_text' in req.params) {
         $set['query.text'] = true;
         hasQuery = true;
     }
 
-    if (typeof result.value['query:ha'] === 'boolean') {
-        $set['query.ha'] = result.value['query:ha'];
+    if (typeof result.value.query_ha === 'boolean') {
+        $set['query.ha'] = result.value.query_ha;
         hasQuery = true;
-    } else if ('query:ha' in req.params) {
+    } else if ('query_ha' in req.params) {
         $unset['query.ha'] = true;
         hasQuery = true;
     }
 
-    if (result.value['query:size']) {
-        $set['query.size'] = result.value['query:size'];
+    if (result.value.query_size) {
+        $set['query.size'] = result.value.query_size;
         hasQuery = true;
-    } else if ('query:size' in req.params) {
+    } else if ('query_size' in req.params) {
         $unset['query.size'] = true;
         hasQuery = true;
     }
 
     ['unseen', 'flag', 'delete', 'spam'].forEach(key => {
-        if (typeof result.value['action:' + key] === 'boolean') {
-            $set['action.' + key] = result.value['action:' + key];
+        if (typeof result.value['action_' + key] === 'boolean') {
+            $set['action.' + key] = result.value['action_' + key];
             hasAction = true;
-        } else if ('action:' + key in req.params) {
+        } else if ('action_' + key in req.params) {
             $unset['action.' + key] = true;
             hasAction = true;
         }
     });
 
     ['forward', 'targetUrl'].forEach(key => {
-        if (result.value['action:' + key]) {
-            $set['action.' + key] = result.value['action:' + key];
+        if (result.value['action_' + key]) {
+            $set['action.' + key] = result.value['action_' + key];
             hasAction = true;
-        } else if ('action:' + key in req.params) {
+        } else if ('action_' + key in req.params) {
             $unset['action.' + key] = true;
             hasAction = true;
         }
     });
 
     let checkFilterMailbox = done => {
-        if (!result.value['action:mailbox']) {
-            if ('action:mailbox' in req.params) {
+        if (!result.value.action_mailbox) {
+            if ('action_mailbox' in req.params) {
                 $unset['action.mailbox'] = true;
                 hasAction = true;
             }
             return done();
         }
         db.database.collection('mailboxes').findOne({
-            _id: new ObjectID(result.value['action:mailbox']),
+            _id: new ObjectID(result.value.action_mailbox),
             user
         }, (err, mailboxData) => {
             if (err) {
@@ -3184,6 +3050,10 @@ server.post('/users/:user/asps', (req, res, next) => {
             cidr: 'forbidden'
         })
     });
+
+    if (typeof req.params.scopes === 'string') {
+        req.params.scopes = req.params.scopes.split(',').map(scope => scope.trim()).filter(scope => scope);
+    }
 
     const result = Joi.validate(req.params, schema, {
         abortEarly: false,
