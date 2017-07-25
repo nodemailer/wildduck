@@ -7,13 +7,14 @@ const Joi = require('joi');
 const crypto = require('crypto');
 const tools = require('./lib/tools');
 const consts = require('./lib/consts');
+const mobileconfig = require('mobileconfig');
 const UserHandler = require('./lib/user-handler');
 const MailboxHandler = require('./lib/mailbox-handler');
 const MessageHandler = require('./lib/message-handler');
 const ImapNotifier = require('./lib/imap-notifier');
 const db = require('./lib/db');
 const MongoPaging = require('mongo-cursor-pagination');
-const certs = require('./lib/certs').get('api');
+const certs = require('./lib/certs');
 const ObjectID = require('mongodb').ObjectID;
 const imapTools = require('./imap-core/lib/imap-tools');
 const libmime = require('libmime');
@@ -23,6 +24,8 @@ const GridFSBucket = require('mongodb').GridFSBucket;
 const libbase64 = require('libbase64');
 const libqp = require('libqp');
 const urllib = require('url');
+const apiCerts = certs.get('api');
+const mobileconfigCerts = certs.get('api.mobileconfig');
 
 const serverOptions = {
     name: 'Wild Duck API',
@@ -36,12 +39,12 @@ const serverOptions = {
     }
 };
 
-if (certs && config.api.secure) {
-    serverOptions.key = certs.key;
-    if (certs.ca) {
-        serverOptions.ca = certs.ca;
+if (apiCerts && config.api.secure) {
+    serverOptions.key = apiCerts.key;
+    if (apiCerts.ca) {
+        serverOptions.ca = apiCerts.ca;
     }
-    serverOptions.certificate = certs.cert;
+    serverOptions.certificate = apiCerts.cert;
 }
 
 const server = restify.createServer(serverOptions);
@@ -77,6 +80,20 @@ server.get(
         default: 'index.html'
     })
 );
+
+server.use((req, res, next) => {
+    if (config.api.accessToken && req.query.accessToken !== config.api.accessToken) {
+        res.status(403);
+        res.charSet('utf-8');
+        return res.json({
+            error: 'Invalid accessToken value'
+        });
+    }
+    if (req.query.accessToken) {
+        delete req.query.accessToken;
+    }
+    next();
+});
 
 server.get({ name: 'users', path: '/users' }, (req, res, next) => {
     res.charSet('utf-8');
@@ -662,6 +679,7 @@ server.put('/users/:user/addresses/:address', (req, res, next) => {
             }
 
             if (!addressData || addressData.user.toString() !== user.toString()) {
+                res.status(404);
                 res.json({
                     error: 'Invalid or unknown email address identifier'
                 });
@@ -755,6 +773,7 @@ server.del('/users/:user/addresses/:address', (req, res, next) => {
             }
 
             if (!addressData || addressData.user.toString() !== user.toString()) {
+                res.status(404);
                 res.json({
                     error: 'Invalid or unknown email address identifier'
                 });
@@ -1128,6 +1147,7 @@ server.get('/users/:user/addresses/:address', (req, res, next) => {
                 return next();
             }
             if (!addressData) {
+                res.status(404);
                 res.json({
                     error: 'Invalid or unknown address'
                 });
@@ -2340,6 +2360,7 @@ server.del('/users/:user/mailboxes/:mailbox/messages/:message', (req, res, next)
         }
 
         if (!messageData || messageData.user.toString() !== user.toString()) {
+            res.status(404);
             res.json({
                 error: 'Message was not found'
             });
@@ -2596,6 +2617,7 @@ server.del('/users/:user/filters/:filter', (req, res, next) => {
         }
 
         if (!r.deletedCount) {
+            res.status(404);
             res.json({
                 error: 'Filter was not found'
             });
@@ -2953,6 +2975,7 @@ server.put('/users/:user/filters/:filter', (req, res, next) => {
             }
 
             if (!r || !r.value || !r.value._id) {
+                res.status(404);
                 res.json({
                     error: 'Filter was not found'
                 });
@@ -3049,6 +3072,7 @@ server.post('/users/:user/asps', (req, res, next) => {
         user: Joi.string().hex().lowercase().length(24).required(),
         description: Joi.string().trim().max(255).required(),
         scopes: Joi.array().items(Joi.string().valid('imap', 'pop3', 'smtp', '*').required()).unique(),
+        generateMobileconfig: Joi.boolean().truthy(['Y', 'true', 'yes', 1]).default(false),
         ip: Joi.string().ip({
             version: ['ipv4', 'ipv6'],
             cidr: 'forbidden'
@@ -3072,20 +3096,89 @@ server.post('/users/:user/asps', (req, res, next) => {
     }
 
     let user = new ObjectID(result.value.user);
+    let generateMobileconfig = result.value.generateMobileconfig;
 
-    userHandler.generateASP(user, result.value, (err, result) => {
+    db.users.collection('users').findOne({
+        _id: user
+    }, {
+        fields: {
+            username: true,
+            address: true
+        }
+    }, (err, userData) => {
         if (err) {
             res.json({
-                error: err.message
+                error: 'MongoDB Error: ' + err.message
             });
             return next();
         }
-        res.json({
-            success: true,
-            id: result.id,
-            password: result.password
+        if (!userData) {
+            res.json({
+                error: 'This user does not exist'
+            });
+            return next();
+        }
+
+        userHandler.generateASP(user, result.value, (err, result) => {
+            if (err) {
+                res.json({
+                    error: err.message
+                });
+                return next();
+            }
+
+            if (!generateMobileconfig) {
+                res.json({
+                    success: true,
+                    id: result.id,
+                    password: result.password
+                });
+                return next();
+            }
+
+            let options = {
+                displayName: config.name,
+                displayDescription: 'Install this profile to auto configure your email account',
+                emailAddress: userData.address,
+                identifier: config.api.mobileconfig.identifier,
+                imap: {
+                    hostname: config.imap.setup.hostname,
+                    port: config.imap.setup.port || config.imap.port,
+                    secure: config.imap.setup.secure,
+                    username: userData.username,
+                    password: result.password
+                },
+                smtp: {
+                    hostname: config.smtp.setup.hostname,
+                    port: config.smtp.setup.port || config.smtp.port,
+                    secure: true, //config.setup.smtp.secure,
+                    username: userData.username,
+                    password: false // use the same password as for IMAP
+                },
+                keys: mobileconfigCerts
+            };
+
+            mobileconfig.getSignedEmailConfig(options, (err, data) => {
+                if (err) {
+                    res.json({
+                        error: err.message
+                    });
+                    return next();
+                }
+
+                //res.set('Content-Description', 'Mail App Configuration Profile');
+                //res.set('Content-Type', 'application/x-apple-aspen-config');
+                //res.set('Content-Disposition', util.format('attachment; filename="%s.mobileconfig"', req.user.username));
+
+                res.json({
+                    success: true,
+                    id: result.id,
+                    password: result.password,
+                    mobileconfig: data.toString('base64')
+                });
+                return next();
+            });
         });
-        return next();
     });
 });
 

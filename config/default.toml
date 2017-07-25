@@ -6,6 +6,8 @@
 # process title and syslog ident
 ident="wildduck"
 
+name="Wild Duck Mail"
+
 # how many processes to start
 processes=1
 
@@ -77,6 +79,13 @@ maxForwards=2000
     # if `true` then do not autodelete expired messages
     disableRetention=false
 
+    [imap.setup]
+        # Public configuration for IMAP
+        hostname="localtest.me"
+        secure=true
+        # port defaults to imap.port
+        #port=9993
+
 [tls]
     # Default TLS keys (can be overriden by individual services)
     #key="/path/to/server/key.pem"
@@ -123,6 +132,13 @@ maxForwards=2000
         #key="/path/to/server/key.pem"
         #cert="/path/to/server/cert.pem"
 
+    [pop3.setup]
+        # Public configuration for POP3
+        hostname="localtest.me"
+        secure=true
+        # port defaults to pop3.port
+        #port=9995
+
 [api]
     enabled=true
     port=8080
@@ -130,9 +146,21 @@ maxForwards=2000
     host="127.0.0.1"
 
     # Use `true` (HTTPS) for port 443 and `false` (HTTP) for 80
-    secure=true
+    secure=false
+
+    # If set requires all API calls to have accessToken query argument with that value
+    # http://localhost:8080/users?accessToken=somesecretvalue
+    #accessToken="somesecretvalue"
 
     [api.tls]
+        # If certificate path is not defined, use global or built-in self-signed certs
+        #key="/path/to/server/key.pem"
+        #cert="/path/to/server/cert.pem"
+
+    [api.mobileconfig]
+        identifier="com.email.wildduck"
+
+    [api.mobileconfig.tls]
         # If certificate path is not defined, use global or built-in self-signed certs
         #key="/path/to/server/key.pem"
         #cert="/path/to/server/cert.pem"
@@ -152,3 +180,9 @@ maxForwards=2000
     # see [dbs].sender option for choosing correct database to use for ZoneMTA queues
     # by default the main wildduck database is used
     collection="zone-queue"
+
+[smtp.setup]
+    # Public configuration for SMTP MDA
+    hostname="localtest.me"
+    secure=false
+    port=2587
