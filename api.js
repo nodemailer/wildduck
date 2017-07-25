@@ -2060,7 +2060,7 @@ server.get('/users/:user/mailboxes/:mailbox/messages/:message/message.eml', (req
             });
             return next();
         }
-        if (!messageData || message.user.toString() !== user.toString()) {
+        if (!messageData || messageData.user.toString() !== user.toString()) {
             res.json({
                 error: 'This message does not exist'
             });
