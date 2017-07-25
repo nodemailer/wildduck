@@ -192,11 +192,10 @@ class BodyStructure {
         if (options.body) {
             return data;
         } else {
-            return (
-                data
-            // skip body MD5 from extension fields
-                .concat(this.getExtensionFields(node, options).slice(1))
-            );
+            let resp = data
+                // skip body MD5 from extension fields
+                .concat(this.getExtensionFields(node, options).slice(1));
+            return resp;
         }
     }
 

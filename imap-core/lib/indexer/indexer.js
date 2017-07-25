@@ -719,33 +719,34 @@ class Indexer {
                 }
                 return '';
 
-            case 'header.fields':
+            case 'header.fields': {
                 // BODY[HEADER.FIELDS.NOT (Key1 Key2 KeyN)] only selected header keys
                 if (!selector.headers || !selector.headers.length) {
                     return '\r\n\r\n';
                 }
-                return (
+                let headers =
                     formatHeaders(node.header)
-                    .filter(line => {
-                        let key = line.split(':').shift().toLowerCase().trim();
-                        return selector.headers.indexOf(key) >= 0;
-                    })
-                    .join('\r\n') + '\r\n\r\n'
-                );
-
-            case 'header.fields.not':
+                        .filter(line => {
+                            let key = line.split(':').shift().toLowerCase().trim();
+                            return selector.headers.indexOf(key) >= 0;
+                        })
+                        .join('\r\n') + '\r\n\r\n';
+                return headers;
+            }
+            case 'header.fields.not': {
                 // BODY[HEADER.FIELDS.NOT (Key1 Key2 KeyN)] all but selected header keys
                 if (!selector.headers || !selector.headers.length) {
                     return formatHeaders(node.header).join('\r\n') + '\r\n\r\n';
                 }
-                return (
+                let headers =
                     formatHeaders(node.header)
-                    .filter(line => {
-                        let key = line.split(':').shift().toLowerCase().trim();
-                        return selector.headers.indexOf(key) < 0;
-                    })
-                    .join('\r\n') + '\r\n\r\n'
-                );
+                        .filter(line => {
+                            let key = line.split(':').shift().toLowerCase().trim();
+                            return selector.headers.indexOf(key) < 0;
+                        })
+                        .join('\r\n') + '\r\n\r\n';
+                return headers;
+            }
 
             case 'mime':
                 // BODY[1.2.3.MIME] mime node header
