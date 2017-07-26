@@ -4,7 +4,7 @@
     "description": "IMAP server built with Node.js and MongoDB",
     "main": "server.js",
     "scripts": {
-        "test": "grunt"
+        "test": "mongo --eval 'db.dropDatabase()' wildduck-test && redis-cli -n 13 flushdb && NODE_ENV=test grunt"
     },
     "keywords": [],
     "author": "Andris Reinman",
@@ -17,6 +17,9 @@
         "grunt-cli": "^1.2.0",
         "grunt-eslint": "^20.0.0",
         "grunt-mocha-test": "^0.13.2",
+        "grunt-shell-spawn": "^0.3.10",
+        "grunt-wait": "^0.1.0",
+        "icedfrisby": "^1.2.0",
         "mocha": "^3.4.2"
     },
     "dependencies": {
@@ -31,6 +34,7 @@
         "libmime": "^3.1.0",
         "libqp": "^1.1.0",
         "mailsplit": "^4.0.2",
+        "mobileconfig": "^2.0.1",
         "mongo-cursor-pagination": "^5.0.0",
         "mongodb": "^2.2.30",
         "node-redis-scripty": "0.0.5",

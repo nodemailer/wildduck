@@ -1,0 +1,9 @@
+[log]
+    level="error"
+
+[dbs]
+    # mongodb connection string for the main database
+    mongo="mongodb://127.0.0.1:27017/wildduck-test"
+
+    # redis connection string
+    redis="redis://127.0.0.1:6379/13"
