@@ -378,6 +378,7 @@ Returns data about authentication related events. This includes also password ch
 
 - **user** (required) is the ID of the user
 - **limit** is an optional number to limit listing length, defaults to 20
+- **action** is an optional filter to list only specific actions, for example "create asp" to list only entries for creating new application specific passwords
 
 **Example**
 

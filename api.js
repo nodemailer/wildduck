@@ -3436,6 +3436,7 @@ server.get({ name: 'authlog', path: '/users/:user/authlog' }, (req, res, next) =
 
     const schema = Joi.object().keys({
         user: Joi.string().hex().lowercase().length(24).required(),
+        action: Joi.string().trim().lowercase().empty('').max(100),
         limit: Joi.number().default(20).min(1).max(250),
         next: Joi.string().alphanum().max(100),
         prev: Joi.string().alphanum().max(100),
@@ -3459,6 +3460,7 @@ server.get({ name: 'authlog', path: '/users/:user/authlog' }, (req, res, next) =
 
     let user = new ObjectID(result.value.user);
     let limit = result.value.limit;
+    let action = result.value.action;
     let page = result.value.page;
     let pageNext = result.value.next;
     let pagePrev = result.value.prev;
@@ -3483,9 +3485,14 @@ server.get({ name: 'authlog', path: '/users/:user/authlog' }, (req, res, next) =
             return next();
         }
 
-        let filter = {
-            user
-        };
+        let filter = action
+            ? {
+                user,
+                action
+            }
+            : {
+                user
+            };
 
         db.database.collection('authlog').count(filter, (err, total) => {
             if (err) {
@@ -3520,12 +3527,19 @@ server.get({ name: 'authlog', path: '/users/:user/authlog' }, (req, res, next) =
                 }
 
                 let prevUrl = result.hasPrevious
-                    ? server.router.render('authlog', { user: user.toString() }, { prev: result.previous, limit, page: Math.max(page - 1, 1) })
+                    ? server.router.render(
+                        'authlog',
+                        { user: user.toString() },
+                        { prev: result.previous, action: action || '', limit, page: Math.max(page - 1, 1) }
+                    )
                     : false;
-                let nextUrl = result.hasNext ? server.router.render('authlog', { user: user.toString() }, { next: result.next, limit, page: page + 1 }) : false;
+                let nextUrl = result.hasNext
+                    ? server.router.render('authlog', { user: user.toString() }, { next: result.next, action: action || '', limit, page: page + 1 })
+                    : false;
 
                 let response = {
                     success: true,
+                    action,
                     total,
                     page,
                     prev: prevUrl,
