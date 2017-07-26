@@ -148,6 +148,7 @@ server.get({ name: 'users', path: '/users' }, (req, res, next) => {
             fields: {
                 _id: true,
                 username: true,
+                name: true,
                 address: true,
                 storageUsed: true,
                 quota: true,
@@ -189,6 +190,7 @@ server.get({ name: 'users', path: '/users' }, (req, res, next) => {
                 results: (result.results || []).map(userData => ({
                     id: userData._id.toString(),
                     username: userData.username,
+                    name: userData.name,
                     address: userData.address,
                     quota: {
                         allowed: Number(userData.quota) || config.maxStorage * 1024 * 1024,
@@ -982,6 +984,7 @@ server.get('/users/:user', (req, res, next) => {
                     id: user,
 
                     username: userData.username,
+                    name: userData.name,
 
                     address: userData.address,
 
@@ -3097,12 +3100,21 @@ server.post('/users/:user/asps', (req, res, next) => {
 
     let user = new ObjectID(result.value.user);
     let generateMobileconfig = result.value.generateMobileconfig;
+    let scopes = result.value.scopes || ['*'];
+
+    if (generateMobileconfig && !scopes.includes('*') && (!scopes.includes('imap') || !scopes.includes('smtp'))) {
+        res.json({
+            error: 'Profile file requires imap and smtp scopes'
+        });
+        return next();
+    }
 
     db.users.collection('users').findOne({
         _id: user
     }, {
         fields: {
             username: true,
+            name: true,
             address: true
         }
     }, (err, userData) => {
@@ -3136,11 +3148,18 @@ server.post('/users/:user/asps', (req, res, next) => {
                 return next();
             }
 
+            let profileOpts = {};
+            Object.keys(config.api.mobileconfig || {}).forEach(key => {
+                profileOpts[key] = (config.api.mobileconfig[key] || '').toString().replace(/\{email\}/g, userData.address).trim();
+            });
+
             let options = {
-                displayName: config.name,
-                displayDescription: 'Install this profile to auto configure your email account',
+                displayName: profileOpts.displayName,
+                displayDescription: profileOpts.displayDescription,
+                accountDescription: profileOpts.accountDescription,
                 emailAddress: userData.address,
-                identifier: config.api.mobileconfig.identifier,
+                emailAccountName: userData.name,
+                identifier: profileOpts.identifier,
                 imap: {
                     hostname: config.imap.setup.hostname,
                     port: config.imap.setup.port || config.imap.port,
@@ -3165,10 +3184,6 @@ server.post('/users/:user/asps', (req, res, next) => {
                     });
                     return next();
                 }
-
-                //res.set('Content-Description', 'Mail App Configuration Profile');
-                //res.set('Content-Type', 'application/x-apple-aspen-config');
-                //res.set('Content-Disposition', util.format('attachment; filename="%s.mobileconfig"', req.user.username));
 
                 res.json({
                     success: true,

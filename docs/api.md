@@ -4,94 +4,96 @@ Wild Duck Mail Server is a scalable IMAP / POP3 server that natively exposes int
 
 This API is not meant to be used by end users but your application.
 
-- [API Usage Info](#api-usage-info)
-  * [Responses](#responses)
-  * [Paging](#paging)
-- [Users](#users)
-  * [Search and list users](#search-and-list-users)
-    + [GET /users](#get-users)
-  * [Get one user](#get-one-user)
-    + [GET /users/{user}](#get-users-user-)
-  * [Add a new user](#add-a-new-user)
-    + [POST /users](#post-users)
-  * [Update user details](#update-user-details)
-- [Authentication](#authentication)
-  * [Authenticate an user](#authenticate-an-user)
-    + [POST /authenticate](#post-authenticate)
-  * [List the authentication log](#list-the-authentication-log)
-    + [GET /users/{user}/authlog](#get-users-user-authlog)
-- [2FA](#2fa)
-  * [Setup 2FA](#setup-2fa)
-    + [POST /users/{user}/2fa](#post-users-user-2fa)
-  * [Verify 2FA](#verify-2fa)
-    + [PUT /users/{user}/2fa](#put-users-user-2fa)
-  * [Disable 2FA](#disable-2fa)
-    + [DELETE /users/{user}/2fa](#delete-users-user-2fa)
-  * [Check 2FA](#check-2fa)
-    + [GET /users/{user}/2fa](#get-users-user-2fa)
-- [Application Specific Passwords](#application-specific-passwords)
-  * [List existing passwords](#list-existing-passwords)
-    + [GET /user/{user}/asps](#get-user-user-asps)
-  * [Add a new Application Specific Password](#add-a-new-application-specific-password)
-    + [POST /users/{user}/asps](#post-users-user-asps)
-  * [Delete an Application Specific Password](#delete-an-application-specific-password)
-    + [DELETE /users/{user}/asps/{asp}](#delete-users-user-asps-asp-)
-- [Addresses](#addresses)
-  * [Search and list addresses](#search-and-list-addresses)
-    + [GET /addresses](#get-addresses)
-  * [List user addresses](#list-user-addresses)
-    + [GET /users/{user}/addresses](#get-users-user-addresses)
-  * [Get one address](#get-one-address)
-    + [GET /users/{user}/addresses/{address}](#get-users-user-addresses-address-)
-  * [Add a new address](#add-a-new-address)
-    + [POST /users/{user}/addresses](#post-users-user-addresses)
-  * [Update address details](#update-address-details)
-    + [PUT /users/{user}/addresses/{address}](#put-users-user-addresses-address-)
-  * [Delete an alias address](#delete-an-alias-address)
-    + [DELETE /users/{user}/addresses/{address}](#delete-users-user-addresses-address-)
-- [Mailboxes](#mailboxes)
-  * [List existing mailboxes](#list-existing-mailboxes)
-    + [GET /user/{user}/mailboxes](#get-user-user-mailboxes)
-  * [Get one mailbox](#get-one-mailbox)
-    + [GET /users/{user}/mailboxes/{mailbox}](#get-users-user-mailboxes-mailbox-)
-  * [Add a new mailbox](#add-a-new-mailbox)
-    + [POST /users/{user}/mailboxes](#post-users-user-mailboxes)
-  * [Update mailbox details](#update-mailbox-details)
-    + [PUT /users/{user}/mailboxes/{mailbox}](#put-users-user-mailboxes-mailbox-)
-  * [Delete a mailbox](#delete-a-mailbox)
-    + [DELETE /users/{user}/mailboxes/{mailbox}](#delete-users-user-mailboxes-mailbox-)
-- [Messages](#messages)
-  * [List existing messages](#list-existing-messages)
-    + [GET /user/{user}/mailboxes/{mailbox}/messages](#get-user-user-mailboxes-mailbox-messages)
-  * [Search for messages](#search-for-messages)
-    + [GET /user/{user}/search](#get-user-user-search)
-  * [Get message details](#get-message-details)
-    + [GET /users/{user}/mailboxes/{mailbox}/messages/{message}](#get-users-user-mailboxes-mailbox-messages-message-)
-  * [Update message details](#update-message-details)
-    + [PUT /users/{user}/mailboxes/{mailbox}/messages/{message}](#put-users-user-mailboxes-mailbox-messages-message-)
-  * [Delete a message](#delete-a-message)
-    + [DELETE /users/{user}/mailboxes/{mailbox}/messages/{message}](#delete-users-user-mailboxes-mailbox-messages-message-)
-  * [Get message source](#get-message-source)
-    + [GET /users/{user}/mailboxes/{mailbox}/messages/{message}/message.eml](#get-users-user-mailboxes-mailbox-messages-message-messageeml)
-  * [Get message attachment](#get-message-attachment)
-    + [GET /users/{user}/mailboxes/{mailbox}/messages/{message}/attachments/{attachment}](#get-users-user-mailboxes-mailbox-messages-message-attachments-attachment-)
-- [Filters](#filters)
-  * [Create new filter](#create-new-filter)
-    + [POST /users/{user}/filters](#post-users-user-filters)
-  * [List existing filters](#list-existing-filters)
-    + [GET /user/{user}/filters](#get-user-user-filters)
-  * [Get filter details](#get-filter-details)
-    + [GET /users/{user}/filters/{filter}](#get-users-user-filters-filter-)
-  * [Update filter details](#update-filter-details)
-    + [PUT /users/{user}/filters/{filter}](#put-users-user-filters-filter-)
-  * [Delete a filter](#delete-a-filter)
-    + [DELETE /users/{user}/filters/{filter}](#delete-users-user-filters-filter-)
-- [Quota](#quota)
-  * [Recalculate user quota](#recalculate-user-quota)
-    + [POST /users/{user}/quota/reset](#post-users-user-quota-reset)
-- [Updates](#updates)
-  * [Stream update events](#stream-update-events)
-    + [GET /users/{user}/updates](#get-users-user-updates)
+- [HTTP API](#http-api)
+  * [API Usage Info](#api-usage-info)
+    + [Authentication](#authentication)
+    + [Responses](#responses)
+    + [Paging](#paging)
+  * [Users](#users)
+    + [Search and list users](#search-and-list-users)
+      - [GET /users](#get--users)
+    + [Get one user](#get-one-user)
+      - [GET /users/{user}](#get--users--user-)
+    + [Add a new user](#add-a-new-user)
+      - [POST /users](#post--users)
+    + [Update user details](#update-user-details)
+  * [Authentication](#authentication-1)
+    + [Authenticate an user](#authenticate-an-user)
+      - [POST /authenticate](#post--authenticate)
+    + [List the authentication log](#list-the-authentication-log)
+      - [GET /users/{user}/authlog](#get--users--user--authlog)
+  * [2FA](#2fa)
+    + [Setup 2FA](#setup-2fa)
+      - [POST /users/{user}/2fa](#post--users--user--2fa)
+    + [Verify 2FA](#verify-2fa)
+      - [PUT /users/{user}/2fa](#put--users--user--2fa)
+    + [Disable 2FA](#disable-2fa)
+      - [DELETE /users/{user}/2fa](#delete--users--user--2fa)
+    + [Check 2FA](#check-2fa)
+      - [GET /users/{user}/2fa](#get--users--user--2fa)
+  * [Application Specific Passwords](#application-specific-passwords)
+    + [List existing passwords](#list-existing-passwords)
+      - [GET /user/{user}/asps](#get--user--user--asps)
+    + [Add a new Application Specific Password](#add-a-new-application-specific-password)
+      - [POST /users/{user}/asps](#post--users--user--asps)
+    + [Delete an Application Specific Password](#delete-an-application-specific-password)
+      - [DELETE /users/{user}/asps/{asp}](#delete--users--user--asps--asp-)
+  * [Addresses](#addresses)
+    + [Search and list addresses](#search-and-list-addresses)
+      - [GET /addresses](#get--addresses)
+    + [List user addresses](#list-user-addresses)
+      - [GET /users/{user}/addresses](#get--users--user--addresses)
+    + [Get one address](#get-one-address)
+      - [GET /users/{user}/addresses/{address}](#get--users--user--addresses--address-)
+    + [Add a new address](#add-a-new-address)
+      - [POST /users/{user}/addresses](#post--users--user--addresses)
+    + [Update address details](#update-address-details)
+      - [PUT /users/{user}/addresses/{address}](#put--users--user--addresses--address-)
+    + [Delete an alias address](#delete-an-alias-address)
+      - [DELETE /users/{user}/addresses/{address}](#delete--users--user--addresses--address-)
+  * [Mailboxes](#mailboxes)
+    + [List existing mailboxes](#list-existing-mailboxes)
+      - [GET /user/{user}/mailboxes](#get--user--user--mailboxes)
+    + [Get one mailbox](#get-one-mailbox)
+      - [GET /users/{user}/mailboxes/{mailbox}](#get--users--user--mailboxes--mailbox-)
+    + [Add a new mailbox](#add-a-new-mailbox)
+      - [POST /users/{user}/mailboxes](#post--users--user--mailboxes)
+    + [Update mailbox details](#update-mailbox-details)
+      - [PUT /users/{user}/mailboxes/{mailbox}](#put--users--user--mailboxes--mailbox-)
+    + [Delete a mailbox](#delete-a-mailbox)
+      - [DELETE /users/{user}/mailboxes/{mailbox}](#delete--users--user--mailboxes--mailbox-)
+  * [Messages](#messages)
+    + [List existing messages](#list-existing-messages)
+      - [GET /user/{user}/mailboxes/{mailbox}/messages](#get--user--user--mailboxes--mailbox--messages)
+    + [Search for messages](#search-for-messages)
+      - [GET /user/{user}/search](#get--user--user--search)
+    + [Get message details](#get-message-details)
+      - [GET /users/{user}/mailboxes/{mailbox}/messages/{message}](#get--users--user--mailboxes--mailbox--messages--message-)
+    + [Update message details](#update-message-details)
+      - [PUT /users/{user}/mailboxes/{mailbox}/messages/{message}](#put--users--user--mailboxes--mailbox--messages--message-)
+    + [Delete a message](#delete-a-message)
+      - [DELETE /users/{user}/mailboxes/{mailbox}/messages/{message}](#delete--users--user--mailboxes--mailbox--messages--message-)
+    + [Get message source](#get-message-source)
+      - [GET /users/{user}/mailboxes/{mailbox}/messages/{message}/message.eml](#get--users--user--mailboxes--mailbox--messages--message--messageeml)
+    + [Get message attachment](#get-message-attachment)
+      - [GET /users/{user}/mailboxes/{mailbox}/messages/{message}/attachments/{attachment}](#get--users--user--mailboxes--mailbox--messages--message--attachments--attachment-)
+  * [Filters](#filters)
+    + [Create new filter](#create-new-filter)
+      - [POST /users/{user}/filters](#post--users--user--filters)
+    + [List existing filters](#list-existing-filters)
+      - [GET /user/{user}/filters](#get--user--user--filters)
+    + [Get filter details](#get-filter-details)
+      - [GET /users/{user}/filters/{filter}](#get--users--user--filters--filter-)
+    + [Update filter details](#update-filter-details)
+      - [PUT /users/{user}/filters/{filter}](#put--users--user--filters--filter-)
+    + [Delete a filter](#delete-a-filter)
+      - [DELETE /users/{user}/filters/{filter}](#delete--users--user--filters--filter-)
+  * [Quota](#quota)
+    + [Recalculate user quota](#recalculate-user-quota)
+      - [POST /users/{user}/quota/reset](#post--users--user--quota-reset)
+  * [Updates](#updates)
+    + [Stream update events](#stream-update-events)
+      - [GET /users/{user}/updates](#get--users--user--updates)
 
 <small><i><a href='http://ecotrust-canada.github.io/markdown-toc/'>Table of contents generated with markdown-toc</a></i></small>
 
@@ -602,7 +604,7 @@ Creates a new Application Specific Password for an existing user, returns the ID
 
 - **user** (required) is the ID of the user
 - **description** (required) is the name or description for the new Application Specific Password
-- **scopes** is an array of scopes this password is valid for. Valid scopes are "imap", "pop3", "smtp" or "*" for all ASP supported scopes
+- **scopes** is an array (or a comma separated string) of scopes this password is valid for. Valid scopes are "imap", "pop3", "smtp". Special scope "*" (also the default) is valid for all ASP supported scopes (this does not include "master")
 - **generateMobileconfig** is a boolean. If true, then the result includes a base64 formatted profile file to autoconfigure OSX and iOS mail clients
 - **ip** is the IP address the request was made from
 
@@ -626,18 +628,18 @@ Response for a successful operation:
 }
 ```
 
-Or with the profile file
+Or with the profile file:
 
 ```
 curl -XPOST "http://localhost:8080/users/5971da1754cfdc7f0983b2ec/asps" -H 'content-type: application/json' -d '{
     "description": "Mac OSX Mail Client",
-    "scopes": ["imap"],
+    "scopes": ["imap", "smtp"],
     "generateMobileconfig": true
     "ip": "192.168.10.10"
 }'
 ```
 
-and the result:
+and the result with the profile file:
 
 ```json
 {
@@ -648,7 +650,16 @@ and the result:
 }
 ```
 
-Resulting password should be shown to the client. This password is shown only once so if the user forgets it then the APS should be deleted and replaced with a new one. Mobileconfig file should be sent to the client with Content-Type value of `application/x-apple-aspen-config`.
+Resulting password should be shown to the client. This password is shown only once so if the user forgets it then the APS should be deleted and replaced with a new one. Application Specific Password can include spaces, so using "slrf waav yzma tgxf" is the same as "slrfwaavyzmatgxf".
+
+Profile file should be sent to the client with Content-Type value of `application/x-apple-aspen-config`.
+
+```javascript
+res.set('Content-Description', 'Mail App Configuration Profile');
+res.set('Content-Type', 'application/x-apple-aspen-config');
+res.set('Content-Disposition', 'attachment; filename="profile.mobileconfig"');
+res.send(Buffer.from(asp.mobileconfig, 'base64'));
+```
 
 ### Delete an Application Specific Password
 

@@ -6,8 +6,6 @@
 # process title and syslog ident
 ident="wildduck"
 
-name="Wild Duck Mail"
-
 # how many processes to start
 processes=1
 
@@ -158,7 +156,24 @@ maxForwards=2000
         #cert="/path/to/server/cert.pem"
 
     [api.mobileconfig]
+        # plist configuration for OSX/iOS profile files that are generated with Application Specific Passwords
+        # Use {email} in the description strings to replace it with account email address
+
+        # A reverse-DNS style identifier (com.example.myprofile, for example) that identifies the profile.
+        # This string is used to determine whether a new profile should replace an existing one or should be added.
         identifier="com.email.wildduck"
+
+        # A human-readable name for the profile. This value is displayed on the Detail screen. It does not have to be unique.
+        displayName="Wild Duck Mail"
+
+        # A human-readable string containing the name of the organization that provided the profile.
+        organization="Wild Duck Mail Services"
+
+        # A description of the profile, shown on the Detail screen for the profile. This should be descriptive enough to help the user decide whether to install the profile.
+        displayDescription="Install this profile to setup {email}"
+
+        # A user-visible description of the email account, shown in the Mail and Settings applications.
+        accountDescription="Wild Duck ({email})"
 
     [api.mobileconfig.tls]
         # If certificate path is not defined, use global or built-in self-signed certs
