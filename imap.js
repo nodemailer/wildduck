@@ -44,9 +44,9 @@ const serverOptions = {
     ignoreSTARTTLS: config.imap.ignoreSTARTTLS,
 
     id: {
-        name: 'Wild Duck IMAP Server',
-        version: packageData.version,
-        vendor: 'Kreata'
+        name: config.imap.name || 'Wild Duck IMAP Server',
+        version: config.imap.version || packageData.version,
+        vendor: config.imap.vendor || 'Kreata'
     },
 
     logger: {

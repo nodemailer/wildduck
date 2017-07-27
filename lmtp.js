@@ -36,7 +36,7 @@ const serverOptions = {
     name: false,
 
     // not required but nice-to-have
-    banner: 'Welcome to Wild Duck Mail Server',
+    banner: config.lmtp.banner || 'Welcome to Wild Duck Mail Server',
 
     disabledCommands: ['AUTH'],
 
