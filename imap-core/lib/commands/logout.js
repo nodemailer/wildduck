@@ -1,6 +1,8 @@
 'use strict';
 
-const quotes = [
+const config = require('wild-config');
+
+const quotes = (config.imap.quotes = [
     'All dreams are but another reality. Never forget...',
     'Oh boy, oh boy, oh boy...',
     'Cut the dramatics, would yeh, and follow me!',
@@ -9,7 +11,7 @@ const quotes = [
     'Piccobello!',
     'No more Mr. Nice Duck!',
     'Not bad for a duck from outer space.'
-];
+]);
 
 module.exports = {
     handler(command) {
