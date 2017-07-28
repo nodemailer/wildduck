@@ -75,7 +75,7 @@ server.get(
 );
 
 server.use((req, res, next) => {
-    if (config.api.accessToken && req.query.accessToken !== config.api.accessToken) {
+    if (config.api.accessToken && ![req.query.accessToken, req.headers['x-access-token']].includes(config.api.accessToken)) {
         res.status(403);
         res.charSet('utf-8');
         return res.json({
