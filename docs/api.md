@@ -432,6 +432,7 @@ This call prepares the user to support 2FA tokens. If 2FA is already enabled the
 
 - **user** (required) is the ID of the user
 - **issuer** is the name to be shown in the Authenticator App
+- **fresh** is a boolean. If true then generates a new seed even if an old one already exists
 - **ip** is the IP address the request was made from
 
 **Response fields**
