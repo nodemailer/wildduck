@@ -199,6 +199,8 @@ const serverOptions = {
                         .forEach(filter => {
                             matchingFilters.push(filter.id);
 
+                            log.info('ddd', JSON.stringify(filter.action));
+
                             // apply matching filter
                             if (!filterActions) {
                                 filterActions = filter.action;
@@ -384,7 +386,7 @@ const serverOptions = {
                                 // if similar message exists, then skip
                                 skipExisting: true
                             };
-
+                            log.info('ddd3', JSON.stringify(messageOptions));
                             messageHandler.add(messageOptions, (err, inserted, info) => {
                                 // remove Delivered-To
                                 chunks.shift();
