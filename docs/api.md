@@ -1578,6 +1578,107 @@ Response for a successful operation:
 }
 ```
 
+## Autoreplies
+
+Wild Duck supports setting up autoreply messages that are sent to senders by LMTP process.
+
+### Setup Autoreply
+
+#### PUT /users/{user}/autoreply
+
+This call prepares the user to support 2FA tokens. If 2FA is already enabled then this call fails.
+
+**Parameters**
+
+- **user** (required) is the ID of the user
+- **status** is a boolean that indicates if autoreply messages should be sent (true) or not (false)
+- **subject** is the subject line of autoreply message
+- **message** is text body of the autoreply message
+
+**Response fields**
+
+- **success** should be `true`
+
+**Example**
+
+```
+curl -XPUT "http://localhost:8080/users/5971da1754cfdc7f0983b2ec/autoreply" -H 'content-type: application/json' -d '{
+  "status": true,
+  "subject": "Out of office",
+  "message": "I'm out of office this week"
+}'
+```
+
+Response for a successful operation:
+
+```json
+{
+  "success": true
+}
+```
+
+### Disable Autoreply
+
+#### DELETE /users/{user}/autoreply
+
+You can disable autoreplies either by updating it with status:false or deleting it.
+
+**Parameters**
+
+- **user** (required) is the ID of the user
+
+**Response fields**
+
+- **success** should be `true`
+
+**Example**
+
+```
+curl -XDELETE "http://localhost:8080/users/5971da1754cfdc7f0983b2ec/autoreply"
+```
+
+Response for a successful operation:
+
+```json
+{
+  "success": true
+}
+```
+
+### Check Autoreply status
+
+#### GET /users/{user}/autoreply
+
+Return current autoreply status
+
+**Parameters**
+
+- **user** (required) is the ID of the user
+
+**Response fields**
+
+- **success** should be `true`
+- **status** is a boolean that indicates if autoreply messages should be sent (true) or not (false)
+- **subject** is the subject line of autoreply message
+- **message** is text body of the autoreply message
+
+**Example**
+
+```
+curl "http://localhost:8080/users/5971da1754cfdc7f0983b2ec/autoreply"
+```
+
+Response for a successful operation:
+
+```json
+{
+  "success": true,
+  "status": true,
+  "subject": "Out of office",
+  "message": "I'm out of office this week"
+}
+```
+
 ## Quota
 
 ### Recalculate user quota

@@ -51,6 +51,7 @@ indexes:
     key:
       user: 1
       _id: -1
+
 - collection: authlog
   type: users # index applies to users database
   index:
@@ -69,11 +70,20 @@ indexes:
     key:
       user: 1
 
+# Indexes for the autoreply collection
+
+- collection: autoreplies
+  index:
+    name: user
+    key:
+      user: 1
+
 # Indexes for the mailboxes collection
 
 - collection: mailboxes
   index:
-    name: find_by_user
+    name: user_path
+    unique: true
     key:
       user: 1
       path: 1

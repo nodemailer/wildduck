@@ -19,6 +19,7 @@ const aspsRoutes = require('./lib/api/asps');
 const _2faRoutes = require('./lib/api/2fa');
 const updatesRoutes = require('./lib/api/updates');
 const authRoutes = require('./lib/api/auth');
+const autoreplyRoutes = require('./lib/api/autoreply');
 
 const serverOptions = {
     name: 'Wild Duck API',
@@ -112,6 +113,7 @@ module.exports = done => {
     _2faRoutes(db, server, userHandler);
     updatesRoutes(db, server, notifier);
     authRoutes(db, server, userHandler);
+    autoreplyRoutes(db, server);
 
     server.on('error', err => {
         if (!started) {
