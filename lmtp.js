@@ -183,7 +183,7 @@ const serverOptions = {
                             : []
                     );
 
-                    log.info('ddd', JSON.stringify(filter));
+                    log.info('ddd', JSON.stringify(filters));
 
                     let forwardTargets = new Set();
                     let forwardTargetUrls = new Set();
