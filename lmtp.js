@@ -267,7 +267,6 @@ const serverOptions = {
                     };
 
                     let sendAutoreply = done => {
-                        log.info('dddd', JSON.stringify({ sender, user }));
                         // never reply to messages marked as spam
                         if (!sender || !user.autoreply || filterActions.get('spam')) {
                             return setImmediate(done);
