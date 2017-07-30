@@ -118,6 +118,7 @@ const serverOptions = {
 
         stream.once('end', () => {
             let spamHeader = config.spamHeader && config.spamHeader.toLowerCase();
+            log.info('spam', spamHeader);
             let sender = tools.normalizeAddress((session.envelope.mailFrom && session.envelope.mailFrom.address) || '');
             let responses = [];
             let users = session.users;
@@ -181,6 +182,8 @@ const serverOptions = {
                             }
                             : []
                     );
+
+                    log.info('ddd', JSON.stringify(filter));
 
                     let forwardTargets = new Set();
                     let forwardTargetUrls = new Set();
