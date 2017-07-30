@@ -466,10 +466,12 @@ function checkFilter(filter, prepared, maildata) {
         let headerMatches = new Set();
         for (let j = prepared.headers.length - 1; j >= 0; j--) {
             let header = prepared.headers[j];
+            log.info('dd5', '%s: %s, %s %s', header.key, header.value, headerFilters.get(header.key), header.value.indexOf(headerFilters.get(header.key)) >= 0);
             if (headerFilters.has(header.key) && header.value.indexOf(headerFilters.get(header.key)) >= 0) {
                 headerMatches.add(header.key);
             }
         }
+        console.log(headerMatches.size, headerFilters.size);
         if (headerMatches.size < headerFilters.size) {
             // not enough matches
             return false;
