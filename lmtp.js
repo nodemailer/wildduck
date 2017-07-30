@@ -420,7 +420,7 @@ module.exports = done => {
         return setImmediate(() => done(null, false));
     }
 
-    messageHandler = new MessageHandler({ database: db.database, gridfs: db.gridfs, redis: db.redis });
+    messageHandler = new MessageHandler({ database: db.database, gridfs: db.gridfs, users: db.users, redis: db.redis });
 
     let started = false;
 
