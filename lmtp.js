@@ -118,7 +118,6 @@ const serverOptions = {
 
         stream.once('end', () => {
             let spamHeader = config.spamHeader && config.spamHeader.toLowerCase();
-            log.info('spam', spamHeader);
             let sender = tools.normalizeAddress((session.envelope.mailFrom && session.envelope.mailFrom.address) || '');
             let responses = [];
             let users = session.users;
@@ -183,8 +182,6 @@ const serverOptions = {
                             : []
                     );
 
-                    log.info('ddd', JSON.stringify(filters));
-
                     let forwardTargets = new Set();
                     let forwardTargetUrls = new Set();
                     let matchingFilters = [];
@@ -198,8 +195,6 @@ const serverOptions = {
                         // apply filter actions
                         .forEach(filter => {
                             matchingFilters.push(filter.id);
-
-                            log.info('ddd', JSON.stringify(filter.action));
 
                             // apply matching filter
                             if (!filterActions) {
@@ -273,7 +268,7 @@ const serverOptions = {
 
                     let sendAutoreply = done => {
                         // never reply to messages marked as spam
-                        if (!sender || !user.autoreply || filterActions.get('spam')) {
+                        if (!sender || !user.autoreply || !user.autoreply.status || !user.autoreply.message || filterActions.get('spam')) {
                             return setImmediate(done);
                         }
 
@@ -386,7 +381,7 @@ const serverOptions = {
                                 // if similar message exists, then skip
                                 skipExisting: true
                             };
-                            log.info('ddd3', JSON.stringify(messageOptions));
+
                             messageHandler.add(messageOptions, (err, inserted, info) => {
                                 // remove Delivered-To
                                 chunks.shift();
@@ -466,12 +461,10 @@ function checkFilter(filter, prepared, maildata) {
         let headerMatches = new Set();
         for (let j = prepared.headers.length - 1; j >= 0; j--) {
             let header = prepared.headers[j];
-            log.info('dd5', '%s: %s, %s %s', header.key, header.value, headerFilters.get(header.key), header.value.indexOf(headerFilters.get(header.key)) >= 0);
             if (headerFilters.has(header.key) && header.value.indexOf(headerFilters.get(header.key)) >= 0) {
                 headerMatches.add(header.key);
             }
         }
-        console.log(headerMatches.size, headerFilters.size);
         if (headerMatches.size < headerFilters.size) {
             // not enough matches
             return false;
