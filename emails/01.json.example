@@ -1,0 +1,17 @@
+{
+    "mailbox": "INBOX",
+    "seen": true,
+    "flag": true,
+
+    "from": {
+        "name": "Support",
+        "address": "info@example.com"
+    },
+    "to": {
+        "name": "[NAME]",
+        "address": "[EMAIL]"
+    },
+    "subject": "[FNAME], welcome to our awesome service!",
+    "text": "[FNAME], your new email account [EMAIL] is now ready to be used!",
+    "html": "<p><strong>[FNAME]</strong>, your new email account [EMAIL] is now ready to be used!</p>"
+}

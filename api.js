@@ -100,9 +100,9 @@ module.exports = done => {
         database: db.database,
         redis: db.redis
     });
-    userHandler = new UserHandler({ database: db.database, users: db.users, redis: db.redis });
-    mailboxHandler = new MailboxHandler({ database: db.database, users: db.users, redis: db.redis, notifier });
     messageHandler = new MessageHandler({ database: db.database, gridfs: db.gridfs, redis: db.redis });
+    userHandler = new UserHandler({ database: db.database, users: db.users, redis: db.redis, messageHandler });
+    mailboxHandler = new MailboxHandler({ database: db.database, users: db.users, redis: db.redis, notifier });
 
     usersRoutes(db, server, userHandler);
     addressesRoutes(db, server);

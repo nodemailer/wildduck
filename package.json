@@ -26,6 +26,7 @@
         "addressparser": "^1.0.1",
         "bcryptjs": "^2.4.3",
         "generate-password": "^1.3.0",
+        "he": "^1.1.1",
         "html-to-text": "^3.3.0",
         "iconv-lite": "^0.4.18",
         "joi": "^10.6.0",
