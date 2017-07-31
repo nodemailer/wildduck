@@ -7,9 +7,15 @@ indexes:
   type: users # index applies to users database
   index:
     name: users
-    unique: true
     key:
       username: 1
+- collection: users
+  type: users # index applies to users database
+  index:
+    name: users_dotless
+    unique: true
+    key:
+      unameview: 1
 - collection: users
   type: users # index applies to users database
   index:
@@ -23,9 +29,15 @@ indexes:
   type: users # index applies to users database
   index:
     name: address
-    unique: true
     key:
       address: 1
+- collection: addresses
+  type: users # index applies to users database
+  index:
+    name: address_dotless
+    unique: true
+    key:
+      addrview: 1
 - collection: addresses
   type: users # index applies to users database
   index:

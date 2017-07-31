@@ -55,7 +55,7 @@ const serverOptions = {
         let recipient = originalRecipient.replace(/\+[^@]*@/, '@');
 
         db.users.collection('addresses').findOne({
-            address: recipient
+            addrview: recipient.substr(0, recipient.indexOf('@')).replace(/\./g, '') + recipient.substr(recipient.indexOf('@'))
         }, (err, address) => {
             if (err) {
                 log.error('LMTP', err);

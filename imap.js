@@ -209,13 +209,15 @@ function clearExpiredMessages() {
             cursor.close(() => {
                 // delete all attachments that do not have any active links to message objects
                 deleteOrphanedAttachments(() => {
-                    server.logger.debug(
-                        {
-                            tnx: 'gc'
-                        },
-                        'Deleted %s messages',
-                        deleted
-                    );
+                    if (deleted) {
+                        server.logger.debug(
+                            {
+                                tnx: 'gc'
+                            },
+                            'Deleted %s messages',
+                            deleted
+                        );
+                    }
                     done(null, true);
                 });
             });

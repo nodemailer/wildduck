@@ -9,7 +9,8 @@ ident="wildduck"
 # how many processes to start
 processes=1
 
-# if this header exists and starts with "yes" then the message is treated as spam
+# If this header exists and starts with "yes" then the message is treated as spam
+# This is Rspamd header. For the same with SpamAssassin use "X-Spam-Status"
 spamHeader="X-Rspamd-Spam"
 
 # default quota storage in MB (can be overriden per user)
@@ -160,7 +161,7 @@ maxForwards=2000
         # Use {email} in the description strings to replace it with account email address
 
         # A reverse-DNS style identifier (com.example.myprofile, for example) that identifies the profile.
-        # This string is used to determine whether a new profile should replace an existing one or should be added.
+        # This string is used to determine whether a new profile should replace an existing one or should be added. Username is prepended to this value.
         identifier="com.email.wildduck"
 
         # A human-readable name for the profile. This value is displayed on the Detail screen. It does not have to be unique.
