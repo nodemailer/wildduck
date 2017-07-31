@@ -89,9 +89,10 @@ Yes, it does. You can run the server and get working IMAP and POP3 servers for m
 5. **De-duplication of attachments.** If the same attachment is referenced by different messages then only a single copy of the attachment is stored. Attachment is stored in the encoded form (eg. encoded in base64) to not break any signatures so the resulting encoding must match as well.
 6. Access messages both using **IMAP and HTTP API**. The latter serves parsed data, so no need to fetch RFC822 messages and parse out html, plaintext content or attachments. It is super easy to create a webmail interface on top of this.
 7. Built in **address labels**: _username+label@example.com_ is delivered to _username@example.com_
-8. **HTTP Event Source** to push modifications in user email account to browser for super snappy webmail clients
-9. **Super easy to tweak.** The entire codebase is pure JavaScript, so there's nothing to compile or anything platform specific. If you need to tweak something then change the code, restart the app and you're ready to go. If it works on one machine then most probably it works in every other machine as well.
-10. **Better disk usage**. Attachment de-duplication and MongoDB compression yield in about 40% smaller disk usage as the sum of all stored email sizes.
+8. Dots in usernames and addresses are informational only. username@example.com is the same as user.name@example.com
+9. **HTTP Event Source** to push modifications in user email account to browser for super snappy webmail clients
+10. **Super easy to tweak.** The entire codebase is pure JavaScript, so there's nothing to compile or anything platform specific. If you need to tweak something then change the code, restart the app and you're ready to go. If it works on one machine then most probably it works in every other machine as well.
+11. **Better disk usage**. Attachment de-duplication and MongoDB compression yield in about 40% smaller disk usage as the sum of all stored email sizes.
 
 **Demo video for HTTP push**
 
