@@ -6,6 +6,10 @@ Wild Duck tries to follow Gmail in architectural design. If there's a decision t
 
 > **NB!** Wild Duck is currently in **beta**. Use it on your own responsibility.
 
+![](https://cldup.com/TZoTfxPugm.png)
+
+- Web interface at https://wildduck.email that uses Wild Duck API
+
 ## Requirements
 
 * *MongoDB* to store all data
