@@ -230,7 +230,7 @@ Use [ZoneMTA](https://github.com/zone-eu/zone-mta) with the [ZoneMTA-WildDuck](h
 
 ## Inbound SMTP
 
-Use [Haraka](http://haraka.github.io/) with [queue/lmtp](http://haraka.github.io/manual/plugins/queue/lmtp.html) plugin. Wild Duck specific recipient processing plugin coming soon!
+Use [Haraka](http://haraka.github.io/) with [queue/lmtp](http://haraka.github.io/manual/plugins/queue/lmtp.html) plugin to deliver messages to Wild Duck and [haraka-plugins-wildduck](https://github.com/nodemailer/haraka-plugin-wildduck) to validate recipient addresses and quota usage against the Wild Duck users database.
 
 ## Future considerations
 
