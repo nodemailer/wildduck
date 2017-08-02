@@ -226,7 +226,10 @@ This should "deliver" a new message to the INBOX of _username@example.com_ by us
 
 ## Outbound SMTP
 
-Use [ZoneMTA](https://github.com/zone-eu/zone-mta) with the [ZoneMTA-WildDuck](https://github.com/nodemailer/zonemta-wildduck) plugin. This gives you an outbound SMTP server that uses Wild Duck accounts for authentication. The plugin authenticates user credentials and also rewrites headers if needed (if the header From: address does not match user address or aliases then it is rewritten). Additionally a copy of the sent message is uploaded to the Sent Mail folder.
+Use [WildDuck MTA](https://github.com/nodemailer/wildduck-mta) (which under the hood is
+[ZoneMTA](https://github.com/zone-eu/zone-mta) with the [ZoneMTA-WildDuck](https://github.com/nodemailer/zonemta-wildduck) plugin).
+
+This gives you an outbound SMTP server that uses Wild Duck accounts for authentication. The plugin authenticates user credentials and also rewrites headers if needed (if the header From: address does not match user address or aliases then it is rewritten). Additionally a copy of the sent message is uploaded to the Sent Mail folder. Local delivery is done directly to Wild Duck LMTP.
 
 ## Inbound SMTP
 
