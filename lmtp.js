@@ -73,7 +73,9 @@ const serverOptions = {
                     forwards: true,
                     forward: true,
                     targetUrl: true,
-                    autoreply: true
+                    autoreply: true,
+                    encryptMessages: true,
+                    pubKey: true
                 }
             }, (err, user) => {
                 if (err) {
@@ -148,252 +150,259 @@ const serverOptions = {
                 chunklen += header.length;
 
                 let raw = Buffer.concat(chunks, chunklen);
-                let prepared = messageHandler.prepareMessage({
-                    raw
-                });
-                let maildata = messageHandler.indexer.getMaildata(prepared.id, prepared.mimeTree);
 
-                // default flags are empty
-                let flags = [];
-
-                // default mailbox target is INBOX
-                let mailboxQueryKey = 'path';
-                let mailboxQueryValue = 'INBOX';
-
-                db.database.collection('filters').find({ user: user._id }).sort({ _id: 1 }).toArray((err, filters) => {
-                    if (err) {
-                        // ignore, as filtering is not so important
+                messageHandler.encryptMessage(user.encryptMessages ? user.pubKey : false, raw, (err, encrypted) => {
+                    if (!err && encrypted) {
+                        raw = encrypted;
                     }
-                    // append generic spam header check to the filters
-                    filters = (filters || []).concat(
-                        spamHeader
-                            ? {
-                                id: 'SPAM',
-                                query: {
-                                    headers: {
-                                        [spamHeader]: 'Yes'
-                                    }
-                                },
-                                action: {
-                                    // only applies if any other filter does not already mark message as spam or ham
-                                    spam: true
-                                }
-                            }
-                            : []
-                    );
 
-                    let forwardTargets = new Set();
-                    let forwardTargetUrls = new Set();
-                    let matchingFilters = [];
-                    let filterActions = new Map();
+                    let prepared = messageHandler.prepareMessage({
+                        raw
+                    });
+                    let maildata = messageHandler.indexer.getMaildata(prepared.id, prepared.mimeTree);
 
-                    filters
-                        // apply all filters to the message
-                        .map(filter => checkFilter(filter, prepared, maildata))
-                        // remove all unmatched filters
-                        .filter(filter => filter)
-                        // apply filter actions
-                        .forEach(filter => {
-                            matchingFilters.push(filter.id);
+                    // default flags are empty
+                    let flags = [];
 
-                            // apply matching filter
-                            if (!filterActions) {
-                                filterActions = filter.action;
-                            } else {
-                                Object.keys(filter.action).forEach(key => {
-                                    if (key === 'forward') {
-                                        forwardTargets.add(filter.action[key]);
-                                        return;
-                                    }
+                    // default mailbox target is INBOX
+                    let mailboxQueryKey = 'path';
+                    let mailboxQueryValue = 'INBOX';
 
-                                    if (key === 'targetUrl') {
-                                        forwardTargetUrls.add(filter.action[key]);
-                                        return;
-                                    }
-
-                                    // if a previous filter already has set a value then do not touch it
-                                    if (!filterActions.has(key)) {
-                                        filterActions.set(key, filter.action[key]);
-                                    }
-                                });
-                            }
-                        });
-
-                    let forwardMessage = done => {
-                        if (user.forward && !filterActions.get('delete')) {
-                            // forward to default recipient only if the message is not deleted
-                            forwardTargets.add(user.forward);
-                        }
-
-                        if (user.targetUrl && !filterActions.get('delete')) {
-                            // forward to default URL only if the message is not deleted
-                            forwardTargetUrls.add(user.targetUrl);
-                        }
-
-                        // never forward messages marked as spam
-                        if ((!forwardTargets.size && !forwardTargetUrls.size) || filterActions.get('spam')) {
-                            return setImmediate(done);
-                        }
-
-                        // check limiting counters
-                        messageHandler.counters.ttlcounter(
-                            'wdf:' + user._id.toString(),
-                            forwardTargets.size + forwardTargetUrls.size,
-                            user.forwards,
-                            (err, result) => {
-                                if (err) {
-                                    // failed checks
-                                    log.error('LMTP', 'FRWRDFAIL key=%s error=%s', 'wdf:' + user._id.toString(), err.message);
-                                } else if (!result.success) {
-                                    log.silly('LMTP', 'FRWRDFAIL key=%s error=%s', 'wdf:' + user._id.toString(), 'Precondition failed');
-                                    return done();
-                                }
-
-                                forward(
-                                    {
-                                        user,
-                                        sender,
-                                        recipient,
-
-                                        forward: forwardTargets.size ? Array.from(forwardTargets) : false,
-                                        targetUrl: forwardTargetUrls.size ? Array.from(forwardTargetUrls) : false,
-
-                                        chunks
-                                    },
-                                    done
-                                );
-                            }
-                        );
-                    };
-
-                    let sendAutoreply = done => {
-                        // never reply to messages marked as spam
-                        if (!sender || !user.autoreply || filterActions.get('spam')) {
-                            return setImmediate(done);
-                        }
-
-                        autoreply(
-                            {
-                                user,
-                                sender,
-                                recipient,
-                                chunks,
-                                messageHandler
-                            },
-                            done
-                        );
-                    };
-
-                    forwardMessage((err, id) => {
+                    db.database.collection('filters').find({ user: user._id }).sort({ _id: 1 }).toArray((err, filters) => {
                         if (err) {
-                            log.error(
-                                'LMTP',
-                                '%s FRWRDFAIL from=%s to=%s target=%s error=%s',
-                                prepared.id.toString(),
-                                sender,
-                                recipient,
-                                Array.from(forwardTargets).concat(forwardTargetUrls).join(','),
-                                err.message
-                            );
-                        } else if (id) {
-                            log.silly(
-                                'LMTP',
-                                '%s FRWRDOK id=%s from=%s to=%s target=%s',
-                                prepared.id.toString(),
-                                id,
-                                sender,
-                                recipient,
-                                Array.from(forwardTargets).concat(forwardTargetUrls).join(',')
-                            );
+                            // ignore, as filtering is not so important
                         }
+                        // append generic spam header check to the filters
+                        filters = (filters || []).concat(
+                            spamHeader
+                                ? {
+                                    id: 'SPAM',
+                                    query: {
+                                        headers: {
+                                            [spamHeader]: 'Yes'
+                                        }
+                                    },
+                                    action: {
+                                        // only applies if any other filter does not already mark message as spam or ham
+                                        spam: true
+                                    }
+                                }
+                                : []
+                        );
 
-                        sendAutoreply((err, id) => {
-                            if (err) {
-                                log.error('LMTP', '%s AUTOREPLYFAIL from=%s to=%s error=%s', prepared.id.toString(), '<>', sender, err.message);
-                            } else if (id) {
-                                log.silly('LMTP', '%s AUTOREPLYOK id=%s from=%s to=%s', prepared.id.toString(), id, '<>', sender);
-                            }
+                        let forwardTargets = new Set();
+                        let forwardTargetUrls = new Set();
+                        let matchingFilters = [];
+                        let filterActions = new Map();
 
-                            if (filterActions.get('delete')) {
-                                // nothing to do with the message, just continue
-                                responses.push({
-                                    user,
-                                    response: 'Message dropped by policy as ' + prepared.id.toString()
-                                });
-                                prepared = false;
-                                maildata = false;
-                                return storeNext();
-                            }
+                        filters
+                            // apply all filters to the message
+                            .map(filter => checkFilter(filter, prepared, maildata))
+                            // remove all unmatched filters
+                            .filter(filter => filter)
+                            // apply filter actions
+                            .forEach(filter => {
+                                matchingFilters.push(filter.id);
 
-                            // apply filter results to the message
-                            filterActions.forEach((value, key) => {
-                                switch (key) {
-                                    case 'spam':
-                                        if (value > 0) {
-                                            // positive value is spam
-                                            mailboxQueryKey = 'specialUse';
-                                            mailboxQueryValue = '\\Junk';
+                                // apply matching filter
+                                if (!filterActions) {
+                                    filterActions = filter.action;
+                                } else {
+                                    Object.keys(filter.action).forEach(key => {
+                                        if (key === 'forward') {
+                                            forwardTargets.add(filter.action[key]);
+                                            return;
                                         }
-                                        break;
-                                    case 'seen':
-                                        if (value) {
-                                            flags.push('\\Seen');
+
+                                        if (key === 'targetUrl') {
+                                            forwardTargetUrls.add(filter.action[key]);
+                                            return;
                                         }
-                                        break;
-                                    case 'flag':
-                                        if (value) {
-                                            flags.push('\\Flagged');
+
+                                        // if a previous filter already has set a value then do not touch it
+                                        if (!filterActions.has(key)) {
+                                            filterActions.set(key, filter.action[key]);
                                         }
-                                        break;
-                                    case 'mailbox':
-                                        if (value) {
-                                            // positive value is spam
-                                            mailboxQueryKey = 'mailbox';
-                                            mailboxQueryValue = value;
-                                        }
-                                        break;
+                                    });
                                 }
                             });
 
-                            let messageOptions = {
-                                user: (user && user._id) || user,
-                                [mailboxQueryKey]: mailboxQueryValue,
+                        let forwardMessage = done => {
+                            if (user.forward && !filterActions.get('delete')) {
+                                // forward to default recipient only if the message is not deleted
+                                forwardTargets.add(user.forward);
+                            }
 
-                                prepared,
-                                maildata,
+                            if (user.targetUrl && !filterActions.get('delete')) {
+                                // forward to default URL only if the message is not deleted
+                                forwardTargetUrls.add(user.targetUrl);
+                            }
 
-                                meta: {
-                                    source: 'LMTP',
-                                    from: sender,
-                                    to: recipient,
-                                    origin: session.remoteAddress,
-                                    originhost: session.clientHostname,
-                                    transhost: session.hostNameAppearsAs,
-                                    transtype: session.transmissionType,
-                                    time: Date.now()
-                                },
+                            // never forward messages marked as spam
+                            if ((!forwardTargets.size && !forwardTargetUrls.size) || filterActions.get('spam')) {
+                                return setImmediate(done);
+                            }
 
-                                filters: matchingFilters,
+                            // check limiting counters
+                            messageHandler.counters.ttlcounter(
+                                'wdf:' + user._id.toString(),
+                                forwardTargets.size + forwardTargetUrls.size,
+                                user.forwards,
+                                (err, result) => {
+                                    if (err) {
+                                        // failed checks
+                                        log.error('LMTP', 'FRWRDFAIL key=%s error=%s', 'wdf:' + user._id.toString(), err.message);
+                                    } else if (!result.success) {
+                                        log.silly('LMTP', 'FRWRDFAIL key=%s error=%s', 'wdf:' + user._id.toString(), 'Precondition failed');
+                                        return done();
+                                    }
 
-                                date: false,
-                                flags,
+                                    forward(
+                                        {
+                                            user,
+                                            sender,
+                                            recipient,
 
-                                // if similar message exists, then skip
-                                skipExisting: true
-                            };
+                                            forward: forwardTargets.size ? Array.from(forwardTargets) : false,
+                                            targetUrl: forwardTargetUrls.size ? Array.from(forwardTargetUrls) : false,
 
-                            messageHandler.add(messageOptions, (err, inserted, info) => {
-                                // remove Delivered-To
-                                chunks.shift();
-                                chunklen -= header.length;
+                                            chunks
+                                        },
+                                        done
+                                    );
+                                }
+                            );
+                        };
 
-                                // push to response list
-                                responses.push({
+                        let sendAutoreply = done => {
+                            // never reply to messages marked as spam
+                            if (!sender || !user.autoreply || filterActions.get('spam')) {
+                                return setImmediate(done);
+                            }
+
+                            autoreply(
+                                {
                                     user,
-                                    response: err ? err : 'Message stored as ' + info.id.toString()
+                                    sender,
+                                    recipient,
+                                    chunks,
+                                    messageHandler
+                                },
+                                done
+                            );
+                        };
+
+                        forwardMessage((err, id) => {
+                            if (err) {
+                                log.error(
+                                    'LMTP',
+                                    '%s FRWRDFAIL from=%s to=%s target=%s error=%s',
+                                    prepared.id.toString(),
+                                    sender,
+                                    recipient,
+                                    Array.from(forwardTargets).concat(forwardTargetUrls).join(','),
+                                    err.message
+                                );
+                            } else if (id) {
+                                log.silly(
+                                    'LMTP',
+                                    '%s FRWRDOK id=%s from=%s to=%s target=%s',
+                                    prepared.id.toString(),
+                                    id,
+                                    sender,
+                                    recipient,
+                                    Array.from(forwardTargets).concat(forwardTargetUrls).join(',')
+                                );
+                            }
+
+                            sendAutoreply((err, id) => {
+                                if (err) {
+                                    log.error('LMTP', '%s AUTOREPLYFAIL from=%s to=%s error=%s', prepared.id.toString(), '<>', sender, err.message);
+                                } else if (id) {
+                                    log.silly('LMTP', '%s AUTOREPLYOK id=%s from=%s to=%s', prepared.id.toString(), id, '<>', sender);
+                                }
+
+                                if (filterActions.get('delete')) {
+                                    // nothing to do with the message, just continue
+                                    responses.push({
+                                        user,
+                                        response: 'Message dropped by policy as ' + prepared.id.toString()
+                                    });
+                                    prepared = false;
+                                    maildata = false;
+                                    return storeNext();
+                                }
+
+                                // apply filter results to the message
+                                filterActions.forEach((value, key) => {
+                                    switch (key) {
+                                        case 'spam':
+                                            if (value > 0) {
+                                                // positive value is spam
+                                                mailboxQueryKey = 'specialUse';
+                                                mailboxQueryValue = '\\Junk';
+                                            }
+                                            break;
+                                        case 'seen':
+                                            if (value) {
+                                                flags.push('\\Seen');
+                                            }
+                                            break;
+                                        case 'flag':
+                                            if (value) {
+                                                flags.push('\\Flagged');
+                                            }
+                                            break;
+                                        case 'mailbox':
+                                            if (value) {
+                                                // positive value is spam
+                                                mailboxQueryKey = 'mailbox';
+                                                mailboxQueryValue = value;
+                                            }
+                                            break;
+                                    }
                                 });
 
-                                storeNext();
+                                let messageOptions = {
+                                    user: (user && user._id) || user,
+                                    [mailboxQueryKey]: mailboxQueryValue,
+
+                                    prepared,
+                                    maildata,
+
+                                    meta: {
+                                        source: 'LMTP',
+                                        from: sender,
+                                        to: recipient,
+                                        origin: session.remoteAddress,
+                                        originhost: session.clientHostname,
+                                        transhost: session.hostNameAppearsAs,
+                                        transtype: session.transmissionType,
+                                        time: Date.now()
+                                    },
+
+                                    filters: matchingFilters,
+
+                                    date: false,
+                                    flags,
+
+                                    // if similar message exists, then skip
+                                    skipExisting: true
+                                };
+
+                                messageHandler.add(messageOptions, (err, inserted, info) => {
+                                    // remove Delivered-To
+                                    chunks.shift();
+                                    chunklen -= header.length;
+
+                                    // push to response list
+                                    responses.push({
+                                        user,
+                                        response: err ? err : 'Message stored as ' + info.id.toString()
+                                    });
+
+                                    storeNext();
+                                });
                             });
                         });
                     });
