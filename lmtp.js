@@ -390,7 +390,7 @@ const serverOptions = {
                                     messageOptions.prepared = messageHandler.prepareMessage({
                                         raw: encrypted
                                     });
-                                    messageOptions.maildata = messageHandler.indexer.getMaildata(prepared.id, prepared.mimeTree);
+                                    messageOptions.maildata = messageHandler.indexer.getMaildata(messageOptions.prepared.id, messageOptions.prepared.mimeTree);
                                 }
 
                                 messageHandler.add(messageOptions, (err, inserted, info) => {
