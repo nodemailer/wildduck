@@ -1,0 +1,12 @@
+{
+    "flag": true,
+    "from": {
+        "name": "Wild Duck Support",
+        "address": "info@[DOMAIN]"
+    },
+    "to": {
+        "name": "[NAME]",
+        "address": "[EMAIL]"
+    },
+    "subject": "[FNAME], welcome to our awesome service!"
+}

@@ -28,6 +28,8 @@
         "generate-password": "^1.3.0",
         "he": "^1.1.1",
         "html-to-text": "^3.3.0",
+        "humanname": "^0.2.2",
+        "humanparser": "^1.4.0",
         "iconv-lite": "^0.4.18",
         "joi": "^10.6.0",
         "js-yaml": "^3.9.1",
@@ -58,7 +60,7 @@
         "url": "git://github.com/wildduck-email/wildduck.git"
     },
     "optionalDependencies": {
-        "@ronomon/crypto-async": "^2.0.1",
+        "@ronomon/crypto-async": "^2.2.0",
         "modern-syslog": "^1.1.4"
     }
 }

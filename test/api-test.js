@@ -4,7 +4,6 @@
 
 const chai = require('chai');
 const frisby = require('icedfrisby');
-const Joi = require('joi');
 
 const expect = chai.expect;
 chai.config.includeStack = true;
@@ -26,11 +25,6 @@ frisby
         { json: true }
     )
     .expectStatus(200)
-    .expectJSONTypes({
-        success: Joi.boolean(),
-        id: Joi.string(),
-        error: Joi.string()
-    })
     .afterJSON(response => {
         expect(response).to.exist;
         expect(response.success).to.be.true;

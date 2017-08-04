@@ -4,4 +4,4 @@ npm-debug.log
 .npmrc
 config/production.*
 config/development.*
-emails/*.json
+emails/example.json
