@@ -321,6 +321,33 @@ Response for a successful operation:
 }
 ```
 
+### Reset user password
+
+#### POST /users/{user}/password/reset
+
+Generates a new temporary password and resets 2FA if set. Once user password is reset, then authentication results
+will include `requirePasswordChange: true` parameter. This means that the user should not be able to perform regular
+actions before the password has been changed.
+
+**Parameters**
+
+- **user** (required) is the ID of the user
+
+**Example**
+
+```
+curl -XPOST "http://localhost:8080/users/59467f27535f8f0f067ba8e6/password/reset" -H 'content-type: application/json' -d '{}'
+```
+
+Response for a successful operation:
+
+```json
+{
+  "success":true,
+  "password": "somesecretvalue"
+}
+```
+
 ## Authentication
 
 ### Authenticate an user
@@ -343,7 +370,8 @@ Authenticates an user
 - **id** is the id of the authenticated user
 - **username** is the user name of the logged in user (useful if you logged in used)
 - **scope** is the scope this authentication is valid for
-- **require2fa** if `true` the the user should also [provide a 2FA token](#verify-2fa) before the user is allowed to proceed
+- **require2fa** if `true` then the user should also [provide a 2FA token](#verify-2fa) before the user is allowed to proceed
+- **requirePasswordChange** if `true` then the user should be forced to change their password
 
 **Example**
 
@@ -364,7 +392,8 @@ Response for a successful operation:
   "id": "5971da1754cfdc7f0983b2ec",
   "username": "testuser",
   "scope": "pop3",
-  "require2fa": false
+  "require2fa": false,
+  "requirePasswordChange": false
 }
 ```
 
@@ -417,10 +446,11 @@ Wild Duck supports TOTP based 2FA. If 2FA is enabled then users are requested to
 2FA checks do not happen magically, your application must be 2FA aware:
 
 1. Authenticate user with the [/authenticate](#authenticate-an-user) call
-2. If authentication ends with `require2fa:false` then do nothing, otherwise continue with Step 3.
-3. Request TOTP token from the user before allowing to perform other actions
-4. Check the token with [/user/{user}/2fa?token=123456](#check-2fa)
-5. If token verification succeeds then user is authenticated
+2. If authentication result includes `requirePasswordChange:true` then force user to change their password
+3. If authentication result includes `require2fa:false` then do nothing, the user is now authenticated. Otherwise continue with Step 4.
+4. Request TOTP token from the user before allowing to perform other actions
+5. Check the token with [/user/{user}/2fa?token=123456](#check-2fa)
+6. If token verification succeeds then user is authenticated
 
 ### Setup 2FA
 
