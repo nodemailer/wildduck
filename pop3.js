@@ -307,8 +307,17 @@ module.exports = done => {
 
     let started = false;
 
-    messageHandler = new MessageHandler({ database: db.database, gridfs: db.gridfs, redis: db.redis });
-    userHandler = new UserHandler({ database: db.database, users: db.users, redis: db.redis });
+    messageHandler = new MessageHandler({
+        database: db.database,
+        gridfs: db.gridfs,
+        redis: db.redis
+    });
+
+    userHandler = new UserHandler({
+        database: db.database,
+        users: db.users,
+        redis: db.redis
+    });
 
     server.on('error', err => {
         if (!started) {

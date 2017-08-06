@@ -6,8 +6,6 @@ const PassThrough = stream.PassThrough;
 const BodyStructure = require('./body-structure');
 const createEnvelope = require('./create-envelope');
 const parseMimeTree = require('./parse-mime-tree');
-const ObjectID = require('mongodb').ObjectID;
-const GridFSBucket = require('mongodb').GridFSBucket;
 const libmime = require('libmime');
 const libqp = require('libqp');
 const libbase64 = require('libbase64');
@@ -16,25 +14,12 @@ const he = require('he');
 const htmlToText = require('html-to-text');
 const crypto = require('crypto');
 
-let cryptoAsync;
-try {
-    cryptoAsync = require('@ronomon/crypto-async'); // eslint-disable-line global-require
-} catch (E) {
-    // ignore
-}
-
 class Indexer {
     constructor(options) {
         this.options = options || {};
         this.fetchOptions = this.options.fetchOptions || {};
 
-        this.database = this.options.database;
-        this.gridfs = this.options.gridfs || this.options.database;
-        if (this.gridfs) {
-            this.gridstore = new GridFSBucket(this.gridfs, {
-                bucketName: 'attachments'
-            });
-        }
+        this.attachmentStorage = this.options.attachmentStorage;
 
         // create logger
         this.logger = this.options.logger || {
@@ -195,7 +180,11 @@ class Indexer {
             } else if (node.attachmentId && !skipExternal) {
                 append(false, true); // force newline between header and contents
 
-                let attachmentStream = this.gridstore.openDownloadStream(node.attachmentId);
+                let attachmentId = node.attachmentId;
+                if (mimeTree.attachmentMap && mimeTree.attachmentMap[node.attachmentId]) {
+                    attachmentId = mimeTree.attachmentMap[node.attachmentId];
+                }
+                let attachmentStream = this.attachmentStorage.createReadStream(attachmentId);
 
                 attachmentStream.once('error', err => {
                     res.emit('error', err);
@@ -267,16 +256,13 @@ class Indexer {
      */
     getMaildata(messageId, mimeTree) {
         let magic = parseInt(crypto.randomBytes(2).toString('hex'), 16);
-        let map = {};
         let maildata = {
             nodes: [],
             attachments: [],
             text: '',
             html: [],
             // magic number to append to increment stored attachment object counter
-            magic,
-            // match ids referenced in document to actual attachment ids
-            map
+            magic
         };
 
         let idcount = 0;
@@ -363,7 +349,6 @@ class Indexer {
             // remove attachments and very large text nodes from the mime tree
             if (!isMultipart && node.body && node.body.length && (!isInlineText || node.size > 300 * 1024)) {
                 let attachmentId = 'ATT' + leftPad(++idcount, '0', 5);
-                map[attachmentId] = new ObjectID();
 
                 let fileName =
                     (node.parsedHeader['content-disposition'] &&
@@ -371,6 +356,7 @@ class Indexer {
                         node.parsedHeader['content-disposition'].params.filename) ||
                     (node.parsedHeader['content-type'] && node.parsedHeader['content-type'].params && node.parsedHeader['content-type'].params.name) ||
                     false;
+
                 let contentId = (node.parsedHeader['content-id'] || '').toString().replace(/<|>/g, '').trim();
 
                 if (fileName) {
@@ -391,21 +377,9 @@ class Indexer {
                 // push to queue
                 maildata.nodes.push({
                     attachmentId,
-                    options: {
-                        fsync: true,
-                        contentType,
-                        // metadata should include only minimally required information, this would allow
-                        // to share attachments between different messages if the content is exactly the same
-                        // even though metadata (filename, content-disposition etc) might not
-                        metadata: {
-                            // values to detect if there are messages that reference to this attachment or not
-                            m: maildata.magic,
-                            c: 1,
-
-                            // how to decode contents if a webclient or API asks for the attachment
-                            transferEncoding
-                        }
-                    },
+                    magic: maildata.magic,
+                    contentType,
+                    transferEncoding,
                     body: node.body
                 });
 
@@ -463,82 +437,19 @@ class Indexer {
     storeNodeBodies(messageId, maildata, mimeTree, callback) {
         let pos = 0;
         let nodes = maildata.nodes;
+        mimeTree.attachmentMap = {};
         let storeNode = () => {
             if (pos >= nodes.length) {
-                // replace attachment IDs with ObjectIDs in the mimeTree
-                let walk = (node, next) => {
-                    if (node.attachmentId && maildata.map[node.attachmentId]) {
-                        node.attachmentId = maildata.map[node.attachmentId];
-                    }
-
-                    if (Array.isArray(node.childNodes)) {
-                        let pos = 0;
-                        let processChildNodes = () => {
-                            if (pos >= node.childNodes.length) {
-                                return next();
-                            }
-                            let childNode = node.childNodes[pos++];
-                            walk(childNode, () => processChildNodes());
-                        };
-                        processChildNodes();
-                    } else {
-                        next();
-                    }
-                };
-
-                return walk(mimeTree, () => callback(null, true));
+                return callback(null, true);
             }
 
             let node = nodes[pos++];
-
-            calculateHash(node.body, (err, hash) => {
+            this.attachmentStorage.create(node, (err, id) => {
                 if (err) {
                     return callback(err);
                 }
-
-                this.gridfs.collection('attachments.files').findOneAndUpdate({
-                    'metadata.h': hash
-                }, {
-                    $inc: {
-                        'metadata.c': 1,
-                        'metadata.m': maildata.magic
-                    }
-                }, {
-                    returnOriginal: false
-                }, (err, result) => {
-                    if (err) {
-                        return callback(err);
-                    }
-
-                    if (result && result.value) {
-                        maildata.map[node.attachmentId] = result.value._id;
-                        return storeNode();
-                    }
-
-                    let returned = false;
-
-                    node.options.metadata.h = hash;
-
-                    let store = this.gridstore.openUploadStreamWithId(maildata.map[node.attachmentId], null, node.options);
-
-                    store.once('error', err => {
-                        if (returned) {
-                            return;
-                        }
-                        returned = true;
-                        callback(err);
-                    });
-
-                    store.once('finish', () => {
-                        if (returned) {
-                            return;
-                        }
-                        returned = true;
-                        return storeNode();
-                    });
-
-                    store.end(node.body);
-                });
+                mimeTree.attachmentMap[node.attachmentId] = id;
+                return storeNode();
             });
         };
 
@@ -798,22 +709,6 @@ function textToHtml(str) {
 
 function leftPad(val, chr, len) {
     return chr.repeat(len - val.toString().length) + val;
-}
-
-function calculateHash(input, callback) {
-    let algo = 'sha256';
-
-    if (!cryptoAsync) {
-        setImmediate(() => callback(null, crypto.createHash(algo).update(input).digest('hex')));
-        return;
-    }
-
-    cryptoAsync.hash(algo, input, (err, hash) => {
-        if (err) {
-            return callback(err);
-        }
-        return callback(null, hash.toString('hex'));
-    });
 }
 
 module.exports = Indexer;

@@ -100,18 +100,21 @@ module.exports = done => {
         database: db.database,
         redis: db.redis
     });
+
     messageHandler = new MessageHandler({
         database: db.database,
         users: db.users,
         gridfs: db.gridfs,
         redis: db.redis
     });
+
     userHandler = new UserHandler({
         database: db.database,
         users: db.users,
         redis: db.redis,
         messageHandler
     });
+
     mailboxHandler = new MailboxHandler({
         database: db.database,
         users: db.users,

@@ -199,7 +199,7 @@ function clearExpiredMessages() {
                 mailbox: true,
                 uid: true,
                 size: true,
-                map: true,
+                'mimeTree.attachmentMap': true,
                 magic: true,
                 unseen: true
             });
@@ -295,9 +295,24 @@ module.exports = done => {
             redis: db.redis
         });
 
-        messageHandler = new MessageHandler({ database: db.database, gridfs: db.gridfs, redis: db.redis });
-        userHandler = new UserHandler({ database: db.database, users: db.users, redis: db.redis });
-        mailboxHandler = new MailboxHandler({ database: db.database, users: db.users, redis: db.redis, notifier: server.notifier });
+        messageHandler = new MessageHandler({
+            database: db.database,
+            gridfs: db.gridfs,
+            redis: db.redis
+        });
+
+        userHandler = new UserHandler({
+            database: db.database,
+            users: db.users,
+            redis: db.redis
+        });
+
+        mailboxHandler = new MailboxHandler({
+            database: db.database,
+            users: db.users,
+            redis: db.redis,
+            notifier: server.notifier
+        });
 
         let started = false;
 
@@ -324,7 +339,7 @@ module.exports = done => {
         });
 
         // setup command handlers for the server instance
-        server.onFetch = onFetch(server);
+        server.onFetch = onFetch(server, messageHandler);
         server.onAuth = onAuth(server, userHandler);
         server.onList = onList(server);
         server.onLsub = onLsub(server);
@@ -337,8 +352,8 @@ module.exports = done => {
         server.onStatus = onStatus(server);
         server.onAppend = onAppend(server, messageHandler);
         server.onStore = onStore(server);
-        server.onExpunge = onExpunge(server);
-        server.onCopy = onCopy(server);
+        server.onExpunge = onExpunge(server, messageHandler);
+        server.onCopy = onCopy(server, messageHandler);
         server.onMove = onMove(server, messageHandler);
         server.onSearch = onSearch(server);
         server.onGetQuotaRoot = onGetQuotaRoot(server);
