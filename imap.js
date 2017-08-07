@@ -84,60 +84,6 @@ let mailboxHandler;
 let gcTimeout;
 let gcLock;
 
-function deleteOrphanedAttachments(callback) {
-    // NB! scattered query
-    let cursor = db.gridfs.collection('attachments.files').find({
-        'metadata.c': 0,
-        'metadata.m': 0
-    });
-
-    let deleted = 0;
-    let processNext = () => {
-        cursor.next((err, attachment) => {
-            if (err) {
-                return callback(err);
-            }
-            if (!attachment) {
-                return cursor.close(() => {
-                    // delete all attachments that do not have any active links to message objects
-                    callback(null, deleted);
-                });
-            }
-
-            if (!attachment || (attachment.metadata && attachment.metadata.c)) {
-                // skip
-                return processNext();
-            }
-
-            // delete file entry first
-            db.gridfs.collection('attachments.files').deleteOne({
-                _id: attachment._id,
-                // make sure that we do not delete a message that is already re-used
-                'metadata.c': 0,
-                'metadata.m': 0
-            }, (err, result) => {
-                if (err || !result.deletedCount) {
-                    return processNext();
-                }
-
-                // delete data chunks
-                db.gridfs.collection('attachments.chunks').deleteMany({
-                    files_id: attachment._id
-                }, err => {
-                    if (err) {
-                        // ignore as we don't really care if we have orphans or not
-                    }
-
-                    deleted++;
-                    processNext();
-                });
-            });
-        });
-    };
-
-    processNext();
-}
-
 function clearExpiredMessages() {
     clearTimeout(gcTimeout);
     let startTime = Date.now();
@@ -181,7 +127,7 @@ function clearExpiredMessages() {
 
         if (config.imap.disableRetention) {
             // delete all attachments that do not have any active links to message objects
-            return deleteOrphanedAttachments(() => done(null, true));
+            return messageHandler.attachmentStorage.deleteOrphaned(() => done(null, true));
         }
 
         // find and delete all messages that are expired
@@ -199,7 +145,7 @@ function clearExpiredMessages() {
                 mailbox: true,
                 uid: true,
                 size: true,
-                map: true,
+                'mimeTree.attachmentMap': true,
                 magic: true,
                 unseen: true
             });
@@ -208,7 +154,7 @@ function clearExpiredMessages() {
         let clear = () =>
             cursor.close(() => {
                 // delete all attachments that do not have any active links to message objects
-                deleteOrphanedAttachments(() => {
+                messageHandler.attachmentStorage.deleteOrphaned(() => {
                     if (deleted) {
                         server.logger.debug(
                             {
@@ -295,9 +241,25 @@ module.exports = done => {
             redis: db.redis
         });
 
-        messageHandler = new MessageHandler({ database: db.database, gridfs: db.gridfs, redis: db.redis });
-        userHandler = new UserHandler({ database: db.database, users: db.users, redis: db.redis });
-        mailboxHandler = new MailboxHandler({ database: db.database, users: db.users, redis: db.redis, notifier: server.notifier });
+        messageHandler = new MessageHandler({
+            database: db.database,
+            redis: db.redis,
+            gridfs: db.gridfs,
+            attachments: config.attachments
+        });
+
+        userHandler = new UserHandler({
+            database: db.database,
+            users: db.users,
+            redis: db.redis
+        });
+
+        mailboxHandler = new MailboxHandler({
+            database: db.database,
+            users: db.users,
+            redis: db.redis,
+            notifier: server.notifier
+        });
 
         let started = false;
 
@@ -324,7 +286,7 @@ module.exports = done => {
         });
 
         // setup command handlers for the server instance
-        server.onFetch = onFetch(server);
+        server.onFetch = onFetch(server, messageHandler);
         server.onAuth = onAuth(server, userHandler);
         server.onList = onList(server);
         server.onLsub = onLsub(server);
@@ -337,8 +299,8 @@ module.exports = done => {
         server.onStatus = onStatus(server);
         server.onAppend = onAppend(server, messageHandler);
         server.onStore = onStore(server);
-        server.onExpunge = onExpunge(server);
-        server.onCopy = onCopy(server);
+        server.onExpunge = onExpunge(server, messageHandler);
+        server.onCopy = onCopy(server, messageHandler);
         server.onMove = onMove(server, messageHandler);
         server.onSearch = onSearch(server);
         server.onGetQuotaRoot = onGetQuotaRoot(server);

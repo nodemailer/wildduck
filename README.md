@@ -193,7 +193,7 @@ Shard the following collections by these keys:
 sh.enableSharding('wildduck');
 sh.shardCollection('wildduck.messages', { mailbox: 1, uid: 1 });
 sh.shardCollection('wildduck.threads', { user: 'hashed' });
-sh.shardCollection('wildduck.attachments.files', { 'metadata.h': 'hashed' });
+sh.shardCollection('wildduck.attachments.files', { _id: 'hashed' });
 sh.shardCollection('wildduck.attachments.chunks', { files_id: 'hashed' });
 ```
 

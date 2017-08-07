@@ -432,7 +432,13 @@ module.exports = done => {
         return setImmediate(() => done(null, false));
     }
 
-    messageHandler = new MessageHandler({ database: db.database, gridfs: db.gridfs, users: db.users, redis: db.redis });
+    messageHandler = new MessageHandler({
+        database: db.database,
+        users: db.users,
+        redis: db.redis,
+        gridfs: db.gridfs,
+        attachments: config.attachments
+    });
 
     let started = false;
 

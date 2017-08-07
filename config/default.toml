@@ -52,6 +52,10 @@ maxForwards=2000
     # used to push outbound emails to the sending queue
     #sender="zone-mta"
 
+[attachments]
+    type="gridstore"
+    bucket="attachments"
+
 [log]
     level="silly"
     # log to syslog if true
