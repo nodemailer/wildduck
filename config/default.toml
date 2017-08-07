@@ -52,6 +52,10 @@ maxForwards=2000
     # used to push outbound emails to the sending queue
     #sender="zone-mta"
 
+[totp]
+    cipher="aes192"
+    secret="a secret cat"
+
 [attachments]
     type="gridstore"
     bucket="attachments"
