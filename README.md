@@ -84,6 +84,10 @@ Users, mailboxes and messages can be managed with HTTP requests against Wild Duc
 
 Yes, it does. You can run the server and get working IMAP and POP3 servers for mail store, LMTP server for pushing messages to the mail store and HTTP API server to create new users. All handled by Node.js, MongoDB and Redis, no additional dependencies needed. Provided services can be disabled and enabled one by one so, for example you could process just IMAP in one host and LMTP in another.
 
+### How is security implemented in Wild Duck?
+
+Read about Wild Duck security implementation from the [Wiki](https://github.com/nodemailer/wildduck/wiki/Security-implementation)
+
 ### What are the killer features?
 
 1. **Stateless.** Start as many instances as you want. You can start multiple Wild Duck instances in different machines and as long as they share the same MongoDB and Redis settings, users can connect to any instances. This is very different from the traditional IMAP servers where a single user always needs to connect (or be proxied) to the same IMAP server. Wild Duck keeps all required state information in MongoDB, so it does not matter which IMAP instance you use.
