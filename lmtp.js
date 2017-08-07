@@ -243,6 +243,7 @@ const serverOptions = {
                             'wdf:' + user._id.toString(),
                             forwardTargets.size + forwardTargetUrls.size,
                             user.forwards,
+                            false,
                             (err, result) => {
                                 if (err) {
                                     // failed checks

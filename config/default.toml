@@ -53,10 +53,14 @@ maxForwards=2000
     #sender="zone-mta"
 
 [totp]
-    cipher="aes192"
-    secret="a secret cat"
+    # If enabled then encrypt TOTP seed tokens with the secret password. By default TOTP seeds
+    # are not encrypted and stored as cleartext. Once set up do not change these values,
+    # otherwise decrypting totp seeds is going to fail
+    #cipher="aes192"
+    #secret="a secret cat"
 
 [attachments]
+    # For now there's only a single option for attachment storage
     type="gridstore"
     bucket="attachments"
 
