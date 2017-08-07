@@ -309,8 +309,9 @@ module.exports = done => {
 
     messageHandler = new MessageHandler({
         database: db.database,
+        redis: db.redis,
         gridfs: db.gridfs,
-        redis: db.redis
+        attachments: config.attachments
     });
 
     userHandler = new UserHandler({

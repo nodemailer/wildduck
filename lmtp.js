@@ -434,9 +434,10 @@ module.exports = done => {
 
     messageHandler = new MessageHandler({
         database: db.database,
-        gridfs: db.gridfs,
         users: db.users,
-        redis: db.redis
+        redis: db.redis,
+        gridfs: db.gridfs,
+        attachments: config.attachments
     });
 
     let started = false;

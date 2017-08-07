@@ -84,60 +84,6 @@ let mailboxHandler;
 let gcTimeout;
 let gcLock;
 
-function deleteOrphanedAttachments(callback) {
-    // NB! scattered query
-    let cursor = db.gridfs.collection('attachments.files').find({
-        'metadata.c': 0,
-        'metadata.m': 0
-    });
-
-    let deleted = 0;
-    let processNext = () => {
-        cursor.next((err, attachment) => {
-            if (err) {
-                return callback(err);
-            }
-            if (!attachment) {
-                return cursor.close(() => {
-                    // delete all attachments that do not have any active links to message objects
-                    callback(null, deleted);
-                });
-            }
-
-            if (!attachment || (attachment.metadata && attachment.metadata.c)) {
-                // skip
-                return processNext();
-            }
-
-            // delete file entry first
-            db.gridfs.collection('attachments.files').deleteOne({
-                _id: attachment._id,
-                // make sure that we do not delete a message that is already re-used
-                'metadata.c': 0,
-                'metadata.m': 0
-            }, (err, result) => {
-                if (err || !result.deletedCount) {
-                    return processNext();
-                }
-
-                // delete data chunks
-                db.gridfs.collection('attachments.chunks').deleteMany({
-                    files_id: attachment._id
-                }, err => {
-                    if (err) {
-                        // ignore as we don't really care if we have orphans or not
-                    }
-
-                    deleted++;
-                    processNext();
-                });
-            });
-        });
-    };
-
-    processNext();
-}
-
 function clearExpiredMessages() {
     clearTimeout(gcTimeout);
     let startTime = Date.now();
@@ -181,7 +127,7 @@ function clearExpiredMessages() {
 
         if (config.imap.disableRetention) {
             // delete all attachments that do not have any active links to message objects
-            return deleteOrphanedAttachments(() => done(null, true));
+            return messageHandler.attachmentStorage.deleteOrphaned(() => done(null, true));
         }
 
         // find and delete all messages that are expired
@@ -208,7 +154,7 @@ function clearExpiredMessages() {
         let clear = () =>
             cursor.close(() => {
                 // delete all attachments that do not have any active links to message objects
-                deleteOrphanedAttachments(() => {
+                messageHandler.attachmentStorage.deleteOrphaned(() => {
                     if (deleted) {
                         server.logger.debug(
                             {
@@ -297,8 +243,9 @@ module.exports = done => {
 
         messageHandler = new MessageHandler({
             database: db.database,
+            redis: db.redis,
             gridfs: db.gridfs,
-            redis: db.redis
+            attachments: config.attachments
         });
 
         userHandler = new UserHandler({
