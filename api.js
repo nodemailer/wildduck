@@ -113,7 +113,8 @@ module.exports = done => {
         database: db.database,
         users: db.users,
         redis: db.redis,
-        messageHandler
+        messageHandler,
+        authlogExpireDays: config.log.authlogExpireDays
     });
 
     mailboxHandler = new MailboxHandler({

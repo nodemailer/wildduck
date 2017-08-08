@@ -317,7 +317,8 @@ module.exports = done => {
     userHandler = new UserHandler({
         database: db.database,
         users: db.users,
-        redis: db.redis
+        redis: db.redis,
+        authlogExpireDays: config.log.authlogExpireDays
     });
 
     server.on('error', err => {
