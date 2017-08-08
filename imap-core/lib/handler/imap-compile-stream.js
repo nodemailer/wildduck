@@ -1,4 +1,4 @@
-/* eslint no-console: 0, new-cap: 0 */
+/* eslint new-cap: 0 */
 
 'use strict';
 
@@ -59,6 +59,13 @@ module.exports = function(response, isLogging) {
             if (!value.expectedLength) {
                 return emit();
             }
+
+            if (value.stream && value.stream.errored) {
+                let err = value.stream.errored;
+                value.stream.errored = false;
+                return output.emit('error', err);
+            }
+
             waiting = true;
             let expectedLength = value.maxLength ? Math.min(value.expectedLength, value.startFrom + value.maxLength) : value.expectedLength;
             let startFrom = value.startFrom;
@@ -70,11 +77,11 @@ module.exports = function(response, isLogging) {
             });
 
             // pass errors to output
-            value.stream.on('error', err => {
+            value.stream.once('error', err => {
                 output.emit('error', err);
             });
 
-            limiter.on('end', () => {
+            limiter.once('end', () => {
                 waiting = false;
                 return emit();
             });

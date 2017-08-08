@@ -31,8 +31,8 @@ class IMAPComposer extends Transform {
             obj.pipe(this.connection[!this.connection.compression ? '_socket' : '_deflate'], {
                 end: false
             });
-            obj.on('error', err => this.emit('error', err));
-            obj.on('end', () => {
+            obj.once('error', err => this.emit('error', err));
+            obj.once('end', () => {
                 this.push('\r\n');
                 done();
             });

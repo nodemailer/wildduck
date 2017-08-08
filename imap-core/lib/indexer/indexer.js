@@ -184,10 +184,11 @@ class Indexer {
                 if (mimeTree.attachmentMap && mimeTree.attachmentMap[node.attachmentId]) {
                     attachmentId = mimeTree.attachmentMap[node.attachmentId];
                 }
+
                 let attachmentStream = this.attachmentStorage.createReadStream(attachmentId);
 
                 attachmentStream.once('error', err => {
-                    res.emit('error', err);
+                    res.errored = err;
                 });
 
                 attachmentStream.once('end', () => finalize());

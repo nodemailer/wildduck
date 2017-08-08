@@ -251,6 +251,9 @@ class IMAPConnection extends EventEmitter {
      * @param {Error} err Error object
      */
     _onError(err) {
+        if (err.processed) {
+            return;
+        }
         if (err.code === 'ECONNRESET' || err.code === 'EPIPE') {
             this.close(); // mark connection as 'closing'
             return;
