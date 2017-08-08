@@ -70,6 +70,10 @@ maxForwards=2000
     # not needed if you run the app as systemd service
     syslog=false
 
+    # delete authentication log entries after 30 days
+    # changing this value only affects new entries
+    authlogExpireDays=30
+
 [imap]
     # If enabled then Wild Duck exposes an IMAP interface for listing and fetching emails
     enabled=true
