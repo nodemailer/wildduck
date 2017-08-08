@@ -593,7 +593,6 @@ class Indexer {
      */
     getContents(mimeTree, selector, skipExternal) {
         let node = mimeTree;
-
         if (typeof selector === 'string') {
             selector = {
                 type: selector
@@ -616,9 +615,11 @@ class Indexer {
             case 'content':
                 if (!selector.path) {
                     // BODY[]
+                    node.attachmentMap = mimeTree.attachmentMap;
                     return this.rebuild(node, false, skipExternal);
                 }
                 // BODY[1.2.3]
+                node.attachmentMap = mimeTree.attachmentMap;
                 return this.rebuild(node, true, skipExternal);
 
             case 'header':
@@ -667,9 +668,11 @@ class Indexer {
             case 'text':
                 if (!selector.path) {
                     // BODY[TEXT] mail body without headers
+                    node.attachmentMap = mimeTree.attachmentMap;
                     return this.rebuild(node, true, skipExternal);
                 } else if (node.message) {
                     // BODY[1.2.3.TEXT] embedded message/rfc822 body without headers
+                    node.attachmentMap = mimeTree.attachmentMap;
                     return this.rebuild(node.message, true, skipExternal);
                 }
 
