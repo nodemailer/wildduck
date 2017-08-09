@@ -35,3 +35,14 @@ You can include some resources as external files by using the same name prefix a
 - **name.html** or **name.htm** is the HTML content of the message. If this file exists then it sets or overrides the `html` property in message json structure
 - **name.text** or **name.txt** is the plaintext content of the message. If this file exists then it sets or overrides the `text` property in message json structure
 - **name.filename.ext** is included in the message as an attachment
+
+### Embedded images
+
+You can link the attachment files to HTML as images. For this either use the canonical name of the attachment (eg. "duck.png") or the filename of the attachment in the emails folder (eg "example.duck.png"). Make sure that the URL used in HTML does not use full path, it must point to the current folder.
+
+```html
+<img src="/path/to/duck.png"> <!-- BAD, path is not allowed -->
+<img src="duck.png"> <!-- GOOD, canonical attachment name -->
+<img src="example.duck.png"> <!-- GOOD, actual filename in folder -->
+<img src="./duck.png"> <!-- Not GOOD but works as leading ./ is removed from the filename -->
+```
