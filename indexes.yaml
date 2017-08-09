@@ -273,12 +273,6 @@ indexes:
 - collection: attachments.files
   type: gridfs # index applies to gridfs database
   index:
-    name: attachment_hash
-    key:
-      metadata.h: hashed
-- collection: attachments.files
-  type: gridfs # index applies to gridfs database
-  index:
     name: related_attachments
     key:
       metadata.c: 1
