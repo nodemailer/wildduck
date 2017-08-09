@@ -94,13 +94,13 @@ Read about Wild Duck security implementation from the [Wiki](https://github.com/
 2. **Centralized authentication** which allows modern features like 2FA, application specific passwords, authentication scopes, revoking authentication tokens, audit logging and even profile files to auto configure Apple email clients without providing master password
 3. **Works on any OS including Windows.** At least if you get MongoDB and Redis running first.
 4. Focus on **internationalization**, ie. supporting email addresses with non-ascii characters
-5. **De-duplication of attachments.** If the same attachment is referenced by different messages then only a single copy of the attachment is stored. Attachment is stored in the encoded form (eg. encoded in base64) to not break any signatures so the resulting encoding must match as well.
+5. **Deduplication of attachments.** If the same attachment is referenced by different messages then only a single copy of the attachment is stored. Attachment is stored in the encoded form (eg. encoded in base64) to not break any signatures so the resulting encoding must match as well.
 6. Access messages both using **IMAP and HTTP API**. The latter serves parsed data, so no need to fetch RFC822 messages and parse out html, plaintext content or attachments. It is super easy to create a webmail interface on top of this.
 7. Built in **address labels**: _username+label@example.com_ is delivered to _username@example.com_
 8. Dots in usernames and addresses are informational only. username@example.com is the same as user.name@example.com
 9. **HTTP Event Source** to push modifications in user email account to browser for super snappy webmail clients
 10. **Super easy to tweak.** The entire codebase is pure JavaScript, so there's nothing to compile or anything platform specific. If you need to tweak something then change the code, restart the app and you're ready to go. If it works on one machine then most probably it works in every other machine as well.
-11. **Better disk usage**. Attachment de-duplication and MongoDB compression yield in about 40% smaller disk usage as the sum of all stored email sizes.
+11. **Better disk usage**. Attachment deduplication and MongoDB compression yield in about 40% smaller disk usage as the sum of all stored email sizes.
 
 **Demo video for HTTP push**
 
