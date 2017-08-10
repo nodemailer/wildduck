@@ -131,7 +131,7 @@ function clearExpiredMessages() {
         }
 
         // find and delete all messages that are expired
-        // NB! scattered query
+        // NB! scattered query, searches over all mailboxes and thus over all shards
         let cursor = db.database
             .collection('messages')
             .find({
