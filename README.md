@@ -189,21 +189,6 @@ Wild Duck has built-in message filtering in LMTP server. This is somewhat simila
 
 Filters can be managed via the [Wild Duck API](https://github.com/nodemailer/wildduck/wiki/API-Docs).
 
-## Sharding
-
-Shard the following collections by these keys:
-
-```javascript
-sh.enableSharding('wildduck');
-sh.shardCollection('wildduck.messages', { mailbox: 1, uid: 1 });
-sh.shardCollection('wildduck.threads', { user: 'hashed' });
-// attachment _id is a sha256 hash of attachment contents
-sh.shardCollection('wildduck.attachments.files', { _id: 'hashed' });
-sh.shardCollection('wildduck.attachments.chunks', { files_id: 'hashed' });
-```
-
-> Attachments collections might reside in a different database than default. Modify sharding namespaces accordingly (and do not forget to enable sharding for the attachments database)
-
 ## IMAP Protocol Differences
 
 This is a list of known differences from the IMAP specification. Listed differences are either intentional or are bugs that became features.
@@ -250,6 +235,26 @@ Use [Haraka](http://haraka.github.io/) with [queue/lmtp](http://haraka.github.io
   - IMAP4 non-synchronizing literals, LITERAL- ([RFC7888](https://tools.ietf.org/html/rfc7888)). Synchronized literals are needed for APPEND to check mailbox quota, small values could go with the non-synchronizing version.
   - LIST-STATUS ([RFC5819](https://tools.ietf.org/html/rfc5819))
   - _What else?_ (definitely not NOTIFY nor QRESYNC)
+
+## Operating Wild Duck
+
+### Sharding
+
+Wild Duck supports MongoDB sharding. Consider using sharding only if you know that your data storage is large enough to outgrow single replica. Some actions require scattered queries to be made that might be a hit on performance on a large cluster but most queries include the shard key by default.
+
+Shard the following collections by these keys:
+
+```javascript
+sh.enableSharding('wildduck');
+// consider using mailbox:hashed for messages only with large shard chunk size
+sh.shardCollection('wildduck.messages', { mailbox: 1, uid: 1 });
+sh.shardCollection('wildduck.threads', { user: 'hashed' });
+// attachment _id is a sha256 hash of attachment contents
+sh.shardCollection('wildduck.attachments.files', { _id: 'hashed' });
+sh.shardCollection('wildduck.attachments.chunks', { files_id: 'hashed' });
+```
+
+> Attachments collections might be configured to reside in a different database than default. Modify sharding namespaces accordingly (and do not forget to enable sharding for the attachments database)
 
 ## License
 
