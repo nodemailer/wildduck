@@ -1,0 +1,30 @@
+# If enabled then Wild Duck exposes an IMAP interface for listing and fetching emails
+enabled=true
+port=9993
+# by default bind to localhost only
+host="127.0.0.1"
+
+# Use `true` for port 993 and `false` for 143. If connection is not secured
+# on connection then Wild Duck enables STARTTLS extension
+secure=true
+
+# Max size for messages uploaded via APPEND
+maxMB=25
+
+# delete messages from \Trash and \Junk after retention days
+retention=30
+
+# if `true` then do not autodelete expired messages
+disableRetention=false
+
+[setup]
+# Public configuration for IMAP
+hostname="localhost"
+secure=true
+# port defaults to imap.port
+#port=9993
+
+[tls]
+# If certificate path is not defined, use global or built-in self-signed certs
+#key="/path/to/server/key.pem"
+#cert="/path/to/server/cert.pem"

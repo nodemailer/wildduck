@@ -20,7 +20,7 @@ db.connect(err => {
     // Start IMAP server
     imap(err => {
         if (err) {
-            log.error('App', 'Failed to start IMAP server');
+            log.error('App', 'Failed to start IMAP server. %s', err.message);
             return process.exit(1);
         }
         // Start POP3 server

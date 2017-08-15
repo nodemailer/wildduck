@@ -26,31 +26,7 @@ maxForwards=2000
 #emailDomain="mydomain.info"
 
 [dbs]
-    # mongodb connection string for the main database
-    mongo="mongodb://127.0.0.1:27017/wildduck"
-
-    # redis connection string
-    redis="redis://127.0.0.1:6379/3"
-
-    # Wild Duck allows using different kind of data in different databases
-    # If you do not provide a database config value, then main database connection
-    # is used for everything
-    # You can either use a database name (uses shared connection) or a configutaion
-    # url (creates a separate connection) for each databases
-
-    # Optional database name or connection url for GridFS if you do not want to
-    # use the main db for storing attachments. Useful if you want
-    # to use a different mount folder or storage engine
-    #gridfs="wildduck"
-
-    # Optional database name or connection url for users collection if you do not want to
-    # use the main db for storing user/address data. Useful if you want
-    # to use a different mount folder or storage engine
-    #users="wildduck"
-
-    # Optional database name or connection url for ZoneMTA queue database. This is
-    # used to push outbound emails to the sending queue
-    #sender="zone-mta"
+# @include "dbs.toml"
 
 [totp]
     # If enabled then encrypt TOTP seed tokens with the secret password. By default TOTP seeds
@@ -75,143 +51,22 @@ maxForwards=2000
     authlogExpireDays=30
 
 [imap]
-    # If enabled then Wild Duck exposes an IMAP interface for listing and fetching emails
-    enabled=true
-    port=9993
-    # by default bind to localhost only
-    host="127.0.0.1"
-
-    # Use `true` for port 993 and `false` for 143. If connection is not secured
-    # on connection then Wild Duck enables STARTTLS extension
-    secure=true
-
-    # Max size for messages uploaded via APPEND
-    maxMB=25
-
-    # delete messages from \Trash and \Junk after retention days
-    retention=30
-
-    # if `true` then do not autodelete expired messages
-    disableRetention=false
-
-    [imap.setup]
-        # Public configuration for IMAP
-        hostname="localtest.me"
-        secure=true
-        # port defaults to imap.port
-        #port=9993
+# @include "imap.toml"
 
 [tls]
-    # Default TLS keys (can be overriden by individual services)
-    #key="/path/to/server/key.pem"
-    #ca=["/path/to/server/ca1.pem", "/path/to/server/ca2.pem"]
-    #cert="/path/to/server/cert.pem"
-
-[imap.tls]
-    # If certificate path is not defined, use global or built-in self-signed certs
-    #key="/path/to/server/key.pem"
-    #cert="/path/to/server/cert.pem"
+# @include "tls.toml"
 
 [lmtp]
-    # If enabled then Wild Duck exposes a LMTP interface for pushing messages to mail store
-    enabled=true
-    port=2424
-    # by default bind to localhost only
-    host='127.0.0.1'
-
-    # Max accepted size for messages pushed via LMTP
-    maxMB=25
-
-    [lmtp.tls]
-        # If certificate path is not defined, use global or built-in self-signed certs for STARTTLS
-        #key="/path/to/server/key.pem"
-        #cert="/path/to/server/cert.pem"
+# @include "lmtp.toml"
 
 [pop3]
-    # If enabled then Wild Duck exposes a limited POP3 interface for listing and fetching emails
-    enabled=true
-    port=9995
-    # by default bind to localhost only
-    host="127.0.0.1"
-
-    # Use `true` for port 995 and `false` for 110. Try to always use `true` as the included
-    # POP3 server is limited and does not support the STLS command
-    secure=true
-
-    # How many latest messages to list for LIST and UIDL
-    # POP3 server never lists all messages but only a limited length list
-    maxMessages=250
-
-    [pop3.tls]
-        # If certificate path is not defined, use global or built-in self-signed certs
-        #key="/path/to/server/key.pem"
-        #cert="/path/to/server/cert.pem"
-
-    [pop3.setup]
-        # Public configuration for POP3
-        hostname="localtest.me"
-        secure=true
-        # port defaults to pop3.port
-        #port=9995
+# @include "pop3.toml"
 
 [api]
-    enabled=true
-    port=8080
-    # by default bind to localhost only
-    host="127.0.0.1"
-
-    # Use `true` (HTTPS) for port 443 and `false` (HTTP) for 80
-    secure=false
-
-    # If set requires all API calls to have accessToken query argument with that value
-    # http://localhost:8080/users?accessToken=somesecretvalue
-    #accessToken="somesecretvalue"
-
-    [api.tls]
-        # If certificate path is not defined, use global or built-in self-signed certs
-        #key="/path/to/server/key.pem"
-        #cert="/path/to/server/cert.pem"
-
-    [api.mobileconfig]
-        # plist configuration for OSX/iOS profile files that are generated with Application Specific Passwords
-        # Use {email} in the description strings to replace it with account email address
-
-        # A reverse-DNS style identifier (com.example.myprofile, for example) that identifies the profile.
-        # This string is used to determine whether a new profile should replace an existing one or should be added. Username is prepended to this value.
-        identifier="com.email.wildduck"
-
-        # A human-readable name for the profile. This value is displayed on the Detail screen. It does not have to be unique.
-        displayName="Wild Duck Mail"
-
-        # A human-readable string containing the name of the organization that provided the profile.
-        organization="Wild Duck Mail Services"
-
-        # A description of the profile, shown on the Detail screen for the profile. This should be descriptive enough to help the user decide whether to install the profile.
-        displayDescription="Install this profile to setup {email}"
-
-        # A user-visible description of the email account, shown in the Mail and Settings applications.
-        accountDescription="Wild Duck ({email})"
-
-    [api.mobileconfig.tls]
-        # If certificate path is not defined, use global or built-in self-signed certs
-        #key="/path/to/server/key.pem"
-        #cert="/path/to/server/cert.pem"
+# @include "api.toml"
 
 [sender]
-    # Push messages to ZoneMTA queue for delivery
-    # if `false` then no messages are sent
-    enabled=true
-
-    # which ZoneMTA queue to use by default
-    zone="default"
-
-    # Collection name for GridFS storage
-    gfs="mail"
-
-    # Collection name for the queue
-    # see [dbs].sender option for choosing correct database to use for ZoneMTA queues
-    # by default the main wildduck database is used
-    collection="zone-queue"
+# @include "sender.toml"
 
 [smtp.setup]
     # Public configuration for SMTP MDA

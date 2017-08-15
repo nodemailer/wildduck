@@ -1,0 +1,25 @@
+# If enabled then Wild Duck exposes a limited POP3 interface for listing and fetching emails
+enabled=true
+port=9995
+# by default bind to localhost only
+host="127.0.0.1"
+
+# Use `true` for port 995 and `false` for 110. Try to always use `true` as the included
+# POP3 server is limited and does not support the STLS command
+secure=true
+
+# How many latest messages to list for LIST and UIDL
+# POP3 server never lists all messages but only a limited length list
+maxMessages=250
+
+[tls]
+# If certificate path is not defined, use global or built-in self-signed certs
+#key="/path/to/server/key.pem"
+#cert="/path/to/server/cert.pem"
+
+[setup]
+# Public configuration for POP3
+hostname="localhost"
+secure=true
+# port defaults to pop3.port
+#port=9995

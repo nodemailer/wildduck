@@ -1,0 +1,13 @@
+# If enabled then Wild Duck exposes a LMTP interface for pushing messages to mail store
+enabled=true
+port=2424
+# by default bind to localhost only
+host="127.0.0.1"
+
+# Max accepted size for messages pushed via LMTP
+maxMB=25
+
+[tls]
+# If certificate path is not defined, use global or built-in self-signed certs for STARTTLS
+#key="/path/to/server/key.pem"
+#cert="/path/to/server/cert.pem"
