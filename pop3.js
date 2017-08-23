@@ -18,6 +18,7 @@ const serverOptions = {
     port: config.pop3.port,
     host: config.pop3.host,
     secure: config.pop3.secure,
+    disableVersionString: !!config.pop3.disableVersionString,
 
     // log to console
     logger: {
