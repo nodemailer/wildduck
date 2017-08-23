@@ -142,7 +142,7 @@ const serverOptions = {
 
                 // create Delivered-To and Received headers
                 let header = Buffer.from(
-                    'Delivered-To: ' + recipient + '\r\n'
+                    ['Delivered-To: ' + recipient, 'Return-Path: <' + (sender || '') + '>'].join('\r\n') + '\r\n'
                     //+ 'Received: ' + generateReceivedHeader(session, queueId, os.hostname().toLowerCase(), recipient) + '\r\n'
                 );
 
