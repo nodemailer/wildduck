@@ -5,6 +5,7 @@
 process.env.UV_THREADPOOL_SIZE = 16;
 
 const config = require('wild-config');
+const errors = require('./lib/errors');
 const fs = require('fs');
 const log = require('npmlog');
 const packageData = require('./package.json');
@@ -74,3 +75,8 @@ if (!config.processes || config.processes <= 1) {
         require('./worker.js');
     }
 }
+
+process.on('unhandledRejection', err => {
+    log.error('App', 'Unhandled rejection: %s' + ((err && err.stack) || err));
+    errors.notify(err);
+});

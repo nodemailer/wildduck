@@ -7,6 +7,7 @@ const pop3 = require('./pop3');
 const lmtp = require('./lmtp');
 const api = require('./api');
 const db = require('./lib/db');
+const errors = require('./lib/errors');
 
 // preload certificate files
 require('./lib/certs');
@@ -15,32 +16,37 @@ require('./lib/certs');
 db.connect(err => {
     if (err) {
         log.error('Db', 'Failed to setup database connection');
-        return process.exit(1);
+        errors.notify(err);
+        return setTimeout(() => process.exit(1), 3000);
     }
     // Start IMAP server
     imap(err => {
         if (err) {
             log.error('App', 'Failed to start IMAP server. %s', err.message);
-            return process.exit(1);
+            errors.notify(err);
+            return setTimeout(() => process.exit(1), 3000);
         }
         // Start POP3 server
         pop3(err => {
             if (err) {
                 log.error('App', 'Failed to start POP3 server');
-                return process.exit(1);
+                errors.notify(err);
+                return setTimeout(() => process.exit(1), 3000);
             }
             // Start LMTP maildrop server
             lmtp(err => {
                 if (err) {
                     log.error('App', 'Failed to start LMTP server');
-                    return process.exit(1);
+                    errors.notify(err);
+                    return setTimeout(() => process.exit(1), 3000);
                 }
 
                 // Start HTTP API server
                 api(err => {
                     if (err) {
                         log.error('App', 'Failed to start API server');
-                        return process.exit(1);
+                        errors.notify(err);
+                        return setTimeout(() => process.exit(1), 3000);
                     }
 
                     log.info('App', 'All servers started, ready to process some mail');
@@ -52,7 +58,8 @@ db.connect(err => {
                             log.info('App', 'Changed group to "%s" (%s)', config.group, process.getgid());
                         } catch (E) {
                             log.error('App', 'Failed to change group to "%s" (%s)', config.group, E.message);
-                            return process.exit(1);
+                            errors.notify(E);
+                            return setTimeout(() => process.exit(1), 3000);
                         }
                     }
                     if (config.user) {
@@ -61,7 +68,8 @@ db.connect(err => {
                             log.info('App', 'Changed user to "%s" (%s)', config.user, process.getuid());
                         } catch (E) {
                             log.error('App', 'Failed to change user to "%s" (%s)', config.user, E.message);
-                            return process.exit(1);
+                            errors.notify(E);
+                            return setTimeout(() => process.exit(1), 3000);
                         }
                     }
                 });
