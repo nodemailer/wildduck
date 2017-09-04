@@ -138,8 +138,8 @@ For paging lists longer than allowed limit, Wild Duck API returns URLs for `next
   "total": 200,
   "page": 2,
   "results": ["a list of results"],
-  "prev": "/an/url/to/previous/page?arg1=123&arg2=345",
-  "next": "/an/url/to/next/page?arg1=123&arg2=345"
+  "previousCursor": "abcdef12344",
+  "nextCursor": "abcdef12377"
 }
 ```
 
@@ -172,8 +172,8 @@ Response for a successful operation:
   "query": "testuser01",
   "total": 1,
   "page": 1,
-  "prev": false,
-  "next": false,
+  "previousCursor": false,
+  "nextCursor": false,
   "results": [
     {
       "id": "5970860fcdb513ce633407a1",
@@ -422,8 +422,8 @@ Response for a successful operation:
   "success": true,
   "total": 1,
   "page": 1,
-  "prev": false,
-  "next": "/users/5971da1754cfdc7f0983b2ec/authlog?next=eyIkb2lkIjoiNTk3NWY2YTkzNGY3NDNjODk3NWFjOTk0In0&limit=20&page=2",
+  "previousCursor": false,
+  "nextCursor": "sadasdsdfdfdfg",
   "results": [
     {
       "id": "59762d2f9c035be17bbb1fdf",
@@ -748,8 +748,8 @@ Response for a successful operation:
   "query": "testuser01",
   "total": 1,
   "page": 1,
-  "prev": false,
-  "next": false,
+  "previousCursor": false,
+  "nextCursor": false,
   "results": [
     {
       "id": "5970860fcdb513ce633407a8",
@@ -1163,8 +1163,8 @@ Response for a successful operation:
   "success": true,
   "total": 1,
   "page": 1,
-  "prev": false,
-  "next": false,
+  "previousCursor": false,
+  "nextCursor": false,
   "specialUse": null,
   "results": [
     {
@@ -1214,8 +1214,8 @@ Response for a successful operation:
   "query": "myname",
   "total": 1,
   "page": 1,
-  "prev": false,
-  "next": false,
+  "previousCursor": false,
+  "nextCursor": false,
   "results": [
     {
       "id": 444,
