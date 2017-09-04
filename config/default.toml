@@ -9,10 +9,6 @@ ident="wildduck"
 # how many processes to start
 processes=1
 
-# If this header exists and starts with "yes" then the message is treated as spam
-# This is Rspamd header. For the same with SpamAssassin use "X-Spam-Status"
-spamHeader="X-Rspamd-Spam"
-
 # default quota storage in MB (can be overriden per user)
 maxStorage=1024
 
@@ -26,6 +22,9 @@ maxForwards=2000
 #emailDomain="mydomain.info"
 
 bugsnagCode=""
+
+# Header rules for routing spam
+# @include "spamheaders.toml"
 
 [dbs]
 # @include "dbs.toml"

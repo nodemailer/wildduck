@@ -5,6 +5,12 @@
 process.env.UV_THREADPOOL_SIZE = 16;
 
 const config = require('wild-config');
+
+if (process.env.NODE_CONFIG_ONLY === 'true') {
+    console.log(require('util').inspect(config, false, 22)); // eslint-disable-line
+    return process.exit();
+}
+
 const errors = require('./lib/errors');
 const fs = require('fs');
 const log = require('npmlog');
@@ -58,8 +64,11 @@ if (!config.processes || config.processes <= 1) {
 
         log.info('App', `Master [${process.pid}] is running`);
 
+        let workers = new Set();
+
         let forkWorker = () => {
             let worker = cluster.fork();
+            workers.add(worker);
             log.info('App', `Forked worker ${worker.process.pid}`);
         };
 
@@ -70,7 +79,18 @@ if (!config.processes || config.processes <= 1) {
 
         cluster.on('exit', worker => {
             log.info('App', `Worker ${worker.process.pid} died`);
+            workers.delete(worker);
             setTimeout(forkWorker, 1000);
+        });
+
+        config.on('reload', () => {
+            workers.forEach(child => {
+                try {
+                    child.kill('SIGHUP');
+                } catch (E) {
+                    //ignore
+                }
+            });
         });
     } else {
         if (config.ident) {
