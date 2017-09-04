@@ -77,8 +77,6 @@ indexes:
   type: users # index applies to users database
   index:
     name: entry_by_group
-    # autoremove log entries after expire days
-    expireAfterSeconds: 0
     sparse: true
     key:
       user: 1
