@@ -248,6 +248,7 @@ Creates a new user, returns the ID upon success.
 - **username** (required) is the username of the user. This is not an email address but authentication username, use only letters and numbers
 - **password** (required) is the password for the user
 - **address** is the main email address for the user. If address is not set then a new one is generated based on the username and current domain name
+- **emptyAddress** if true, then do not set up an address for the user
 - **name** is the name for the user
 - **forward** is an email address to where all messages are forwarded to
 - **targetUrl** is an URL to where all messages are uploaded to
