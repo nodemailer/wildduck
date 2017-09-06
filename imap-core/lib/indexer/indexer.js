@@ -2,7 +2,7 @@
 
 const stream = require('stream');
 const PassThrough = stream.PassThrough;
-
+const linkify = require('linkify-it')();
 const BodyStructure = require('./body-structure');
 const createEnvelope = require('./create-envelope');
 const parseMimeTree = require('./parse-mime-tree');
@@ -11,8 +11,16 @@ const libqp = require('libqp');
 const libbase64 = require('libbase64');
 const iconv = require('iconv-lite');
 const he = require('he');
+const tlds = require('tlds');
 const htmlToText = require('html-to-text');
 const crypto = require('crypto');
+
+linkify
+    .tlds(tlds) // Reload with full tlds list
+    .tlds('onion', true) // Add unofficial `.onion` domain
+    .add('git:', 'http:') // Add `git:` ptotocol as "alias"
+    .add('ftp:', null) // Disable `ftp:` ptotocol
+    .set({ fuzzyIP: true });
 
 class Indexer {
     constructor(options) {
@@ -314,7 +322,14 @@ class Indexer {
                         content = libqp.decode(content.toString());
                     }
 
-                    if (!['ascii', 'usascii', 'utf8'].includes(charset.replace(/[^a-z0-9]+/g, '').trim().toLowerCase())) {
+                    if (
+                        !['ascii', 'usascii', 'utf8'].includes(
+                            charset
+                                .replace(/[^a-z0-9]+/g, '')
+                                .trim()
+                                .toLowerCase()
+                        )
+                    ) {
                         try {
                             content = iconv.decode(content, charset);
                         } catch (E) {
@@ -358,7 +373,10 @@ class Indexer {
                     (node.parsedHeader['content-type'] && node.parsedHeader['content-type'].params && node.parsedHeader['content-type'].params.name) ||
                     false;
 
-                let contentId = (node.parsedHeader['content-id'] || '').toString().replace(/<|>/g, '').trim();
+                let contentId = (node.parsedHeader['content-id'] || '')
+                    .toString()
+                    .replace(/<|>/g, '')
+                    .trim();
 
                 if (fileName) {
                     try {
@@ -427,7 +445,11 @@ class Indexer {
             });
 
         maildata.html = htmlContent.filter(str => str.trim()).map(updateCidLinks);
-        maildata.text = textContent.filter(str => str.trim()).map(updateCidLinks).join('\n').trim();
+        maildata.text = textContent
+            .filter(str => str.trim())
+            .map(updateCidLinks)
+            .join('\n')
+            .trim();
 
         return maildata;
     }
@@ -640,7 +662,11 @@ class Indexer {
                 let headers =
                     formatHeaders(node.header)
                         .filter(line => {
-                            let key = line.split(':').shift().toLowerCase().trim();
+                            let key = line
+                                .split(':')
+                                .shift()
+                                .toLowerCase()
+                                .trim();
                             return selector.headers.indexOf(key) >= 0;
                         })
                         .join('\r\n') + '\r\n\r\n';
@@ -654,7 +680,11 @@ class Indexer {
                 let headers =
                     formatHeaders(node.header)
                         .filter(line => {
-                            let key = line.split(':').shift().toLowerCase().trim();
+                            let key = line
+                                .split(':')
+                                .shift()
+                                .toLowerCase()
+                                .trim();
                             return selector.headers.indexOf(key) < 0;
                         })
                         .join('\r\n') + '\r\n\r\n';
@@ -692,13 +722,48 @@ function formatHeaders(headers) {
 }
 
 function textToHtml(str) {
+    let encoded = he
+        // encode special chars
+        .encode(str, {
+            useNamedReferences: true
+        });
+    try {
+        if (linkify.pretest(encoded)) {
+            let links = linkify.match(encoded) || [];
+            let result = [];
+            let last = 0;
+            links.forEach(link => {
+                if (last < link.index) {
+                    result.push(encoded.slice(last, link.index));
+                }
+
+                let url = he
+                    // encode special chars
+                    .encode(link.url, {
+                        useNamedReferences: true
+                    });
+
+                let text = he
+                    // encode special chars
+                    .encode(link.text, {
+                        useNamedReferences: true
+                    });
+
+                result.push(`<a href="${url}">${text}</a>`);
+
+                last = link.lastIndex;
+            });
+
+            result.push(encoded.slice(last));
+
+            encoded = result.join('');
+        }
+    } catch (E) {
+        // failed, don't linkify
+    }
     let text =
         '<p>' +
-        he
-            // encode special chars
-            .encode(str, {
-                useNamedReferences: true
-            })
+        encoded
             .replace(/\r?\n/g, '\n')
             .trim() // normalize line endings
             .replace(/[ \t]+$/gm, '')
