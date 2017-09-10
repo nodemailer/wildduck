@@ -5,9 +5,11 @@ module.exports = {
         let capabilities = [];
 
         if (!this.secure) {
-            capabilities.push('STARTTLS');
-            if (!this._server.options.ignoreSTARTTLS) {
-                capabilities.push('LOGINDISABLED');
+            if (!this._server.options.disableSTARTTLS) {
+                capabilities.push('STARTTLS');
+                if (!this._server.options.ignoreSTARTTLS) {
+                    capabilities.push('LOGINDISABLED');
+                }
             }
         }
 

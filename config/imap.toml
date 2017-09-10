@@ -17,6 +17,14 @@ retention=30
 # if `true` then do not autodelete expired messages
 disableRetention=false
 
+# If true, then disables STARTTLS support
+disableSTARTTLS=false
+
+[id]
+#name="Wild Duck IMAP"
+#version="1.0.0"
+#vendor="Wild Duck"
+
 [setup]
 # Public configuration for IMAP
 hostname="localhost"

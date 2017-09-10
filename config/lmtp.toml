@@ -7,6 +7,15 @@ host="127.0.0.1"
 # Max accepted size for messages pushed via LMTP
 maxMB=25
 
+# If true then disables STARTTLS usage
+disableSTARTTLS=false
+
+# Greeting message for connecting client
+banner="Welcome to Wild Duck Mail Server"
+
+# Server hostname. Defaults to os.hostname() if false
+name=false
+
 [tls]
 # If certificate path is not defined, use global or built-in self-signed certs for STARTTLS
 #key="/path/to/server/key.pem"

@@ -18,7 +18,7 @@ module.exports = {
         let username = Buffer.from((command.attributes[0].value || '').toString().trim(), 'binary').toString();
         let password = Buffer.from((command.attributes[1].value || '').toString().trim(), 'binary').toString();
 
-        if (!this.secure && !this._server.options.ignoreSTARTTLS) {
+        if (!this.secure && !this._server.options.disableSTARTTLS && !this._server.options.ignoreSTARTTLS) {
             // Only allow authentication using TLS
             return callback(null, {
                 response: 'BAD',

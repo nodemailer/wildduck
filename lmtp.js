@@ -41,12 +41,12 @@ const serverOptions = {
         }
     },
 
-    name: false,
+    name: config.lmtp.name || false,
 
     // not required but nice-to-have
     banner: config.lmtp.banner || 'Welcome to Wild Duck Mail Server',
 
-    disabledCommands: ['AUTH'],
+    disabledCommands: ['AUTH'].concat(config.lmtp.disableSTARTTLS ? 'STARTTLS' : []),
 
     onMailFrom(address, session, callback) {
         // reset session entries

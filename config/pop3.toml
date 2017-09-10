@@ -8,6 +8,9 @@ host="127.0.0.1"
 # POP3 server is limited and does not support the STLS command
 secure=true
 
+# If true, then do not show server info in CAPA response
+disableVersionString=false
+
 # How many latest messages to list for LIST and UIDL
 # POP3 server never lists all messages but only a limited length list
 maxMessages=250

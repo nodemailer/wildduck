@@ -70,7 +70,7 @@ bugsnagCode=""
 # @include "sender.toml"
 
 [smtp.setup]
-    # Public configuration for SMTP MDA
-    hostname="localtest.me"
-    secure=false
-    port=2587
+# Public configuration for SMTP MDA, needed for mobileconfig files
+hostname="localhost"
+secure=false
+port=2587

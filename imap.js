@@ -41,6 +41,7 @@ const onGetQuota = require('./lib/handlers/on-get-quota');
 // Setup server
 const serverOptions = {
     secure: config.imap.secure,
+    disableSTARTTLS: config.imap.disableSTARTTLS,
     ignoreSTARTTLS: config.imap.ignoreSTARTTLS,
 
     id: {

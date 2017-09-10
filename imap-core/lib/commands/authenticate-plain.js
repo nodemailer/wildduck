@@ -14,7 +14,7 @@ module.exports = {
     handler(command, callback, next) {
         let token = ((command.attributes && command.attributes[0] && command.attributes[0].value) || '').toString().trim();
 
-        if (!this.secure && !this._server.options.ignoreSTARTTLS) {
+        if (!this.secure && !this._server.options.disableSTARTTLS && !this._server.options.ignoreSTARTTLS) {
             // Only allow authentication using TLS
             return callback(null, {
                 response: 'BAD',
