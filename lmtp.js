@@ -139,9 +139,9 @@ const serverOptions = {
 
                 let rcptData = users[stored++];
                 let recipient = rcptData.recipient;
-                let user = rcptData.user;
+                let userData = rcptData.user;
 
-                let response = responses.filter(r => r.user === user);
+                let response = responses.filter(r => r.userData === userData);
                 if (response.length) {
                     responses.push(response[0]);
                     return storeNext();
@@ -158,6 +158,17 @@ const serverOptions = {
 
                 let raw = Buffer.concat(chunks, chunklen);
 
+                let meta = {
+                    source: 'LMTP',
+                    from: sender,
+                    to: recipient,
+                    origin: session.remoteAddress,
+                    originhost: session.clientHostname,
+                    transhost: session.hostNameAppearsAs,
+                    transtype: session.transmissionType,
+                    time: Date.now()
+                };
+
                 let prepared = messageHandler.prepareMessage({
                     raw,
                     indexedHeaders: spamHeaderKeys
@@ -173,7 +184,7 @@ const serverOptions = {
 
                 db.database
                     .collection('filters')
-                    .find({ user: user._id })
+                    .find({ user: userData._id })
                     .sort({ _id: 1 })
                     .toArray((err, filters) => {
                         if (err) {
@@ -233,14 +244,14 @@ const serverOptions = {
                             });
 
                         let forwardMessage = done => {
-                            if (user.forward && !filterActions.get('delete')) {
+                            if (userData.forward && !filterActions.get('delete')) {
                                 // forward to default recipient only if the message is not deleted
-                                forwardTargets.add(user.forward);
+                                forwardTargets.add(userData.forward);
                             }
 
-                            if (user.targetUrl && !filterActions.get('delete')) {
+                            if (userData.targetUrl && !filterActions.get('delete')) {
                                 // forward to default URL only if the message is not deleted
-                                forwardTargetUrls.add(user.targetUrl);
+                                forwardTargetUrls.add(userData.targetUrl);
                             }
 
                             // never forward messages marked as spam
@@ -250,22 +261,22 @@ const serverOptions = {
 
                             // check limiting counters
                             messageHandler.counters.ttlcounter(
-                                'wdf:' + user._id.toString(),
+                                'wdf:' + userData._id.toString(),
                                 forwardTargets.size + forwardTargetUrls.size,
-                                user.forwards,
+                                userData.forwards,
                                 false,
                                 (err, result) => {
                                     if (err) {
                                         // failed checks
-                                        log.error('LMTP', 'FRWRDFAIL key=%s error=%s', 'wdf:' + user._id.toString(), err.message);
+                                        log.error('LMTP', 'FRWRDFAIL key=%s error=%s', 'wdf:' + userData._id.toString(), err.message);
                                     } else if (!result.success) {
-                                        log.silly('LMTP', 'FRWRDFAIL key=%s error=%s', 'wdf:' + user._id.toString(), 'Precondition failed');
+                                        log.silly('LMTP', 'FRWRDFAIL key=%s error=%s', 'wdf:' + userData._id.toString(), 'Precondition failed');
                                         return done();
                                     }
 
                                     forward(
                                         {
-                                            user,
+                                            userData,
                                             sender,
                                             recipient,
 
@@ -282,13 +293,13 @@ const serverOptions = {
 
                         let sendAutoreply = done => {
                             // never reply to messages marked as spam
-                            if (!sender || !user.autoreply || filterActions.get('spam')) {
+                            if (!sender || !userData.autoreply || filterActions.get('spam')) {
                                 return setImmediate(done);
                             }
 
                             autoreply(
                                 {
-                                    user,
+                                    userData,
                                     sender,
                                     recipient,
                                     chunks,
@@ -335,7 +346,7 @@ const serverOptions = {
                                 if (filterActions.get('delete')) {
                                     // nothing to do with the message, just continue
                                     responses.push({
-                                        user,
+                                        userData,
                                         response: 'Message dropped by policy as ' + prepared.id.toString()
                                     });
                                     prepared = false;
@@ -374,22 +385,13 @@ const serverOptions = {
                                 });
 
                                 let messageOptions = {
-                                    user: (user && user._id) || user,
+                                    user: userData._id,
                                     [mailboxQueryKey]: mailboxQueryValue,
 
                                     prepared,
                                     maildata,
 
-                                    meta: {
-                                        source: 'LMTP',
-                                        from: sender,
-                                        to: recipient,
-                                        origin: session.remoteAddress,
-                                        originhost: session.clientHostname,
-                                        transhost: session.hostNameAppearsAs,
-                                        transtype: session.transmissionType,
-                                        time: Date.now()
-                                    },
+                                    meta,
 
                                     filters: matchingFilters,
 
@@ -400,7 +402,7 @@ const serverOptions = {
                                     skipExisting: true
                                 };
 
-                                messageHandler.encryptMessage(user.encryptMessages ? user.pubKey : false, raw, (err, encrypted) => {
+                                messageHandler.encryptMessage(userData.encryptMessages ? userData.pubKey : false, raw, (err, encrypted) => {
                                     if (!err && encrypted) {
                                         messageOptions.prepared = messageHandler.prepareMessage({
                                             raw: encrypted,
@@ -419,7 +421,7 @@ const serverOptions = {
 
                                         // push to response list
                                         responses.push({
-                                            user,
+                                            userData,
                                             response: err ? err : 'Message stored as ' + info.id.toString()
                                         });
 
