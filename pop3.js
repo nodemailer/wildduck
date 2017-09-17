@@ -2,7 +2,7 @@
 
 const config = require('wild-config');
 const log = require('npmlog');
-const POP3Server = require('./lib/pop3-server');
+const POP3Server = require('./lib/pop3/server');
 const UserHandler = require('./lib/user-handler');
 const MessageHandler = require('./lib/message-handler');
 const ObjectID = require('mongodb').ObjectID;

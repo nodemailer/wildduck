@@ -1,0 +1,25 @@
+# If enabled then Wild Duck exposes an IRC interface for (authenticated) chat
+enabled=false # IRC server is not enabled by default
+port=6667
+# by default bind to localhost only
+host="127.0.0.1"
+
+# Use `true` for port 6697 and `false` for 6667. Try to always use `true` on production
+secure=false
+
+[motd]
+source="message" # "message" or "file"
+#file="/path/to/motd"
+message="Set MOTD message with the server config option \u0002irc.motd\u0002"
+
+[tls]
+# If certificate path is not defined, use global or built-in self-signed certs
+#key="/path/to/server/key.pem"
+#cert="/path/to/server/cert.pem"
+
+[setup]
+# Public configuration for IRC
+hostname="localhost"
+secure=true
+# port defaults to irc.port
+#port=6697
