@@ -37,9 +37,7 @@ bugsnagCode=""
     #secret="a secret cat"
 
 [attachments]
-    # For now there's only a single option for attachment storage
-    type="gridstore"
-    bucket="attachments"
+# @include "attachments.toml"
 
 [log]
     level="silly"

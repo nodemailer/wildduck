@@ -193,18 +193,24 @@ class Indexer {
                     attachmentId = mimeTree.attachmentMap[node.attachmentId];
                 }
 
-                let attachmentStream = this.attachmentStorage.createReadStream(attachmentId);
+                return this.attachmentStorage.get(attachmentId, (err, attachmentData) => {
+                    if (err) {
+                        return res.emit('error', err);
+                    }
 
-                attachmentStream.once('error', err => {
-                    res.errored = err;
+                    let attachmentStream = this.attachmentStorage.createReadStream(attachmentId, attachmentData);
+
+                    attachmentStream.once('error', err => {
+                        // res.errored = err;
+                        res.emit('error', err);
+                    });
+
+                    attachmentStream.once('end', () => finalize());
+
+                    attachmentStream.pipe(res, {
+                        end: false
+                    });
                 });
-
-                attachmentStream.once('end', () => finalize());
-
-                attachmentStream.pipe(res, {
-                    end: false
-                });
-                return;
             }
 
             let pos = 0;
@@ -399,6 +405,7 @@ class Indexer {
                     magic: maildata.magic,
                     contentType,
                     transferEncoding,
+                    lineCount: node.lineCount,
                     body: node.body
                 });
 
