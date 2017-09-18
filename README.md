@@ -259,3 +259,4 @@ sh.shardCollection('wildduck.attachments.chunks', { files_id: 'hashed' });
 ## License
 
 Wild Duck Mail Agent is licensed under the [European Union Public License 1.1](http://ec.europa.eu/idabc/eupl.html).
+
