@@ -10,7 +10,10 @@ secure=false
 [motd]
 source="message" # "message" or "file"
 #file="/path/to/motd"
-message="Set MOTD message with the server config option \u0002irc.motd\u0002"
+message="""
+Set MOTD message with the server config option \u0002irc.motd\u0002.
+Once you have set or changed the message then reload the server by
+running \u0002systemctl reload wildduck\u0002 or send a SIGHUP message to it"""
 
 [tls]
 # If certificate path is not defined, use global or built-in self-signed certs

@@ -335,3 +335,14 @@ indexes:
     expireAfterSeconds: 15552000
     key:
       updated: 1
+
+# Indexes for IRC
+
+- collection: nicks
+  index:
+    name: irc_nicks
+    unique: true
+    key:
+      ns: 1
+      unickview: 1
+      user: 1
