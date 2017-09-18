@@ -19,8 +19,6 @@ const packageData = require('./package.json');
 log.level = config.log.level;
 require('./logger');
 
-errors.notify(new Error('Starting mail server application'));
-
 const printLogo = () => {
     let logo = fs
         .readFileSync(__dirname + '/logo.txt', 'utf-8')
