@@ -22,6 +22,13 @@ indexes:
     name: show_new
     key:
       created: -1
+- collection: users
+  type: users # index applies to users database
+  index:
+    name: users_namespace
+    key:
+      ns: 1
+      unameview: 1
 
 # Indexes for the addresses collection
 
@@ -344,5 +351,13 @@ indexes:
     unique: true
     key:
       ns: 1
-      unickview: 1
+      nickview: 1
       user: 1
+
+- collection: channels
+  index:
+    name: irc_channels
+    unique: true
+    key:
+      ns: 1
+      channelview: 1
