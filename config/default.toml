@@ -47,6 +47,8 @@ bugsnagCode=""
 
     # delete authentication log entries after 30 days
     # changing this value only affects new entries
+    # set to false to not log authentication events
+    # set to 0 to keep the logs infinitely
     authlogExpireDays=30
 
 [imap]
