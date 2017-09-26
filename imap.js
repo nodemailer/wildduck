@@ -16,7 +16,7 @@ const packageData = require('./package.json');
 const yaml = require('js-yaml');
 const fs = require('fs');
 const certs = require('./lib/certs').get('imap');
-const setupIndexes = yaml.safeLoad(fs.readFileSync(__dirname + '/indexes.yaml', 'utf8')).indexes;
+const setupIndexes = yaml.safeLoad(fs.readFileSync(__dirname + '/indexes.yaml', 'utf8'));
 
 const onFetch = require('./lib/handlers/on-fetch');
 const onAuth = require('./lib/handlers/on-auth');
@@ -309,19 +309,52 @@ module.exports = done => {
         server.onGetQuota = onGetQuota(server);
     };
 
+    let collections = setupIndexes.collections;
+    let collectionpos = 0;
+    let ensureCollections = next => {
+        if (collectionpos >= collections.length) {
+            server.logger.info(
+                {
+                    tnx: 'mongo'
+                },
+                'Setup %s collections',
+                collections.length
+            );
+            return next();
+        }
+        let collection = collections[collectionpos++];
+        db[collection.type || 'database'].createCollection(collection.collection, collection.options, err => {
+            if (err) {
+                server.logger.error(
+                    {
+                        err,
+                        tnx: 'mongo'
+                    },
+                    'Failed creating collection %s %s. %s',
+                    collectionpos,
+                    JSON.stringify(collection.collection),
+                    err.message
+                );
+            }
+
+            ensureCollections(next);
+        });
+    };
+
+    let indexes = setupIndexes.indexes;
     let indexpos = 0;
     let ensureIndexes = next => {
-        if (indexpos >= setupIndexes.length) {
+        if (indexpos >= indexes.length) {
             server.logger.info(
                 {
                     tnx: 'mongo'
                 },
                 'Setup indexes for %s collections',
-                setupIndexes.length
+                indexes.length
             );
             return next();
         }
-        let index = setupIndexes[indexpos++];
+        let index = indexes[indexpos++];
         db[index.type || 'database'].collection(index.collection).createIndexes([index.index], (err, r) => {
             if (err) {
                 server.logger.error(
@@ -374,23 +407,25 @@ module.exports = done => {
             return start();
         }
 
-        ensureIndexes(() => {
-            // Do not release the indexing lock immediatelly
-            setTimeout(() => {
-                gcLock.releaseLock(lock, err => {
-                    if (err) {
-                        server.logger.error(
-                            {
-                                tnx: 'gc',
-                                err
-                            },
-                            'Failed to release lock error=%s',
-                            err.message
-                        );
-                    }
-                });
-            }, 60 * 1000);
-            return start();
+        ensureCollections(() => {
+            ensureIndexes(() => {
+                // Do not release the indexing lock immediatelly
+                setTimeout(() => {
+                    gcLock.releaseLock(lock, err => {
+                        if (err) {
+                            server.logger.error(
+                                {
+                                    tnx: 'gc',
+                                    err
+                                },
+                                'Failed to release lock error=%s',
+                                err.message
+                            );
+                        }
+                    });
+                }, 60 * 1000);
+                return start();
+            });
         });
     });
 };

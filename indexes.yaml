@@ -1,4 +1,28 @@
 ---
+collections:
+
+# create following collections with specific options
+
+- collection: messages
+  options:
+    storageEngine:
+      wiredTiger:
+        configString: block_compressor=zlib
+
+- collection: attachments.files
+  type: gridfs
+  options:
+    storageEngine:
+      wiredTiger:
+        configString: block_compressor=zlib
+
+- collection: attachments.chunks
+  type: gridfs
+  options:
+    storageEngine:
+      wiredTiger:
+        configString: block_compressor=zlib
+
 indexes:
 
 # Indexes for the user collection
