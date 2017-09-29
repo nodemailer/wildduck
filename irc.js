@@ -14,6 +14,9 @@ const serverOptions = {
     host: config.irc.host,
     secure: config.irc.secure,
 
+    name: config.irc.name,
+    hostname: config.irc.hostname,
+
     // log to console
     logger: {
         info(...args) {
