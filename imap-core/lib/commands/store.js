@@ -1,5 +1,6 @@
 'use strict';
 
+const errors = require('../../../lib/errors.js');
 const imapTools = require('../imap-tools');
 
 module.exports = {
@@ -161,10 +162,14 @@ module.exports = {
                 // check if only messages that exist are referenced
                 if (!this._server.options.allowStoreExpunged && success === true && !silent && messages.length) {
                     for (let i = this.selected.notifications.length - 1; i >= 0; i--) {
-                        if (this.selected.notifications[i].command === 'EXPUNGE' && messages.indexOf(this.selected.notifications[i].uid) >= 0) {
+                        if (this.selected.notifications[i].command === 'EXPUNGE' && messages.includes(this.selected.notifications[i].uid)) {
+                            let err = new Error('Some of the messages no longer exist');
+                            errors.notifyConnection(this, err, {
+                                uid: this.selected.notifications[i].uid
+                            });
                             response = {
                                 response: 'NO',
-                                message: 'Some of the messages no longer exist'
+                                message: err.message
                             };
                             break;
                         }
