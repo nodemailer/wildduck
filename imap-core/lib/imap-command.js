@@ -102,6 +102,8 @@ class IMAPCommand {
                     }
                 });
                 this.connection.send(this.tag + ' BAD Invalid literal size');
+                this.payload = '';
+                this.first = true;
                 return callback(new Error('Literal too big'));
             }
 
