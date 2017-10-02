@@ -181,14 +181,6 @@ class IMAPConnection extends EventEmitter {
      * @event
      */
     _onEnd() {
-        this._server.logger.info(
-            {
-                tnx: 'close',
-                cid: this.id
-            },
-            '[%s] Connection END',
-            this.id
-        );
         if (!this._closed) {
             this._onClose();
         }
@@ -462,7 +454,7 @@ class IMAPConnection extends EventEmitter {
         let existsResponse;
 
         // show notifications
-        this._server.logger.info(
+        this._server.logger.debug(
             {
                 tnx: 'notifications',
                 cid: this.id
@@ -518,7 +510,7 @@ class IMAPConnection extends EventEmitter {
                 this.selected.modifyIndex = update.modseq;
             }
 
-            this._server.logger.info(
+            this._server.logger.debug(
                 {
                     tnx: 'notifications',
                     cid: this.id
@@ -532,7 +524,7 @@ class IMAPConnection extends EventEmitter {
                 continue; // skip this
             }
 
-            this._server.logger.info(
+            this._server.logger.debug(
                 {
                     tnx: 'notifications',
                     cid: this.id
@@ -553,7 +545,7 @@ class IMAPConnection extends EventEmitter {
 
                 case 'EXPUNGE': {
                     let seq = (this.selected.uidList || []).indexOf(update.uid);
-                    this._server.logger.info(
+                    this._server.logger.debug(
                         {
                             tnx: 'expunge',
                             cid: this.id

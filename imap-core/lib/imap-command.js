@@ -74,13 +74,21 @@ class IMAPCommand {
                 this.command = (match[2] || '').trim().toUpperCase();
 
                 if (!this.command || !this.tag) {
+                    let err = new Error('Invalid tag');
+                    errors.notifyConnection(this.connection, err, {
+                        payload: this.payload ? (this.payload.length < 256 ? this.payload : this.payload.toString().substr(0, 150) + '...') : false
+                    });
                     this.connection.send('* BAD Invalid tag');
-                    return callback(new Error('Invalid tag'));
+                    return callback(err);
                 }
 
                 if (!commands.has(this.command)) {
+                    let err = new Error('Unknown command');
+                    errors.notifyConnection(this.connection, err, {
+                        payload: this.payload ? (this.payload.length < 256 ? this.payload : this.payload.toString().substr(0, 150) + '...') : false
+                    });
                     this.connection.send(this.tag + ' BAD Unknown command: ' + this.command);
-                    return callback(new Error('Unknown command'));
+                    return callback(err);
                 }
             }
         }
@@ -88,7 +96,7 @@ class IMAPCommand {
         if (command.literal) {
             // check if the literal size is in acceptable bounds
             if (isNaN(command.expecting) || isNaN(command.expecting) < 0 || command.expecting > Number.MAX_SAFE_INTEGER) {
-                errors.notify(new Error('Invalid literal size'), {
+                errors.notifyConnection(this.connection, new Error('Invalid literal size'), {
                     command: {
                         expecting: command.expecting
                     }
@@ -159,7 +167,7 @@ class IMAPCommand {
                 return next(err);
             }
 
-            // check if the payload needs to be directod to a preset handler
+            // check if the payload needs to be directed to a preset handler
             if (typeof this.connection._nextHandler === 'function') {
                 this.connection._server.logger.debug(
                     {
@@ -176,6 +184,9 @@ class IMAPCommand {
             try {
                 this.parsed = imapHandler.parser(this.payload);
             } catch (E) {
+                errors.notifyConnection(this.connection, E, {
+                    payload: this.payload ? (this.payload.length < 256 ? this.payload : this.payload.toString().substr(0, 150) + '...') : false
+                });
                 this.connection._server.logger.debug(
                     {
                         err: E,
@@ -212,6 +223,10 @@ class IMAPCommand {
 
             this.validateCommand(this.parsed, handler, err => {
                 if (err) {
+                    let payload = imapHandler.compiler(this.parsed, false, true);
+                    errors.notifyConnection(this.connection, err, {
+                        payload: payload ? (payload.length < 256 ? payload : payload.toString().substr(0, 150) + '...') : false
+                    });
                     this.connection.send(this.tag + ' ' + (err.response || 'BAD') + ' ' + err.message);
                     return next(err);
                 }
@@ -222,6 +237,10 @@ class IMAPCommand {
                         this.parsed,
                         (err, response) => {
                             if (err) {
+                                let payload = imapHandler.compiler(this.parsed, false, true);
+                                errors.notifyConnection(this.connection, err, {
+                                    payload: payload ? (payload.length < 256 ? payload : payload.toString().substr(0, 150) + '...') : false
+                                });
                                 this.connection.send(this.tag + ' ' + (err.response || 'BAD') + ' ' + err.message);
                                 return next(err);
                             }
