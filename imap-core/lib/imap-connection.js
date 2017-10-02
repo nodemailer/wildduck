@@ -10,6 +10,7 @@ const crypto = require('crypto');
 const os = require('os');
 const EventEmitter = require('events').EventEmitter;
 const packageInfo = require('../../package');
+const errors = require('../../lib/errors.js');
 
 const SOCKET_TIMEOUT = 30 * 60 * 1000;
 
@@ -86,6 +87,13 @@ class IMAPConnection extends EventEmitter {
         // increment connection count
         this._closing = false;
         this._closed = false;
+
+        this._accountListener = message => {
+            if (message && message.action === 'LOGOUT') {
+                this.send('* BYE ' + (message.reason || 'Logout requested'));
+                this.close();
+            }
+        };
     }
 
     /**
@@ -195,6 +203,8 @@ class IMAPConnection extends EventEmitter {
             return;
         }
 
+        this._server.notifier.removeListener(this.session, '*', this._accountListener);
+
         this._parser = false;
 
         this.state = 'Closed';
@@ -250,6 +260,8 @@ class IMAPConnection extends EventEmitter {
             this.close(); // mark connection as 'closing'
             return;
         }
+
+        errors.notifyConnection(this.this, err);
 
         this._server.logger.error(
             {
@@ -730,6 +742,11 @@ class IMAPConnection extends EventEmitter {
         }
 
         return response;
+    }
+
+    setUser(user) {
+        this.session.user = user;
+        this._server.notifier.addListener(this.session, '*', this._accountListener);
     }
 }
 

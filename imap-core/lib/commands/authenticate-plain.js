@@ -119,7 +119,8 @@ function authenticate(connection, token, callback) {
                 username,
                 'PLAIN'
             );
-            connection.session.user = response.user;
+
+            connection.setUser(response.user);
             connection.state = 'Authenticated';
 
             callback(null, {

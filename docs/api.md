@@ -283,7 +283,7 @@ After you have created an user you can use these credentials to log in to the IM
 
 ### Update user details
 
-####/users/{user}
+#### PUT /users/{user}
 
 Updates the properties of an user. Only specify these fields that you want to be updated.
 
@@ -311,6 +311,33 @@ Set user quota to 1 kilobyte:
 ```
 curl -XPUT "http://localhost:8080/users/59467f27535f8f0f067ba8e6" -H 'content-type: application/json' -d '{
   "quota": 1024
+}'
+```
+
+Response for a successful operation:
+
+```json
+{
+  "success": true
+}
+```
+
+### Log out user from all IMAP sessions
+
+#### PUT /users/{user}/logout
+
+Forces closing all active IMAP session of an user
+
+**Parameters**
+
+- **user** (required) is the ID of the user
+- **reason** is an optional message to be sent to the user with logout notification
+
+**Example**
+
+```
+curl -XPUT "http://localhost:8080/users/59467f27535f8f0f067ba8e6/logout" -H 'content-type: application/json' -d '{
+  "reaosn": "Account was deleted"
 }'
 ```
 

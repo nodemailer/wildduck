@@ -112,7 +112,8 @@ module.exports = {
                     username,
                     'LOGIN'
                 );
-                this.session.user = response.user;
+
+                this.setUser(response.user);
                 this.state = 'Authenticated';
 
                 callback(null, {
