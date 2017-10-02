@@ -384,7 +384,7 @@ const serverOptions = {
                                     }
                                 });
 
-                                let messageOptions = {
+                                let messageOpts = {
                                     user: userData._id,
                                     [mailboxQueryKey]: mailboxQueryValue,
 
@@ -404,17 +404,14 @@ const serverOptions = {
 
                                 messageHandler.encryptMessage(userData.encryptMessages ? userData.pubKey : false, raw, (err, encrypted) => {
                                     if (!err && encrypted) {
-                                        messageOptions.prepared = messageHandler.prepareMessage({
+                                        messageOpts.prepared = messageHandler.prepareMessage({
                                             raw: encrypted,
                                             indexedHeaders: spamHeaderKeys
                                         });
-                                        messageOptions.maildata = messageHandler.indexer.getMaildata(
-                                            messageOptions.prepared.id,
-                                            messageOptions.prepared.mimeTree
-                                        );
+                                        messageOpts.maildata = messageHandler.indexer.getMaildata(messageOpts.prepared.id, messageOpts.prepared.mimeTree);
                                     }
 
-                                    messageHandler.add(messageOptions, (err, inserted, info) => {
+                                    messageHandler.add(messageOpts, (err, inserted, info) => {
                                         // remove Delivered-To
                                         chunks.shift();
                                         chunklen -= header.length;

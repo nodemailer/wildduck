@@ -1,7 +1,7 @@
 'use strict';
 
 const imapHandler = require('./handler/imap-handler');
-
+const errors = require('../../lib/errors.js');
 const MAX_MESSAGE_SIZE = 1 * 1024 * 1024;
 
 const commands = new Map([
@@ -88,6 +88,11 @@ class IMAPCommand {
         if (command.literal) {
             // check if the literal size is in acceptable bounds
             if (isNaN(command.expecting) || isNaN(command.expecting) < 0 || command.expecting > Number.MAX_SAFE_INTEGER) {
+                errors.notify(new Error('Invalid literal size'), {
+                    command: {
+                        expecting: command.expecting
+                    }
+                });
                 this.connection.send(this.tag + ' BAD Invalid literal size');
                 return callback(new Error('Literal too big'));
             }
