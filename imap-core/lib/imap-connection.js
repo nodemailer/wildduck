@@ -203,7 +203,9 @@ class IMAPConnection extends EventEmitter {
             return;
         }
 
-        this._server.notifier.removeListener(this.session, '*', this._accountListener);
+        if (this.user) {
+            this._server.notifier.removeListener({ user: this.user }, '*', this._accountListener);
+        }
 
         this._parser = false;
 
@@ -745,7 +747,7 @@ class IMAPConnection extends EventEmitter {
     }
 
     setUser(user) {
-        this.session.user = user;
+        this.user = this.session.user = user;
         this._server.notifier.addListener(this.session, '*', this._accountListener);
     }
 }

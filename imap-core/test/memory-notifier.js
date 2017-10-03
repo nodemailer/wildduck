@@ -37,7 +37,10 @@ class MemoryNotifier extends EventEmitter {
      * @returns {String} md5 hex
      */
     _eventName(mailbox, username) {
-        return crypto.createHash('md5').update(username + ':' + mailbox).digest('hex');
+        return crypto
+            .createHash('md5')
+            .update(username + ':' + mailbox)
+            .digest('hex');
     }
 
     /**
