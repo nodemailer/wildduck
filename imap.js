@@ -11,7 +11,7 @@ const UserHandler = require('./lib/user-handler');
 const MailboxHandler = require('./lib/mailbox-handler');
 const db = require('./lib/db');
 const consts = require('./lib/consts');
-const RedFour = require('redfour');
+const RedFour = require('ioredfour');
 const packageData = require('./package.json');
 const yaml = require('js-yaml');
 const fs = require('fs');
@@ -224,7 +224,7 @@ module.exports = done => {
     }
 
     gcLock = new RedFour({
-        redis: db.redisConfig,
+        redis: db.redis,
         namespace: 'wildduck'
     });
 

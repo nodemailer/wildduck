@@ -337,7 +337,7 @@ Forces closing all active IMAP session of an user
 
 ```
 curl -XPUT "http://localhost:8080/users/59467f27535f8f0f067ba8e6/logout" -H 'content-type: application/json' -d '{
-  "reaosn": "Account was deleted"
+  "reason": "Account was deleted"
 }'
 ```
 
