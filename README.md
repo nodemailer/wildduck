@@ -18,6 +18,7 @@ Wild Duck tries to follow Gmail in architectural design. If there's a decision t
 
 **Optional requirements**
 
+* Redis Sentinel for automatic Redis failover
 * Build tools to install optional dependencies that need compiling
 
 Wild Duck can be installed on any Node.js compatible platform.
@@ -256,7 +257,12 @@ sh.shardCollection('wildduck.attachments.chunks', { files_id: 'hashed' });
 
 > Attachments collections might be configured to reside in a different database than default. Modify sharding namespaces accordingly (and do not forget to enable sharding for the attachments database)
 
+### Redis Sentinel
+
+Wild Duck is able to use Redis Sentinel instead of single Redis master for automatic failover. When using Sentinel and the Redis master fails then it might take a moment until new master is elected. Pending requests are cached during that window, so most operations should succeed eventually. You might want to test failover under load though, to see how it behaves.
+
+Redis Sentinel failover does not guarantee consistency. Wild Duck does not store critical information in Redis, so even if some data loss occurs, it should not be noticeable.
+
 ## License
 
 Wild Duck Mail Agent is licensed under the [European Union Public License 1.1](http://ec.europa.eu/idabc/eupl.html).
-

@@ -1,7 +1,7 @@
 # mongodb connection string for the main database
 mongo="mongodb://127.0.0.1:27017/wildduck"
 
-# redis connection string
+# redis connection string to connect to a single master (see below for Sentinel example)
 redis="redis://127.0.0.1:6379/3"
 
 # Wild Duck allows using different kind of data in different databases
@@ -25,3 +25,18 @@ redis="redis://127.0.0.1:6379/3"
 #sender="zone-mta"
 
 #queued="mail"
+
+## Connect to Redis Sentinel instead of single master
+# [redis]
+# name="mymaster"
+# password=""
+# db=3
+# [[redis.sentinels]]
+#   host="54.36.85.113"
+#   port=26379
+# [[redis.sentinels]]
+#   host="54.36.85.114"
+#   port=26379
+# [[redis.sentinels]]
+#   host="54.36.85.115"
+#   port=26379
