@@ -6,6 +6,7 @@ const IMAPConnection = require('./imap-connection').IMAPConnection;
 const tlsOptions = require('./tls-options');
 const EventEmitter = require('events').EventEmitter;
 const shared = require('nodemailer/lib/shared');
+const punycode = require('punycode');
 
 const CLOSE_TIMEOUT = 1 * 1000; // how much to wait until pending connections are terminated
 
@@ -265,6 +266,10 @@ class IMAPServer extends EventEmitter {
                 };
             }
         }
+    }
+
+    _normalizeHostname(hostname) {
+        return punycode.toUnicode((hostname || '').toString().trim()).toLowerCase();
     }
 }
 
