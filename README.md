@@ -263,6 +263,12 @@ Wild Duck is able to use Redis Sentinel instead of single Redis master for autom
 
 Redis Sentinel failover does not guarantee consistency. Wild Duck does not store critical information in Redis, so even if some data loss occurs, it should not be noticeable.
 
+### Certificates
+
+You can live-reload updated certificates by sending SIGHUP to the master process. This causes application configuration to be re-read from the disk. Reloading only affects only some settings, for example all TLS certificates are loaded and updated. In this case existing processes continue as is, while new ones use the updated certs.
+
+Beware though that if configuration loading fails, then it ends with an exception. Make sure that TLS certificate files are readable for the Wild Duck user.
+
 ## License
 
 Wild Duck Mail Agent is licensed under the [European Union Public License 1.1](http://ec.europa.eu/idabc/eupl.html).
