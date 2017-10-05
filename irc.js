@@ -7,7 +7,7 @@ const UserHandler = require('./lib/user-handler');
 const MessageHandler = require('./lib/message-handler');
 const db = require('./lib/db');
 const fs = require('fs');
-const certs = require('./lib/certs').get('irc');
+const certs = require('./lib/certs');
 
 const serverOptions = {
     port: config.irc.port,
@@ -34,13 +34,7 @@ const serverOptions = {
     }
 };
 
-if (certs) {
-    serverOptions.key = certs.key;
-    if (certs.ca) {
-        serverOptions.ca = certs.ca;
-    }
-    serverOptions.cert = certs.cert;
-}
+certs.loadTLSOptions(serverOptions, 'irc');
 
 const server = new IRCServer(serverOptions);
 

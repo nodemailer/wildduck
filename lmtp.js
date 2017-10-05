@@ -10,7 +10,7 @@ const MessageHandler = require('./lib/message-handler');
 const db = require('./lib/db');
 const forward = require('./lib/forward');
 const autoreply = require('./lib/autoreply');
-const certs = require('./lib/certs').get('lmtp');
+const certs = require('./lib/certs');
 
 let messageHandler;
 let spamChecks = prepareSmapChecks(config.spamHeader);
@@ -435,15 +435,11 @@ const serverOptions = {
     }
 };
 
-if (certs) {
-    serverOptions.key = certs.key;
-    if (certs.ca) {
-        serverOptions.ca = certs.ca;
-    }
-    serverOptions.cert = certs.cert;
-}
+certs.loadTLSOptions(serverOptions, 'lmtp');
 
 const server = new SMTPServer(serverOptions);
+
+certs.registerReload(server, 'lmtp');
 
 module.exports = done => {
     if (!config.lmtp.enabled) {

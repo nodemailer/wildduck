@@ -15,7 +15,7 @@ const RedFour = require('ioredfour');
 const packageData = require('./package.json');
 const yaml = require('js-yaml');
 const fs = require('fs');
-const certs = require('./lib/certs').get('imap');
+const certs = require('./lib/certs');
 const setupIndexes = yaml.safeLoad(fs.readFileSync(__dirname + '/indexes.yaml', 'utf8'));
 
 const onFetch = require('./lib/handlers/on-fetch');
@@ -69,15 +69,11 @@ const serverOptions = {
     maxStorage: config.maxStorage * 1024 * 1024
 };
 
-if (certs) {
-    serverOptions.key = certs.key;
-    if (certs.ca) {
-        serverOptions.ca = certs.ca;
-    }
-    serverOptions.cert = certs.cert;
-}
+certs.loadTLSOptions(serverOptions, 'imap');
 
 const server = new IMAPServer(serverOptions);
+
+certs.registerReload(server, 'imap');
 
 let messageHandler;
 let userHandler;

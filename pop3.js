@@ -7,7 +7,7 @@ const UserHandler = require('./lib/user-handler');
 const MessageHandler = require('./lib/message-handler');
 const ObjectID = require('mongodb').ObjectID;
 const db = require('./lib/db');
-const certs = require('./lib/certs').get('pop3');
+const certs = require('./lib/certs');
 
 const MAX_MESSAGES = 250;
 
@@ -182,15 +182,11 @@ const serverOptions = {
     }
 };
 
-if (certs) {
-    serverOptions.key = certs.key;
-    if (certs.ca) {
-        serverOptions.ca = certs.ca;
-    }
-    serverOptions.cert = certs.cert;
-}
+certs.loadTLSOptions(serverOptions, 'pop3');
 
 const server = new POP3Server(serverOptions);
+
+certs.registerReload(server, 'pop3');
 
 // move messages to trash
 function trashMessages(session, messages, callback) {

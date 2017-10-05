@@ -3,7 +3,6 @@
 // openssl s_client -starttls imap -crlf -connect localhost:1143
 
 const tls = require('tls');
-const tlsOptions = require('../tls-options');
 
 const SOCKET_TIMEOUT = 30 * 60 * 1000;
 
@@ -33,14 +32,19 @@ function upgrade(connection) {
     connection.writeStream.unpipe(connection._socket);
     connection._upgrading = true;
 
-    let secureContext = tls.createSecureContext(tlsOptions(connection._server.options));
+    let secureContext = connection._server.secureContext.get('*');
     let socketOptions = {
+        secureContext,
         isServer: true,
-        secureContext
+        server: connection._server.server,
+
+        SNICallback: (servername, cb) => {
+            cb(null, connection._server.secureContext.get(connection._server._normalizeHostname(servername)) || connection._server.secureContext.get('*'));
+        }
     };
 
     // Apply additional socket options if these are set in the server options
-    ['requestCert', 'rejectUnauthorized', 'session'].forEach(key => {
+    ['requestCert', 'rejectUnauthorized', 'NPNProtocols', 'SNICallback', 'session', 'requestOCSP'].forEach(key => {
         if (key in connection._server.options) {
             socketOptions[key] = connection._server.options[key];
         }
@@ -53,24 +57,31 @@ function upgrade(connection) {
     // upgrade connection
     let secureSocket = new tls.TLSSocket(connection._socket, socketOptions);
 
-    secureSocket.on('close', connection._onClose.bind(connection));
-    secureSocket.on('error', connection._onError.bind(connection));
-    secureSocket.on('clientError', connection._onError.bind(connection));
-    secureSocket.setTimeout(connection._server.options.socketTimeout || SOCKET_TIMEOUT, connection._onTimeout.bind(connection));
+    secureSocket.once('close', () => connection._onClose());
+    secureSocket.once('error', err => connection._onError(err));
+    secureSocket.once('_tlsError', err => connection._onError(err));
+    secureSocket.once('clientError', err => connection._onError(err));
+
+    secureSocket.setTimeout(connection._server.options.socketTimeout || SOCKET_TIMEOUT, () => connection._onTimeout());
 
     secureSocket.on('secure', () => {
         connection.secure = true;
         connection._socket = secureSocket;
         connection._upgrading = false;
 
+        let cipher = connection._socket.getCipher();
         connection._server.logger.info(
             {
                 tnx: 'starttls',
-                cid: connection.id
+                cid: connection.id,
+                user: connection.session && connection.session.user && connection.session.user.username,
+                cipher: cipher && cipher.name
             },
-            '[%s] Connection upgraded to TLS',
-            connection.id
+            '[%s] Connection upgraded to TLS using ',
+            connection.id,
+            (cipher && cipher.name) || 'N/A'
         );
+
         connection._socket.pipe(connection._parser);
         connection.writeStream.pipe(connection._socket);
     });

@@ -6,7 +6,6 @@ const IMAPConnection = require('./imap-connection').IMAPConnection;
 const tlsOptions = require('./tls-options');
 const EventEmitter = require('events').EventEmitter;
 const shared = require('nodemailer/lib/shared');
-const util = require('util');
 
 const CLOSE_TIMEOUT = 1 * 1000; // how much to wait until pending connections are terminated
 
@@ -22,13 +21,10 @@ class IMAPServer extends EventEmitter {
 
         this.options = options || {};
 
-        // apply TLS defaults if needed
-        if (this.options.secure) {
-            this.options = tlsOptions(this.options);
-        }
+        this.updateSecureContext();
 
         this.logger = shared.getLogger(this.options, {
-            component: this.options.component || 'pop3-server'
+            component: this.options.component || 'imap-server'
         });
 
         /**
@@ -42,14 +38,30 @@ class IMAPServer extends EventEmitter {
         this.connections = new Set();
 
         // setup server listener and connection handler
-        this.server = (this.options.secure ? tls : net).createServer(this.options, socket => {
-            let connection = new IMAPConnection(this, socket);
-            this.connections.add(connection);
-            connection.on('error', this._onError.bind(this));
-            connection.init();
-        });
+        //this.server = (this.options.secure ? tls : net).createServer(this.options, 1);
+
+        // setup server listener and connection handler
+        if (this.options.secure && !this.options.needsUpgrade) {
+            this.server = net.createServer(this.options, socket => {
+                this._upgrade(socket, (err, tlsSocket) => {
+                    if (err) {
+                        return this._onError(err);
+                    }
+                    this.connect(tlsSocket);
+                });
+            });
+        } else {
+            this.server = net.createServer(this.options, socket => this.connect(socket));
+        }
 
         this._setListeners();
+    }
+
+    connect(socket) {
+        let connection = new IMAPConnection(this, socket);
+        this.connections.add(connection);
+        connection.on('error', this._onError.bind(this));
+        connection.init();
     }
 
     /**
@@ -110,34 +122,6 @@ class IMAPServer extends EventEmitter {
     // PRIVATE METHODS
 
     /**
-     * Generates a bunyan-like logger that prints to console
-     *
-     * @returns {Object} Bunyan logger instance
-     */
-    _createDefaultLogger() {
-        let logger = {
-            _print: (...args) => {
-                let level = args.shift();
-                let message;
-
-                if (args.length > 1) {
-                    message = util.format(...args);
-                } else {
-                    message = args[0];
-                }
-
-                console.log('[%s] %s: %s', new Date().toISOString().substr(0, 19).replace(/T/, ' '), level.toUpperCase(), message); // eslint-disable-line no-console
-            }
-        };
-
-        logger.info = logger._print.bind(null, 'info');
-        logger.debug = logger._print.bind(null, 'debug');
-        logger.error = logger._print.bind(null, 'error');
-
-        return logger;
-    }
-
-    /**
      * Setup server event handlers
      */
     _setListeners() {
@@ -191,6 +175,96 @@ class IMAPServer extends EventEmitter {
      */
     _onError(err) {
         this.emit('error', err);
+    }
+
+    _upgrade(socket, callback) {
+        let socketOptions = {
+            secureContext: this.secureContext.get('*'),
+            isServer: true,
+            server: this.server,
+            SNICallback: this.options.SNICallback
+        };
+
+        let returned = false;
+        let onError = err => {
+            if (returned) {
+                return;
+            }
+            returned = true;
+            callback(err || new Error('Socket closed unexpectedly'));
+        };
+
+        // remove all listeners from the original socket besides the error handler
+        socket.once('error', onError);
+
+        // upgrade connection
+        let tlsSocket = new tls.TLSSocket(socket, socketOptions);
+
+        tlsSocket.once('close', onError);
+        tlsSocket.once('error', onError);
+        tlsSocket.once('_tlsError', onError);
+        tlsSocket.once('clientError', onError);
+        tlsSocket.once('tlsClientError', onError);
+
+        tlsSocket.on('secure', () => {
+            socket.removeListener('error', onError);
+            tlsSocket.removeListener('close', onError);
+            tlsSocket.removeListener('error', onError);
+            tlsSocket.removeListener('_tlsError', onError);
+            tlsSocket.removeListener('clientError', onError);
+            tlsSocket.removeListener('tlsClientError', onError);
+            if (returned) {
+                try {
+                    tlsSocket.end();
+                } catch (E) {
+                    //
+                }
+                return;
+            }
+            returned = true;
+            return callback(null, tlsSocket);
+        });
+    }
+
+    updateSecureContext(options) {
+        Object.keys(options || {}).forEach(key => {
+            this.options[key] = options[key];
+        });
+
+        let defaultTlsOptions = tlsOptions(this.options);
+
+        this.secureContext = new Map();
+        this.secureContext.set('*', tls.createSecureContext(defaultTlsOptions));
+
+        let ctxMap = this.options.sniOptions || {};
+        // sniOptions is either an object or a Map with domain names as keys and TLS option objects as values
+        if (typeof ctxMap.get === 'function') {
+            ctxMap.forEach((ctx, servername) => {
+                this.secureContext.set(this._normalizeHostname(servername), tls.createSecureContext(tlsOptions(ctx)));
+            });
+        } else {
+            Object.keys(ctxMap).forEach(servername => {
+                this.secureContext.set(this._normalizeHostname(servername), tls.createSecureContext(tlsOptions(ctxMap[servername])));
+            });
+        }
+
+        if (this.options.secure) {
+            // appy changes
+
+            Object.keys(defaultTlsOptions || {}).forEach(key => {
+                if (!(key in this.options)) {
+                    this.options[key] = defaultTlsOptions[key];
+                }
+            });
+
+            // ensure SNICallback method
+            if (typeof this.options.SNICallback !== 'function') {
+                // create default SNI handler
+                this.options.SNICallback = (servername, cb) => {
+                    cb(null, this.secureContext.get(this._normalizeHostname(servername)) || this.secureContext.get('*'));
+                };
+            }
+        }
     }
 }
 

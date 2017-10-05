@@ -1,5 +1,7 @@
 'use strict';
 
+const crypto = require('crypto');
+
 // Expose to the world
 module.exports = getTLSOptions;
 
@@ -50,29 +52,13 @@ const tlsDefaults = {
         'Zwp1dsNQU+Xkylz8IUANWSLHYZOMtN2e5SKIdwTtl5C8YxveuY8YKb1gDExnMraT\n' +
         'VGXQDqPleug=\n' +
         '-----END CERTIFICATE-----',
-
-    /*
-    // default iojs cipher set, copied from https://certsimple.com/blog/a-plus-node-js-ssl
-    ciphers: [
-        'ECDHE-RSA-AES256-SHA384',
-        'DHE-RSA-AES256-SHA384',
-        'ECDHE-RSA-AES256-SHA256',
-        'DHE-RSA-AES256-SHA256',
-        'ECDHE-RSA-AES128-SHA256',
-        'DHE-RSA-AES128-SHA256',
-        'HIGH',
-        '!aNULL',
-        '!eNULL',
-        '!EXPORT',
-        '!DES',
-        '!RC4',
-        '!MD5',
-        '!PSK',
-        '!SRP',
-        '!CAMELLIA'
-    ].join(':'),
-    */
-    honorCipherOrder: true
+    honorCipherOrder: true,
+    requestOCSP: false,
+    sessionIdContext: crypto
+        .createHash('sha1')
+        .update(process.argv.join(' '))
+        .digest('hex')
+        .slice(0, 32)
 };
 
 /**

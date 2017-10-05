@@ -8,7 +8,7 @@ const MailboxHandler = require('./lib/mailbox-handler');
 const MessageHandler = require('./lib/message-handler');
 const ImapNotifier = require('./lib/imap-notifier');
 const db = require('./lib/db');
-const certs = require('./lib/certs').get('api');
+const certs = require('./lib/certs');
 
 const usersRoutes = require('./lib/api/users');
 const addressesRoutes = require('./lib/api/addresses');
@@ -33,12 +33,15 @@ const serverOptions = {
     }
 };
 
-if (certs && config.api.secure) {
-    serverOptions.key = certs.key;
-    if (certs.ca) {
-        serverOptions.ca = certs.ca;
+let certOptions = {};
+certs.loadTLSOptions(certOptions, 'api');
+
+if (config.api.secure && certOptions.key) {
+    serverOptions.key = certOptions.key;
+    if (certOptions.ca) {
+        serverOptions.ca = certOptions.ca;
     }
-    serverOptions.certificate = certs.cert;
+    serverOptions.certificate = certOptions.cert;
 }
 
 const server = restify.createServer(serverOptions);
