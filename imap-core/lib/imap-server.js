@@ -206,9 +206,11 @@ class IMAPServer extends EventEmitter {
                     remoteAddress
                 };
             }
-            if (!err) {
-                err = new Error('Socket closed unexpectedly');
+            if (!err || !err.message) {
+                err = new Error('Socket closed while initiating TLS');
                 err.meta = {
+                    protocol: 'imap',
+                    stage: 'connect',
                     remoteAddress
                 };
             }
@@ -221,8 +223,7 @@ class IMAPServer extends EventEmitter {
         // upgrade connection
         let tlsSocket = new tls.TLSSocket(socket, socketOptions);
 
-        let onCloseError = () => onError(new Error('Socket closed while initiating TLS'));
-        tlsSocket.once('close', onCloseError);
+        tlsSocket.once('close', onError);
         tlsSocket.once('error', onError);
         tlsSocket.once('_tlsError', onError);
         tlsSocket.once('clientError', onError);
@@ -230,7 +231,7 @@ class IMAPServer extends EventEmitter {
 
         tlsSocket.on('secure', () => {
             socket.removeListener('error', onError);
-            tlsSocket.removeListener('close', onCloseError);
+            tlsSocket.removeListener('close', onError);
             tlsSocket.removeListener('error', onError);
             tlsSocket.removeListener('_tlsError', onError);
             tlsSocket.removeListener('clientError', onError);
