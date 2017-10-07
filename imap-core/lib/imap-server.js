@@ -198,14 +198,16 @@ class IMAPServer extends EventEmitter {
             returned = true;
             if (err && /SSL23_GET_CLIENT_HELLO/.test(err.message)) {
                 let message = err.message;
-                err.message = 'Failed to establish TLS session on connection to ' + remoteAddress;
+                err.message = 'Failed to establish TLS session';
                 err.meta = {
+                    protocol: 'imap',
+                    stage: 'connect',
                     message,
                     remoteAddress
                 };
             }
             if (!err) {
-                err = new Error('Socket closed unexpectedly to ' + remoteAddress);
+                err = new Error('Socket closed unexpectedly');
                 err.meta = {
                     remoteAddress
                 };
