@@ -58,7 +58,7 @@ function authenticate(connection, token, callback) {
     let password = (data[2] || '').toString().trim();
     let clientToken = (data[3] || '').toString().trim();
 
-    console.log(clientToken);
+    console.log(data);
 
     // Do auth
     connection._server.onAuth(
