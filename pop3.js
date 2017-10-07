@@ -323,7 +323,7 @@ module.exports = done => {
             started = true;
             return done(err);
         }
-        log.error('POP3', err);
+        log.error('POP3', err.message);
     });
 
     server.listen(config.pop3.port, config.pop3.host, () => {
