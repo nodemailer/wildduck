@@ -270,7 +270,8 @@ module.exports = done => {
                 {
                     err
                 },
-                err
+                '%s',
+                err.message
             );
         });
 

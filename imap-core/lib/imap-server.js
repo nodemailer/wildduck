@@ -188,6 +188,8 @@ class IMAPServer extends EventEmitter {
             SNICallback: this.options.SNICallback
         };
 
+        let remoteAddress = socket.remoteAddress;
+
         let returned = false;
         let onError = err => {
             if (returned) {
@@ -196,16 +198,16 @@ class IMAPServer extends EventEmitter {
             returned = true;
             if (err && /SSL23_GET_CLIENT_HELLO/.test(err.message)) {
                 let message = err.message;
-                err.message = 'Failed to establish TLS session';
+                err.message = 'Failed to establish TLS session on connection to ' + remoteAddress;
                 err.meta = {
                     message,
-                    remoteAddress: socket.remoteAddress
+                    remoteAddress
                 };
             }
             if (!err) {
-                err = new Error('Socket closed unexpectedly');
+                err = new Error('Socket closed unexpectedly to ' + remoteAddress);
                 err.meta = {
-                    remoteAddress: socket.remoteAddress
+                    remoteAddress
                 };
             }
             callback(err);
