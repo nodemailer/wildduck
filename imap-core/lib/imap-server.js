@@ -7,6 +7,7 @@ const tlsOptions = require('./tls-options');
 const EventEmitter = require('events').EventEmitter;
 const shared = require('nodemailer/lib/shared');
 const punycode = require('punycode');
+const errors = require('../../lib/errors.js');
 
 const CLOSE_TIMEOUT = 1 * 1000; // how much to wait until pending connections are terminated
 
@@ -175,6 +176,7 @@ class IMAPServer extends EventEmitter {
      * @event
      */
     _onError(err) {
+        errors.notify(err);
         this.emit('error', err);
     }
 
