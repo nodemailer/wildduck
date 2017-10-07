@@ -47,7 +47,7 @@ module.exports = {
 function authenticate(connection, token, callback) {
     let data = new Buffer(token, 'base64').toString().split('\x00');
 
-    if (data.length !== 3) {
+    if (data.length < 3 || data.length > 4) {
         return callback(null, {
             response: 'BAD',
             message: 'Invalid SASL argument'
@@ -56,13 +56,17 @@ function authenticate(connection, token, callback) {
 
     let username = (data[1] || '').toString().trim();
     let password = (data[2] || '').toString().trim();
+    let clientToken = (data[3] || '').toString().trim();
+
+    console.log(clientToken);
 
     // Do auth
     connection._server.onAuth(
         {
             method: 'PLAIN',
             username,
-            password
+            password,
+            clientToken
         },
         connection.session,
         (err, response) => {
