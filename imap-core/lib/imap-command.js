@@ -167,6 +167,16 @@ class IMAPCommand {
 
         this.append(command, err => {
             if (err) {
+                this.connection._server.logger.debug(
+                    {
+                        err,
+                        tnx: 'client',
+                        cid: this.connection.id
+                    },
+                    '[%s] C: %s',
+                    this.connection.id,
+                    this.payload || ''
+                );
                 return next(err);
             }
 

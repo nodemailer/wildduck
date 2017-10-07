@@ -258,7 +258,7 @@ class IMAPConnection extends EventEmitter {
         if (err.processed) {
             return;
         }
-        if (err.code === 'ECONNRESET' || err.code === 'EPIPE') {
+        if (err.code === 'ECONNRESET' || err.code === 'EPIPE' || err.code === 'ETIMEDOUT') {
             this.close(); // mark connection as 'closing'
             return;
         }
