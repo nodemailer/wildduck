@@ -176,7 +176,7 @@ class IMAPServer extends EventEmitter {
      * @event
      */
     _onError(err) {
-        errors.notify(err);
+        errors.notifyConnection(false, err);
         this.emit('error', err);
     }
 
@@ -194,7 +194,21 @@ class IMAPServer extends EventEmitter {
                 return;
             }
             returned = true;
-            callback(err || new Error('Socket closed unexpectedly'));
+            if (err && /SSL23_GET_CLIENT_HELLO/.test(err.message)) {
+                let message = err.message;
+                err.message = 'Failed to establish TLS session';
+                err.meta = {
+                    message,
+                    remoteAddress: socket.remoteAddress
+                };
+            }
+            if (!err) {
+                err = new Error('Socket closed unexpectedly');
+                err.meta = {
+                    remoteAddress: socket.remoteAddress
+                };
+            }
+            callback(err);
         };
 
         // remove all listeners from the original socket besides the error handler
