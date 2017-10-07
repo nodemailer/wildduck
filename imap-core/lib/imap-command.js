@@ -76,9 +76,12 @@ class IMAPCommand {
 
                 if (!this.command || !this.tag) {
                     let err = new Error('Invalid tag');
-                    errors.notifyConnection(this.connection, err, {
-                        payload: this.payload ? (this.payload.length < 256 ? this.payload : this.payload.toString().substr(0, 150) + '...') : false
-                    });
+                    if (this.payload) {
+                        // no payload means empty line
+                        errors.notifyConnection(this.connection, err, {
+                            payload: this.payload.length < 256 ? this.payload : this.payload.toString().substr(0, 150) + '...'
+                        });
+                    }
                     this.connection.send('* BAD Invalid tag');
                     return callback(err);
                 }
