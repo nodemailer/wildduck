@@ -21,7 +21,8 @@ class TokenParser {
     }
 
     getAttributes() {
-        let attributes = [], branch = attributes;
+        let attributes = [],
+            branch = attributes;
 
         let walk = function(node) {
             let curBranch = branch;
@@ -122,7 +123,7 @@ class TokenParser {
                 }
             }.bind(this);
 
-        for ((i = 0), (len = this.str.length); i < len; i++) {
+        for (i = 0, len = this.str.length; i < len; i++) {
             chr = this.str.charAt(i);
 
             switch (this.state) {
@@ -541,7 +542,6 @@ class ParserInstance {
 
         if ((match = this.remainder.match(/^[^\s]+(?=\s|$)/))) {
             element = match[0];
-
             if ((errPos = imapFormalSyntax.verify(element, syntax)) >= 0) {
                 throw new Error('Unexpected char at position ' + (this.pos + errPos));
             }
@@ -582,7 +582,8 @@ class ParserInstance {
 }
 
 module.exports = function(command, options) {
-    let parser, response = {};
+    let parser,
+        response = {};
 
     options = options || {};
 

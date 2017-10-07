@@ -214,6 +214,38 @@ describe('IMAP Protocol integration tests', function() {
                 }
             );
         });
+
+        it('should reject client token', function(done) {
+            let cmds = ['T1 AUTHENTICATE PLAIN', new Buffer('\x00testuser\x00pass\x00token', 'utf-8').toString('base64'), 'T2 LOGOUT'];
+
+            testClient(
+                {
+                    commands: cmds,
+                    secure: true,
+                    port
+                },
+                function(resp) {
+                    expect(/^T1 BAD/m.test(resp.toString())).to.be.true;
+                    done();
+                }
+            );
+        });
+
+        it('should authenticate with client token', function(done) {
+            let cmds = ['T1 AUTHENTICATE PLAIN-CLIENTTOKEN', new Buffer('\x00testuser\x00pass\x00token', 'utf-8').toString('base64'), 'T2 LOGOUT'];
+
+            testClient(
+                {
+                    commands: cmds,
+                    secure: true,
+                    port
+                },
+                function(resp) {
+                    expect(/^T1 OK/m.test(resp.toString())).to.be.true;
+                    done();
+                }
+            );
+        });
     });
 
     describe('NAMESPACE', function() {

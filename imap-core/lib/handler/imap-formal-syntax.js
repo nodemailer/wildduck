@@ -129,7 +129,7 @@ module.exports = {
     },
 
     command: function() {
-        let value = this.ALPHA() + this.DIGIT();
+        let value = this.ALPHA() + this.DIGIT() + '-';
         this.command = function() {
             return value;
         };

@@ -14,6 +14,8 @@ module.exports = {
     handler(command, callback, next) {
         let token = ((command.attributes && command.attributes[0] && command.attributes[0].value) || '').toString().trim();
 
+        let requireClientToken = (command.command || '').toString().toUpperCase() === 'AUTHENTICATE PLAIN-CLIENTTOKEN' ? true : false;
+
         if (!this.secure && !this._server.options.disableSTARTTLS && !this._server.options.ignoreSTARTTLS) {
             // Only allow authentication using TLS
             return callback(null, {
@@ -34,20 +36,20 @@ module.exports = {
             this._nextHandler = (token, next) => {
                 this._nextHandler = false;
                 next(); // keep the parser flowing
-                authenticate(this, token, callback);
+                authenticate(this, token, requireClientToken, callback);
             };
             this.send('+');
             return next(); // resume input parser. Normally this is done by callback() but we need the next input sooner
         }
 
-        authenticate(this, token, callback);
+        authenticate(this, token, requireClientToken, callback);
     }
 };
 
-function authenticate(connection, token, callback) {
+function authenticate(connection, token, requireClientToken, callback) {
     let data = new Buffer(token, 'base64').toString().split('\x00');
 
-    if (data.length < 3 || data.length > 4) {
+    if ((!requireClientToken && data.length !== 3) || (requireClientToken && data.length !== 4)) {
         return callback(null, {
             response: 'BAD',
             message: 'Invalid SASL argument'
@@ -56,9 +58,7 @@ function authenticate(connection, token, callback) {
 
     let username = (data[1] || '').toString().trim();
     let password = (data[2] || '').toString().trim();
-    let clientToken = (data[3] || '').toString().trim();
-
-    console.log(data);
+    let clientToken = (data[3] || '').toString().trim() || false;
 
     // Do auth
     connection._server.onAuth(
@@ -116,12 +116,14 @@ function authenticate(connection, token, callback) {
                     username,
                     method: 'PLAIN',
                     action: 'success',
-                    cid: connection.id
+                    cid: connection.id,
+                    clientToken
                 },
-                '[%s] %s authenticated using %s',
+                '[%s] %s authenticated using %s%s',
                 connection.id,
                 username,
-                'PLAIN'
+                'PLAIN' + (requireClientToken ? '-CLIENTTOKEN' : ''),
+                clientToken ? ' with token "' + clientToken + '"' : ''
             );
 
             connection.setUser(response.user);

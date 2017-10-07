@@ -14,6 +14,7 @@ const commands = new Map([
     ['STARTTLS', require('./commands/starttls')],
     ['LOGIN', require('./commands/login')],
     ['AUTHENTICATE PLAIN', require('./commands/authenticate-plain')],
+    ['AUTHENTICATE PLAIN-CLIENTTOKEN', require('./commands/authenticate-plain')],
     ['NAMESPACE', require('./commands/namespace')],
     ['LIST', require('./commands/list')],
     ['LSUB', require('./commands/lsub')],
