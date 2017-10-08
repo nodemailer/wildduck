@@ -263,7 +263,7 @@ class IMAPConnection extends EventEmitter {
             return;
         }
 
-        if (err && /SSL23_GET_CLIENT_HELLO/.test(err.message)) {
+        if (err && /SSL23_GET_CLIENT_HELLO|ssl3_get_client_hello/i.test(err.message)) {
             let message = err.message;
             err.message = 'Failed to establish TLS session';
             err.meta = {
