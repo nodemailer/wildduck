@@ -12,7 +12,7 @@ const EventEmitter = require('events').EventEmitter;
 const packageInfo = require('../../package');
 const errors = require('../../lib/errors.js');
 
-const SOCKET_TIMEOUT = 30 * 60 * 1000;
+const SOCKET_TIMEOUT = 10 * 60 * 1000;
 
 /**
  * Creates a handler for new socket
@@ -161,14 +161,17 @@ class IMAPConnection extends EventEmitter {
     /**
      * Close socket
      */
-    close() {
+    close(force) {
         if (!this._socket.destroyed && this._socket.writable) {
-            this._socket.end();
+            this._socket[!force ? 'end' : 'destroy']();
         }
 
         this._server.connections.delete(this);
 
         this._closing = true;
+        if (force) {
+            setImmediate(() => this._onClose());
+        }
     }
 
     // PRIVATE METHODS
@@ -308,11 +311,15 @@ class IMAPConnection extends EventEmitter {
             '[%s] Connection TIMEOUT',
             this.id
         );
+
         if (this.idling) {
-            return; // ignore timeouts when IDLEing
+            // see if the connection still works
+            this.send('* OK Still here');
+            return;
         }
+
         this.send('* BYE Idle timeout, closing connection');
-        this.close();
+        this.close(true); // force connection to close
     }
 
     /**
