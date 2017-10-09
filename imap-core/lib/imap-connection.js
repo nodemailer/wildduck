@@ -261,12 +261,13 @@ class IMAPConnection extends EventEmitter {
         if (err.processed) {
             return;
         }
-        if (err.code === 'ECONNRESET' || err.code === 'EPIPE' || err.code === 'ETIMEDOUT') {
+
+        if (['ECONNRESET', 'EPIPE', 'ETIMEDOUT', 'EHOSTUNREACH'].includes(err.code)) {
             this.close(); // mark connection as 'closing'
             return;
         }
 
-        if (err && /SSL23_GET_CLIENT_HELLO|ssl3_get_client_hello/i.test(err.message)) {
+        if (err && /SSL[23]*_GET_CLIENT_HELLO/i.test(err.message)) {
             let message = err.message;
             err.message = 'Failed to establish TLS session';
             err.meta = {
@@ -276,7 +277,8 @@ class IMAPConnection extends EventEmitter {
                 remoteAddress: this.remoteAddress
             };
         }
-        if (!err) {
+
+        if (!err || !err.message) {
             err = new Error('Socket closed unexpectedly');
             err.meta = {
                 remoteAddress: this.remoteAddress
