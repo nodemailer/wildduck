@@ -105,15 +105,6 @@ indexes:
     key:
       expires: 1
 
-- collection: authlog
-  type: users # index applies to users database
-  index:
-    name: entry_by_group
-    sparse: true
-    key:
-      user: 1
-      group: 1
-
 # Indexes for the filters collection
 
 - collection: filters
