@@ -410,7 +410,7 @@ Authenticates an user
 - **id** is the id of the authenticated user
 - **username** is the user name of the logged in user (useful if you logged in used)
 - **scope** is the scope this authentication is valid for
-- **require2fa** if `true` then the user should also [provide a 2FA token](#verify-2fa) before the user is allowed to proceed
+- **require2fa** is an array of enabled 2FA mechanisms for this user
 - **requirePasswordChange** if `true` then the user should be forced to change their password
 
 **Example**
@@ -481,20 +481,26 @@ Log entries expire after 30 days.
 
 ## 2FA
 
-Wild Duck supports TOTP based 2FA. If 2FA is enabled then users are requested to enter authentication token after successful login. Also, with 2FA enabled, master password can not be used in IMAP, POP3 or SMTP. The user must create an [Application Specific Password](#application-specific-passwords) with a correct scope for email clients using these protocols.
+Wild Duck supports TOTP and U2f based 2FA. If 2FA is enabled then users are requested to enter authentication token after successful login. Also, with 2FA enabled, master password can not be used in IMAP, POP3 or SMTP. The user must create an [Application Specific Password](#application-specific-passwords) with a correct scope for email clients using these protocols.
 
 2FA checks do not happen magically, your application must be 2FA aware:
 
 1. Authenticate user with the [/authenticate](#authenticate-an-user) call
 2. If authentication result includes `requirePasswordChange:true` then force user to change their password
-3. If authentication result includes `require2fa:false` then do nothing, the user is now authenticated. Otherwise continue with Step 4.
-4. Request TOTP token from the user before allowing to perform other actions
-5. Check the token with [/user/{user}/2fa?token=123456](#check-2fa)
-6. If token verification succeeds then user is authenticated
+3. If authentication result includes `require2fa:false` then do nothing, the user is now authenticated. Otherwise continue with Step 4. or Step 5.
+4. If `require2fa` array includes 'totp' then:
+  1. Request TOTP token from the user before allowing to perform other actions
+  2. Check the token with */user/{user}/2fa/totp/check*
+  3. If token verification succeeds then user is authenticated
+5. If `require2fa` array includes 'u2f' then:
+  1. Authentication response should include u2fAuthRequest object. If it is missing or verification times out then you can fetch a new U2F request object from the server with */user/{user}/2fa/u2f/start*
+  2. Send authentication request to U2F key
+  3. Send authentication response from key to server with */user/{user}/2fa/totp/check*
+  4. If token verification succeeds then user is authenticated
 
 ### Setup 2FA
 
-#### POST /users/{user}/2fa
+#### POST /users/{user}/2fa/totp/setup
 
 This call prepares the user to support 2FA tokens. If 2FA is already enabled then this call fails.
 
@@ -513,7 +519,7 @@ This call prepares the user to support 2FA tokens. If 2FA is already enabled the
 **Example**
 
 ```
-curl -XPOST "http://localhost:8080/users/5971da1754cfdc7f0983b2ec/2fa" -H 'content-type: application/json' -d '{
+curl -XPOST "http://localhost:8080/users/5971da1754cfdc7f0983b2ec/2fa/totp/setup" -H 'content-type: application/json' -d '{
   "issuer": "testikas",
   "ip": "192.168.10.10"
 }'
@@ -530,7 +536,7 @@ Response for a successful operation:
 
 ### Verify 2FA
 
-#### PUT /users/{user}/2fa
+#### POST /users/{user}/2fa/totp/enable
 
 Once 2FA QR code is generated the user must return the token with this call. Once the token is successfully provided then 2FA is enabled for the account.
 
@@ -547,7 +553,7 @@ Once 2FA QR code is generated the user must return the token with this call. Onc
 **Example**
 
 ```
-curl -XPUT "http://localhost:8080/users/5971da1754cfdc7f0983b2ec/2fa" -H 'content-type: application/json' -d '{
+curl -XPOST "http://localhost:8080/users/5971da1754cfdc7f0983b2ec/2fa/totp/enable" -H 'content-type: application/json' -d '{
   "token": "455912",
   "ip": "192.168.10.10"
 }'
@@ -561,40 +567,11 @@ Response for a successful operation:
 }
 ```
 
-### Disable 2FA
-
-#### DELETE /users/{user}/2fa
-
-Disabling 2FA re-enables master password usage for IMAP, POP3 and SMTP.
-
-**Parameters**
-
-- **user** (required) is the ID of the user
-- **ip** is the IP address the request was made from
-
-**Response fields**
-
-- **success** should be `true`
-
-**Example**
-
-```
-curl -XDELETE "http://localhost:8080/users/5971da1754cfdc7f0983b2ec/2fa?ip=192.168.10.10"
-```
-
-Response for a successful operation:
-
-```json
-{
-  "success": true
-}
-```
-
 ### Check 2FA
 
-#### GET /users/{user}/2fa
+#### POST /users/{user}/2fa/totp/check
 
-Validates a TOTP token against user 2FA settings. This check should be performed when an user authentication response includes `request2fa:true`
+Validates a TOTP token against user 2FA settings. This check should be performed when an user authentication response includes `request2fa:['totp']`
 
 **Parameters**
 
@@ -609,7 +586,68 @@ Validates a TOTP token against user 2FA settings. This check should be performed
 **Example**
 
 ```
-curl "http://localhost:8080/users/5971da1754cfdc7f0983b2ec/2fa?token=123456&ip=192.168.10.10"
+curl -XPOST "http://localhost:8080/users/5971da1754cfdc7f0983b2ec/2fa/totp/check" -H 'content-type: application/json' -d '{
+  "token": "455912",
+  "ip": "192.168.10.10"
+}'
+```
+
+Response for a successful operation:
+
+```json
+{
+  "success": true
+}
+```
+
+### Disable TOTP
+
+#### DELETE /users/{user}/2fa/totp
+
+Disabling TOTP for authentication. Other 2FA schemes remain in place.
+
+**Parameters**
+
+- **user** (required) is the ID of the user
+- **ip** is the IP address the request was made from
+
+**Response fields**
+
+- **success** should be `true`
+
+**Example**
+
+```
+curl -XDELETE "http://localhost:8080/users/5971da1754cfdc7f0983b2ec/2fa/totp?ip=192.168.10.10"
+```
+
+Response for a successful operation:
+
+```json
+{
+  "success": true
+}
+```
+
+### Disable 2FA
+
+#### DELETE /users/{user}/2fa
+
+Disables all 2FA schemes. Disabling 2FA re-enables master password usage for IMAP, POP3 and SMTP.
+
+**Parameters**
+
+- **user** (required) is the ID of the user
+- **ip** is the IP address the request was made from
+
+**Response fields**
+
+- **success** should be `true`
+
+**Example**
+
+```
+curl -XDELETE "http://localhost:8080/users/5971da1754cfdc7f0983b2ec/2fa?ip=192.168.10.10"
 ```
 
 Response for a successful operation:

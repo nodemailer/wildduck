@@ -36,6 +36,10 @@ bugsnagCode=""
     #cipher="aes192"
     #secret="a secret cat"
 
+[u2f]
+    # Fully qualified URL of your website (must use HTTPS!)
+    appId="https://localhost:3000"
+
 [attachments]
 # @include "attachments.toml"
 
