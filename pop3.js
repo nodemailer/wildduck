@@ -20,6 +20,8 @@ const serverOptions = {
     secure: config.pop3.secure,
     disableVersionString: !!config.pop3.disableVersionString,
 
+    useProxy: !!config.imap.useProxy,
+
     // log to console
     logger: {
         info(...args) {
