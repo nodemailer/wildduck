@@ -22,11 +22,13 @@ const SOCKET_TIMEOUT = 10 * 60 * 1000;
  * @param {Object} socket Socket instance
  */
 class IMAPConnection extends EventEmitter {
-    constructor(server, socket) {
+    constructor(server, socket, options) {
         super();
 
+        options = options || {};
+
         // Random session ID, used for logging
-        this.id = crypto.randomBytes(9).toString('base64');
+        this.id = options.id || crypto.randomBytes(9).toString('base64');
 
         this.compression = false;
         this._deflate = false;
@@ -63,7 +65,7 @@ class IMAPConnection extends EventEmitter {
         this.secure = !!this._server.options.secure;
 
         // Store remote address for later usage
-        this.remoteAddress = this._socket.remoteAddress;
+        this.remoteAddress = options.remoteAddress || this._socket.remoteAddress;
 
         // Server hostname for the greegins
         this.name = (this._server.options.name || os.hostname()).toLowerCase();
@@ -129,6 +131,7 @@ class IMAPConnection extends EventEmitter {
                 this.id,
                 this.clientHostname
             );
+
             this.send('* OK ' + ((this._server.options.id && this._server.options.id.name) || packageInfo.name) + ' ready');
         });
     }

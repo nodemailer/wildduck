@@ -44,6 +44,8 @@ const serverOptions = {
     disableSTARTTLS: config.imap.disableSTARTTLS,
     ignoreSTARTTLS: config.imap.ignoreSTARTTLS,
 
+    useProxy: !!config.imap.useProxy,
+
     id: {
         name: config.imap.name || 'Wild Duck IMAP Server',
         version: config.imap.version || packageData.version,

@@ -1,8 +1,7 @@
 # If enabled then Wild Duck exposes an IMAP interface for listing and fetching emails
 enabled=true
 port=9993
-# by default bind to localhost only
-host="127.0.0.1"
+host="0.0.0.0"
 
 # Use `true` for port 993 and `false` for 143. If connection is not secured
 # on connection then Wild Duck enables STARTTLS extension
@@ -19,6 +18,9 @@ disableRetention=false
 
 # If true, then disables STARTTLS support
 disableSTARTTLS=false
+
+# If true, then expect HAProxy PROXY header as the first line of data
+useProxy=false
 
 [id]
 #name="Wild Duck IMAP"
