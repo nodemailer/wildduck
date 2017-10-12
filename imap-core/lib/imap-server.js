@@ -237,7 +237,7 @@ class IMAPServer extends EventEmitter {
                         if (params[1]) {
                             socketOptions.remoteAddress = params[1].trim().toLowerCase();
 
-                            socketOptions.ignore = this.options.ignoredHosts && this.options.ignoredHosts.includes(socket.remoteAddress);
+                            socketOptions.ignore = this.options.ignoredHosts && this.options.ignoredHosts.includes(socketOptions.remoteAddress);
 
                             if (!socketOptions.ignore) {
                                 this.logger.info(
