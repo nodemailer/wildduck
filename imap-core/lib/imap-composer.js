@@ -19,7 +19,7 @@ class IMAPComposer extends Transform {
 
         if (typeof obj.pipe === 'function') {
             // pipe stream to socket and wait until it finishes before continuing
-            this.connection._server.logger.debug(
+            this.connection.logger.debug(
                 {
                     tnx: 'pipeout',
                     cid: this.connection.id
@@ -41,7 +41,7 @@ class IMAPComposer extends Transform {
 
         let compiled = imapHandler.compiler(obj);
 
-        this.connection._server.logger.debug(
+        this.connection.logger.debug(
             {
                 tnx: 'send',
                 cid: this.connection.id

@@ -22,6 +22,9 @@ disableSTARTTLS=false
 # If true, then expect HAProxy PROXY header as the first line of data
 useProxy=false
 
+# an array of IP addresses to ignore (not logged)
+ignoredHosts=[]
+
 [id]
 #name="Wild Duck IMAP"
 #version="1.0.0"

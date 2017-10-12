@@ -118,7 +118,7 @@ class IMAPCommand {
                 // Deny all literals bigger than maxMessage
                 command.expecting > maxAllowed
             ) {
-                this.connection._server.logger.debug(
+                this.connection.logger.debug(
                     {
                         tnx: 'client',
                         cid: this.connection.id
@@ -170,7 +170,7 @@ class IMAPCommand {
 
         this.append(command, err => {
             if (err) {
-                this.connection._server.logger.debug(
+                this.connection.logger.debug(
                     {
                         err,
                         tnx: 'client',
@@ -185,7 +185,7 @@ class IMAPCommand {
 
             // check if the payload needs to be directed to a preset handler
             if (typeof this.connection._nextHandler === 'function') {
-                this.connection._server.logger.debug(
+                this.connection.logger.debug(
                     {
                         tnx: 'client',
                         cid: this.connection.id
@@ -203,7 +203,7 @@ class IMAPCommand {
                 errors.notifyConnection(this.connection, E, {
                     payload: this.payload ? (this.payload.length < 256 ? this.payload : this.payload.toString().substr(0, 150) + '...') : false
                 });
-                this.connection._server.logger.debug(
+                this.connection.logger.debug(
                     {
                         err: E,
                         tnx: 'client',
@@ -227,7 +227,7 @@ class IMAPCommand {
                 });
             }
 
-            this.connection._server.logger.debug(
+            this.connection.logger.debug(
                 {
                     tnx: 'client',
                     cid: this.connection.id
