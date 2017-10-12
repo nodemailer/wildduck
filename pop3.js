@@ -21,6 +21,7 @@ const serverOptions = {
     disableVersionString: !!config.pop3.disableVersionString,
 
     useProxy: !!config.imap.useProxy,
+    ignoredHosts: config.pop3.ignoredHosts,
 
     // log to console
     logger: {
