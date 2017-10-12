@@ -263,6 +263,10 @@ Wild Duck is able to use Redis Sentinel instead of single Redis master for autom
 
 Redis Sentinel failover does not guarantee consistency. Wild Duck does not store critical information in Redis, so even if some data loss occurs, it should not be noticeable.
 
+### HAProxy
+
+When using Haproxy you can enable PROXY protocol to get correct remote addresses in logs
+
 ### Certificates
 
 You can live-reload updated certificates by sending SIGHUP to the master process. This causes application configuration to be re-read from the disk. Reloading only affects only some settings, for example all TLS certificates are loaded and updated. In this case existing processes continue as is, while new ones use the updated certs.

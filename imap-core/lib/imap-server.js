@@ -241,10 +241,11 @@ class IMAPServer extends EventEmitter {
                                     proxy: params[1].trim().toLowerCase(),
                                     destination: socket.remoteAddress
                                 },
-                                '[%s] PROXY from %s through %s',
+                                '[%s] PROXY from %s through %s (%s)',
                                 socketOptions.id,
                                 params[1].trim().toLowerCase(),
-                                socket.remoteAddress
+                                socket.remoteAddress,
+                                JSON.stringify(params)
                             );
                             socketOptions.remoteAddress = params[1].trim().toLowerCase();
                             if (params[3]) {
