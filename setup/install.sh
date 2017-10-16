@@ -297,6 +297,7 @@ ufw allow 80/tcp
 ufw allow 443/tcp
 ufw allow 25/tcp
 ufw allow 587/tcp
+ufw allow 993/tcp
 ufw --force enable
 
 ### start services ####
