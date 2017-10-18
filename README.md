@@ -210,7 +210,7 @@ Any other differences are most probably real bugs and unintentional.
 Create an email account and use your IMAP client to connect to it. To send mail to this account, run the example script:
 
 ```
-node examples/push-mail.js username@example.com
+node examples/push-message.js username@example.com
 ```
 
 This should "deliver" a new message to the INBOX of _username@example.com_ by using the built-in LMTP maildrop interface. If your email client is connected then you should promptly see the new message.
