@@ -3,11 +3,18 @@
 # Run as root:
 # sudo ./install.sh [maildomain.com]
 
+INSTALLDIR=`pwd`
+
+if [[ $EUID -ne 0 ]]; then
+   echo "This script must be run as root" 1>&2
+   exit 1
+fi
+
 HOSTNAME="$1"
 
 WILDDUCK_COMMIT="30f0e83ed34efcaacd56b997d85a0b76ad1cdd8d"
 ZONEMTA_COMMIT="88f73b6f6fa4c1135af611d1bb79213ed5ee3869"
-WEBMAIL_COMMIT="bbac73339f192b1dfa39be20ac3a6acf5ffffc07"
+WEBMAIL_COMMIT="e2453fa150b28a72ccec613a04dfecca1b4e74a1"
 
 if [[ $EUID -ne 0 ]]; then
    echo "This script must be run as root" 1>&2
@@ -65,22 +72,18 @@ mv /etc/wildduck/default.toml /etc/wildduck/wildduck.toml
 
 echo 'sender="zone-mta"' >> /etc/wildduck/dbs.toml
 
-echo 'enabled=true
-port=993
-host="0.0.0.0"
-secure=true' > /etc/wildduck/imap.toml
-
-echo 'enabled=true
-port=995
-host="0.0.0.0"
-secure=true' > /etc/wildduck/pop3.toml
+sed -i -e "s/999/99/g;s/localhost/$HOSTNAME/g" /etc/wildduck/imap.toml
+sed -i -e "s/999/99/g;s/localhost/$HOSTNAME/g" /etc/wildduck/pop3.toml
 
 echo "enabled=true
 port=24
-emailDomain=\"$HOSTNAME\"" > /etc/wildduck/lmtp.toml
+disableSTARTTLS=true" > /etc/wildduck/lmtp.toml
 
-echo 'user="wildduck"
-group="wildduck"' | cat - /etc/wildduck/wildduck.toml > temp && mv temp /etc/wildduck/wildduck.toml
+echo "user=\"wildduck\"
+group=\"wildduck\"
+emailDomain=\"$HOSTNAME\"" | cat - /etc/wildduck/wildduck.toml > temp && mv temp /etc/wildduck/wildduck.toml
+
+sed -i -e "s/localhost:3000/$HOSTNAME/g;s/localhost/$HOSTNAME/g;s/2587/587/g" /etc/wildduck/wildduck.toml
 
 cd /opt/wildduck
 sudo npm install --production
@@ -119,8 +122,13 @@ echo "26214400" > config/databytes
 
 echo "$HOSTNAME" > config/me
 
-echo "queue/lmtp
+echo "spf
+tls
+queue/lmtp
 wildduck" > config/plugins
+
+echo "key=/etc/wildduck/certs/privkey.pem
+cert=/etc/wildduck/certs/fullchain.pem" > config/tls.ini
 
 echo "host=127.0.0.1
 port=24" > config/lmtp.ini
@@ -214,6 +222,13 @@ localMxPort=24
     address=\"127.0.0.1\"
     name=\"$HOSTNAME\"" > /etc/zone-mta/plugins/wildduck.toml
 
+sed -i -e "s/test/wildduck/g;s/example.com/$HOSTNAME/g;s/signTransportDomain=true/signTransportDomain=false/g;" /etc/zone-mta/plugins/dkim.toml
+cd /opt/zone-mta/keys
+openssl genrsa -out "$HOSTNAME-dkim.pem" 2048
+chmod 400 "$HOSTNAME-dkim.pem"
+openssl rsa -in "$HOSTNAME-dkim.pem" -out "$HOSTNAME-dkim.cert" -pubout
+DNS_ADDRESS="v=DKIM1;p=$(grep -v -e '^-' $HOSTNAME-dkim.cert | tr -d "\n")"
+
 cd /opt/zone-mta
 sudo npm install zonemta-wildduck --save
 sudo npm install --production
@@ -247,7 +262,7 @@ mkdir /opt/wildduck-webmail
 git --git-dir=/var/opt/wildduck-webmail.git --work-tree=/opt/wildduck-webmail checkout "$WEBMAIL_COMMIT"
 cp /opt/wildduck-webmail/config/default.toml /etc/wildduck/wildduck-webmail.toml
 
-sed -i -e "s/localhost/$HOSTNAME/g" /etc/wildduck/wildduck-webmail.toml
+sed -i -e "s/localhost/$HOSTNAME/g;s/999/99/g;s/2587/587/g" /etc/wildduck/wildduck-webmail.toml
 
 cd /opt/wildduck-webmail
 sudo npm install --production
@@ -272,23 +287,36 @@ WantedBy=multi-user.target' > /etc/systemd/system/wildduck-webmail.service
 
 systemctl enable wildduck-webmail.service
 
-mv /etc/nginx/sites-available/default /etc/nginx/sites-available/default.bak
+#### NGINX ####
 
-echo 'server {
-    listen 80 default_server;
-    listen [::]:80 default_server;
+# Create initial certs. These will be overwritten later by Let's Encrypt certs
+mkdir /etc/wildduck/certs
+cd /etc/wildduck/certs
+openssl req -subj "/CN=$HOSTNAME/O=My Company Name LTD./C=US" -new -newkey rsa:2048 -days 365 -nodes -x509 -keyout privkey.pem -out fullchain.pem
 
-    server_name _;
+chown -R wildduck:wildduck /etc/wildduck/certs
+chmod 0700 /etc/wildduck/certs/privkey.pem
+
+# Setup domain without SSL at first, otherwise acme.sh will fail
+echo "server {
+    listen 80;
+
+    server_name $HOSTNAME;
+
+    ssl_certificate /etc/wildduck/certs/fullchain.pem;
+    ssl_certificate_key /etc/wildduck/certs/privkey.pem;
 
     location / {
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header HOST $http_host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header HOST \$http_host;
         proxy_set_header X-NginX-Proxy true;
         proxy_pass http://127.0.0.1:3000;
         proxy_redirect off;
     }
-}' > /etc/nginx/sites-available/default
+}" > "/etc/nginx/sites-available/$HOSTNAME"
+ln -s "/etc/nginx/sites-available/$HOSTNAME" "/etc/nginx/sites-enabled/$HOSTNAME"
+systemctl reload nginx
 
 #### UFW ####
 
@@ -300,6 +328,63 @@ ufw allow 587/tcp
 ufw allow 993/tcp
 ufw --force enable
 
+#### SSL CERTS ####
+
+curl https://get.acme.sh | sh
+
+echo 'cert="/etc/wildduck/certs/fullchain.pem"
+key="/etc/wildduck/certs/privkey.pem"' > /etc/wildduck/tls.toml
+
+sed -i -e "s/key=/#key=/g;s/cert=/#cert=/g" /etc/zone-mta/interfaces/feeder.toml
+echo '# @include "../../wildduck/tls.toml"' >> /etc/zone-mta/interfaces/feeder.toml
+
+# vanity script as first run should not restart anything
+echo '#!/bin/bash
+echo "OK"' > /usr/local/bin/reload-services.sh
+chmod +x /usr/local/bin/reload-services.sh
+
+/root/.acme.sh/acme.sh --issue --nginx \
+    -d "$HOSTNAME" \
+    --key-file       /etc/wildduck/certs/privkey.pem  \
+    --fullchain-file /etc/wildduck/certs/fullchain.pem \
+    --reloadcmd     "/usr/local/bin/reload-services.sh" \
+    --force || echo "Warning: Failed to generate certificates, using self-signed certs"
+
+# Update site config, make sure ssl is enabled
+echo "server {
+    listen 80;
+    server_name $HOSTNAME;
+    return 301 https://\$server_name\$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+
+    server_name $HOSTNAME;
+
+    ssl_certificate /etc/wildduck/certs/fullchain.pem;
+    ssl_certificate_key /etc/wildduck/certs/privkey.pem;
+
+    location / {
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header HOST \$http_host;
+        proxy_set_header X-NginX-Proxy true;
+        proxy_pass http://127.0.0.1:3000;
+        proxy_redirect off;
+    }
+}" > "/etc/nginx/sites-available/$HOSTNAME"
+systemctl reload nginx
+
+# update reload script for future updates
+echo '#!/bin/bash
+/bin/systemctl reload nginx
+/bin/systemctl reload wildduck
+/bin/systemctl restart zone-mta
+/bin/systemctl restart haraka
+/bin/systemctl restart wildduck-webmail' > /usr/local/bin/reload-services.sh
+chmod +x /usr/local/bin/reload-services.sh
+
 ### start services ####
 
 systemctl start mongod
@@ -308,3 +393,33 @@ systemctl start haraka
 systemctl start zone-mta
 systemctl start wildduck-webmail
 systemctl reload nginx
+
+cd "$INSTALLDIR"
+
+echo "NAMESERVER SETUP
+================
+
+MX
+--
+Add this MX record to the $HOSTNAME DNS zone:
+
+$HOSTNAME. IN MX 5 $HOSTNAME.
+
+SPF
+---
+Add this TXT record to the $HOSTNAME DNS zone:
+
+$HOSTNAME. IN TXT \"v=spf1 a ~all\"
+
+DKIM
+----
+Add this TXT record to the $HOSTNAME DNS zone:
+
+wildduck._domainkey.$HOSTNAME. IN TXT \"$DNS_ADDRESS\"
+
+(these settings are stored to $INSTALLDIR/$HOSTNAME-nameserver.txt)" > "$INSTALLDIR/$HOSTNAME-nameserver.txt"
+
+echo ""
+cat "$HOSTNAME-nameserver.txt"
+echo ""
+echo "All done, open https://$HOSTNAME/ in your browser"

@@ -6,6 +6,8 @@ Here you can find an example install script to install Wild Duck with Haraka and
 
     sudo ./install.sh mydomain.com
 
+Make sure that mydomain.com points to that instance as the install script tries to fetch an SSL certificate from let's Encrypt.
+
 Where mydomain.com is the domain name of your server.
 
 If everything succeeds then open your browser http://mydomain.com/ and you should see the Wild Duck example webmail app. Create an account using that app and start receiving and sending emails! (Make sure though that your MX DNS uses mydomain.com)
