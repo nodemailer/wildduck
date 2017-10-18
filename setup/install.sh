@@ -181,6 +181,10 @@ echo '# @include "../wildduck/dbs.toml"' > /etc/zone-mta/dbs-production.toml
 echo 'user="wildduck"
 group="wildduck"' | cat - /etc/zone-mta/zonemta.toml > temp && mv temp /etc/zone-mta/zonemta.toml
 
+echo "[[default]]
+address=\"0.0.0.0\"
+name=\"$HOSTNAME\"" > /etc/zone-mta/pools.toml
+
 echo "[\"modules/zonemta-wildduck\"]
 enabled=[\"receiver\", \"sender\"]
 
@@ -417,9 +421,16 @@ Add this TXT record to the $HOSTNAME DNS zone:
 
 wildduck._domainkey.$HOSTNAME. IN TXT \"$DNS_ADDRESS\"
 
-(these settings are stored to $INSTALLDIR/$HOSTNAME-nameserver.txt)" > "$INSTALLDIR/$HOSTNAME-nameserver.txt"
+PTR
+---
+Make sure that your public IP has a PTR record set to $HOSTNAME.
+If your hosting provider does not allow you to set PTR records but has
+assigned their own hostname, then edit /etc/zone-mta/pools.toml and replace
+the hostname $HOSTNAME with the actual hostname of this server.
+
+(this text is also stored to $INSTALLDIR/$HOSTNAME-nameserver.txt)" > "$INSTALLDIR/$HOSTNAME-nameserver.txt"
 
 echo ""
-cat "$HOSTNAME-nameserver.txt"
+cat "$INSTALLDIR/$HOSTNAME-nameserver.txt"
 echo ""
 echo "All done, open https://$HOSTNAME/ in your browser"

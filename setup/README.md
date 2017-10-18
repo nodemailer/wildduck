@@ -1,20 +1,41 @@
 # Wild Duck Installer
 
-Here you can find an example install script to install Wild Duck with Haraka and ZoneMTA. The install script is self contained, you can upload to your server and start it. It fetches all required files from Github by itself.
+Here you can find an example install script to install Wild Duck with Haraka and ZoneMTA. The install script is self contained, you can upload to your server and start it as root. It fetches all required files from Github.
+
+The install script is tested on Ubuntu 16.04 and the server must be blank. Blank meaning that there should be no existing software installed (eg. Apache, MySQL or Postfix). If the server already has something installed, then remove the extra applications before running this script. This also means that you should not run the install script in a VPS that you already use for other stuff.
+
+## What does it do?
+
+This install script installs and configures the following components:
+
+1. **Wild Duck Mail Server** for IMAP and POP3
+2. **Haraka** with Wild Duck plugin for incoming email
+3. **ZoneMTA** with Wild Duck plugin for outbound email
+4. **Wild Duck Webmail** for creating accounts and viewing messages
+5. **Nginx** to serve the webmail component
+6. **acme.sh** to manage Let's Encrypt certificates
+
+What it does not configure:
+
+1. **DNS settings**. These you need to handle yourself. See domainname-nameserver.txt file after installation for DNS configuration (includes DKIM)
+
+## Security
+
+All components use TLS/HTTPS with Let's Encrypt certificates by default. Webmail component allows to set up two factor authentication (both TOTP and U2F). If 2FA is enabled then you can also generate application specific passwords for external applications (eg. for the IMAP client) from the Webmail interface as master password can not be used in that case.
 
 ## Usage
 
-    sudo ./install.sh mydomain.com
-
-Make sure that mydomain.com points to that instance as the install script tries to fetch an SSL certificate from let's Encrypt.
+    $ wget https://raw.githubusercontent.com/nodemailer/wildduck/master/setup/install.sh
+    $ chmod +x
+    $ ./install.sh mydomain.com
 
 Where mydomain.com is the domain name of your server.
 
-If everything succeeds then open your browser http://mydomain.com/ and you should see the Wild Duck example webmail app. Create an account using that app and start receiving and sending emails! (Make sure though that your MX DNS uses mydomain.com)
+Make sure that mydomain.com points to current server as the install script tries to fetch an SSL certificate from Let's Encrypt.
 
-The install script is tested on Ubuntu 16.04 and the server must be blank. There should be no existing software installed (eg. Apache or MySQL). If the server already has something installed, then remove the extra application before running this script.
+If the installation succeeds then the installer writes DNS configuration to domainname-nameserver.txt file. Set up the provided DNS entries from this file before sending and receiving email.
 
-Be aware though that the installation is not set up securely. MongoDB and Redis do not have authentication enabled. There are only self-signed certs installed (and Haraka on port 25 does not have any certs installed). The webmail app rins on HTTP which also means that Yubikey 2FA does not work.
+Next point your browser to https://mydomain.com/ and you should see the Wild Duck example webmail app where you can create an email account.
 
 ## Config files
 
