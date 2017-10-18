@@ -269,7 +269,7 @@ class Indexer {
     /**
      * Decode text/plain and text/html parts, separate node bodies from the tree
      */
-    getMaildata(messageId, mimeTree) {
+    getMaildata(mimeTree) {
         let magic = parseInt(crypto.randomBytes(2).toString('hex'), 16);
         let maildata = {
             nodes: [],
@@ -446,7 +446,7 @@ class Indexer {
             str.replace(/\bcid:([^\s"']+)/g, (match, cid) => {
                 if (cidMap.has(cid)) {
                     let attachment = cidMap.get(cid);
-                    return 'attachment:' + messageId + '/' + attachment.id.toString();
+                    return 'attachment:' + attachment.id.toString();
                 }
                 return match;
             });
@@ -464,9 +464,10 @@ class Indexer {
     /**
      * Stores attachments to GridStore
      */
-    storeNodeBodies(messageId, maildata, mimeTree, callback) {
+    storeNodeBodies(maildata, mimeTree, callback) {
         let pos = 0;
         let nodes = maildata.nodes;
+
         mimeTree.attachmentMap = {};
         let storeNode = () => {
             if (pos >= nodes.length) {

@@ -140,6 +140,8 @@ const serverOptions = {
 
             let transactionId = new ObjectID();
 
+            let prepared = false;
+
             let storeNext = () => {
                 if (stored >= users.length) {
                     return callback(null, responses.map(r => r.response));
@@ -157,6 +159,8 @@ const serverOptions = {
 
                 filterHandler.process(
                     {
+                        mimeTree: prepared && prepared.mimeTree,
+                        maildata: prepared && prepared.maildata,
                         user: userData,
                         sender,
                         recipient,
@@ -174,13 +178,19 @@ const serverOptions = {
                             time: Date.now()
                         }
                     },
-                    (err, response) => {
+                    (err, response, preparedResponse) => {
                         if (err) {
                             // ???
                         }
+
                         if (response) {
                             responses.push(response);
                         }
+
+                        if (!prepared && preparedResponse) {
+                            prepared = preparedResponse;
+                        }
+
                         setImmediate(storeNext);
                     }
                 );
