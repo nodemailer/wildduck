@@ -25,6 +25,18 @@ Wild Duck can be installed on any Node.js compatible platform.
 
 ## Usage
 
+### Scripted install
+
+If you have a blank VPS and a free domain name that you can point to that VPS than you can try out the scripted all-included install
+
+[Installation instructions](./setup)
+
+Install script installs and configures all required dependencies and services, including Let's Encrypt based certs, to run Wild Duck as a mail server.
+
+Tested on a 10$ DigitalOcean Ubuntu 16.04 instance.
+
+### Manual install
+
 Assuming you have MongoDB and Redis running somewhere.
 
 ### Step 1\. Get the code from github
