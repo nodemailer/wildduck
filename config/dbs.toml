@@ -22,7 +22,7 @@ redis="redis://127.0.0.1:6379/3"
 
 # Optional database name or connection url for ZoneMTA queue database. This is
 # used to push outbound emails to the sending queue
-#sender="zone-mta"
+sender="zone-mta"
 
 #queued="mail"
 

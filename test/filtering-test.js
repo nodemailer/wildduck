@@ -3,15 +3,14 @@
 
 'use strict';
 
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+
 const crypto = require('crypto');
 //const util = require('util');
 const chai = require('chai');
 const request = require('request');
 const fs = require('fs');
-
-//const nodemailer = require('nodemailer');
-//const imapHandler = require('../lib/handler/imap-handler');
-//const userHandler = require('../lib/handler/user-handler');
+const BrowserBox = require('browserbox');
 const simpleParser = require('mailparser').simpleParser;
 const nodemailer = require('nodemailer');
 
@@ -498,5 +497,87 @@ describe('Send multiple messages', function() {
                 checkNormalUsers(() => checkEncryptedUsers(() => done()));
             }
         );
+    });
+
+    it('should fetch messages from IMAP', done => {
+        let imagePng = new Buffer(
+            'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQAQMAAAAlPW0iAAAABlBMVEUAAAD/' +
+                '//+l2Z/dAAAAM0lEQVR4nGP4/5/h/1+G/58ZDrAz3D/McH8yw83NDDeNGe4U' +
+                'g9C9zwz3gVLMDA/A6P9/AFGGFyjOXZtQAAAAAElFTkSuQmCC',
+            'base64'
+        );
+        let textTxt = 'Some notes about this e-mail';
+        let swanJpg = fs.readFileSync(__dirname + '/../examples/swan.jpg');
+
+        let checksums = [
+            crypto
+                .createHash('md5')
+                .update(imagePng)
+                .digest('hex'),
+            crypto
+                .createHash('md5')
+                .update(Buffer.from(textTxt))
+                .digest('hex'),
+            crypto
+                .createHash('md5')
+                .update(swanJpg)
+                .digest('hex')
+        ];
+
+        const client = new BrowserBox('localhost', 9993, {
+            useSecureTransport: true,
+            auth: {
+                user: 'user4',
+                pass: 'secretpass'
+            },
+            id: {
+                name: 'My Client',
+                version: '0.1'
+            },
+            tls: {
+                rejectUnauthorized: false
+            }
+        });
+
+        client.onerror = err => {
+            expect(err).to.not.exist;
+        };
+
+        client.onclose = done;
+
+        client.onauth = () => {
+            client.listMailboxes((err, result) => {
+                expect(err).to.not.exist;
+                let folders = result.children.map(mbox => ({ name: mbox.name, specialUse: mbox.specialUse || false }));
+                expect(folders).to.deep.equal([
+                    { name: 'INBOX', specialUse: false },
+                    { name: 'Archive', specialUse: '\\Archive' },
+                    { name: 'Drafts', specialUse: '\\Drafts' },
+                    { name: 'Junk', specialUse: '\\Junk' },
+                    { name: 'Sent Mail', specialUse: '\\Sent' },
+                    { name: 'Trash', specialUse: '\\Trash' }
+                ]);
+                client.selectMailbox('INBOX', { condstore: true }, (err, result) => {
+                    expect(err).to.not.exist;
+                    expect(result.exists).gte(1);
+
+                    client.listMessages(result.exists, ['uid', 'flags', 'body.peek[]'], (err, messages) => {
+                        expect(err).to.not.exist;
+                        expect(messages.length).equal(1);
+
+                        let messageInfo = messages[0];
+                        simpleParser(messageInfo['body[]'], (err, parsed) => {
+                            expect(err).to.not.exist;
+                            checksums.forEach((checksum, i) => {
+                                expect(checksum).to.equal(parsed.attachments[i].checksum);
+                            });
+                            client.close();
+                        });
+                    });
+                });
+            });
+        };
+
+        client.connect();
     });
 });
