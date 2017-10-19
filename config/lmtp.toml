@@ -1,6 +1,7 @@
 # If enabled then Wild Duck exposes a LMTP interface for pushing messages to mail store
 enabled=true
 port=2424
+
 # by default bind to localhost only
 host="127.0.0.1"
 

@@ -20,7 +20,9 @@
         "grunt-shell-spawn": "^0.3.10",
         "grunt-wait": "^0.1.0",
         "icedfrisby": "^1.4.0",
-        "mocha": "^4.0.1"
+        "mailparser": "^2.1.0",
+        "mocha": "^4.0.1",
+        "request": "^2.83.0"
     },
     "dependencies": {
         "addressparser": "1.0.1",
