@@ -26,7 +26,7 @@ All components use TLS/HTTPS with Let's Encrypt certificates by default. Webmail
 ## Usage
 
     $ wget https://raw.githubusercontent.com/nodemailer/wildduck/master/setup/install.sh
-    $ chmod +x
+    $ chmod +x install.sh
     $ ./install.sh mydomain.com
 
 Where mydomain.com is the domain name of your server.
