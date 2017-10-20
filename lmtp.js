@@ -170,12 +170,12 @@ const serverOptions = {
                             transactionId,
                             source: 'LMTP',
                             from: sender,
-                            to: recipient,
+                            to: [recipient],
                             origin: session.remoteAddress,
                             originhost: session.clientHostname,
                             transhost: session.hostNameAppearsAs,
                             transtype: session.transmissionType,
-                            time: Date.now()
+                            time: new Date()
                         }
                     },
                     (err, response, preparedResponse) => {

@@ -1322,7 +1322,7 @@ The search uses MongoDB fulltext index, see [MongoDB docs](https://docs.mongodb.
 
 #### GET /users/{user}/mailboxes/{mailbox}/messages/{message}
 
-Returns data about a specific address.
+Returns data about a specific message.
 
 **Parameters**
 
@@ -1334,6 +1334,54 @@ Returns data about a specific address.
 
 ```
 curl "http://localhost:8080/users/59467f27535f8f0f067ba8e6/mailboxes/596c9dd31b201716e764efc2/messages/444"
+```
+
+Response for a successful operation:
+
+```json
+{
+  "success": true,
+  "id": 444,
+  "from": {
+  "address": "sender@example.com",
+      "name": "Sender Name"
+  },
+  "to": [
+    {
+      "address": "testuser@example.com",
+      "name": "Test User"
+    }
+  ],
+  "subject": "Subject line",
+  "messageId": "<FA472D2A-092E-44BC-9D38-AFACE48AB98E@example.com>",
+  "date": "2011-11-02T19:19:08.000Z",
+  "seen": true,
+  "deleted": false,
+  "flagged": false,
+  "draft": false,
+  "html": [
+    "Notice that the HTML content is an array of HTML strings"
+  ],
+  "attachments": []
+}
+```
+
+### Get message events
+
+#### GET /users/{user}/mailboxes/{mailbox}/messages/{message}/events
+
+Returns timeline information about a specific message.
+
+**Parameters**
+
+- **user** (required) is the ID of the user
+- **mailbox** (required) is the ID of the mailbox
+- **message** (required) is the ID of the message
+
+**Example**
+
+```
+curl "http://localhost:8080/users/59467f27535f8f0f067ba8e6/mailboxes/596c9dd31b201716e764efc2/messages/444/events"
 ```
 
 Response for a successful operation:

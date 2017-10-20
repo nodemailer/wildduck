@@ -358,6 +358,20 @@ indexes:
     key:
       updated: 1
 
+# messagelog
+- collection: messagelog
+  index:
+    name: messagelog_id_hashed
+    key:
+      id: hashed
+- collection: threads
+  index:
+    name: messagelog_autoexpire
+    # autoremove messagelog entries after 180 days
+    expireAfterSeconds: 15552000
+    key:
+      created: 1
+
 # Indexes for IRC
 
 - collection: chat

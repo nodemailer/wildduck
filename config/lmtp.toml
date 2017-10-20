@@ -9,7 +9,7 @@ host="127.0.0.1"
 maxMB=25
 
 # If true then disables STARTTLS usage
-disableSTARTTLS=false
+disableSTARTTLS=true
 
 # Greeting message for connecting client
 banner="Welcome to Wild Duck Mail Server"
