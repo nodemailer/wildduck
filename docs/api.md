@@ -1381,7 +1381,7 @@ Returns timeline information about a specific message.
 **Example**
 
 ```
-curl "http://localhost:8080/users/59467f27535f8f0f067ba8e6/mailboxes/596c9dd31b201716e764efc2/messages/444/events"
+curl "http://localhost:8080/users/59cb9b0f8d78173c5fc6871c/mailboxes/59cb9b0f8d78173c5fc6871d/messages/43/events"
 ```
 
 Response for a successful operation:
@@ -1389,28 +1389,57 @@ Response for a successful operation:
 ```json
 {
   "success": true,
-  "id": 444,
-  "from": {
-  "address": "sender@example.com",
-      "name": "Sender Name"
-  },
-  "to": [
+  "id": "59e9dfac7f60c84cb2c467c4",
+  "events": [
     {
-      "address": "testuser@example.com",
-      "name": "Test User"
+      "id": "15f3991b258000f6e5.002",
+      "action": "STORE",
+      "source": "MX",
+      "origin": "sender.com",
+      "from": "andris12@example.com",
+      "to": [
+        "andris2@example.com"
+      ],
+      "transtype": "ESMTPSA",
+      "time": "2017-10-20T11:36:12.481Z"
+    },
+    {
+      "id": "15f3991b9d7000fb8f",
+      "action": "FORWARD",
+      "from": "andris12@example.com",
+      "to": [
+        "andris@kreata.ee",
+        "andris.reinman@gmail.com"
+      ],
+      "time": "2017-10-20T11:36:12.523Z"
+    },
+    {
+      "id": "15f3991b9d7000fb8f",
+      "seq": "002",
+      "action": "REJECTED",
+      "src": "0.0.0.0",
+      "dst": "gmail-smtp-in.l.google.com",
+      "response": "421-4.7.0 This message does not have authentication information or fails to pass authentication checks. To best protect our users from spam, the message has been blocked. Please visit https://",
+      "from": "andris12@example.com",
+      "to": [
+        "andris.reinman@gmail.com"
+      ],
+      "time": "2017-10-20T11:36:18.446Z"
+    },
+    {
+      "id": "15f3991b9d7000fb8f",
+      "seq": "001",
+      "action": "ACCEPTED",
+      "src": "0.0.0.0",
+      "dst": "aspmx.l.google.com",
+      "response": "250 2.0.0 OK 1508499378 v89si365958lje.238 - gsmtp",
+      "from": "andris12@example.com",
+      "to": [
+        "andris@kreata.ee"
+      ],
+      "time": "2017-10-20T11:36:18.934Z"
     }
-  ],
-  "subject": "Subject line",
-  "messageId": "<FA472D2A-092E-44BC-9D38-AFACE48AB98E@example.com>",
-  "date": "2011-11-02T19:19:08.000Z",
-  "seen": true,
-  "deleted": false,
-  "flagged": false,
-  "draft": false,
-  "html": [
-    "Notice that the HTML content is an array of HTML strings"
-  ],
-  "attachments": []
+  ]
 }
 ```
 
