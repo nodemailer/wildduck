@@ -168,7 +168,7 @@ const serverOptions = {
                         chunklen,
                         meta: {
                             transactionId,
-                            source: 'LMTP',
+                            source: 'MX',
                             from: sender,
                             to: [recipient],
                             origin: session.remoteAddress,
