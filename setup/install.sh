@@ -70,8 +70,6 @@ git --git-dir=/var/opt/wildduck.git --work-tree=/opt/wildduck checkout "$WILDDUC
 cp -r /opt/wildduck/config /etc/wildduck
 mv /etc/wildduck/default.toml /etc/wildduck/wildduck.toml
 
-echo 'sender="zone-mta"' >> /etc/wildduck/dbs.toml
-
 sed -i -e "s/999/99/g;s/localhost/$HOSTNAME/g" /etc/wildduck/imap.toml
 sed -i -e "s/999/99/g;s/localhost/$HOSTNAME/g" /etc/wildduck/pop3.toml
 
