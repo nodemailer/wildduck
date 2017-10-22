@@ -18,6 +18,7 @@ This install script installs and configures the following components:
 What it does not configure:
 
 1. **DNS settings**. These you need to handle yourself. See domainname-nameserver.txt file after installation for DNS configuration (includes DKIM)
+2. No **Antispam** nor **antivirus**. This you need to configure yourself. Wild Duck is preconfigured to move all messages with common spam headers to a spam folder instead of INBOX, so in most cases it should be enough to configure SpamAssassin/ClamAV for Haraka.
 
 ## Security
 
