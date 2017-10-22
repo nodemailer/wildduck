@@ -39,6 +39,8 @@ apt-get update
 
 apt-get -q -y install mongodb-org pwgen nodejs git ufw build-essential libssl-dev dnsutils python software-properties-common nginx
 
+systemctl enable mongod.service
+
 # redis
 apt-add-repository -y ppa:chris-lea/redis-server
 apt-get update
