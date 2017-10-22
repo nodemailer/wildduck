@@ -14,11 +14,12 @@ This install script installs and configures the following components:
 4. **Wild Duck Webmail** for creating accounts and viewing messages
 5. **Nginx** to serve the webmail component
 6. **acme.sh** to manage Let's Encrypt certificates
+7. **Rspamd** to check messages for spam. Messages detected as spam are routed to Junk Mail folder by default
+8. **ClamAV** to check messages for viruses. ClamAV is disabled by default, you need to enable it in the Haraka plugins file
 
 What it does not configure:
 
 1. **DNS settings**. These you need to handle yourself. See domainname-nameserver.txt file after installation for DNS configuration (includes DKIM)
-2. No **Antispam** nor **antivirus**. This you need to configure yourself. Wild Duck is preconfigured to move all messages with common spam headers to a spam folder instead of INBOX, so in most cases it should be enough to configure SpamAssassin/ClamAV for Haraka.
 
 ## Security
 

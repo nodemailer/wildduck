@@ -37,14 +37,22 @@ curl -sL https://deb.nodesource.com/setup_8.x | bash -
 
 apt-get update
 
-apt-get -q -y install mongodb-org pwgen nodejs git ufw build-essential libssl-dev dnsutils python software-properties-common nginx
+apt-get -q -y install mongodb-org pwgen nodejs git ufw build-essential libssl-dev dnsutils python software-properties-common nginx lsb-release wget
 
 systemctl enable mongod.service
 
 # redis
 apt-add-repository -y ppa:chris-lea/redis-server
+
+# rspamd
+CODENAME=`lsb_release -c -s`
+wget -O- https://rspamd.com/apt-stable/gpg.key | apt-key add -
+echo "deb http://rspamd.com/apt-stable/ $CODENAME main" > /etc/apt/sources.list.d/rspamd.list
+echo "deb-src http://rspamd.com/apt-stable/ $CODENAME main" >> /etc/apt/sources.list.d/rspamd.list
 apt-get update
-apt-get -q -y install redis-server
+
+apt-get -q -y install redis-server clamav clamav-daemon
+apt-get -q -y --no-install-recommends install rspamd
 
 apt-get clean
 
@@ -83,6 +91,11 @@ echo "user=\"wildduck\"
 group=\"wildduck\"
 emailDomain=\"$HOSTNAME\"" | cat - /etc/wildduck/wildduck.toml > temp && mv temp /etc/wildduck/wildduck.toml
 
+echo '[[spamHeader]]
+key="X-Rspamd-Bar"
+value="^\\+{6}"
+target="\\Junk"' >> /etc/wildduck/spamheaders.toml
+
 sed -i -e "s/localhost:3000/$HOSTNAME/g;s/localhost/$HOSTNAME/g;s/2587/587/g" /etc/wildduck/wildduck.toml
 
 cd /opt/wildduck
@@ -114,7 +127,7 @@ cd
 sudo npm install --unsafe-perm -g Haraka
 haraka -i /opt/haraka
 cd /opt/haraka
-sudo npm install --save haraka-plugin-wildduck Haraka
+sudo npm install --save haraka-plugin-wildduck haraka-plugin-rspamd Haraka
 
 mv config/plugins config/pluginbs.bak
 
@@ -123,7 +136,16 @@ echo "26214400" > config/databytes
 echo "$HOSTNAME" > config/me
 
 echo "spf
+
+## ClamAV is disabled by default. Make sure freshclam has updated all
+## virus definitions and clamav-daemon has successfully started before
+## enabling it.
+#clamd
+
+rspamd
 tls
+dkim_verify
+
 queue/lmtp
 wildduck" > config/plugins
 
@@ -132,6 +154,35 @@ cert=/etc/wildduck/certs/fullchain.pem" > config/tls.ini
 
 echo "host=127.0.0.1
 port=24" > config/lmtp.ini
+
+echo 'host = localhost
+port = 11333
+add_headers = always
+[dkim]
+enabled = true
+[header]
+bar = X-Rspamd-Bar
+report = X-Rspamd-Report
+score = X-Rspamd-Score
+spam = X-Rspamd-Spam
+[check]
+authenticated=true
+private_ip=true
+[reject]
+spam = false
+[soft_reject]
+enabled = true
+[rmilter_headers]
+enabled = true
+[spambar]
+positive = +
+negative = -
+neutral = /' > config/rspamd.ini
+
+echo 'clamd_socket = /var/run/clamav/clamd.ctl
+[reject]
+virus=true
+error=false' > config/clamd.ini
 
 echo '---
 accounts:
