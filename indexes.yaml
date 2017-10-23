@@ -364,7 +364,7 @@ indexes:
     name: messagelog_id_hashed
     key:
       id: hashed
-- collection: threads
+- collection: messagelog
   index:
     name: messagelog_autoexpire
     # autoremove messagelog entries after 180 days
