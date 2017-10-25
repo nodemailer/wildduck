@@ -17,6 +17,13 @@ key="X-Rspamd-Spam"
 value="^yes"
 target="\\Junk"
 
+# Treat as spam if message has header with 6 or more plus signs:
+#   X-Rspamd-Bar: ++++++
+[[spamHeader]]
+key="X-Rspamd-Bar"
+value="^\\+{6}"
+target="\\Junk"
+
 [[spamHeader]]
 # If this header has a value, then it contains a virus, treat as spam
 key="X-Haraka-Virus"
