@@ -1,10 +1,10 @@
 [example]
 
-name="Example Plugin"
+enabled = true
 
 # $WD: path of wildduck module root
 # $CONFIG: path of config root
-path="$WD/plugins/example.js"
+path = "$WD/plugins/example.js"
 
 # Additional config options
 value1 = "Example config option"

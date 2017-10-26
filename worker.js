@@ -81,13 +81,16 @@ db.connect(err => {
                             }
                         }
 
-                        plugins(err => {
+                        plugins.init(err => {
                             if (err) {
                                 log.error('App', 'Failed to start plugins');
                                 errors.notify(err);
                                 return setTimeout(() => process.exit(1), 3000);
                             }
-                            log.info('App', 'All servers started, ready to process some mail');
+
+                            plugins.runHooks('init', () => {
+                                log.info('App', 'All servers started, ready to process some mail');
+                            });
                         });
                     });
                 });
