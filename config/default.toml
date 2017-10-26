@@ -76,6 +76,9 @@ bugsnagCode=""
 [sender]
 # @include "sender.toml"
 
+[plugins]
+# @include "plugins/*.toml"
+
 [smtp.setup]
 # Public configuration for SMTP MDA, needed for mobileconfig files
 hostname="localhost"

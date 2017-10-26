@@ -7,6 +7,7 @@ const pop3 = require('./pop3');
 const irc = require('./irc');
 const lmtp = require('./lmtp');
 const api = require('./api');
+const plugins = require('./lib/plugins');
 const db = require('./lib/db');
 const errors = require('./lib/errors');
 
@@ -58,8 +59,6 @@ db.connect(err => {
                             return setTimeout(() => process.exit(1), 3000);
                         }
 
-                        log.info('App', 'All servers started, ready to process some mail');
-
                         // downgrade user and group if needed
                         if (config.group) {
                             try {
@@ -81,6 +80,15 @@ db.connect(err => {
                                 return setTimeout(() => process.exit(1), 3000);
                             }
                         }
+
+                        plugins(err => {
+                            if (err) {
+                                log.error('App', 'Failed to start plugins');
+                                errors.notify(err);
+                                return setTimeout(() => process.exit(1), 3000);
+                            }
+                            log.info('App', 'All servers started, ready to process some mail');
+                        });
                     });
                 });
             });
