@@ -367,6 +367,13 @@ indexes:
 
 - collection: messagelog
   index:
+    name: messagelog_parent
+    key:
+      parentId: 1
+    sparse: true
+
+- collection: messagelog
+  index:
     name: messagelog_autoexpire
     # autoremove messagelog entries after 180 days
     expireAfterSeconds: 15552000

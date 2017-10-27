@@ -1,6 +1,6 @@
 [example]
 
-enabled = true
+enabled = false
 
 # $WD: path of wildduck module root
 # $CONFIG: path of config root

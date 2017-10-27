@@ -370,7 +370,7 @@ class Indexer {
 
             // remove attachments and very large text nodes from the mime tree
             if (!isMultipart && node.body && node.body.length && (!isInlineText || node.size > 300 * 1024)) {
-                let attachmentId = 'ATT' + leftPad(++idcount, '0', 5);
+                let attachmentId = 'ATT' + (++idcount).toString().padStart(5, '0');
 
                 let fileName =
                     (node.parsedHeader['content-disposition'] &&
@@ -782,10 +782,6 @@ function textToHtml(str) {
         '</p>';
 
     return text;
-}
-
-function leftPad(val, chr, len) {
-    return chr.repeat(len - val.toString().length) + val;
 }
 
 module.exports = Indexer;
