@@ -364,6 +364,7 @@ indexes:
     name: messagelog_id_hashed
     key:
       id: hashed
+
 - collection: messagelog
   index:
     name: messagelog_autoexpire
