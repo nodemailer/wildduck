@@ -216,7 +216,7 @@ module.exports = function(response, isLogging) {
 
                 let finalize = () => {
                     if (node.partial) {
-                        resp += '<' + node.partial.join('.') + '>';
+                        resp += '<' + node.partial[0] + '>';
                     }
                     setImmediate(callback);
                 };
