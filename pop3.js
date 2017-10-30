@@ -46,6 +46,7 @@ const serverOptions = {
             'pop3',
             {
                 protocol: 'POP3',
+                sess: session.id,
                 ip: session.remoteAddress
             },
             (err, result) => {

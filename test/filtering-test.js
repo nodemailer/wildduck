@@ -61,7 +61,8 @@ describe('Send multiple messages', function() {
                             address: 'user2@example.com',
                             name: 'user2',
                             pubKey: user2PubKey,
-                            encryptMessages: true
+                            encryptMessages: true,
+                            encryptForwarded: true
                         }
                     },
                     (err, meta, response) => {
@@ -77,7 +78,8 @@ describe('Send multiple messages', function() {
                                     address: 'user3@example.com',
                                     name: 'user3',
                                     pubKey: user3PubKey,
-                                    encryptMessages: true
+                                    encryptMessages: true,
+                                    encryptForwarded: true
                                 }
                             },
                             (err, meta, response) => {
@@ -93,7 +95,8 @@ describe('Send multiple messages', function() {
                                             address: 'user4@example.com',
                                             name: 'user4',
                                             pubKey: user2PubKey,
-                                            encryptMessages: false
+                                            encryptMessages: false,
+                                            encryptForwarded: true
                                         }
                                     },
                                     (err, meta, response) => {

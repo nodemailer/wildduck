@@ -89,6 +89,7 @@ const serverOptions = {
                     targetUrl: true,
                     autoreply: true,
                     encryptMessages: true,
+                    encryptForwarded: true,
                     pubKey: true
                 }
             }, (err, user) => {
