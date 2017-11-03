@@ -44,13 +44,13 @@
         "linkify-it": "2.0.3",
         "mailsplit": "4.0.2",
         "mobileconfig": "2.1.0",
-        "mongo-cursor-pagination": "5.0.0",
+        "mongo-cursor-pagination": "6.0.0",
         "mongodb": "2.2.33",
         "nodemailer": "4.3.1",
         "npmlog": "4.1.2",
         "openpgp": "2.5.12",
         "qrcode": "0.9.0",
-        "restify": "6.2.3",
+        "restify": "6.3.0",
         "seq-index": "1.1.0",
         "smtp-server": "3.3.0",
         "speakeasy": "2.0.0",
@@ -65,7 +65,7 @@
         "url": "git://github.com/wildduck-email/wildduck.git"
     },
     "optionalDependencies": {
-        "@ronomon/crypto-async": "2.2.0",
+        "@ronomon/crypto-async": "2.2.1",
         "modern-syslog": "1.1.4"
     }
 }

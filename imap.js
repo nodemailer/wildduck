@@ -125,7 +125,7 @@ function clearExpiredMessages() {
             });
         };
 
-        if (config.imap.disableRetention) {
+        if (!config.imap.disableRetention) {
             // delete all attachments that do not have any active links to message objects
             return messageHandler.attachmentStorage.deleteOrphaned(() => done(null, true));
         }

@@ -53,9 +53,15 @@ indexes:
     key:
       ns: 1
       unameview: 1
+- collection: users
+  type: users # index applies to users database
+  index:
+    name: users
+    key:
+      tagsview: 1
+    sparse: true
 
 # Indexes for the addresses collection
-
 - collection: addresses
   type: users # index applies to users database
   index:
