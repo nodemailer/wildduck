@@ -56,7 +56,7 @@ indexes:
 - collection: users
   type: users # index applies to users database
   index:
-    name: users
+    name: users_tags
     key:
       tagsview: 1
     sparse: true
