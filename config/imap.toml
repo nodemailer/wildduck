@@ -29,6 +29,14 @@ ignoredHosts=[]
 #version="1.0.0"
 #vendor="Wild Duck"
 
+# Add extra IMAP interfaces
+#[[interface]]
+#enabled=true
+#port=9143
+#host="0.0.0.0"
+#secure=false
+#ignoreSTARTTLS=true
+
 [setup]
 # Public configuration for IMAP
 hostname="localhost"

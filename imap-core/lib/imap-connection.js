@@ -138,9 +138,12 @@ class IMAPConnection extends EventEmitter {
                     tnx: 'connect',
                     cid: this.id
                 },
-                '[%s] Connection from %s',
+                '[%s] %s from %s to %s:%s',
                 this.id,
-                this.clientHostname
+                this.secure ? 'Secure connection' : 'Connection',
+                this.clientHostname,
+                this._socket && this._socket.localAddress,
+                this._socket && this._socket.localPort
             );
 
             this.send(
