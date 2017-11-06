@@ -8,6 +8,7 @@ const tlsOptions = require('./tls-options');
 const EventEmitter = require('events').EventEmitter;
 const shared = require('nodemailer/lib/shared');
 const punycode = require('punycode');
+const base32 = require('base32.js');
 const errors = require('../../lib/errors.js');
 
 const CLOSE_TIMEOUT = 1 * 1000; // how much to wait until pending connections are terminated
@@ -195,7 +196,7 @@ class IMAPServer extends EventEmitter {
 
     _handleProxy(socket, callback) {
         let socketOptions = {
-            id: crypto.randomBytes(9).toString('base64')
+            id: base32.encode(crypto.randomBytes(10)).toLowerCase()
         };
 
         if (!this.options.useProxy) {

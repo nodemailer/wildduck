@@ -5,6 +5,7 @@ const log = require('npmlog');
 const POP3Server = require('./lib/pop3/server');
 const UserHandler = require('./lib/user-handler');
 const MessageHandler = require('./lib/message-handler');
+const packageData = require('./package.json');
 const ObjectID = require('mongodb').ObjectID;
 const db = require('./lib/db');
 const certs = require('./lib/certs');
@@ -17,11 +18,20 @@ let userHandler;
 const serverOptions = {
     port: config.pop3.port,
     host: config.pop3.host,
+
     secure: config.pop3.secure,
+    disableSTARTTLS: config.pop3.disableSTARTTLS,
+    ignoreSTARTTLS: config.pop3.ignoreSTARTTLS,
+
     disableVersionString: !!config.pop3.disableVersionString,
 
     useProxy: !!config.imap.useProxy,
     ignoredHosts: config.pop3.ignoredHosts,
+
+    id: {
+        name: config.pop3.name || 'Wild Duck POP3 Server',
+        version: config.pop3.version || packageData.version
+    },
 
     // log to console
     logger: {

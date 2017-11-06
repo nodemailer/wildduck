@@ -8,6 +8,7 @@ const search = require('./search');
 const dns = require('dns');
 const crypto = require('crypto');
 const os = require('os');
+const base32 = require('base32.js');
 const EventEmitter = require('events').EventEmitter;
 const packageInfo = require('../../package');
 const errors = require('../../lib/errors.js');
@@ -27,7 +28,7 @@ class IMAPConnection extends EventEmitter {
 
         options = options || {};
         // Random session ID, used for logging
-        this.id = options.id || crypto.randomBytes(9).toString('base64');
+        this.id = options.id || base32.encode(crypto.randomBytes(10)).toLowerCase();
 
         this.ignore = options.ignore;
 
@@ -142,7 +143,14 @@ class IMAPConnection extends EventEmitter {
                 this.clientHostname
             );
 
-            this.send('* OK ' + ((this._server.options.id && this._server.options.id.name) || packageInfo.name) + ' ready');
+            this.send(
+                '* OK ' +
+                    ((this._server.options.id && this._server.options.id.name) || packageInfo.name) +
+                    ' ready for requests from ' +
+                    this.remoteAddress +
+                    ' ' +
+                    this.id
+            );
         });
     }
 

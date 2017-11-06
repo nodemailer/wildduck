@@ -25,7 +25,6 @@ useProxy=false
 # an array of IP addresses to ignore (not logged)
 ignoredHosts=[]
 
-[id]
 #name="Wild Duck IMAP"
 #version="1.0.0"
 #vendor="Wild Duck"
