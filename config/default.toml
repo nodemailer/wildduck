@@ -70,9 +70,6 @@ bugsnagCode=""
 [api]
 # @include "api.toml"
 
-[irc]
-# @include "irc.toml"
-
 [sender]
 # @include "sender.toml"
 
