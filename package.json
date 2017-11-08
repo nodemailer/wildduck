@@ -44,7 +44,7 @@
         "linkify-it": "2.0.3",
         "mailsplit": "4.0.2",
         "mobileconfig": "2.1.0",
-        "mongo-cursor-pagination": "^5.0.0",
+        "mongo-cursor-pagination": "5.0.0",
         "mongodb": "2.2.33",
         "nodemailer": "4.3.1",
         "npmlog": "4.1.2",

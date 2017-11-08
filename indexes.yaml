@@ -105,6 +105,13 @@ indexes:
 - collection: authlog
   type: users # index applies to users database
   index:
+    name: user
+    key:
+      user: hashed
+
+- collection: authlog
+  type: users # index applies to users database
+  index:
     name: entry_autoexpire
     # autoremove log entries after expire days
     expireAfterSeconds: 0
