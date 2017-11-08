@@ -311,6 +311,14 @@ indexes:
     name: chunks_shard
     key:
       files_id: hashed
+- collection: attachments.chunks
+  type: gridfs # index applies to gridfs database
+  index:
+    name: files_id_1_n_1
+    unique: true
+    key:
+      files_id: 1
+      n: 1
 
 # Indexes for the journal collection
 
