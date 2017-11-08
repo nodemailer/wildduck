@@ -105,7 +105,7 @@ indexes:
 - collection: authlog
   type: users # index applies to users database
   index:
-    name: user
+    name: user_hashed
     key:
       user: hashed
 
