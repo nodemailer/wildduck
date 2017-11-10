@@ -257,6 +257,17 @@ class IMAPConnection extends EventEmitter {
 
         this._server.connections.delete(this);
 
+        if (typeof this._server.notifier.releaseConnection === 'function') {
+            this._server.notifier.releaseConnection(
+                {
+                    service: 'imap',
+                    session: this.session,
+                    user: this.user
+                },
+                () => false
+            );
+        }
+
         if (this._closed) {
             return;
         }
