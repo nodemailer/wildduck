@@ -9,6 +9,7 @@ const packageData = require('./package.json');
 const ObjectID = require('mongodb').ObjectID;
 const db = require('./lib/db');
 const certs = require('./lib/certs');
+const LimitedFetch = require('./lib/limited-fetch');
 
 const MAX_MESSAGES = 250;
 
@@ -63,6 +64,7 @@ const serverOptions = {
                 if (err) {
                     return callback(err);
                 }
+
                 if (!result) {
                     return callback();
                 }
@@ -139,28 +141,46 @@ const serverOptions = {
     },
 
     onFetchMessage(message, session, callback) {
-        db.database.collection('messages').findOne({
-            _id: new ObjectID(message.id),
-            // shard key
-            mailbox: message.mailbox,
-            uid: message.uid
-        }, {
-            mimeTree: true,
-            size: true
-        }, (err, message) => {
+        messageHandler.counters.ttlcounter('pdw:' + session.user.id, 0, config.pop3.maxDownloadMB * 1024 * 1024, false, (err, res) => {
             if (err) {
                 return callback(err);
             }
-            if (!message) {
-                return callback(new Error('Message does not exist or is already deleted'));
+            if (!res.success) {
+                let err = new Error('Download was rate limited. Check again in ' + res.ttl + ' seconds');
+                return callback(err);
             }
+            db.database.collection('messages').findOne({
+                _id: new ObjectID(message.id),
+                // shard key
+                mailbox: message.mailbox,
+                uid: message.uid
+            }, {
+                mimeTree: true,
+                size: true
+            }, (err, message) => {
+                if (err) {
+                    return callback(err);
+                }
+                if (!message) {
+                    return callback(new Error('Message does not exist or is already deleted'));
+                }
 
-            let response = messageHandler.indexer.rebuild(message.mimeTree);
-            if (!response || response.type !== 'stream' || !response.value) {
-                return callback(new Error('Can not fetch message'));
-            }
+                let response = messageHandler.indexer.rebuild(message.mimeTree);
+                if (!response || response.type !== 'stream' || !response.value) {
+                    return callback(new Error('Can not fetch message'));
+                }
 
-            callback(null, response.value);
+                let limiter = new LimitedFetch({
+                    key: 'pdw:' + session.user.id,
+                    ttlcounter: messageHandler.counters.ttlcounter,
+                    maxBytes: config.pop3.maxDownloadMB * 1024 * 1024
+                });
+
+                response.value.pipe(limiter);
+                response.value.once('error', err => limiter.emit('error', err));
+
+                callback(null, limiter);
+            });
         });
     },
 

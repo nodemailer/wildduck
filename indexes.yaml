@@ -250,7 +250,8 @@ indexes:
       searchable: 1
       headers.value: text
       text: text
-    sparse: true
+    partialFilterExpression:
+      searchable: true
 - collection: messages
   index:
     # in most cases we only care about unseen, not seen messages
