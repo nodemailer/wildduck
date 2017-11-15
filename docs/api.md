@@ -1771,18 +1771,23 @@ Wild Duck supports setting up autoreply messages that are sent to senders by LMT
 
 #### PUT /users/{user}/autoreply
 
-This call prepares the user to support 2FA tokens. If 2FA is already enabled then this call fails.
+This call sets up or updates autoreply message for the user.
 
 **Parameters**
 
 - **user** (required) is the ID of the user
 - **status** is a boolean that indicates if autoreply messages should be sent (true) or not (false)
 - **subject** is the subject line of autoreply message
-- **message** is text body of the autoreply message
+- **text** is text body of the autoreply message
+- **html** is html body of the autoreply message
+- **start** is the start time of the autoreply
+- **end** is the end time of the autoreply
 
 **Response fields**
 
 - **success** should be `true`
+
+Autoreply update calls can be done partially, eg. only updating status or subject.
 
 **Example**
 
@@ -1790,7 +1795,9 @@ This call prepares the user to support 2FA tokens. If 2FA is already enabled the
 curl -XPUT "http://localhost:8080/users/5971da1754cfdc7f0983b2ec/autoreply" -H 'content-type: application/json' -d '{
   "status": true,
   "subject": "Out of office",
-  "message": "I'm out of office this week"
+  "text": "I'm out of office this week",
+  "start": "2017-11-15T00:00:00.000Z",
+  "end": "2017-11-19T00:00:00.000Z",
 }'
 ```
 

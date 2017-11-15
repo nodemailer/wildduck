@@ -40,19 +40,14 @@ indexes:
     unique: true
     key:
       unameview: 1
+
 - collection: users
   type: users # index applies to users database
   index:
     name: show_new
     key:
       created: -1
-- collection: users
-  type: users # index applies to users database
-  index:
-    name: users_namespace
-    key:
-      ns: 1
-      unameview: 1
+
 - collection: users
   type: users # index applies to users database
   index:
@@ -62,12 +57,14 @@ indexes:
     sparse: true
 
 # Indexes for the addresses collection
+# note: is it really needed? maybe sort and list using addrview?
 - collection: addresses
   type: users # index applies to users database
   index:
     name: address
     key:
       address: 1
+
 - collection: addresses
   type: users # index applies to users database
   index:
@@ -76,6 +73,7 @@ indexes:
     key:
       addrview: 1
       _id: 1
+
 - collection: addresses
   type: users # index applies to users database
   index:
@@ -93,7 +91,6 @@ indexes:
       user: 1
 
 # Indexes for the authentication log collection
-
 - collection: authlog
   type: users # index applies to users database
   index:
@@ -130,12 +127,14 @@ indexes:
 
 - collection: autoreplies
   index:
-    name: user
+    name: autoreply
     key:
       user: 1
+      start: 1
+      end: 1
 
 # Indexes for the mailboxes collection
-
+# note: should mailboxes collection be sharded? could be by user
 - collection: mailboxes
   index:
     name: user_path
@@ -143,12 +142,14 @@ indexes:
     key:
       user: 1
       path: 1
+
 - collection: mailboxes
   index:
     name: user_subscribed
     key:
       user: 1
       subscribed: 1
+
 - collection: mailboxes
   index:
     name: find_by_type
@@ -157,29 +158,6 @@ indexes:
       specialUse: 1
 
 # Indexes for the messages collection
-
-- collection: messages
-  index:
-    name: user_messages_by_thread
-    key:
-      user: 1
-      thread: 1
-- collection: messages
-  index:
-    # use also as sharding key
-    name: mailbox_uid
-    key:
-      mailbox: 1
-      uid: 1
-      _id: 1
-- collection: messages
-  index:
-    # use also as sharding key
-    name: mailbox_uid_reverse
-    key:
-      mailbox: 1
-      uid: -1
-      _id: -1
 
 - collection: messages
   index:
@@ -192,10 +170,28 @@ indexes:
 
 - collection: messages
   index:
-    name: newer_first
+    name: user_messages_by_thread
+    key:
+      user: 1
+      thread: 1
+
+- collection: messages
+  index:
+    # use also as sharding key
+    name: mailbox_uid
+    key:
+      mailbox: 1
+      uid: 1
+      _id: 1
+
+- collection: messages
+  index:
+    name: mailbox_uid_reverse
     key:
       mailbox: 1
       uid: -1
+      _id: -1
+
 - collection: messages
   index:
     name: mailbox_modseq_uid
@@ -203,24 +199,21 @@ indexes:
       mailbox: 1
       modseq: 1
       uid: 1
+
 - collection: messages
   index:
     name: mailbox_flags
     key:
       mailbox: 1
       flags: 1
-- collection: messages
-  index:
-    name: by_modseq
-    key:
-      mailbox: 1
-      modseq: 1
+
 - collection: messages
   index:
     name: by_idate
     key:
       mailbox: 1
       idate: 1
+
 - collection: messages
   index:
     name: by_hdate
@@ -228,12 +221,14 @@ indexes:
       mailbox: 1
       hdate: 1
       msgid: 1
+
 - collection: messages
   index:
     name: by_size
     key:
       mailbox: 1
       size: 1
+
 - collection: messages
   index:
     name: by_headers
@@ -241,6 +236,7 @@ indexes:
       mailbox: 1
       headers.key: 1
       headers.value: 1
+
 - collection: messages
   index:
     # there can be only one $text index per collection
@@ -252,6 +248,7 @@ indexes:
       text: text
     partialFilterExpression:
       searchable: true
+
 - collection: messages
   index:
     # in most cases we only care about unseen, not seen messages
@@ -259,6 +256,7 @@ indexes:
     key:
       mailbox: 1
       unseen: 1
+
 - collection: messages
   index:
     # some mail agents list messages that do not have the \Deleted flag set
@@ -266,24 +264,28 @@ indexes:
     key:
       mailbox: 1
       undeleted: 1
+
 - collection: messages
   index:
     name: mailbox_flagged_flag
     key:
       mailbox: 1
       flagged: 1
+
 - collection: messages
   index:
     name: mailbox_draft_flag
     key:
       mailbox: 1
       draft: 1
+
 - collection: messages
   index:
     name: has_attachment
     key:
       mailbox: 1
       ha: 1
+
 - collection: messages
   index:
     # This filter finds all messages that are expired and must be deleted.
@@ -305,6 +307,7 @@ indexes:
     name: attachment_id_hashed
     key:
       _id: hashed
+
 - collection: attachments.files
   type: gridfs # index applies to gridfs database
   index:
@@ -312,6 +315,7 @@ indexes:
     key:
       metadata.c: 1
       metadata.m: 1
+
 - collection: attachments.chunks
   type: gridfs # index applies to gridfs database
   index:
@@ -319,6 +323,7 @@ indexes:
     name: chunks_shard
     key:
       files_id: hashed
+
 - collection: attachments.chunks
   type: gridfs # index applies to gridfs database
   index:
@@ -337,6 +342,7 @@ indexes:
     key:
       mailbox: 1
       modseq: 1
+
 - collection: journal
   index:
     # this index is used to send updates to a logged in webmail user
@@ -344,6 +350,7 @@ indexes:
     key:
       user: 1
       _id: 1
+
 - collection: journal
   index:
     # this index is used to find the latest journal entry
@@ -351,6 +358,7 @@ indexes:
     key:
       user: 1
       _id: -1
+
 - collection: journal
   # delete journal entries after 3 hours
   index:
@@ -366,12 +374,14 @@ indexes:
     name: thread_shard
     key:
       user: hashed
+
 - collection: threads
   index:
     name: thread
     key:
       user: 1
       ids: 1
+
 - collection: threads
   index:
     name: thread_autoexpire
@@ -392,7 +402,7 @@ indexes:
     name: messagelog_parent
     key:
       parentId: 1
-    sparse: true
+    sparse: true # only messages inserted by mail store have parentId set
 
 - collection: messagelog
   index:
