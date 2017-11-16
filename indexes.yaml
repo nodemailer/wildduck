@@ -297,6 +297,13 @@ indexes:
       exp: 1
       rdate: 1
 
+- collection: messages
+  index:
+    # needed to calculate quotas
+    name: message_size
+    key:
+      size: 1
+
 # Indexes for the attachments collection
 # attachments.files collection should be sharded by _id (hash)
 # attachments.chunks collection should be sharded by files_id (hash)
