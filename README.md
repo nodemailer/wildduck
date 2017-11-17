@@ -261,8 +261,10 @@ Shard the following collections by these keys:
 sh.enableSharding('wildduck');
 // consider using mailbox:hashed for messages only with large shard chunk size
 sh.shardCollection('wildduck.messages', { mailbox: 1, uid: 1 });
+sh.shardCollection('wildduck.archived', { user: 1, _id: 1 });
 sh.shardCollection('wildduck.threads', { user: 'hashed' });
 sh.shardCollection('wildduck.messagelog', { id: 'hashed' });
+sh.shardCollection('wildduck.authlog', { user: 'hashed' });
 // attachment _id is a sha256 hash of attachment contents
 sh.shardCollection('wildduck.attachments.files', { _id: 'hashed' });
 sh.shardCollection('wildduck.attachments.chunks', { files_id: 'hashed' });

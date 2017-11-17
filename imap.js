@@ -80,10 +80,23 @@ function clearExpiredMessages() {
             gcTimeout.unref();
             return;
         } else if (!lock.success) {
+            logger.debug(
+                {
+                    tnx: 'gc'
+                },
+                'Lock already acquired'
+            );
             gcTimeout = setTimeout(clearExpiredMessages, consts.GC_INTERVAL);
             gcTimeout.unref();
             return;
         }
+
+        logger.debug(
+            {
+                tnx: 'gc'
+            },
+            'Got lock for garbage collector'
+        );
 
         let done = () => {
             gcLock.releaseLock(lock, err => {
@@ -102,36 +115,49 @@ function clearExpiredMessages() {
             });
         };
 
-        if (!config.imap.disableRetention) {
+        if (config.imap.disableRetention) {
             // delete all attachments that do not have any active links to message objects
+            // do not touch expired messages
             return messageHandler.attachmentStorage.deleteOrphaned(() => done(null, true));
         }
 
-        // find and delete all messages that are expired
-        // NB! scattered query, searches over all mailboxes and thus over all shards
-        let cursor = db.database
-            .collection('messages')
-            .find({
-                exp: true,
-                rdate: {
-                    $lte: Date.now()
-                }
-            })
-            .project({
-                _id: true,
-                mailbox: true,
-                uid: true,
-                size: true,
-                'mimeTree.attachmentMap': true,
-                magic: true,
-                unseen: true
+        let deleteOrphaned = next => {
+            // delete all attachments that do not have any active links to message objects
+            messageHandler.attachmentStorage.deleteOrphaned(() => {
+                next(null, true);
             });
+        };
 
-        let deleted = 0;
-        let clear = () =>
-            cursor.close(() => {
-                // delete all attachments that do not have any active links to message objects
-                messageHandler.attachmentStorage.deleteOrphaned(() => {
+        let archiveExpiredMessages = next => {
+            logger.debug(
+                {
+                    tnx: 'gc'
+                },
+                'Archiving expired messages'
+            );
+            // find and delete all messages that are expired
+            // NB! scattered query, searches over all mailboxes and thus over all shards
+            let cursor = db.database
+                .collection('messages')
+                .find({
+                    exp: true,
+                    rdate: {
+                        $lte: Date.now()
+                    }
+                })
+                .project({
+                    _id: true,
+                    mailbox: true,
+                    uid: true,
+                    size: true,
+                    'mimeTree.attachmentMap': true,
+                    magic: true,
+                    unseen: true
+                });
+
+            let deleted = 0;
+            let clear = () =>
+                cursor.close(() => {
                     if (deleted) {
                         logger.debug(
                             {
@@ -141,56 +167,176 @@ function clearExpiredMessages() {
                             deleted
                         );
                     }
-                    done(null, true);
+                    return deleteOrphaned(next);
                 });
-            });
 
-        let processNext = () => {
-            if (Date.now() - startTime > consts.GC_INTERVAL * 0.8) {
-                // deleting expired messages has taken too long time, cancel
-                return clear();
-            }
-
-            cursor.next((err, message) => {
-                if (err) {
-                    return done(err);
-                }
-                if (!message) {
+            let processNext = () => {
+                if (Date.now() - startTime > consts.GC_INTERVAL * 0.8) {
+                    // deleting expired messages has taken too long time, cancel
                     return clear();
                 }
 
-                logger.info(
-                    {
-                        tnx: 'gc',
-                        err
-                    },
-                    'Deleting expired message id=%s',
-                    message._id
-                );
-
-                gcTimeout = setTimeout(clearExpiredMessages, consts.GC_INTERVAL);
-
-                messageHandler.del(
-                    {
-                        message,
-                        skipAttachments: true
-                    },
-                    err => {
-                        if (err) {
-                            return cursor.close(() => done(err));
-                        }
-                        deleted++;
-                        if (consts.GC_DELAY_DELETE) {
-                            setTimeout(processNext, consts.GC_DELAY_DELETE);
-                        } else {
-                            setImmediate(processNext);
-                        }
+                cursor.next((err, messageData) => {
+                    if (err) {
+                        return done(err);
                     }
-                );
-            });
+                    if (!messageData) {
+                        return clear();
+                    }
+
+                    messageHandler.del(
+                        {
+                            messageData,
+                            // do not archive messages of deleted users
+                            archive: !messageData.userDeleted
+                        },
+                        err => {
+                            if (err) {
+                                logger.error(
+                                    {
+                                        tnx: 'gc',
+                                        err
+                                    },
+                                    'Failed to delete expired message id=%s. %s',
+                                    messageData._id,
+                                    err.message
+                                );
+                                return cursor.close(() => done(err));
+                            }
+                            logger.debug(
+                                {
+                                    tnx: 'gc',
+                                    err
+                                },
+                                'Deleted expired message id=%s',
+                                messageData._id
+                            );
+                            deleted++;
+                            if (consts.GC_DELAY_DELETE) {
+                                setTimeout(processNext, consts.GC_DELAY_DELETE);
+                            } else {
+                                setImmediate(processNext);
+                            }
+                        }
+                    );
+                });
+            };
+
+            processNext();
         };
 
-        processNext();
+        let purgeExpiredMessages = next => {
+            logger.debug(
+                {
+                    tnx: 'gc'
+                },
+                'Purging archived messages'
+            );
+
+            // find and delete all messages that are expired
+            // NB! scattered query, searches over all mailboxes and thus over all shards
+            let cursor = db.database
+                .collection('archived')
+                .find({
+                    exp: true,
+                    rdate: {
+                        $lte: Date.now()
+                    }
+                })
+                .project({
+                    _id: true,
+                    mailbox: true,
+                    uid: true,
+                    size: true,
+                    'mimeTree.attachmentMap': true,
+                    magic: true,
+                    unseen: true
+                });
+
+            let deleted = 0;
+            let clear = () =>
+                cursor.close(() => {
+                    if (deleted) {
+                        logger.debug(
+                            {
+                                tnx: 'gc'
+                            },
+                            'Purged %s messages',
+                            deleted
+                        );
+                    }
+                    return deleteOrphaned(next);
+                });
+
+            let processNext = () => {
+                if (Date.now() - startTime > consts.GC_INTERVAL * 0.8) {
+                    // deleting expired messages has taken too long time, cancel
+                    return clear();
+                }
+
+                cursor.next((err, messageData) => {
+                    if (err) {
+                        return done(err);
+                    }
+                    if (!messageData) {
+                        return clear();
+                    }
+
+                    db.database.collection('archived').deleteOne({ _id: messageData._id }, err => {
+                        if (err) {
+                            //failed to delete
+                            logger.error(
+                                {
+                                    tnx: 'gc',
+                                    err
+                                },
+                                'Failed to delete archived message id=%s. %s',
+                                messageData._id,
+                                err.message
+                            );
+                            return cursor.close(() => done(err));
+                        }
+
+                        logger.debug(
+                            {
+                                tnx: 'gc'
+                            },
+                            'Deleted archived message id=%s',
+                            messageData._id
+                        );
+
+                        let attachmentIds = Object.keys(messageData.mimeTree.attachmentMap || {}).map(key => messageData.mimeTree.attachmentMap[key]);
+
+                        if (!attachmentIds.length) {
+                            // no stored attachments
+                            deleted++;
+                            if (consts.GC_DELAY_DELETE) {
+                                setTimeout(processNext, consts.GC_DELAY_DELETE);
+                            } else {
+                                setImmediate(processNext);
+                            }
+                            return;
+                        }
+
+                        messageHandler.attachmentStorage.updateMany(attachmentIds, -1, -messageData.magic, err => {
+                            if (err) {
+                                // should we care about this error?
+                            }
+                            deleted++;
+                            if (consts.GC_DELAY_DELETE) {
+                                setTimeout(processNext, consts.GC_DELAY_DELETE);
+                            } else {
+                                setImmediate(processNext);
+                            }
+                        });
+                    });
+                });
+            };
+
+            processNext();
+        };
+
+        archiveExpiredMessages(() => purgeExpiredMessages(done));
     });
 }
 

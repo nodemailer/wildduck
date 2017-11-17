@@ -86,9 +86,19 @@ indexes:
 - collection: asps
   type: users # index applies to users database
   index:
-    name: user
+    name: asps_user
     key:
       user: 1
+      active: 1
+      expires: 1
+
+- collection: asps
+  index:
+    name: asps_autoexpire
+    # autoremove expired asps entries after 180 days
+    expireAfterSeconds: 15552000
+    key:
+      expires: 1
 
 # Indexes for the authentication log collection
 - collection: authlog
@@ -303,6 +313,31 @@ indexes:
     name: message_size
     key:
       size: 1
+
+# indexes for deleted messages
+- collection: archived
+  index:
+    name: user_messages
+    key:
+      user: 1
+      _id: 1
+
+# indexes for deleted messages
+- collection: archived
+  index:
+    name: user_messages_desc
+    key:
+      user: 1
+      _id: -1
+
+- collection: archived
+  index:
+    name: retention_time
+    partialFilterExpression:
+      exp: true
+    key:
+      exp: 1
+      rdate: 1
 
 # Indexes for the attachments collection
 # attachments.files collection should be sharded by _id (hash)

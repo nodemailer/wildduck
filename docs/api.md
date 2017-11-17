@@ -334,6 +334,30 @@ Response for a successful operation:
 }
 ```
 
+### Delete user
+
+#### DELETE /users/{user}
+
+Deletes user data form database. Messages are not immediately deleted but marked to be deleted in 2 days. Various relate dlog entries also expire naturally and are not touched by this call
+
+**Parameters**
+
+- **user** is the ID of the user
+
+**Example**
+
+```
+curl -XDELETE "http://localhost:8080/users/5970860fcdb513ce633407a1"
+```
+
+Response for a successful operation:
+
+```json
+{
+  "success": true
+}
+```
+
 ### Log out user from all IMAP sessions
 
 #### PUT /users/{user}/logout
@@ -1476,6 +1500,7 @@ Response for a successful operation:
   "success": true
 }
 ```
+
 ### Delete a message
 
 #### DELETE /users/{user}/mailboxes/{mailbox}/messages/{message}
@@ -1868,6 +1893,134 @@ Response for a successful operation:
   "status": true,
   "subject": "Out of office",
   "message": "I'm out of office this week"
+}
+```
+
+## Archive
+
+Deleted messages are moved to temporary archive from where these are purged after configured delay (defaults to 2 weeks). During that window it is possible to list and restore archived messages. Restoring an archived message resets the UID of a message. Archived messages do not count against user quota.
+
+### List archived messages
+
+#### GET /user/{user}/archived
+
+Lists archived messages for an user. This is similar to listing mailbox messages, major difference being that archived message IDs are not numeric but hex strings
+
+**Parameters**
+
+- **user** (required) is the ID of the user
+- **order** optional message ordering, either "asc" or "desc". Defaults to "desc" (newer first)
+
+**Example**
+
+```
+curl "http://localhost:8080/users/59467f27535f8f0f067ba8e6/archived"
+```
+
+Response for a successful operation:
+
+```json
+{
+  "success": true,
+  "total": 1,
+  "page": 1,
+  "previousCursor": false,
+  "nextCursor": false,
+  "specialUse": null,
+  "results": [
+    {
+      "id": "5a0d7baa221311cf2d8f145e",
+      "mailbox": "59467f27535f8f0f067ba8e6",
+      "thread": "5971da7754cfdc7f0983bbde",
+      "from": {
+        "address": "sender@example.com",
+        "name": "Sender Name"
+      },
+      "subject": "Subject line",
+      "date": "2011-11-02T19:19:08.000Z",
+      "intro": "Beginning text in the message…",
+      "attachments": false,
+      "seen": true,
+      "deleted": false,
+      "flagged": false,
+      "draft": false
+    }
+  ]
+}
+```
+
+### Get archived message details
+
+#### GET /users/{user}/archived/{message}
+
+Returns data about a specific message. This is similar to listing mailbox message, major difference being that archived message ID is not numeric but a hex strings
+
+**Parameters**
+
+- **user** (required) is the ID of the user
+- **message** (required) is the ID of the message
+
+**Example**
+
+```
+curl "http://localhost:8080/users/59467f27535f8f0f067ba8e6/archived/5a0d7baa221311cf2d8f145e"
+```
+
+Response for a successful operation:
+
+```json
+{
+  "success": true,
+  "id": "5a0d7baa221311cf2d8f145e",
+  "from": {
+  "address": "sender@example.com",
+      "name": "Sender Name"
+  },
+  "to": [
+    {
+      "address": "testuser@example.com",
+      "name": "Test User"
+    }
+  ],
+  "subject": "Subject line",
+  "messageId": "<FA472D2A-092E-44BC-9D38-AFACE48AB98E@example.com>",
+  "date": "2011-11-02T19:19:08.000Z",
+  "seen": true,
+  "deleted": false,
+  "flagged": false,
+  "draft": false,
+  "html": [
+    "Notice that the HTML content is an array of HTML strings"
+  ],
+  "attachments": []
+}
+```
+
+### Restore archived message
+
+#### POST /users/{user}/archived/{message}/restore
+
+Restores archived message
+
+**Parameters**
+
+- **user** (required) is the ID of the user
+- **message** (required) is the ID of the message
+- **mailbox** is an optional ID of the destination mailbox. By default the message is restored to the mailbox it was deleted from or to INBOX if the source mailbox does not exist anymore
+
+**Example**
+
+```
+curl -XPOST "http://localhost:8080/users/59467f27535f8f0f067ba8e6/archived/5a0d7baa221311cf2d8f145e/restore" -H 'content-type: application/json' -d '{}'
+```
+
+Response for a successful operation includes the mailbox ID the message was restored to and the updated UID of the message:
+
+```json
+{
+  "success": true,
+  "mailbox": "5a05ad49484b251f07951b22",
+  "uid": 40
 }
 ```
 

@@ -151,6 +151,16 @@ frisby
                                 expect(response).to.exist;
                                 expect(response.success).to.be.true;
                                 expect(response.results.length).to.equal(2);
+
+                                frisby
+                                    .create('DELETE users/{id}')
+                                    .delete(URL + '/users/' + userId)
+                                    .expectStatus(200)
+                                    .afterJSON(response => {
+                                        expect(response).to.exist;
+                                        expect(response.success).to.be.true;
+                                    })
+                                    .toss();
                             })
                             .toss();
                     })
