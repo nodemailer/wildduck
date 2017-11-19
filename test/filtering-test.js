@@ -554,7 +554,6 @@ describe('Send multiple messages', function() {
                 let folders = result.children.map(mbox => ({ name: mbox.name, specialUse: mbox.specialUse || false }));
                 expect(folders).to.deep.equal([
                     { name: 'INBOX', specialUse: false },
-                    { name: 'Archive', specialUse: '\\Archive' },
                     { name: 'Drafts', specialUse: '\\Drafts' },
                     { name: 'Junk', specialUse: '\\Junk' },
                     { name: 'Sent Mail', specialUse: '\\Sent' },
