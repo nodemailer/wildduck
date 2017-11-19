@@ -253,7 +253,6 @@ indexes:
     name: fulltext
     key:
       user: 1
-      searchable: 1
       headers.value: text
       text: text
     partialFilterExpression:
@@ -269,6 +268,15 @@ indexes:
 
 - collection: messages
   index:
+    name: user_unseen_flag
+    key:
+      user: 1
+      unseen: 1
+    partialFilterExpression:
+      searchable: true
+
+- collection: messages
+  index:
     # some mail agents list messages that do not have the \Deleted flag set
     name: mailbox_undeleted_flag
     key:
@@ -280,6 +288,13 @@ indexes:
     name: mailbox_flagged_flag
     key:
       mailbox: 1
+      flagged: 1
+
+- collection: messages
+  index:
+    name: user_flagged_flag
+    key:
+      user: 1
       flagged: 1
 
 - collection: messages
@@ -306,13 +321,6 @@ indexes:
     key:
       exp: 1
       rdate: 1
-
-- collection: messages
-  index:
-    # needed to calculate quotas
-    name: message_size
-    key:
-      size: 1
 
 # indexes for deleted messages
 - collection: archived
