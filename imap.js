@@ -249,6 +249,7 @@ function clearExpiredMessages() {
                     uid: true,
                     size: true,
                     'mimeTree.attachmentMap': true,
+                    'meta.queueId': true,
                     magic: true,
                     unseen: true
                 });
@@ -307,28 +308,38 @@ function clearExpiredMessages() {
 
                         let attachmentIds = Object.keys(messageData.mimeTree.attachmentMap || {}).map(key => messageData.mimeTree.attachmentMap[key]);
 
-                        if (!attachmentIds.length) {
-                            // no stored attachments
-                            deleted++;
-                            if (consts.GC_DELAY_DELETE) {
-                                setTimeout(processNext, consts.GC_DELAY_DELETE);
-                            } else {
-                                setImmediate(processNext);
-                            }
-                            return;
-                        }
+                        return db.database.collection('messagelog').insertOne(
+                            {
+                                id: messageData.meta.queueId || messageData._id.toString(),
+                                action: 'DELETED',
+                                parentId: messageData._id,
+                                created: new Date()
+                            },
+                            () => {
+                                if (!attachmentIds.length) {
+                                    // no stored attachments
+                                    deleted++;
+                                    if (consts.GC_DELAY_DELETE) {
+                                        setTimeout(processNext, consts.GC_DELAY_DELETE);
+                                    } else {
+                                        setImmediate(processNext);
+                                    }
+                                    return;
+                                }
 
-                        messageHandler.attachmentStorage.updateMany(attachmentIds, -1, -messageData.magic, err => {
-                            if (err) {
-                                // should we care about this error?
+                                messageHandler.attachmentStorage.updateMany(attachmentIds, -1, -messageData.magic, err => {
+                                    if (err) {
+                                        // should we care about this error?
+                                    }
+                                    deleted++;
+                                    if (consts.GC_DELAY_DELETE) {
+                                        setTimeout(processNext, consts.GC_DELAY_DELETE);
+                                    } else {
+                                        setImmediate(processNext);
+                                    }
+                                });
                             }
-                            deleted++;
-                            if (consts.GC_DELAY_DELETE) {
-                                setTimeout(processNext, consts.GC_DELAY_DELETE);
-                            } else {
-                                setImmediate(processNext);
-                            }
-                        });
+                        );
                     });
                 });
             };

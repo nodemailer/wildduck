@@ -142,7 +142,7 @@ All failed responses look like the following:
 
 ### Paging
 
-For paging lists longer than allowed limit, Wild Duck API returns URLs for `next` and `previous` pages. When paging do not change these URLs yourself. If query arguments are changed then the results might be unreliable.
+For paging lists longer than allowed limit, Wild Duck API returns cursors for `next` and `previous` pages.
 
 ```json
 {
@@ -154,6 +154,16 @@ For paging lists longer than allowed limit, Wild Duck API returns URLs for `next
   "nextCursor": "abcdef12377"
 }
 ```
+
+The `page` property in return value is a "soft" argument, you need to set it yourself with the query argument. WildDuck does not know from which page the request was made to but your application does.
+
+Fetch next page using cursors:
+
+    GET /users/{user}/mailboxes/{mailbox}/messages?next={nextCursor}&page={page+1}
+
+Fetch previous page using cursors:
+
+    GET /users/{user}/mailboxes/{mailbox}/messages?previous={nextCursor}&page={page-1}
 
 ## Users
 
@@ -1284,6 +1294,54 @@ Response for a successful operation:
       "seen": true,
       "deleted": false,
       "flagged": false,
+      "draft": false
+    }
+  ]
+}
+```
+
+### List flagged messages
+
+#### GET /user/{user}/flagged
+
+Lists flagged messages in the account (excludes Spam and Trash)
+
+**Parameters**
+
+- **user** (required) is the ID of the user
+- **order** optional message ordering, either "asc" or "desc". Defaults to "desc" (newer first)
+
+**Example**
+
+```
+curl "http://localhost:8080/users/59467f27535f8f0f067ba8e6/flagged"
+```
+
+Response for a successful operation:
+
+```json
+{
+  "success": true,
+  "total": 1,
+  "page": 1,
+  "previousCursor": false,
+  "nextCursor": false,
+  "results": [
+    {
+      "id": 444,
+      "mailbox": "59467f27535f8f0f067ba8e6",
+      "thread": "5971da7754cfdc7f0983bbde",
+      "from": {
+        "address": "sender@example.com",
+        "name": "Sender Name"
+      },
+      "subject": "Subject line",
+      "date": "2011-11-02T19:19:08.000Z",
+      "intro": "Beginning text in the message…",
+      "attachments": false,
+      "seen": true,
+      "deleted": false,
+      "flagged": true,
       "draft": false
     }
   ]
