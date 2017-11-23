@@ -1,5 +1,7 @@
 # Wild Duck Mail Server
 
+![](https://raw.githubusercontent.com/nodemailer/wildduck/master/public/duck.png)
+
 Wild Duck is a distributed IMAP/POP3 mail server. _Distributed_ means that Wild Duck uses a distributed database (sharded + replicated MongoDB) as a backend for
 storing all data, including emails. Wild Duck instances are stateless, any user can connect to any Wild Duck instance. Wild Duck uses a write ahead log to keep
 IMAP sessions between different instances in sync.
@@ -7,10 +9,6 @@ IMAP sessions between different instances in sync.
 Wild Duck tries to follow Gmail in architectural design. If there's a decision to be made then usually the answer is to do whatever Gmail has done.
 
 > **NB!** Wild Duck is currently in **beta**. Use it on your own responsibility.
-
-![](https://cldup.com/TZoTfxPugm.png)
-
-* Web interface at https://wildduck.email that uses Wild Duck API
 
 ## Requirements
 
@@ -36,6 +34,10 @@ If you have a blank VPS and a free domain name that you can point to that VPS th
 Install script installs and configures all required dependencies and services, including Let's Encrypt based certs, to run Wild Duck as a mail server.
 
 Tested on a 10$ DigitalOcean Ubuntu 16.04 instance.
+
+![](https://cldup.com/TZoTfxPugm.png)
+
+* Web interface at https://wildduck.email that uses Wild Duck API
 
 ### Manual install
 

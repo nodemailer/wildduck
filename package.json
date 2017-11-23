@@ -5,15 +5,14 @@
     "main": "server.js",
     "scripts": {
         "toc": "markdown-toc -i docs/api.md",
-        "test": "mongo --eval 'db.dropDatabase()' wildduck-test && redis-cli -n 13 flushdb && NODE_ENV=test grunt"
+        "test": "mongo --eval 'db.dropDatabase()' wildduck-test && redis-cli -n 13 flushdb && NODE_ENV=test grunt",
+        "apidoc": "apidoc -i lib/api/ -o apidoc/"
     },
-    "keywords": [
-        "imap",
-        "mail server"
-    ],
+    "keywords": ["imap", "mail server"],
     "author": "Andris Reinman",
     "license": "EUPL-1.1",
     "devDependencies": {
+        "apidoc": "^0.17.6",
         "browserbox": "^0.9.1",
         "chai": "^4.1.2",
         "eslint-config-nodemailer": "^1.2.0",
