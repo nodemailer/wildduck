@@ -1,15 +1,13 @@
 {
     "name": "wildduck",
-    "version": "1.0.89",
+    "version": "1.0.90",
     "description": "IMAP server built with Node.js and MongoDB",
     "main": "server.js",
     "scripts": {
+        "toc": "markdown-toc -i docs/api.md",
         "test": "mongo --eval 'db.dropDatabase()' wildduck-test && redis-cli -n 13 flushdb && NODE_ENV=test grunt"
     },
-    "keywords": [
-        "imap",
-        "mail server"
-    ],
+    "keywords": ["imap", "mail server"],
     "author": "Andris Reinman",
     "license": "EUPL-1.1",
     "devDependencies": {
@@ -46,6 +44,7 @@
         "libqp": "1.1.0",
         "linkify-it": "2.0.3",
         "mailsplit": "4.0.2",
+        "markdown-toc": "^1.2.0",
         "mobileconfig": "2.1.0",
         "mongo-cursor-pagination": "5.0.0",
         "mongodb": "2.2.33",
@@ -53,7 +52,7 @@
         "npmlog": "4.1.2",
         "openpgp": "2.5.13",
         "qrcode": "1.0.0",
-        "restify": "6.3.2",
+        "restify": "6.3.4",
         "seq-index": "1.1.0",
         "smtp-server": "3.3.0",
         "speakeasy": "2.0.0",

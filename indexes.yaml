@@ -112,6 +112,31 @@ indexes:
 - collection: authlog
   type: users # index applies to users database
   index:
+    name: user_action
+    key:
+      user: 1
+      action: 1
+      _id: -1
+
+- collection: authlog
+  type: users # index applies to users database
+  index:
+    name: by_session
+    key:
+      session: 1
+    sparse: true
+
+- collection: authlog
+  type: users # index applies to users database
+  index:
+    name: by_ip
+    key:
+      ip: 1
+    sparse: true
+
+- collection: authlog
+  type: users # index applies to users database
+  index:
     name: user_hashed
     key:
       user: hashed
