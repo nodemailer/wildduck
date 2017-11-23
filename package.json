@@ -7,7 +7,10 @@
         "toc": "markdown-toc -i docs/api.md",
         "test": "mongo --eval 'db.dropDatabase()' wildduck-test && redis-cli -n 13 flushdb && NODE_ENV=test grunt"
     },
-    "keywords": ["imap", "mail server"],
+    "keywords": [
+        "imap",
+        "mail server"
+    ],
     "author": "Andris Reinman",
     "license": "EUPL-1.1",
     "devDependencies": {
@@ -22,6 +25,7 @@
         "grunt-wait": "^0.1.0",
         "icedfrisby": "^1.5.0",
         "mailparser": "^2.1.0",
+        "markdown-toc": "^1.2.0",
         "mocha": "^4.0.1",
         "request": "^2.83.0"
     },
@@ -39,12 +43,11 @@
         "ioredis": "3.2.1",
         "joi": "13.0.2",
         "js-yaml": "3.10.0",
-        "libbase64": "0.2.0",
+        "libbase64": "1.0.0",
         "libmime": "3.1.0",
         "libqp": "1.1.0",
         "linkify-it": "2.0.3",
         "mailsplit": "4.0.2",
-        "markdown-toc": "^1.2.0",
         "mobileconfig": "2.1.0",
         "mongo-cursor-pagination": "5.0.0",
         "mongodb": "2.2.33",
