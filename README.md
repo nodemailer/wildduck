@@ -28,6 +28,12 @@ Every component of the Wild Duck mail server can be replicated which eliminates 
 
 ![](https://raw.githubusercontent.com/nodemailer/wildduck/master/public/wd.png)
 
+## Storage
+
+Attachment de-duplication and compression gives up to 56% of storage size reduction.
+
+![](https://raw.githubusercontent.com/nodemailer/wildduck/master/public/storage.png)
+
 ## Usage
 
 ### Scripted install
