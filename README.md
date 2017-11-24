@@ -2,9 +2,8 @@
 
 ![](https://raw.githubusercontent.com/nodemailer/wildduck/master/public/duck.png)
 
-Wild Duck is a distributed IMAP/POP3 mail server. _Distributed_ means that Wild Duck uses a distributed database (sharded + replicated MongoDB) as a backend for
-storing all data, including emails. Wild Duck instances are stateless, any user can connect to any Wild Duck instance. Wild Duck uses a write ahead log to keep
-IMAP sessions between different instances in sync.
+Wild Duck is a scalable no-SPOF IMAP/POP3 mail server. Wild Duck uses a distributed database (sharded + replicated MongoDB) as a backend for storing all data,
+including emails.
 
 Wild Duck tries to follow Gmail in architectural design. If there's a decision to be made then usually the answer is to do whatever Gmail has done.
 
@@ -22,6 +21,12 @@ Wild Duck tries to follow Gmail in architectural design. If there's a decision t
 * Build tools to install optional dependencies that need compiling
 
 Wild Duck can be installed on any Node.js compatible platform.
+
+## No-SPOF architecture
+
+Every component of the Wild Duck mail server can be replicated which eliminates potential single point of failures.
+
+![](https://raw.githubusercontent.com/nodemailer/wildduck/master/public/wd.png)
 
 ## Usage
 
