@@ -6,12 +6,9 @@
     "scripts": {
         "toc": "markdown-toc -i docs/api.md",
         "test": "mongo --eval 'db.dropDatabase()' wildduck-test && redis-cli -n 13 flushdb && NODE_ENV=test grunt",
-        "apidoc": "apidoc -i lib/api/ -o apidoc/"
+        "apidoc": "apidoc -i lib/api/ -o docs/"
     },
-    "keywords": [
-        "imap",
-        "mail server"
-    ],
+    "keywords": ["imap", "mail server"],
     "author": "Andris Reinman",
     "license": "EUPL-1.1",
     "devDependencies": {
@@ -53,6 +50,7 @@
         "mobileconfig": "2.1.0",
         "mongo-cursor-pagination-node6": "5.0.0",
         "mongodb": "2.2.33",
+        "mongodb-extended-json": "^1.10.0",
         "nodemailer": "4.4.0",
         "npmlog": "4.1.2",
         "openpgp": "2.5.13",
