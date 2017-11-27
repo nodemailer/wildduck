@@ -88,7 +88,7 @@ node server.js --config=/etc/wildduck.toml
 
 ### Step 4\. Create an user account
 
-See [API Docs](https://github.com/nodemailer/wildduck/wiki/API-Docs#add-a-new-user) for details about creating new user accounts
+See [API Docs](https://api.wildduck.email/#api-Users-PostUser) for details about creating new user accounts
 
 ### Step 5\. Use an IMAP/POP3 client to log in
 
@@ -107,15 +107,15 @@ Any IMAP or POP3 client will do. Use the credentials from step 4\. to log in.
 
 Users, mailboxes and messages can be managed with HTTP requests against Wild Duck API
 
-### [API Docs](https://github.com/nodemailer/wildduck/wiki/API-Docs)
+**[API Docs](https://api.wildduck.email/)**
 
 # FAQ
 
 ### Does it work?
 
-Yes, it does. You can run the server and get working IMAP and POP3 servers for mail store, LMTP server for pushing messages to the mail store and HTTP API
-server to create new users. All handled by Node.js, MongoDB and Redis, no additional dependencies needed. Provided services can be disabled and enabled one by
-one so, for example you could process just IMAP in one host and LMTP in another.
+Yes, it does. You can run the server and get working IMAP and POP3 servers for mail store, LMTP server for pushing messages to the mail store and
+[HTTP API](https://api.wildduck.email/) server to create new users. All handled by Node.js, MongoDB and Redis, no additional dependencies needed. Provided
+services can be disabled and enabled one by one so, for example you could process just IMAP in one host and LMTP in another.
 
 ### How is security implemented in Wild Duck?
 
@@ -134,8 +134,8 @@ Read about Wild Duck security implementation from the [Wiki](https://github.com/
 5. **Works on any OS including Windows.** At least if you get MongoDB and Redis running first.
 6. Focus on **internationalization**, ie. supporting email addresses with non-ascii characters
 7. **Deduplication of attachments.** If the same attachment is referenced by different messages then only a single copy of the attachment is stored.
-8. Access messages both using **IMAP and HTTP API**. The latter serves parsed data, so no need to fetch RFC822 messages and parse out html, plaintext content or
-   attachments. It is super easy to create a webmail interface on top of this.
+8. Access messages both using **IMAP and [HTTP API](https://api.wildduck.email/)**. The latter serves parsed data, so no need to fetch RFC822 messages and parse
+   out html, plaintext content or attachments. It is super easy to create a webmail interface on top of this.
 9. Built in **address labels**: _username+label@example.com_ is delivered to _username@example.com_
 10. Dots in usernames and addresses are informational only. username@example.com is the same as user.name@example.com
 11. **HTTP Event Source** to push modifications in user email account to browser for super snappy webmail clients
@@ -250,7 +250,7 @@ If a messages is deleted by a client this message gets marked as Seen and moved 
 
 Wild Duck has built-in message filtering in LMTP server. This is somewhat similar to Sieve even though the filters are not scripts.
 
-Filters can be managed via the [Wild Duck API](https://github.com/nodemailer/wildduck/wiki/API-Docs).
+Filters can be managed via the [Wild Duck API](https://api.wildduck.email/#api-Filters).
 
 ## IMAP Protocol Differences
 
