@@ -68,9 +68,42 @@ const serverOptions = {
         let originalRecipient = tools.normalizeAddress(rcpt.address);
         let recipient = originalRecipient.replace(/\+[^@]*@/, '@');
 
-        db.users.collection('addresses').findOne({
-            addrview: recipient.substr(0, recipient.indexOf('@')).replace(/\./g, '') + recipient.substr(recipient.indexOf('@'))
-        }, (err, address) => {
+        let resolveAddress = next => {
+            db.users.collection('addresses').findOne(
+                {
+                    addrview: recipient.substr(0, recipient.indexOf('@')).replace(/\./g, '') + recipient.substr(recipient.indexOf('@'))
+                },
+                (err, address) => {
+                    if (err) {
+                        log.error('LMTP', err);
+                        return callback(new Error('Database error'));
+                    }
+                    if (address) {
+                        return next(null, address);
+                    }
+
+                    db.users.collection('addresses').findOne(
+                        {
+                            addrview: '*' + recipient.substr(recipient.indexOf('@'))
+                        },
+                        (err, address) => {
+                            if (err) {
+                                log.error('LMTP', err);
+                                return callback(new Error('Database error'));
+                            }
+
+                            if (!address) {
+                                return callback(new Error('Unknown recipient'));
+                            }
+
+                            next(null, address);
+                        }
+                    );
+                }
+            );
+        };
+
+        resolveAddress((err, address) => {
             if (err) {
                 log.error('LMTP', err);
                 return callback(new Error('Database error'));
@@ -79,39 +112,43 @@ const serverOptions = {
                 return callback(new Error('Unknown recipient'));
             }
 
-            db.users.collection('users').findOne({
-                _id: address.user
-            }, {
-                fields: {
-                    name: true,
-                    forwards: true,
-                    forward: true,
-                    targetUrl: true,
-                    autoreply: true,
-                    encryptMessages: true,
-                    encryptForwarded: true,
-                    pubKey: true
-                }
-            }, (err, user) => {
-                if (err) {
-                    log.error('LMTP', err);
-                    return callback(new Error('Database error'));
-                }
-                if (!user) {
-                    return callback(new Error('Unknown recipient'));
-                }
+            db.users.collection('users').findOne(
+                {
+                    _id: address.user
+                },
+                {
+                    fields: {
+                        name: true,
+                        forwards: true,
+                        forward: true,
+                        targetUrl: true,
+                        autoreply: true,
+                        encryptMessages: true,
+                        encryptForwarded: true,
+                        pubKey: true
+                    }
+                },
+                (err, user) => {
+                    if (err) {
+                        log.error('LMTP', err);
+                        return callback(new Error('Database error'));
+                    }
+                    if (!user) {
+                        return callback(new Error('Unknown recipient'));
+                    }
 
-                if (!session.users) {
-                    session.users = [];
+                    if (!session.users) {
+                        session.users = [];
+                    }
+
+                    session.users.push({
+                        recipient: originalRecipient,
+                        user
+                    });
+
+                    callback();
                 }
-
-                session.users.push({
-                    recipient: originalRecipient,
-                    user
-                });
-
-                callback();
-            });
+            );
         });
     },
 
