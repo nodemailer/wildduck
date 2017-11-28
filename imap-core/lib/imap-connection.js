@@ -117,21 +117,16 @@ class IMAPConnection extends EventEmitter {
         // Setup event handlers for the socket
         this._setListeners();
 
-        // Resolve hostname for the remote IP
-        // we do not care for errors as we consider the ip as unresolved in this case, no big deal
-        dns.reverse(this.remoteAddress, (err, hostnames) => {
-            if (err) {
-                //ignore, no big deal
-            }
+        // make sure we have a session set up
+        this._startSession();
 
-            // eslint-disable-line handle-callback-err
-            if (this._closing || this._closed) {
+        let now = Date.now();
+        let greetingSent = false;
+        let sendGreeting = () => {
+            if (greetingSent) {
                 return;
             }
-
-            this.clientHostname = (hostnames && hostnames.shift()) || '[' + this.remoteAddress + ']';
-
-            this._startSession();
+            greetingSent = true;
 
             this.logger.info(
                 {
@@ -141,7 +136,7 @@ class IMAPConnection extends EventEmitter {
                 '[%s] %s from %s to %s:%s',
                 this.id,
                 this.secure ? 'Secure connection' : 'Connection',
-                this.clientHostname,
+                this.session.clientHostname,
                 this._socket && this._socket.localAddress,
                 this._socket && this._socket.localPort
             );
@@ -154,7 +149,53 @@ class IMAPConnection extends EventEmitter {
                     ' ' +
                     this.id
             );
-        });
+        };
+
+        // do not wait with initial response too long
+        let resolveTimer = setTimeout(() => {
+            clearTimeout(resolveTimer);
+            sendGreeting();
+        }, 1000);
+
+        let reverseCb = (err, hostnames) => {
+            clearTimeout(resolveTimer);
+            if (err) {
+                //ignore, no big deal
+            }
+
+            let clientHostname = hostnames && hostnames.shift();
+            this.session.clientHostname = this.clientHostname = clientHostname || '[' + this.remoteAddress + ']';
+
+            if (greetingSent && clientHostname) {
+                this.logger.info(
+                    {
+                        tnx: 'connect',
+                        cid: this.id
+                    },
+                    '[%s] Resolved %s as %s in %ss',
+                    this.id,
+                    this.remoteAddress,
+                    clientHostname,
+                    ((Date.now() - now) / 1000).toFixed(3)
+                );
+            }
+
+            // eslint-disable-line handle-callback-err
+            if (this._closing || this._closed) {
+                return;
+            }
+
+            sendGreeting();
+        };
+
+        // Resolve hostname for the remote IP
+        // we do not care for errors as we consider the ip as unresolved in this case, no big deal
+        try {
+            dns.reverse(this.remoteAddress, reverseCb);
+        } catch (E) {
+            // happens on invalid remote address
+            reverseCb(E);
+        }
     }
 
     /**
@@ -397,7 +438,7 @@ class IMAPConnection extends EventEmitter {
             selected: this.selected,
 
             remoteAddress: this.remoteAddress,
-            clientHostname: this.clientHostname,
+            clientHostname: this.clientHostname || '[' + this.remoteAddress + ']',
             writeStream: this.writeStream,
             socket: this._socket,
 
