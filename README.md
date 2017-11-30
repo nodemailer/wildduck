@@ -336,6 +336,19 @@ sh.shardCollection('wildduck.attachments.chunks', { files_id: 'hashed' });
 > Attachments collections might be configured to reside in a different database than default. Modify sharding namespaces accordingly (and do not forget to
 > enable sharding for the attachments database)
 
+### Disk usage
+
+Tests show that the ratio of attachment contents vs other stuff is around 1:10. This means that you can split your database between multiple disks by using
+smaller SSD for message data and indexes and a larger and cheaper SATA for attachment contents. This assumes that you use WiredTiger with
+`storage.directoryPerDB:true` and `storage.wiredTiger.engineConfig.directoryForIndexes:true`
+
+Assuming that you use a database named `attachments` for attachment contents:
+
+    SSD mount : /var/lib/mongodb
+    SATA mount: /var/lib/mongodb/attachments/content
+
+In this case you could have a 1TB SATA and 150GB SSD.
+
 ### Redis Sentinel
 
 Wild Duck is able to use Redis Sentinel instead of single Redis master for automatic failover. When using Sentinel and the Redis master fails then it might take
