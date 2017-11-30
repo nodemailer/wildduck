@@ -212,11 +212,23 @@ describe('Send multiple messages', function() {
                                             return next();
                                         }
                                         let attachment = message.attachments[pos++];
-                                        request(URL + attachment.url, { encoding: null }, (err, meta, raw) => {
-                                            expect(err).to.not.exist;
-                                            attachment.raw = raw;
-                                            setImmediate(getAttachments);
-                                        });
+                                        request(
+                                            URL +
+                                                '/users/' +
+                                                message.user +
+                                                '/mailboxes/' +
+                                                message.mailbox +
+                                                '/messages/' +
+                                                message.id +
+                                                '/attachments/' +
+                                                attachment.id,
+                                            { encoding: null },
+                                            (err, meta, raw) => {
+                                                expect(err).to.not.exist;
+                                                attachment.raw = raw;
+                                                setImmediate(getAttachments);
+                                            }
+                                        );
                                     };
                                     setImmediate(getAttachments);
                                 };
@@ -396,11 +408,23 @@ describe('Send multiple messages', function() {
                                             return next();
                                         }
                                         let attachment = message.attachments[pos++];
-                                        request(URL + attachment.url, { encoding: null }, (err, meta, raw) => {
-                                            expect(err).to.not.exist;
-                                            attachment.raw = raw;
-                                            setImmediate(getAttachments);
-                                        });
+                                        request(
+                                            URL +
+                                                '/users/' +
+                                                message.user +
+                                                '/mailboxes/' +
+                                                message.mailbox +
+                                                '/messages/' +
+                                                message.id +
+                                                '/attachments/' +
+                                                attachment.id,
+                                            { encoding: null },
+                                            (err, meta, raw) => {
+                                                expect(err).to.not.exist;
+                                                attachment.raw = raw;
+                                                setImmediate(getAttachments);
+                                            }
+                                        );
                                     };
                                     setImmediate(getAttachments);
                                 };
