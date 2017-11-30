@@ -339,15 +339,15 @@ sh.shardCollection('wildduck.attachments.chunks', { files_id: 'hashed' });
 ### Disk usage
 
 Tests show that the ratio of attachment contents vs other stuff is around 1:10. This means that you can split your database between multiple disks by using
-smaller SSD for message data and indexes and a larger and cheaper SATA for attachment contents. This assumes that you use WiredTiger with
+smaller SSD (eg. 150GB) for message data and indexes and a larger and cheaper SATA (eg. 1TB) for attachment contents. This assumes that you use WiredTiger with
 `storage.directoryPerDB:true` and `storage.wiredTiger.engineConfig.directoryForIndexes:true`
 
 Assuming that you use a database named `attachments` for attachment contents:
 
     SSD mount : /var/lib/mongodb
-    SATA mount: /var/lib/mongodb/attachments/content
+    SATA mount: /var/lib/mongodb/attachments/collection
 
-In this case you could have a 1TB SATA and 150GB SSD.
+MongoDB does not complain about existing folders so you can prepare the mount before even installing MongoDB.
 
 ### Redis Sentinel
 
