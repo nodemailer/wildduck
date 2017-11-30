@@ -372,7 +372,7 @@ class Indexer {
             if (!isMultipart && node.body && node.body.length && (!isInlineText || node.size > 300 * 1024)) {
                 let attachmentId = 'ATT' + leftPad(++idcount, '0', 5);
 
-                let fileName =
+                let filename =
                     (node.parsedHeader['content-disposition'] &&
                         node.parsedHeader['content-disposition'].params &&
                         node.parsedHeader['content-disposition'].params.filename) ||
@@ -384,19 +384,19 @@ class Indexer {
                     .replace(/<|>/g, '')
                     .trim();
 
-                if (fileName) {
+                if (filename) {
                     try {
-                        fileName = libmime.decodeWords(fileName).trim();
+                        filename = libmime.decodeWords(filename).trim();
                     } catch (E) {
                         // failed to parse filename, keep as is (most probably an unknown charset is used)
                     }
                 } else {
-                    fileName = crypto.randomBytes(4).toString('hex') + '.' + libmime.detectExtension(contentType);
+                    filename = crypto.randomBytes(4).toString('hex') + '.' + libmime.detectExtension(contentType);
                 }
 
                 cidMap.set(contentId, {
                     id: attachmentId,
-                    fileName
+                    filename
                 });
 
                 // push to queue
@@ -414,7 +414,7 @@ class Indexer {
                     // list in the attachments array
                     maildata.attachments.push({
                         id: attachmentId,
-                        fileName,
+                        filename,
                         contentType,
                         disposition,
                         transferEncoding,
