@@ -318,7 +318,7 @@ database.
 Wild Duck supports MongoDB sharding. Consider using sharding only if you know that your data storage is large enough to outgrow single replica. Some actions
 require scattered queries to be made that might be a hit on performance on a large cluster but most queries include the shard key by default.
 
-Shard the following collections by these keys:
+Shard the following collections by these keys (assuming you keep attachments in a separate database):
 
 ```javascript
 sh.enableSharding('wildduck');
@@ -328,13 +328,12 @@ sh.shardCollection('wildduck.archived', { user: 1, _id: 1 });
 sh.shardCollection('wildduck.threads', { user: 'hashed' });
 sh.shardCollection('wildduck.messagelog', { id: 'hashed' });
 sh.shardCollection('wildduck.authlog', { user: 'hashed' });
-// attachment _id is a sha256 hash of attachment contents
-sh.shardCollection('wildduck.attachments.files', { _id: 'hashed' });
-sh.shardCollection('wildduck.attachments.chunks', { files_id: 'hashed' });
-```
 
-> Attachments collections might be configured to reside in a different database than default. Modify sharding namespaces accordingly (and do not forget to
-> enable sharding for the attachments database)
+sh.enableSharding('attachments');
+// attachment _id is a sha256 hash of attachment contents
+sh.shardCollection('attachments.attachments.files', { _id: 'hashed' });
+sh.shardCollection('attachments.attachments.chunks', { files_id: 'hashed' });
+```
 
 ### Disk usage
 
