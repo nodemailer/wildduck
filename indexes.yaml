@@ -81,6 +81,22 @@ indexes:
     key:
       user: 1
 
+# Indexes for the domainaliases collection
+- collection: domainaliases
+  type: users # index applies to users database
+  index:
+    name: domainalias
+    unique: true
+    key:
+      alias: 1
+
+- collection: domainaliases
+  type: users # index applies to users database
+  index:
+    name: domainlist
+    key:
+      domain: 1
+
 # Indexes for the application specific passwords collection
 
 - collection: asps

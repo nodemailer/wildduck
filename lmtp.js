@@ -8,11 +8,13 @@ const ObjectID = require('mongodb').ObjectID;
 const SMTPServer = require('smtp-server').SMTPServer;
 const tools = require('./lib/tools');
 const MessageHandler = require('./lib/message-handler');
+const UserHandler = require('./lib/user-handler');
 const FilterHandler = require('./lib/filter-handler');
 const db = require('./lib/db');
 const certs = require('./lib/certs');
 
 let messageHandler;
+let userHandler;
 let filterHandler;
 let spamChecks, spamHeaderKeys;
 
@@ -69,90 +71,39 @@ const serverOptions = {
     // If this method is not set, all addresses are allowed
     onRcptTo(rcpt, session, callback) {
         let originalRecipient = tools.normalizeAddress(rcpt.address);
-        let recipient = originalRecipient.replace(/\+[^@]*@/, '@');
-
-        let resolveAddress = next => {
-            db.users.collection('addresses').findOne(
-                {
-                    addrview: recipient.substr(0, recipient.indexOf('@')).replace(/\./g, '') + recipient.substr(recipient.indexOf('@'))
-                },
-                (err, address) => {
-                    if (err) {
-                        log.error('LMTP', err);
-                        return callback(new Error('Database error'));
-                    }
-                    if (address) {
-                        return next(null, address);
-                    }
-
-                    db.users.collection('addresses').findOne(
-                        {
-                            addrview: '*' + recipient.substr(recipient.indexOf('@'))
-                        },
-                        (err, address) => {
-                            if (err) {
-                                log.error('LMTP', err);
-                                return callback(new Error('Database error'));
-                            }
-
-                            if (!address) {
-                                return callback(new Error('Unknown recipient'));
-                            }
-
-                            next(null, address);
-                        }
-                    );
+        userHandler.get(
+            originalRecipient,
+            {
+                name: true,
+                forwards: true,
+                forward: true,
+                targetUrl: true,
+                autoreply: true,
+                encryptMessages: true,
+                encryptForwarded: true,
+                pubKey: true
+            },
+            (err, userData) => {
+                if (err) {
+                    log.error('LMTP', err);
+                    return callback(new Error('Database error'));
                 }
-            );
-        };
-
-        resolveAddress((err, address) => {
-            if (err) {
-                log.error('LMTP', err);
-                return callback(new Error('Database error'));
-            }
-            if (!address) {
-                return callback(new Error('Unknown recipient'));
-            }
-
-            db.users.collection('users').findOne(
-                {
-                    _id: address.user
-                },
-                {
-                    fields: {
-                        name: true,
-                        forwards: true,
-                        forward: true,
-                        targetUrl: true,
-                        autoreply: true,
-                        encryptMessages: true,
-                        encryptForwarded: true,
-                        pubKey: true
-                    }
-                },
-                (err, user) => {
-                    if (err) {
-                        log.error('LMTP', err);
-                        return callback(new Error('Database error'));
-                    }
-                    if (!user) {
-                        return callback(new Error('Unknown recipient'));
-                    }
-
-                    if (!session.users) {
-                        session.users = [];
-                    }
-
-                    session.users.push({
-                        recipient: originalRecipient,
-                        user
-                    });
-
-                    callback();
+                if (!userData) {
+                    return callback(new Error('Unknown recipient'));
                 }
-            );
-        });
+
+                if (!session.users) {
+                    session.users = [];
+                }
+
+                session.users.push({
+                    recipient: originalRecipient,
+                    user: userData
+                });
+
+                callback();
+            }
+        );
     },
 
     // Handle message stream
@@ -262,6 +213,13 @@ module.exports = done => {
         redis: db.redis,
         gridfs: db.gridfs,
         attachments: config.attachments
+    });
+
+    userHandler = new UserHandler({
+        database: db.database,
+        users: db.users,
+        redis: db.redis,
+        authlogExpireDays: config.log.authlogExpireDays
     });
 
     filterHandler = new FilterHandler({
