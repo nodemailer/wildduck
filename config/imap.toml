@@ -30,6 +30,9 @@ disableSTARTTLS=false
 
 # If true, then expect HAProxy PROXY header as the first line of data
 useProxy=false
+# useProxy=true # expect PROXY from all conections
+# useProxy=['*'] # expect PROXY from all conections
+# useProxy=['1.2.3.4', '1.2.3.5'] # expect PROXY only from connections from listed IP addresses
 
 # an array of IP addresses to ignore (not logged)
 ignoredHosts=[]

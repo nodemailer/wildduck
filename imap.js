@@ -355,6 +355,8 @@ let createInterface = (ifaceOptions, callback) => {
     // Setup server
     const serverOptions = {
         secure: ifaceOptions.secure,
+        secured: ifaceOptions.secured,
+
         disableSTARTTLS: ifaceOptions.disableSTARTTLS,
         ignoreSTARTTLS: ifaceOptions.ignoreSTARTTLS,
 

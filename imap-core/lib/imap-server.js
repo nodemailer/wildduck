@@ -51,6 +51,9 @@ class IMAPServer extends EventEmitter {
                     if (err) {
                         // ignore, should not happen
                     }
+                    if (this.options.secured) {
+                        return this.connect(socket, socketOptions);
+                    }
                     this._upgrade(socket, (err, tlsSocket) => {
                         if (err) {
                             return this._onError(err);
@@ -199,7 +202,10 @@ class IMAPServer extends EventEmitter {
             id: base32.encode(crypto.randomBytes(10)).toLowerCase()
         };
 
-        if (!this.options.useProxy) {
+        if (
+            !this.options.useProxy ||
+            (Array.isArray(this.options.useProxy) && !this.options.useProxy.includes(socket.remoteAddress) && !this.options.useProxy.includes('*'))
+        ) {
             socketOptions.ignore = this.options.ignoredHosts && this.options.ignoredHosts.includes(socket.remoteAddress);
             return setImmediate(() => callback(null, socketOptions));
         }

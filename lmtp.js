@@ -31,6 +31,9 @@ config.on('reload', () => {
 const serverOptions = {
     lmtp: true,
 
+    secure: config.lmtp.secure,
+    secured: config.lmtp.secured,
+
     // log to console
     logger: {
         info(...args) {

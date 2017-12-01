@@ -360,7 +360,20 @@ be noticeable.
 
 ### HAProxy
 
-When using Haproxy you can enable PROXY protocol to get correct remote addresses in logs
+When using HAProxy you can enable PROXY protocol to get correct remote addresses in server logs. You can use the most basic round-robin based balancing as no
+persistent sessions against specific hosts are needed. Use TCP load balancing with no extra settings both for plaintext and TLS connections.
+
+If TLS is handled by HAProxy then use the following server config to indicate that WildDuck assumes to be a TLS server but TLS is handled upstream
+
+```toml
+[imap]
+secure=true # this is a TLS server
+secured=true # TLS is handled upstream
+
+[pop3]
+secure=true # this is a TLS server
+secured=true # TLS is handled upstream
+```
 
 ### Certificates
 

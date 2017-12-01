@@ -67,7 +67,7 @@ class IMAPConnection extends EventEmitter {
         this.secure = !!this._server.options.secure;
 
         // Store remote address for later usage
-        this.remoteAddress = options.remoteAddress || this._socket.remoteAddress;
+        this.remoteAddress = (options.remoteAddress || this._socket.remoteAddress || '').replace(/^::ffff:/, '');
 
         // Server hostname for the greegins
         this.name = (this._server.options.name || os.hostname()).toLowerCase();

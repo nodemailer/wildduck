@@ -8,7 +8,10 @@
         "test": "mongo --eval 'db.dropDatabase()' wildduck-test && redis-cli -n 13 flushdb && NODE_ENV=test grunt",
         "apidoc": "apidoc -i lib/api/ -o docs/"
     },
-    "keywords": ["imap", "mail server"],
+    "keywords": [
+        "imap",
+        "mail server"
+    ],
     "author": "Andris Reinman",
     "license": "EUPL-1.1",
     "devDependencies": {
@@ -39,7 +42,7 @@
         "humanparser": "1.5.0",
         "iconv-lite": "0.4.19",
         "ioredfour": "1.0.2-ioredis",
-        "ioredis": "3.2.1",
+        "ioredis": "3.2.2",
         "joi": "13.0.2",
         "js-yaml": "3.10.0",
         "libbase64": "1.0.1",
@@ -53,11 +56,11 @@
         "mongodb-extended-json": "^1.10.0",
         "nodemailer": "4.4.0",
         "npmlog": "4.1.2",
-        "openpgp": "2.5.13",
+        "openpgp": "2.5.14",
         "qrcode": "1.0.0",
         "restify": "6.3.4",
         "seq-index": "1.1.0",
-        "smtp-server": "3.3.1",
+        "smtp-server": "3.4.0",
         "speakeasy": "2.0.0",
         "tlds": "1.199.0",
         "u2f": "0.1.3",
