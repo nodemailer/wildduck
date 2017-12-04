@@ -146,50 +146,56 @@ const serverOptions = {
     },
 
     onFetchMessage(message, session, callback) {
-        messageHandler.counters.ttlcounter('pdw:' + session.user.id, 0, config.pop3.maxDownloadMB * 1024 * 1024, false, (err, res) => {
-            if (err) {
-                return callback(err);
+        db.redis.hget('limits:' + session.user.id, 'pop3:download', (err, value) => {
+            let limit = (config.pop3.maxDownloadMB || 10) * 1024 * 1024;
+            if (!err && value && !isNaN(value)) {
+                limit = Number(value) || limit;
             }
-            if (!res.success) {
-                let err = new Error('Download was rate limited. Check again in ' + res.ttl + ' seconds');
-                return callback(err);
-            }
-            db.database.collection('messages').findOne(
-                {
-                    _id: new ObjectID(message.id),
-                    // shard key
-                    mailbox: message.mailbox,
-                    uid: message.uid
-                },
-                {
-                    mimeTree: true,
-                    size: true
-                },
-                (err, message) => {
-                    if (err) {
-                        return callback(err);
-                    }
-                    if (!message) {
-                        return callback(new Error('Message does not exist or is already deleted'));
-                    }
-
-                    let response = messageHandler.indexer.rebuild(message.mimeTree);
-                    if (!response || response.type !== 'stream' || !response.value) {
-                        return callback(new Error('Can not fetch message'));
-                    }
-
-                    let limiter = new LimitedFetch({
-                        key: 'pdw:' + session.user.id,
-                        ttlcounter: messageHandler.counters.ttlcounter,
-                        maxBytes: config.pop3.maxDownloadMB * 1024 * 1024
-                    });
-
-                    response.value.pipe(limiter);
-                    response.value.once('error', err => limiter.emit('error', err));
-
-                    callback(null, limiter);
+            messageHandler.counters.ttlcounter('pdw:' + session.user.id, 0, limit, false, (err, res) => {
+                if (err) {
+                    return callback(err);
                 }
-            );
+                if (!res.success) {
+                    let err = new Error('Download was rate limited. Check again in ' + res.ttl + ' seconds');
+                    return callback(err);
+                }
+                db.database.collection('messages').findOne(
+                    {
+                        _id: new ObjectID(message.id),
+                        // shard key
+                        mailbox: message.mailbox,
+                        uid: message.uid
+                    },
+                    {
+                        mimeTree: true,
+                        size: true
+                    },
+                    (err, message) => {
+                        if (err) {
+                            return callback(err);
+                        }
+                        if (!message) {
+                            return callback(new Error('Message does not exist or is already deleted'));
+                        }
+
+                        let response = messageHandler.indexer.rebuild(message.mimeTree);
+                        if (!response || response.type !== 'stream' || !response.value) {
+                            return callback(new Error('Can not fetch message'));
+                        }
+
+                        let limiter = new LimitedFetch({
+                            key: 'pdw:' + session.user.id,
+                            ttlcounter: messageHandler.counters.ttlcounter,
+                            maxBytes: limit
+                        });
+
+                        response.value.pipe(limiter);
+                        response.value.once('error', err => limiter.emit('error', err));
+
+                        callback(null, limiter);
+                    }
+                );
+            });
         });
     },
 

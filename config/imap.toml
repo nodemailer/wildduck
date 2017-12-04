@@ -13,13 +13,13 @@ maxMB=25
 # delete messages from \Trash and \Junk after retention days
 retention=30
 
-# TODO: Max donwload bandwith per day
-maxDownloadMB=3000
+# Default max donwload bandwith per day in megabytes
+maxDownloadMB=10000
 
-# TODO: Max upload bandwith per day
-maxUploadMB=1000
+# Default max upload bandwith per day in  megabytes
+maxUploadMB=10000
 
-# TODO: Max concurrent connections per service per client
+# Default max concurrent connections per service per client
 maxConnections=15
 
 # if `true` then do not autodelete expired messages

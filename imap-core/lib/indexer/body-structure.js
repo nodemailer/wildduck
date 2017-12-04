@@ -60,6 +60,17 @@ class BodyStructure {
         let bodySubtype = (node.parsedHeader['content-type'] && node.parsedHeader['content-type'].subtype) || null;
         let contentTransfer = node.parsedHeader['content-transfer-encoding'] || '7bit';
 
+        if (!bodyType || !bodySubtype) {
+            // prevent strange content types like (NIL "/ms-word") that may break some clients
+            if (bodyType === 'text' || bodySubtype === 'plain') {
+                bodyType = 'text';
+                bodySubtype = 'plain';
+            } else {
+                bodyType = 'application';
+                bodySubtype = 'octet-stream';
+            }
+        }
+
         return [
             // body type
             options.upperCaseKeys ? (bodyType && bodyType.toUpperCase()) || null : bodyType,
