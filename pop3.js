@@ -146,11 +146,11 @@ const serverOptions = {
     },
 
     onFetchMessage(message, session, callback) {
-        db.redis.hget('limits:' + session.user.id, 'pop3:download', (err, value) => {
-            let limit = (config.pop3.maxDownloadMB || 10) * 1024 * 1024;
-            if (!err && value && !isNaN(value)) {
-                limit = Number(value) || limit;
+        userHandler.userCache.get(session.user.id, 'pop3MaxDownload', (config.pop3.maxDownloadMB || 10) * 1024 * 1024, (err, limit) => {
+            if (err) {
+                return callback(err);
             }
+
             messageHandler.counters.ttlcounter('pdw:' + session.user.id, 0, limit, false, (err, res) => {
                 if (err) {
                     return callback(err);

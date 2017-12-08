@@ -401,8 +401,8 @@ let createInterface = (ifaceOptions, callback) => {
     server.notifier = notifier;
 
     // setup command handlers for the server instance
-    server.onFetch = onFetch(server, messageHandler);
-    server.onAuth = onAuth(server, userHandler);
+    server.onFetch = onFetch(server, messageHandler, userHandler.userCache);
+    server.onAuth = onAuth(server, userHandler, userHandler.userCache);
     server.onList = onList(server);
     server.onLsub = onLsub(server);
     server.onSubscribe = onSubscribe(server);
@@ -412,7 +412,7 @@ let createInterface = (ifaceOptions, callback) => {
     server.onDelete = onDelete(server, mailboxHandler);
     server.onOpen = onOpen(server);
     server.onStatus = onStatus(server);
-    server.onAppend = onAppend(server, messageHandler);
+    server.onAppend = onAppend(server, messageHandler, userHandler.userCache);
     server.onStore = onStore(server);
     server.onExpunge = onExpunge(server, messageHandler);
     server.onCopy = onCopy(server, messageHandler);
