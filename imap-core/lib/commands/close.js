@@ -26,21 +26,19 @@ module.exports = {
         this.session.selected = this.selected = false;
         this.state = 'Authenticated';
 
-        this.updateNotificationListener(() => {
-            this._server.onExpunge(
-                mailbox,
-                {
-                    isUid: false,
-                    silent: true
-                },
-                this.session,
-                () => {
-                    // don't care if expunging succeeded, the mailbox is now closed anyway
-                    callback(null, {
-                        response: 'OK'
-                    });
-                }
-            );
-        });
+        this._server.onExpunge(
+            mailbox,
+            {
+                isUid: false,
+                silent: true
+            },
+            this.session,
+            () => {
+                // don't care if expunging succeeded, the mailbox is now closed anyway
+                callback(null, {
+                    response: 'OK'
+                });
+            }
+        );
     }
 };

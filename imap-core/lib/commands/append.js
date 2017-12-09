@@ -12,7 +12,7 @@ module.exports = {
 
     schema: [
         {
-            name: 'mailbox',
+            name: 'path',
             type: 'string'
         },
         {
@@ -41,7 +41,7 @@ module.exports = {
         }
 
         let path = Buffer.from((command.attributes.shift() || {}).value || 'binary').toString();
-        let mailbox = imapTools.normalizeMailbox(path, !this.acceptUTF8Enabled);
+        path = imapTools.normalizeMailbox(path, !this.acceptUTF8Enabled);
         let message = command.attributes.pop();
         let flags = [];
         let internaldate = false;
@@ -60,7 +60,7 @@ module.exports = {
 
         flags = flags.map(flag => (flag.value || '').toString());
 
-        if (!mailbox) {
+        if (!path) {
             return callback(new Error('Invalid mailbox argument for APPEND'));
         }
 
@@ -99,7 +99,7 @@ module.exports = {
         });
 
         this._server.onAppend(
-            mailbox,
+            path,
             flags,
             internaldate,
             new Buffer(typeof message.value === 'string' ? message.value : (message.value || '').toString(), 'binary'),

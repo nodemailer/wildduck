@@ -115,6 +115,7 @@ module.exports = {
 
                 this.setUser(response.user);
                 this.state = 'Authenticated';
+                this.setupNotificationListener();
 
                 callback(null, {
                     response: 'OK',

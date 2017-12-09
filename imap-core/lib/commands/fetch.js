@@ -90,7 +90,7 @@ module.exports = {
         }
 
         // checks conditions – does the messages need to be marked as seen, is the full body needed etc.
-        for ((i = 0), (len = params.length); i < len; i++) {
+        for (i = 0, len = params.length; i < len; i++) {
             param = params[i];
             if (!param || (typeof param !== 'string' && param.type !== 'ATOM')) {
                 return callback(new Error('Invalid message data item name for ' + command.command));
@@ -164,7 +164,7 @@ module.exports = {
         let getFieldName = field => (field.value || '').toString().toLowerCase();
 
         // compose query object from parsed IMAP command
-        for ((i = 0), (len = params.length); i < len; i++) {
+        for (i = 0, len = params.length; i < len; i++) {
             param = params[i];
             let item = {
                 query: imapHandler.compiler({
@@ -269,7 +269,7 @@ module.exports = {
 function checkSchema(schema, item) {
     let i, len;
     if (Array.isArray(schema)) {
-        for ((i = 0), (len = schema.length); i < len; i++) {
+        for (i = 0, len = schema.length; i < len; i++) {
             if (checkSchema(schema[i], item)) {
                 return true;
             }

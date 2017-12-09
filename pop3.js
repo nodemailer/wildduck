@@ -335,7 +335,6 @@ function markAsSeen(session, messages, callback) {
                     }
                     messageHandler.notifier.addEntries(
                         mailboxData,
-                        false,
                         messages.map(message => {
                             let result = {
                                 command: 'FETCH',
@@ -349,7 +348,7 @@ function markAsSeen(session, messages, callback) {
                             return result;
                         }),
                         () => {
-                            messageHandler.notifier.fire(mailboxData.user, mailboxData.path);
+                            messageHandler.notifier.fire(mailboxData.user);
                             callback(null, messages.length);
                         }
                     );

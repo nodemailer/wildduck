@@ -23,7 +23,7 @@ module.exports = {
 
     handler(command, callback) {
         let path = Buffer.from((command.attributes[0] && command.attributes[0].value) || '', 'binary').toString();
-        let mailbox = imapTools.normalizeMailbox(path, !this.acceptUTF8Enabled);
+        path = imapTools.normalizeMailbox(path, !this.acceptUTF8Enabled);
 
         let extensions = [].concat(command.attributes[1] || []).map(attr => ((attr && attr.value) || '').toString().toUpperCase());
 
@@ -39,7 +39,7 @@ module.exports = {
             });
         }
 
-        if (!mailbox) {
+        if (!path) {
             // nothing to check for if mailbox is not defined
             return callback(null, {
                 response: 'NO',
@@ -47,34 +47,35 @@ module.exports = {
             });
         }
 
-        this._server.onOpen(mailbox, this.session, (err, folder) => {
+        this._server.onOpen(path, this.session, (err, mailboxData) => {
             if (err) {
                 this.session.selected = this.selected = false;
                 this.state = 'Authenticated';
                 return callback(err);
             }
 
-            if (!folder || typeof folder === 'string') {
+            if (!mailboxData || typeof mailboxData === 'string') {
                 this.session.selected = this.selected = false;
                 this.state = 'Authenticated';
                 return callback(null, {
                     response: 'NO',
-                    code: typeof folder === 'string' ? folder : 'NONEXISTENT'
+                    code: typeof mailboxData === 'string' ? mailboxData : 'NONEXISTENT'
                 });
             }
 
             // Set current state as selected
             this.session.selected = this.selected = {
-                modifyIndex: folder.modifyIndex,
-                uidList: folder.uidList,
+                modifyIndex: mailboxData.modifyIndex,
+                uidList: mailboxData.uidList,
                 notifications: [],
                 condstoreEnabled: this.condstoreEnabled,
                 readOnly: (command.command || '').toString().toUpperCase() === 'EXAMINE' ? true : false,
-                mailbox
+                mailbox: mailboxData._id,
+                path
             };
             this.state = 'Selected';
 
-            let flagList = imapTools.systemFlagsFormatted.concat(folder.flags || []);
+            let flagList = imapTools.systemFlagsFormatted.concat(mailboxData.flags || []);
 
             // * FLAGS (\Answered \Flagged \Draft \Deleted \Seen)
             this.send(
@@ -138,7 +139,7 @@ module.exports = {
                                 },
                                 {
                                     type: 'atom',
-                                    value: String(Number(folder.uidValidity) || 1)
+                                    value: String(Number(mailboxData.uidValidity) || 1)
                                 }
                             ]
                         },
@@ -151,13 +152,13 @@ module.exports = {
             );
 
             // * 0 EXISTS
-            this.send('* ' + folder.uidList.length + ' EXISTS');
+            this.send('* ' + mailboxData.uidList.length + ' EXISTS');
 
             // * 0 RECENT
             this.send('* 0 RECENT');
 
             // * OK [HIGHESTMODSEQ 123]
-            if ('modifyIndex' in folder && Number(folder.modifyIndex)) {
+            if ('modifyIndex' in mailboxData && Number(mailboxData.modifyIndex)) {
                 this.send(
                     imapHandler.compiler({
                         tag: '*',
@@ -172,7 +173,7 @@ module.exports = {
                                     },
                                     {
                                         type: 'atom',
-                                        value: String(Number(folder.modifyIndex) || 0)
+                                        value: String(Number(mailboxData.modifyIndex) || 0)
                                     }
                                 ]
                             },
@@ -200,7 +201,7 @@ module.exports = {
                                 },
                                 {
                                     type: 'atom',
-                                    value: String(Number(folder.uidNext) || 1)
+                                    value: String(Number(mailboxData.uidNext) || 1)
                                 }
                             ]
                         },
@@ -212,13 +213,10 @@ module.exports = {
                 })
             );
 
-            // start listening for EXPUNGE, EXISTS and FETCH FLAGS notifications
-            this.updateNotificationListener(() => {
-                callback(null, {
-                    response: 'OK',
-                    code: this.selected.readOnly ? 'READ-ONLY' : 'READ-WRITE',
-                    message: command.command + ' completed' + (this.selected.condstoreEnabled ? ', CONDSTORE is now enabled' : '')
-                });
+            callback(null, {
+                response: 'OK',
+                code: this.selected.readOnly ? 'READ-ONLY' : 'READ-WRITE',
+                message: command.command + ' completed' + (this.selected.condstoreEnabled ? ', CONDSTORE is now enabled' : '')
             });
         });
     }

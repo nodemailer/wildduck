@@ -15,14 +15,14 @@ module.exports = {
             type: 'string'
         },
         {
-            name: 'mailbox',
+            name: 'path',
             type: 'string'
         }
     ],
 
     handler(command, callback) {
         let reference = Buffer.from((command.attributes[0] && command.attributes[0].value) || '', 'binary').toString();
-        let mailbox = Buffer.from((command.attributes[1] && command.attributes[1].value) || '', 'binary').toString();
+        let path = Buffer.from((command.attributes[1] && command.attributes[1].value) || '', 'binary').toString();
 
         // Check if LIST method is set
         if (typeof this._server.onLsub !== 'function') {
@@ -32,7 +32,7 @@ module.exports = {
             });
         }
 
-        let query = imapTools.normalizeMailbox(reference + mailbox, !this.acceptUTF8Enabled);
+        let query = imapTools.normalizeMailbox(reference + path, !this.acceptUTF8Enabled);
 
         let lsubResponse = (err, list) => {
             if (err) {
@@ -72,7 +72,7 @@ module.exports = {
             });
         };
 
-        if (!mailbox) {
+        if (!path) {
             // return delimiter only
             return lsubResponse(null, {
                 path: '/',
@@ -82,6 +82,6 @@ module.exports = {
 
         // Do folder listing
         // Concat reference and mailbox. No special reference handling whatsoever
-        this._server.onLsub(imapTools.normalizeMailbox(reference + mailbox), this.session, lsubResponse);
+        this._server.onLsub(imapTools.normalizeMailbox(reference + path), this.session, lsubResponse);
     }
 };

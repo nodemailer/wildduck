@@ -128,6 +128,7 @@ function authenticate(connection, token, requireClientToken, callback) {
 
             connection.setUser(response.user);
             connection.state = 'Authenticated';
+            connection.setupNotificationListener();
 
             callback(null, {
                 response: 'OK',

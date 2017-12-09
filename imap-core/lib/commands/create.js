@@ -10,17 +10,17 @@ module.exports = {
 
     schema: [
         {
-            name: 'mailbox',
+            name: 'path',
             type: 'string'
         }
     ],
 
     handler(command, callback) {
-        let mailbox = Buffer.from((command.attributes[0] && command.attributes[0].value) || '', 'binary').toString();
+        let path = Buffer.from((command.attributes[0] && command.attributes[0].value) || '', 'binary').toString();
 
         if (!this.acceptUTF8Enabled) {
             // decode before normalizing to uncover stuff like ending / etc.
-            mailbox = utf7.decode(mailbox);
+            path = utf7.decode(path);
         }
 
         // Check if CREATE method is set
@@ -31,7 +31,7 @@ module.exports = {
             });
         }
 
-        if (!mailbox) {
+        if (!path) {
             // nothing to check for if mailbox is not defined
             return callback(null, {
                 response: 'NO',
@@ -41,7 +41,7 @@ module.exports = {
         }
 
         // ignore commands that try to create hierarchy
-        if (/\/$/.test(mailbox)) {
+        if (/\/$/.test(path)) {
             return callback(null, {
                 response: 'OK',
                 code: 'CANNOT',
@@ -50,7 +50,7 @@ module.exports = {
         }
 
         // ignore commands with adjacent spaces
-        if (/\/{2,}/.test(mailbox)) {
+        if (/\/{2,}/.test(path)) {
             return callback(null, {
                 response: 'NO',
                 code: 'CANNOT',
@@ -58,9 +58,9 @@ module.exports = {
             });
         }
 
-        mailbox = imapTools.normalizeMailbox(mailbox);
+        path = imapTools.normalizeMailbox(path);
 
-        this._server.onCreate(mailbox, this.session, (err, success) => {
+        this._server.onCreate(path, this.session, (err, success) => {
             if (err) {
                 return callback(err);
             }

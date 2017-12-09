@@ -12,14 +12,14 @@ module.exports = {
 
     schema: [
         {
-            name: 'mailbox',
+            name: 'path',
             type: 'string'
         }
     ],
 
     handler(command, callback) {
         let path = Buffer.from((command.attributes[0] && command.attributes[0].value) || '', 'binary').toString();
-        let mailbox = imapTools.normalizeMailbox(path, !this.acceptUTF8Enabled);
+        path = imapTools.normalizeMailbox(path, !this.acceptUTF8Enabled);
 
         if (typeof this._server.onGetQuota !== 'function') {
             return callback(null, {
@@ -28,7 +28,7 @@ module.exports = {
             });
         }
 
-        if (!mailbox) {
+        if (!path) {
             // nothing to check for if mailbox is not defined
             return callback(null, {
                 response: 'NO',
@@ -36,7 +36,7 @@ module.exports = {
             });
         }
 
-        this._server.onGetQuotaRoot(mailbox, this.session, (err, data) => {
+        this._server.onGetQuotaRoot(path, this.session, (err, data) => {
             if (err) {
                 return callback(err);
             }

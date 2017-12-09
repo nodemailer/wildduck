@@ -14,6 +14,7 @@ module.exports = function(options) {
 
     [
         {
+            _id: Symbol('INBOX'),
             path: 'INBOX',
             uidValidity: 123,
             uidNext: 70,
@@ -96,6 +97,7 @@ module.exports = function(options) {
             journal: []
         },
         {
+            _id: Symbol('[Gmail]/Sent Mail'),
             path: '[Gmail]/Sent Mail',
             specialUse: '\\Sent',
             uidValidity: 123,

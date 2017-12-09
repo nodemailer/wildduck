@@ -10,7 +10,7 @@ module.exports = {
 
     schema: [
         {
-            name: 'mailbox',
+            name: 'path',
             type: 'string'
         },
         {
@@ -20,7 +20,7 @@ module.exports = {
     ],
 
     handler(command, callback) {
-        let mailbox = Buffer.from((command.attributes[0] && command.attributes[0].value) || '', 'binary').toString();
+        let path = Buffer.from((command.attributes[0] && command.attributes[0].value) || '', 'binary').toString();
         let query = command.attributes[1] && command.attributes[1];
 
         let statusElements = ['MESSAGES', 'RECENT', 'UIDNEXT', 'UIDVALIDITY', 'UNSEEN', 'HIGHESTMODSEQ'];
@@ -35,7 +35,7 @@ module.exports = {
             });
         }
 
-        if (!mailbox) {
+        if (!path) {
             // nothing to check for if mailbox is not defined
             return callback(null, {
                 response: 'NO',
@@ -73,7 +73,7 @@ module.exports = {
             }
         }
 
-        mailbox = imapTools.normalizeMailbox(mailbox, !this.acceptUTF8Enabled);
+        path = imapTools.normalizeMailbox(path, !this.acceptUTF8Enabled);
 
         // mark CONDSTORE as enabled
         if (statusQuery.indexOf('HIGHESTMODSEQ') >= 0 && !this.condstoreEnabled) {
@@ -83,7 +83,7 @@ module.exports = {
             }
         }
 
-        this._server.onStatus(mailbox, this.session, (err, data) => {
+        this._server.onStatus(path, this.session, (err, data) => {
             let response;
             let values = {
                 RECENT: 0

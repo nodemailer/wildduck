@@ -100,13 +100,6 @@ class IMAPConnection extends EventEmitter {
                 }
             };
         });
-
-        this._accountListener = message => {
-            if (message && message.action === 'LOGOUT') {
-                this.send('* BYE ' + (message.reason || 'Logout requested'));
-                this.close();
-            }
-        };
     }
 
     /**
@@ -271,10 +264,6 @@ class IMAPConnection extends EventEmitter {
             return;
         }
 
-        if (this.user) {
-            this._server.notifier.removeListener({ user: this.user }, '*', this._accountListener);
-        }
-
         this._parser = false;
 
         this.state = 'Closed';
@@ -292,9 +281,7 @@ class IMAPConnection extends EventEmitter {
             this._inflate = null;
         }
 
-        if (this._listenerData) {
-            this._listenerData.clear();
-        }
+        this.clearNotificationListener();
 
         this._server.connections.delete(this);
 
@@ -452,112 +439,96 @@ class IMAPConnection extends EventEmitter {
 
     /**
      * Sets up notification listener from upstream
-     *
-     * @param {Function} done Called once listeners are updated
      */
-    updateNotificationListener(done) {
-        if (this._listenerData) {
-            if (!this.selected || this._listenerData.mailbox !== this.selected.mailbox) {
-                // registered against some mailbox, unregister from it
-                this._listenerData.clear();
-            } else if (this._listenerData.mailbox === this.selected.mailbox) {
-                // already registered
-                return done();
-            }
-        }
+    setupNotificationListener() {
+        let conn = this;
+        let isSelected = mailbox => mailbox && conn.selected && conn.selected.mailbox && conn.selected.mailbox.toString() === mailbox.toString();
 
-        if (!this.selected) {
-            this._listenerData = false;
-            return done();
-        }
-
-        let cleared = false;
-        let listenerData = (this._listenerData = {
-            mailbox: this.selected.mailbox,
+        this._listenerData = {
             lock: false,
-            clear: () => {
-                this._server.notifier.removeListener(this.session, listenerData.mailbox, listenerData.callback);
-                if (listenerData === this._listenerData) {
-                    this._listenerData = false;
-                }
-                listenerData = false;
-                cleared = true;
-            },
-            callback: message => {
+            cleared: false,
+            callback(message) {
+                let selectedMailbox = conn.selected && conn.selected.mailbox;
+
                 if (message) {
-                    if (this.selected && message.action === 'DELETE' && message.mailbox === this.selected.mailbox) {
-                        this.send('* BYE Selected mailbox was deleted, have to disconnect');
-                        this.close();
-                        return;
+                    // global triggers
+                    switch (message.command) {
+                        case 'LOGOUT':
+                            conn.clearNotificationListener();
+                            conn.send('* BYE ' + (message.reason || 'Logout requested'));
+                            conn.close();
+                            break;
+
+                        case 'DROP':
+                            if (isSelected(message.mailbox)) {
+                                conn.clearNotificationListener();
+                                conn.send('* BYE Selected mailbox was deleted, have to disconnect');
+                                conn.close();
+                                break;
+                            }
                     }
+                    return;
                 }
 
-                if (listenerData.lock) {
+                if (conn._listenerData.lock || !selectedMailbox) {
                     // race condition, do not allow fetching data before previous fetch is finished
                     return;
                 }
 
-                if (cleared) {
-                    // some kind of a race condition, just ignore
-                    return;
-                }
-
-                // if not selected anymore, remove itself
-                if (this.state !== 'Selected' || !this.selected) {
-                    listenerData.clear();
-                    return;
-                }
-
-                listenerData.lock = true;
-                this._server.notifier.getUpdates(this.session, this._listenerData.mailbox, this.selected.modifyIndex, (err, updates) => {
-                    if (cleared) {
-                        // client probably switched mailboxes while processing, just ignore all results
+                conn._listenerData.lock = true;
+                conn._server.notifier.getUpdates(selectedMailbox, conn.selected.modifyIndex, (err, updates) => {
+                    conn._listenerData.lock = false;
+                    if (conn._listenerData.cleared) {
+                        // already logged out
                         return;
                     }
-                    listenerData.lock = false;
 
                     if (err) {
-                        this.logger.info(
+                        conn.logger.info(
                             {
                                 err,
                                 tnx: 'updates',
-                                cid: this.id
+                                cid: conn.id
                             },
                             '[%s] Notification Error: %s',
-                            this.id,
+                            conn.id,
                             err.message
                         );
                         return;
                     }
 
-                    // if not selected anymore, remove itself
-                    if (this.state !== 'Selected' || !this.selected) {
-                        listenerData.clear();
+                    // check if the same mailbox is still selected
+                    if (!isSelected(selectedMailbox) || !updates || !updates.length) {
                         return;
                     }
 
-                    if (!updates || !updates.length) {
-                        return;
-                    }
+                    updates.sort((a, b) => a.modseq - b.modseq);
 
                     // store new incremental modify index
-                    if (updates[updates.length - 1].modseq > this.selected.modifyIndex) {
-                        this.selected.modifyIndex = updates[updates.length - 1].modseq;
+                    if (updates[updates.length - 1].modseq > conn.selected.modifyIndex) {
+                        conn.selected.modifyIndex = updates[updates.length - 1].modseq;
                     }
 
                     // append received notifications to the list
-                    this.selected.notifications = this.selected.notifications.concat(updates);
-                    if (this.idling) {
+                    conn.selected.notifications = conn.selected.notifications.concat(updates);
+                    if (conn.idling) {
                         // when idling emit notifications immediatelly
-                        this.emitNotifications();
+                        conn.emitNotifications();
                     }
                 });
             }
-        });
+        };
 
-        this._server.notifier.addListener(this.session, this._listenerData.mailbox, this._listenerData.callback);
+        this._server.notifier.addListener(this.session, this._listenerData.callback);
+    }
 
-        return done();
+    clearNotificationListener() {
+        if (!this._listenerData || this._listenerData.cleared) {
+            return;
+        }
+        this._server.notifier.removeListener(this.session, this._listenerData.callback);
+        this._listenerData.cleared = true;
+        this._listenerData = false;
     }
 
     // send notifications to client
@@ -711,10 +682,6 @@ class IMAPConnection extends EventEmitter {
 
         // clear queue
         this.selected.notifications = [];
-
-        if (typeof this._server.onNotifications === 'function') {
-            setImmediate(this._server.onNotifications.bind(this._server, this.selected.mailbox, this.selected.modifyIndex, this.session));
-        }
     }
 
     formatResponse(command, uid, data) {
@@ -850,7 +817,6 @@ class IMAPConnection extends EventEmitter {
 
     setUser(user) {
         this.user = this.session.user = user;
-        this._server.notifier.addListener(this.session, '*', this._accountListener);
     }
 }
 

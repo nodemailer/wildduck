@@ -7,10 +7,8 @@ module.exports = {
         this.session.selected = this.selected = false;
         this.state = 'Authenticated';
 
-        this.updateNotificationListener(() => {
-            callback(null, {
-                response: 'OK'
-            });
+        callback(null, {
+            response: 'OK'
         });
     }
 };

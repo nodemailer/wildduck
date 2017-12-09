@@ -33,7 +33,10 @@ module.exports = {
         if (Array.isArray(command.attributes[0])) {
             command.attributes[0].forEach(val => {
                 if (key === false) {
-                    key = (val.value || '').toString().toLowerCase().trim();
+                    key = (val.value || '')
+                        .toString()
+                        .toLowerCase()
+                        .trim();
                 } else {
                     if (allowedKeys.indexOf(key) >= 0) {
                         clientId[key] = (val.value || '').toString();
@@ -52,19 +55,21 @@ module.exports = {
                 this.id
             );
 
-            Object.keys(clientId).sort((a, b) => allowedKeys.indexOf(a) - allowedKeys.indexOf(b)).forEach(key => {
-                this._server.logger.info(
-                    {
-                        tnx: 'id',
-                        cid: this.id
-                    },
-                    '[%s] %s%s: %s',
-                    this.id,
-                    key,
-                    new Array(maxKeyLen - key.length + 1).join(' '),
-                    clientId[key]
-                );
-            });
+            Object.keys(clientId)
+                .sort((a, b) => allowedKeys.indexOf(a) - allowedKeys.indexOf(b))
+                .forEach(key => {
+                    this._server.logger.info(
+                        {
+                            tnx: 'id',
+                            cid: this.id
+                        },
+                        '[%s] %s%s: %s',
+                        this.id,
+                        key,
+                        new Array(maxKeyLen - key.length + 1).join(' '),
+                        clientId[key]
+                    );
+                });
         }
 
         // Create response ID serverIdList

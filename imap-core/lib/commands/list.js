@@ -20,7 +20,7 @@ module.exports = {
             type: 'string'
         },
         {
-            name: 'mailbox',
+            name: 'path',
             type: 'string'
         },
         {
@@ -39,7 +39,7 @@ module.exports = {
         let filterSpecialUseFolders = false;
         let filterSpecialUseFlags = false;
         let reference;
-        let mailbox;
+        let path;
 
         let arrPos = 0;
 
@@ -64,7 +64,7 @@ module.exports = {
         arrPos++;
 
         // "%"
-        mailbox = Buffer.from((command.attributes[arrPos] && command.attributes[arrPos].value) || '', 'binary').toString();
+        path = Buffer.from((command.attributes[arrPos] && command.attributes[arrPos].value) || '', 'binary').toString();
         arrPos++;
 
         // RETURN (SPECIAL-USE)
@@ -94,7 +94,7 @@ module.exports = {
             });
         }
 
-        let query = imapTools.normalizeMailbox(reference + mailbox, !this.acceptUTF8Enabled);
+        let query = imapTools.normalizeMailbox(reference + path, !this.acceptUTF8Enabled);
 
         let listResponse = (err, list) => {
             if (err) {
@@ -148,7 +148,7 @@ module.exports = {
             });
         };
 
-        if (!mailbox && !filterSpecialUseFlags) {
+        if (!path && !filterSpecialUseFlags) {
             // return delimiter only
             let response = {
                 tag: '*',

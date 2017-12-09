@@ -14,7 +14,10 @@ module.exports = {
     ],
 
     handler(command, callback) {
-        let mechanism = ((command.attributes[0] && command.attributes[0].value) || '').toString().toUpperCase().trim();
+        let mechanism = ((command.attributes[0] && command.attributes[0].value) || '')
+            .toString()
+            .toUpperCase()
+            .trim();
 
         if (!mechanism) {
             return callback(null, {

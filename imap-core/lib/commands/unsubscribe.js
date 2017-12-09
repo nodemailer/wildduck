@@ -9,13 +9,13 @@ module.exports = {
 
     schema: [
         {
-            name: 'mailbox',
+            name: 'path',
             type: 'string'
         }
     ],
 
     handler(command, callback) {
-        let mailbox = imapTools.normalizeMailbox((command.attributes[0] && command.attributes[0].value) || '', !this.acceptUTF8Enabled);
+        let path = imapTools.normalizeMailbox((command.attributes[0] && command.attributes[0].value) || '', !this.acceptUTF8Enabled);
 
         // Check if UNSUBSCRIBE method is set
         if (typeof this._server.onUnsubscribe !== 'function') {
@@ -25,7 +25,7 @@ module.exports = {
             });
         }
 
-        if (!mailbox) {
+        if (!path) {
             // nothing to check for if mailbox is not defined
             return callback(null, {
                 response: 'NO',
@@ -33,14 +33,14 @@ module.exports = {
             });
         }
 
-        if (mailbox === 'INBOX') {
+        if (path === 'INBOX') {
             return callback(null, {
                 response: 'NO',
                 message: 'Can not unsubscribe from INBOX'
             });
         }
 
-        this._server.onUnsubscribe(mailbox, this.session, (err, success) => {
+        this._server.onUnsubscribe(path, this.session, (err, success) => {
             if (err) {
                 return callback(err);
             }

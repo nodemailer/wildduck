@@ -18,10 +18,9 @@ module.exports = {
         this.session.selected = this.selected = false;
         this.state = 'Logout';
 
-        this.updateNotificationListener(() => {
-            this.send('* BYE Logout requested');
-            this.send(command.tag + ' OK ' + quotes[Math.floor(Math.random() * quotes.length)]);
-            this.close();
-        });
+        this.clearNotificationListener();
+        this.send('* BYE Logout requested');
+        this.send(command.tag + ' OK ' + quotes[Math.floor(Math.random() * quotes.length)]);
+        this.close();
     }
 };

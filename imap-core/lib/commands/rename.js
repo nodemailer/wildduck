@@ -9,7 +9,7 @@ module.exports = {
 
     schema: [
         {
-            name: 'mailbox',
+            name: 'path',
             type: 'string'
         },
         {
@@ -19,7 +19,7 @@ module.exports = {
     ],
 
     handler(command, callback) {
-        let mailbox = Buffer.from((command.attributes[0] && command.attributes[0].value) || '', 'binary').toString();
+        let path = Buffer.from((command.attributes[0] && command.attributes[0].value) || '', 'binary').toString();
         let newname = Buffer.from((command.attributes[1] && command.attributes[1].value) || '', 'binary').toString();
 
         // Check if RENAME method is set
@@ -30,7 +30,7 @@ module.exports = {
             });
         }
 
-        if (!mailbox || !newname) {
+        if (!path || !newname) {
             // nothing to check for if mailbox is not defined
             return callback(null, {
                 response: 'NO',
@@ -39,7 +39,7 @@ module.exports = {
             });
         }
 
-        mailbox = imapTools.normalizeMailbox(mailbox, !this.acceptUTF8Enabled);
+        path = imapTools.normalizeMailbox(path, !this.acceptUTF8Enabled);
         newname = imapTools.normalizeMailbox(newname, !this.acceptUTF8Enabled);
 
         // ignore commands with adjacent separators
@@ -52,7 +52,7 @@ module.exports = {
         }
 
         // Renaming INBOX is permitted by RFC3501 but not by this implementation
-        if (mailbox === 'INBOX') {
+        if (path === 'INBOX') {
             return callback(null, {
                 response: 'NO',
                 code: 'CANNOT',
@@ -68,7 +68,7 @@ module.exports = {
             });
         }
 
-        this._server.onRename(mailbox, newname, this.session, (err, success) => {
+        this._server.onRename(path, newname, this.session, (err, success) => {
             if (err) {
                 return callback(err);
             }

@@ -9,14 +9,14 @@ module.exports = {
 
     schema: [
         {
-            name: 'mailbox',
+            name: 'path',
             type: 'string'
         }
     ],
 
     handler(command, callback) {
         let path = Buffer.from((command.attributes[0] && command.attributes[0].value) || '', 'binary').toString();
-        let mailbox = imapTools.normalizeMailbox(path, !this.acceptUTF8Enabled);
+        path = imapTools.normalizeMailbox(path, !this.acceptUTF8Enabled);
 
         // Check if SUBSCRIBE method is set
         if (typeof this._server.onSubscribe !== 'function') {
@@ -26,7 +26,7 @@ module.exports = {
             });
         }
 
-        if (!mailbox) {
+        if (!path) {
             // nothing to check for if mailbox is not defined
             return callback(null, {
                 response: 'NO',
@@ -34,13 +34,13 @@ module.exports = {
             });
         }
 
-        if (mailbox === 'INBOX') {
+        if (path === 'INBOX') {
             return callback(null, {
                 response: 'OK'
             });
         }
 
-        this._server.onSubscribe(mailbox, this.session, (err, success) => {
+        this._server.onSubscribe(path, this.session, (err, success) => {
             if (err) {
                 return callback(err);
             }

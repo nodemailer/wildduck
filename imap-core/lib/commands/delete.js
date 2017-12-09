@@ -9,14 +9,14 @@ module.exports = {
 
     schema: [
         {
-            name: 'mailbox',
+            name: 'path',
             type: 'string'
         }
     ],
 
     handler(command, callback) {
-        let mailbox = Buffer.from((command.attributes[0] && command.attributes[0].value) || '', 'binary').toString();
-        mailbox = imapTools.normalizeMailbox(mailbox, !this.acceptUTF8Enabled);
+        let path = Buffer.from((command.attributes[0] && command.attributes[0].value) || '', 'binary').toString();
+        path = imapTools.normalizeMailbox(path, !this.acceptUTF8Enabled);
 
         // Check if DELETE method is set
         if (typeof this._server.onDelete !== 'function') {
@@ -26,7 +26,7 @@ module.exports = {
             });
         }
 
-        if (!mailbox) {
+        if (!path) {
             // nothing to check for if mailbox is not defined
             return callback(null, {
                 response: 'NO',
@@ -35,7 +35,7 @@ module.exports = {
             });
         }
 
-        if (mailbox === 'INBOX') {
+        if (path === 'INBOX') {
             // nothing to check for if mailbox is not defined
             return callback(null, {
                 response: 'NO',
@@ -44,7 +44,7 @@ module.exports = {
             });
         }
 
-        this._server.onDelete(mailbox, this.session, (err, success) => {
+        this._server.onDelete(path, this.session, (err, success) => {
             if (err) {
                 return callback(err);
             }
@@ -55,11 +55,6 @@ module.exports = {
                     code: typeof success === 'string' ? success.toUpperCase() : false
                 });
             }
-
-            this._server.notifier.fire(this.session.user.id, mailbox, {
-                action: 'DELETE',
-                mailbox
-            });
 
             callback(null, {
                 response: 'OK'

@@ -1,6 +1,5 @@
 'use strict';
 
-let crypto = require('crypto');
 let EventEmitter = require('events').EventEmitter;
 
 // Expects that the folder listing is a Map
@@ -30,31 +29,14 @@ class MemoryNotifier extends EventEmitter {
     }
 
     /**
-     * Generates hashed event names for mailbox:username pairs
-     *
-     * @param {String} mailbox
-     * @param {String} username
-     * @returns {String} md5 hex
-     */
-    _eventName(mailbox, username) {
-        return crypto
-            .createHash('md5')
-            .update(username + ':' + mailbox)
-            .digest('hex');
-    }
-
-    /**
      * Registers an event handler for mailbox:username events
      *
      * @param {String} username
      * @param {String} mailbox
      * @param {Function} handler Function to run once there are new entries in the journal
      */
-    addListener(session, mailbox, handler) {
-        let eventName = this._eventName(session.user.id, mailbox);
-        this._listeners.addListener(eventName, handler);
-
-        this.logger.debug('[%s] New journal listener for %s ("%s:%s")', session.id, eventName, session.user.id, mailbox);
+    addListener(session, handler) {
+        this._listeners.addListener(session.user.id.toString(), handler);
     }
 
     /**
@@ -64,11 +46,8 @@ class MemoryNotifier extends EventEmitter {
      * @param {String} mailbox
      * @param {Function} handler Function to run once there are new entries in the journal
      */
-    removeListener(session, mailbox, handler) {
-        let eventName = this._eventName(session.user.id, mailbox);
-        this._listeners.removeListener(eventName, handler);
-
-        this.logger.debug('[%s] Removed journal listener from %s ("%s:%s")', session.id, eventName, session.user.id, mailbox);
+    removeListener(session, handler) {
+        this._listeners.removeListener(session.user.id.toString(), handler);
     }
 
     /**
@@ -79,7 +58,7 @@ class MemoryNotifier extends EventEmitter {
      * @param {Array|Object} entries An array of entries to be journaled
      * @param {Function} callback Runs once the entry is either stored or an error occurred
      */
-    addEntries(username, mailbox, entries, callback) {
+    addEntries(mailbox, entries, callback) {
         let folder = this.folders.get(mailbox);
 
         if (!folder) {
@@ -111,10 +90,9 @@ class MemoryNotifier extends EventEmitter {
      * @param {String} username
      * @param {String} mailbox
      */
-    fire(username, mailbox, payload) {
-        let eventName = this._eventName(username, mailbox);
+    fire(username, payload) {
         setImmediate(() => {
-            this._listeners.emit(eventName, payload);
+            this._listeners.emit(username, payload);
         });
     }
 
@@ -126,7 +104,7 @@ class MemoryNotifier extends EventEmitter {
      * @param {Number} modifyIndex Last known modification id
      * @param {Function} callback Returns update entries as an array
      */
-    getUpdates(session, mailbox, modifyIndex, callback) {
+    getUpdates(mailbox, modifyIndex, callback) {
         modifyIndex = Number(modifyIndex) || 0;
 
         if (!this.folders.has(mailbox)) {

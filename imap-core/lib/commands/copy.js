@@ -11,7 +11,7 @@ module.exports = {
             type: 'sequence'
         },
         {
-            name: 'mailbox',
+            name: 'path',
             type: 'string'
         }
     ],
@@ -29,9 +29,9 @@ module.exports = {
 
         let range = (command.attributes[0] && command.attributes[0].value) || '';
         let path = Buffer.from((command.attributes[1] && command.attributes[1].value) || '', 'binary').toString();
-        let mailbox = imapTools.normalizeMailbox(path, !this.acceptUTF8Enabled);
+        path = imapTools.normalizeMailbox(path, !this.acceptUTF8Enabled);
 
-        if (!mailbox) {
+        if (!path) {
             return callback(new Error('Invalid mailbox argument for ' + cmd));
         }
 
@@ -44,7 +44,7 @@ module.exports = {
         this._server.onCopy(
             this.selected.mailbox,
             {
-                destination: mailbox,
+                destination: path,
                 messages
             },
             this.session,
@@ -53,9 +53,15 @@ module.exports = {
                     return callback(err);
                 }
 
-                let code = typeof success === 'string'
-                    ? success.toUpperCase()
-                    : 'COPYUID ' + info.uidValidity + ' ' + imapTools.packMessageRange(info.sourceUid) + ' ' + imapTools.packMessageRange(info.destinationUid);
+                let code =
+                    typeof success === 'string'
+                        ? success.toUpperCase()
+                        : 'COPYUID ' +
+                          info.uidValidity +
+                          ' ' +
+                          imapTools.packMessageRange(info.sourceUid) +
+                          ' ' +
+                          imapTools.packMessageRange(info.destinationUid);
 
                 callback(null, {
                     response: success === true ? 'OK' : 'NO',
