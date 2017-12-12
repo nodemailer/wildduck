@@ -35,6 +35,7 @@ frisby
             .get(URL + '/users/' + userId)
             .expectStatus(200)
             .afterJSON(response => {
+                console.log(response); // eslint-disable-line
                 expect(response).to.exist;
                 expect(response.success).to.be.true;
                 expect(response.id).to.equal(userId);

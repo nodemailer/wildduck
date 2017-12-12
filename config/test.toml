@@ -7,3 +7,5 @@
 
     # redis connection string
     redis="redis://127.0.0.1:6379/13"
+
+    dbname="wildduck-test"

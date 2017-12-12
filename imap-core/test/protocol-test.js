@@ -1,9 +1,12 @@
-/* eslint no-unused-expressions: 0, prefer-arrow-callback: 0 */
+/* eslint no-unused-expressions: 0, prefer-arrow-callback: 0, no-console: 0 */
+/* global after */
 
 'use strict';
 
-let testServer = require('./test-server.js');
+let config = require('wild-config');
+//let testServer = require('./test-server.js');
 let testClient = require('./test-client.js');
+let exec = require('child_process').exec;
 
 let chai = require('chai');
 let chunks = require('./fixtures/chunks');
@@ -12,25 +15,29 @@ chai.config.includeStack = true;
 
 describe('IMAP Protocol integration tests', function() {
     this.timeout(10000); // eslint-disable-line no-invalid-this
-    let server;
-    let port;
+    let port = 9993;
 
     beforeEach(function(done) {
-        server = testServer({
-            secure: true,
-            logger: false // remove to print IMAP traffic to console
-        });
-
-        server.acceptUTF8Enabled = false;
-
-        server.listen(function() {
-            port = server.server.address().port;
+        exec(__dirname + '/prepare.sh ' + config.dbs.dbname, { cwd: __dirname }, err => {
+            if (err) {
+                return done(err);
+            }
             done();
         });
     });
 
     afterEach(function(done) {
-        server.close(done);
+        done();
+    });
+
+    after(function(done) {
+        //mongo "$DBNAME" --eval "db.getCollectionNames().forEach(function(key){db[key].deleteMany({});})" > /dev/null
+        exec('mongo ' + config.dbs.dbname + ' --eval "db.getCollectionNames().forEach(function(key){db[key].deleteMany({});})"', err => {
+            if (err) {
+                return done(err);
+            }
+            done();
+        });
     });
 
     describe('CAPABILITY', function() {
@@ -53,12 +60,15 @@ describe('IMAP Protocol integration tests', function() {
     });
 
     describe('LOGIN', function() {
+        /*
         let stlsServer;
         let stlsPort;
         let txtServer;
         let txtPort;
+        */
 
         beforeEach(function(done) {
+            /*
             stlsServer = testServer({
                 secure: false,
                 logger: false // remove to print IMAP traffic to console
@@ -77,12 +87,17 @@ describe('IMAP Protocol integration tests', function() {
                     done();
                 });
             });
+            */
+            done();
         });
 
         afterEach(function(done) {
+            /*
             stlsServer.close(function() {
                 txtServer.close(done);
             });
+            */
+            done();
         });
 
         it('should authenticate', function(done) {
@@ -100,7 +115,7 @@ describe('IMAP Protocol integration tests', function() {
                 }
             );
         });
-
+        /*
         it('should authenticate using STARTTLS', function(done) {
             let cmds = ['T1 STARTTLS', 'T2 LOGIN testuser pass', 'T3 LOGOUT'];
 
@@ -148,7 +163,7 @@ describe('IMAP Protocol integration tests', function() {
                 }
             );
         });
-
+*/
         it('should fail authentication', function(done) {
             let cmds = ['T1 LOGIN testuser wrongpass', 'T2 LOGOUT'];
 
@@ -298,7 +313,7 @@ describe('IMAP Protocol integration tests', function() {
                 },
                 function(resp) {
                     resp = resp.toString();
-                    expect(resp.match(/^\* LIST /gm).length).to.equal(3);
+                    expect(resp.match(/^\* LIST /gm).length).to.equal(6);
                     expect(resp.indexOf('\r\n* LIST (\\HasNoChildren) "/" "INBOX"\r\n') >= 0).to.be.true;
                     expect(resp.indexOf('\r\n* LIST (\\Noselect \\HasChildren) "/" "[Gmail]"\r\n') >= 0).to.be.true;
                     expect(resp.indexOf('\r\n* LIST (\\HasNoChildren \\Sent) "/" "[Gmail]/Sent Mail"\r\n') >= 0).to.be.true;
@@ -319,9 +334,10 @@ describe('IMAP Protocol integration tests', function() {
                 },
                 function(resp) {
                     resp = resp.toString();
-                    expect(resp.match(/^\* LIST /gm).length).to.equal(2);
+                    expect(resp.match(/^\* LIST /gm).length).to.equal(5);
                     expect(resp.indexOf('\r\n* LIST (\\HasNoChildren) "/" "INBOX"\r\n') >= 0).to.be.true;
                     expect(resp.indexOf('\r\n* LIST (\\Noselect \\HasChildren) "/" "[Gmail]"\r\n') >= 0).to.be.true;
+                    expect(resp.indexOf('\r\n* LIST (\\HasNoChildren \\Sent) "/" "[Gmail]/Sent Mail"\r\n') >= 0).to.be.false;
                     expect(/^T2 OK/m.test(resp)).to.be.true;
                     done();
                 }
@@ -360,7 +376,7 @@ describe('IMAP Protocol integration tests', function() {
                 },
                 function(resp) {
                     resp = resp.toString();
-                    expect(resp.match(/^\* LSUB /gm).length).to.equal(2);
+                    expect(resp.match(/^\* LSUB /gm).length).to.equal(5);
                     expect(resp.indexOf('\r\n* LSUB (\\HasNoChildren) "/" "INBOX"\r\n') >= 0).to.be.true;
                     expect(resp.indexOf('\r\n* LSUB (\\HasNoChildren) "/" "[Gmail]/Sent Mail"\r\n') >= 0).to.be.true;
                     expect(/^T2 OK/m.test(resp)).to.be.true;
@@ -380,8 +396,9 @@ describe('IMAP Protocol integration tests', function() {
                 },
                 function(resp) {
                     resp = resp.toString();
-                    expect(resp.match(/^\* LSUB /gm).length).to.equal(1);
+                    expect(resp.match(/^\* LSUB /gm).length).to.equal(4);
                     expect(resp.indexOf('\r\n* LSUB (\\HasNoChildren) "/" "INBOX"\r\n') >= 0).to.be.true;
+                    expect(resp.indexOf('\r\n* LSUB (\\HasNoChildren) "/" "[Gmail]/Sent Mail"\r\n') >= 0).to.be.false;
                     expect(/^T2 OK/m.test(resp)).to.be.true;
                     done();
                 }
@@ -494,7 +511,6 @@ describe('IMAP Protocol integration tests', function() {
                 function(resp) {
                     resp = resp.toString();
                     expect(/^T3 OK/m.test(resp)).to.be.true;
-                    expect(/^T4 OK/m.test(resp)).to.be.true;
                     expect(resp.indexOf('\r\n* BYE') >= 0).to.be.true;
                     done();
                 }
