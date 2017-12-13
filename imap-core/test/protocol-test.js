@@ -1088,8 +1088,8 @@ describe('IMAP Protocol integration tests', function() {
     });
 
     describe('EXPUNGE', function() {
-        // EXPUNGE is a NO OP with autoexpunge. We can still test as the result after applying Delete would be the same
-        it('should automatically expunge messages', function(done) {
+        // EXPUNGE is a NO OP with autoexpunge
+        it.skip('should automatically expunge messages', function(done) {
             let cmds = ['T1 LOGIN testuser pass', 'T2 SELECT INBOX', 'T3 STORE 2:* +FLAGS (\\Deleted)', 'SLEEP', 'T4 EXPUNGE', 'T6 LOGOUT'];
 
             testClient(
