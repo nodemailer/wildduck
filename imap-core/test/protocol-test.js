@@ -1046,7 +1046,7 @@ describe('IMAP Protocol integration tests', function() {
                 },
                 function(resp) {
                     resp = resp.toString();
-                    expect(resp.match(/^\* LSUB /gm).length).to.equal(3);
+                    expect(resp.match(/^\* LSUB /gm).length).to.equal(6);
                     expect(resp.indexOf('\r\n* LSUB (\\HasNoChildren) "/" "INBOX"\r\n') >= 0).to.be.true;
                     expect(resp.indexOf('\r\n* LSUB (\\HasNoChildren) "/" "[Gmail]/Sent Mail"\r\n') >= 0).to.be.true;
                     expect(resp.indexOf('\r\n* LSUB (\\HasNoChildren) "/" "testfolder"\r\n') >= 0).to.be.true;
@@ -1076,7 +1076,7 @@ describe('IMAP Protocol integration tests', function() {
                 },
                 function(resp) {
                     resp = resp.toString();
-                    expect(resp.match(/^\* LSUB /gm).length).to.equal(2);
+                    expect(resp.match(/^\* LSUB /gm).length).to.equal(5);
                     expect(resp.indexOf('\r\n* LSUB (\\HasNoChildren) "/" "INBOX"\r\n') >= 0).to.be.true;
                     expect(resp.indexOf('\r\n* LSUB (\\HasNoChildren) "/" "[Gmail]/Sent Mail"\r\n') >= 0).to.be.true;
                     expect(resp.indexOf('\r\n* LSUB (\\HasNoChildren) "/" "testfolder"\r\n') >= 0).to.be.false;
@@ -1088,8 +1088,9 @@ describe('IMAP Protocol integration tests', function() {
     });
 
     describe('EXPUNGE', function() {
-        it('should expunge messages', function(done) {
-            let cmds = ['T1 LOGIN testuser pass', 'T2 SELECT INBOX', 'T3 STORE 2:* +FLAGS (\\Deleted)', 'T4 EXPUNGE', 'T6 LOGOUT'];
+        // EXPUNGE is a NO OP with autoexpunge. We can still test as the result after applying Delete would be the same
+        it('should automatically expunge messages', function(done) {
+            let cmds = ['T1 LOGIN testuser pass', 'T2 SELECT INBOX', 'T3 STORE 2:* +FLAGS (\\Deleted)', 'SLEEP', 'T4 EXPUNGE', 'T6 LOGOUT'];
 
             testClient(
                 {
@@ -1108,8 +1109,9 @@ describe('IMAP Protocol integration tests', function() {
     });
 
     describe('UID EXPUNGE', function() {
-        it('should expunge messages', function(done) {
-            let cmds = ['T1 LOGIN testuser pass', 'T2 SELECT INBOX', 'T3 STORE 1:* +FLAGS (\\Deleted)', 'T4 UID EXPUNGE 50', 'T5 LOGOUT'];
+        // UID EXPUNGE is a NO OP with autoexpunge
+        it.skip('should automatically expunge messages', function(done) {
+            let cmds = ['T1 LOGIN testuser pass', 'T2 SELECT INBOX', 'T3 STORE 1:* +FLAGS (\\Deleted)', 'SLEEP', 'T4 UID EXPUNGE 50', 'T5 LOGOUT'];
 
             testClient(
                 {
@@ -1130,7 +1132,7 @@ describe('IMAP Protocol integration tests', function() {
 
     describe('FETCH command', function() {
         it('should list by UID', function(done) {
-            let cmds = ['T1 LOGIN testuser pass', 'T2 SELECT INBOX', 'T3 UID FETCH 50 (FLAGS)', 'T4 FETCH 3 (FLAGS)', 'T4 LOGOUT'];
+            let cmds = ['T1 LOGIN testuser pass', 'T2 SELECT INBOX', 'T3 UID FETCH 103 (FLAGS)', 'T4 FETCH 3 (FLAGS)', 'T4 LOGOUT'];
 
             testClient(
                 {
@@ -1140,7 +1142,7 @@ describe('IMAP Protocol integration tests', function() {
                 },
                 function(resp) {
                     resp = resp.toString();
-                    expect(resp.slice(/\n/).indexOf('* 3 FETCH (FLAGS (\\Seen) UID 50)') >= 0).to.be.true; // UID FETCH FLAGS
+                    expect(resp.slice(/\n/).indexOf('* 3 FETCH (FLAGS (\\Seen) UID 103)') >= 0).to.be.true; // UID FETCH FLAGS
                     expect(resp.slice(/\n/).indexOf('* 3 FETCH (FLAGS (\\Seen))') >= 0).to.be.true; // FETCH FLAGS
                     expect(/^T3 OK/m.test(resp)).to.be.true;
                     done();
@@ -1152,9 +1154,9 @@ describe('IMAP Protocol integration tests', function() {
             let cmds = [
                 'T1 LOGIN testuser pass',
                 'T2 SELECT INBOX',
-                'T3 UID FETCH 50 (FLAGS) (CHANGEDSINCE 1)',
+                'T3 UID FETCH 103 (FLAGS) (CHANGEDSINCE 1)',
                 'T4 FETCH 3 (FLAGS) (CHANGEDSINCE 1)',
-                'T5 UID FETCH 50 (FLAGS) (CHANGEDSINCE 10000)',
+                'T5 UID FETCH 103 (FLAGS) (CHANGEDSINCE 10000)',
                 'T6 FETCH 3 (FLAGS) (CHANGEDSINCE 10000)',
                 'T7 LOGOUT'
             ];
@@ -1167,8 +1169,8 @@ describe('IMAP Protocol integration tests', function() {
                 },
                 function(resp) {
                     resp = resp.toString();
-                    expect(resp.slice(/\n/).indexOf('* 3 FETCH (FLAGS (\\Seen) UID 50 MODSEQ (45))') >= 0).to.be.true; // UID FETCH FLAGS
-                    expect(resp.slice(/\n/).indexOf('* 3 FETCH (FLAGS (\\Seen) MODSEQ (45))') >= 0).to.be.true; // FETCH FLAGS
+                    expect(resp.slice(/\n/).indexOf('* 3 FETCH (FLAGS (\\Seen) UID 103 MODSEQ (3))') >= 0).to.be.true; // UID FETCH FLAGS
+                    expect(resp.slice(/\n/).indexOf('* 3 FETCH (FLAGS (\\Seen) MODSEQ (3))') >= 0).to.be.true; // FETCH FLAGS
                     expect(resp.match(/^\* \d+ FETCH/gm).length).to.equal(2);
                     expect(/^T3 OK/m.test(resp)).to.be.true;
                     expect(/^T4 OK/m.test(resp)).to.be.true;
@@ -1195,7 +1197,7 @@ describe('IMAP Protocol integration tests', function() {
                             resp
                                 .slice(/\n/)
                                 .indexOf(
-                                    '* 1 FETCH (UID 45 BODYSTRUCTURE ("TEXT" "PLAIN" NIL NIL NIL "7BIT" 6 1 NIL NIL NIL NIL) ENVELOPE (NIL "test" ((NIL NIL "sender" "example.com")) ((NIL NIL "sender" "example.com")) ((NIL NIL "sender" "example.com")) ((NIL NIL "to" "example.com")) ((NIL NIL "cc" "example.com")) NIL NIL NIL))'
+                                    '* 1 FETCH (UID 101 BODYSTRUCTURE ("TEXT" "PLAIN" NIL NIL NIL "7BIT" 6 1 NIL NIL NIL NIL) ENVELOPE (NIL "test" ((NIL NIL "sender" "example.com")) ((NIL NIL "sender" "example.com")) ((NIL NIL "sender" "example.com")) ((NIL NIL "to" "example.com")) ((NIL NIL "cc" "example.com")) NIL NIL NIL))'
                                 ) >= 0
                         ).to.be.true;
                         expect(/^T3 OK/m.test(resp)).to.be.true;
@@ -1249,7 +1251,7 @@ describe('IMAP Protocol integration tests', function() {
                     function(resp) {
                         resp = resp.toString();
 
-                        expect(resp.indexOf('\n* 3 FETCH (UID 50)\r\n') >= 0).to.be.true;
+                        expect(resp.indexOf('\n* 3 FETCH (UID 103)\r\n') >= 0).to.be.true;
                         expect(/^T3 OK/m.test(resp)).to.be.true;
 
                         done();
@@ -1698,7 +1700,7 @@ describe('IMAP Protocol integration tests', function() {
                     resp = resp.toString();
                     expect(resp.match(/^\* SEARCH /gm).length).to.equal(2);
                     expect(/^\* SEARCH 1 4 5 6$/m.test(resp)).to.be.true;
-                    expect(/^\* SEARCH 45 52 53 60$/m.test(resp)).to.be.true;
+                    expect(/^\* SEARCH 101 104 105 106$/m.test(resp)).to.be.true;
                     expect(/^T3 OK/m.test(resp)).to.be.true;
                     expect(/^T4 OK/m.test(resp)).to.be.true;
                     done();

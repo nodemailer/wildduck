@@ -12,7 +12,8 @@ module.exports = function(grunt) {
                 options: {
                     reporter: 'spec'
                 },
-                src: ['test/**/*-test.js', 'imap-core/test/**/*-test.js']
+                // run imap-core tests first
+                src: ['imap-core/test/**/*-test.js', 'test/**/*-test.js']
             }
         },
 

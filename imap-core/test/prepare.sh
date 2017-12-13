@@ -66,7 +66,9 @@ subject: test6
 hello 6
 "
 
-mongo "$DBNAME" --eval "db.messages.updateOne({uid:1}, {\$set:{modseq: 100}})" > /dev/null
-mongo "$DBNAME" --eval "db.messages.updateOne({uid:2}, {\$set:{modseq: 5000}})" > /dev/null
+mongo "$DBNAME" --eval "db.mailboxes.updateOne({_id: ObjectId('$INBOXID')}, {\$set:{modifyIndex: 5000, uidNext: 1000}})" > /dev/null
+mongo "$DBNAME" --eval "db.messages.updateOne({mailbox: ObjectId('$INBOXID'), uid:1}, {\$set:{modseq: 100}})" > /dev/null
+mongo "$DBNAME" --eval "db.messages.updateOne({mailbox: ObjectId('$INBOXID'), uid:2}, {\$set:{modseq: 5000}})" > /dev/null
+mongo "$DBNAME" --eval "db.messages.updateMany({}, {\$inc:{uid: 100}})" > /dev/null
 
 # curl --silent "http://localhost:8080/users/$USERID/mailboxes/$INBOXID/messages" | jq
