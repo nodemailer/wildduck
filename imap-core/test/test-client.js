@@ -114,7 +114,7 @@ function runClientMockup(options, callback) {
                         delay = setTimeout(() => {
                             command = commands.shift();
                             if (command === 'SLEEP') {
-                                return setTimeout(processCommand, 1000);
+                                return setTimeout(processCommand, 5000);
                             }
 
                             if (Array.isArray(command)) {
