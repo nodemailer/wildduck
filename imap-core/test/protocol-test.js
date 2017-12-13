@@ -1100,6 +1100,7 @@ describe('IMAP Protocol integration tests', function() {
                 },
                 function(resp) {
                     resp = resp.toString();
+                    console.log(resp);
                     expect(resp.match(/^\* \d+ EXPUNGE/gm).length).to.equal(5);
                     expect(/^T4 OK/m.test(resp)).to.be.true;
                     done();
