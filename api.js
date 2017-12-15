@@ -141,7 +141,7 @@ module.exports = done => {
     updatesRoutes(db, server, notifier);
     authRoutes(db, server, userHandler);
     autoreplyRoutes(db, server);
-    submitRoutes(db, server, messageHandler);
+    submitRoutes(db, server, messageHandler, userHandler);
     domainaliasRoutes(db, server);
 
     server.on('error', err => {
