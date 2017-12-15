@@ -1089,8 +1089,8 @@ describe('IMAP Protocol integration tests', function() {
 
     describe('EXPUNGE', function() {
         // EXPUNGE is a NO OP with autoexpunge
-        it.skip('should automatically expunge messages', function(done) {
-            let cmds = ['T1 LOGIN testuser pass', 'T2 SELECT INBOX', 'T3 STORE 2:* +FLAGS (\\Deleted)', 'SLEEP', 'T4 EXPUNGE', 'T6 LOGOUT'];
+        it('should expunge all deleted messages', function(done) {
+            let cmds = ['T1 LOGIN testuser pass', 'T2 SELECT INBOX', 'T3 STORE 2:* +FLAGS (\\Deleted)', 'T4 EXPUNGE', 'T6 LOGOUT'];
 
             testClient(
                 {
@@ -1100,7 +1100,6 @@ describe('IMAP Protocol integration tests', function() {
                 },
                 function(resp) {
                     resp = resp.toString();
-                    console.log(resp);
                     expect(resp.match(/^\* \d+ EXPUNGE/gm).length).to.equal(5);
                     expect(/^T4 OK/m.test(resp)).to.be.true;
                     done();
@@ -1111,8 +1110,8 @@ describe('IMAP Protocol integration tests', function() {
 
     describe('UID EXPUNGE', function() {
         // UID EXPUNGE is a NO OP with autoexpunge
-        it.skip('should automatically expunge messages', function(done) {
-            let cmds = ['T1 LOGIN testuser pass', 'T2 SELECT INBOX', 'T3 STORE 1:* +FLAGS (\\Deleted)', 'SLEEP', 'T4 UID EXPUNGE 50', 'T5 LOGOUT'];
+        it('should expunge specific messages', function(done) {
+            let cmds = ['T1 LOGIN testuser pass', 'T2 SELECT INBOX', 'T3 STORE 1:* +FLAGS (\\Deleted)', 'T4 UID EXPUNGE 103,105', 'T5 LOGOUT'];
 
             testClient(
                 {
@@ -1122,8 +1121,9 @@ describe('IMAP Protocol integration tests', function() {
                 },
                 function(resp) {
                     resp = resp.toString();
-                    expect(resp.match(/^\* \d+ EXPUNGE/gm).length).to.equal(1);
+                    expect(resp.match(/^\* \d+ EXPUNGE/gm).length).to.equal(2);
                     expect(resp.match(/^\* 3 EXPUNGE/gm).length).to.equal(1);
+                    expect(resp.match(/^\* 4 EXPUNGE/gm).length).to.equal(1);
                     expect(/^T4 OK/m.test(resp)).to.be.true;
                     done();
                 }

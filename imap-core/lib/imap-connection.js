@@ -477,11 +477,11 @@ class IMAPConnection extends EventEmitter {
 
                 conn._listenerData.lock = true;
                 conn._server.notifier.getUpdates(selectedMailbox, conn.selected.modifyIndex, (err, updates) => {
-                    conn._listenerData.lock = false;
-                    if (conn._listenerData.cleared) {
+                    if (!conn._listenerData || conn._listenerData.cleared) {
                         // already logged out
                         return;
                     }
+                    conn._listenerData.lock = false;
 
                     if (err) {
                         conn.logger.info(
