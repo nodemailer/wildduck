@@ -223,9 +223,8 @@ module.exports = done => {
     });
 
     filterHandler = new FilterHandler({
-        database: db.database,
-        users: db.users,
-        redis: db.redis,
+        db,
+        sender: config.sender,
         messageHandler,
         spamHeaderKeys,
         spamChecks
