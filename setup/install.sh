@@ -12,7 +12,7 @@ fi
 
 HOSTNAME="$1"
 
-WILDDUCK_COMMIT="029aeecc233af54bf9170570d87c2e1695fad922"
+WILDDUCK_COMMIT="v1.0.96"
 ZONEMTA_COMMIT="e058fccbf75a87c2d84df43e012ea579d2f9b481"
 WEBMAIL_COMMIT="be67abbad78c0f912394e0aaaf699629477e3985"
 
@@ -38,6 +38,8 @@ curl -sL https://deb.nodesource.com/setup_8.x | bash -
 apt-get update
 
 apt-get -q -y install mongodb-org pwgen nodejs git ufw build-essential libssl-dev dnsutils python software-properties-common nginx lsb-release wget
+
+SRS_SECRET=`pwgen 12 -1`
 
 systemctl enable mongod.service
 
@@ -91,11 +93,6 @@ echo "user=\"wildduck\"
 group=\"wildduck\"
 emailDomain=\"$HOSTNAME\"" | cat - /etc/wildduck/wildduck.toml > temp && mv temp /etc/wildduck/wildduck.toml
 
-echo '[[spamHeader]]
-key="X-Rspamd-Bar"
-value="^\\+{6}"
-target="\\Junk"' >> /etc/wildduck/spamheaders.toml
-
 sed -i -e "s/localhost:3000/$HOSTNAME/g;s/localhost/$HOSTNAME/g;s/2587/587/g" /etc/wildduck/wildduck.toml
 
 cd /opt/wildduck
@@ -146,14 +143,11 @@ rspamd
 tls
 dkim_verify
 
-queue/lmtp
+# Wild Duck plugin handles recipient checking and queueing
 wildduck" > config/plugins
 
 echo "key=/etc/wildduck/certs/privkey.pem
 cert=/etc/wildduck/certs/fullchain.pem" > config/tls.ini
-
-echo "host=127.0.0.1
-port=24" > config/lmtp.ini
 
 echo 'host = localhost
 port = 11333
@@ -184,20 +178,8 @@ echo 'clamd_socket = /var/run/clamav/clamd.ctl
 virus=true
 error=false' > config/clamd.ini
 
-echo '---
-accounts:
-  maxStorage: 1024
-redis: "redis://127.0.0.1:6379/3"
-mongo:
-  url: "mongodb://127.0.0.1:27017/wildduck"
-srs:
-  secret: "supersecret"
-attachments:
-  type: "gridstore"
-  bucket: "attachments"
-  decodeBase64: true
-log:
-  authlogExpireDays: 30' > config/wildduck.yaml
+cp node_modules/haraka-plugin-wildduck/config/wildduck.yaml config/wildduck.yaml
+sed -i -e "s/secret value/$SRS_SECRET/g" config/wildduck.yaml
 
 echo '[Unit]
 Description=Haraka MX Server
@@ -254,7 +236,7 @@ authlogExpireDays=30
 # Handle rewriting of forwarded emails
 forwardedSRS=true
 # SRS secret value. Must be the same as in the MX side
-secret=\"secret value\"
+secret=\"$SRS_SECRET\"
 # SRS domain, must resolve back to MX
 rewriteDomain=\"$HOSTNAME\"
 
@@ -262,20 +244,7 @@ rewriteDomain=\"$HOSTNAME\"
 # do not set these values if you do not want to use local delivery
 
 # Use LMTP instead of SMTP
-localLmtp=true
-localMxPort=24
-# SMTP/LMTP server for local delivery
-[[\"modules/zonemta-wildduck\".localMx]]
-    priority=0
-    # hostname is for logging only, IP is actually used
-    exchange=\"$HOSTNAME\"
-    A=[\"127.0.0.1\"]
-    AAAA=[]
-# Interface to be used for local delivery
-# Make sure that it can connect to the localMX IP
-[\"modules/zonemta-wildduck\".localZoneAddress]
-    address=\"127.0.0.1\"
-    name=\"$HOSTNAME\"" > /etc/zone-mta/plugins/wildduck.toml
+localLmtp=false" > /etc/zone-mta/plugins/wildduck.toml
 
 sed -i -e "s/test/wildduck/g;s/example.com/$HOSTNAME/g;s/signTransportDomain=true/signTransportDomain=false/g;" /etc/zone-mta/plugins/dkim.toml
 cd /opt/zone-mta/keys
