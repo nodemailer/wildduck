@@ -350,6 +350,7 @@ ufw allow 443/tcp
 ufw allow 25/tcp
 ufw allow 587/tcp
 ufw allow 993/tcp
+ufw allow 995/tcp
 ufw --force enable
 
 #### SSL CERTS ####

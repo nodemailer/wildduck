@@ -1,12 +1,11 @@
 # If enabled then Wild Duck exposes a limited POP3 interface for listing and fetching emails
 enabled=true
-port=9110
+port=9995
 # by default bind to localhost only
 host="0.0.0.0"
 
-# Use `true` for port 995 and `false` for 110. Try to always use `true` as the included
-# POP3 server is limited and does not support the STLS command
-secure=false
+# Use `true` for port 995 and `false` for 110
+secure=true
 
 # If true, then do not show server info in CAPA response
 disableVersionString=false
