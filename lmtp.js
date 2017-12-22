@@ -19,7 +19,7 @@ let filterHandler;
 let spamChecks, spamHeaderKeys;
 
 config.on('reload', () => {
-    spamChecks = prepareSpamChecks(config.spamHeader);
+    spamChecks = tools.prepareSpamChecks(config.spamHeader);
     spamHeaderKeys = spamChecks.map(check => check.key);
 
     if (filterHandler) {
@@ -203,7 +203,7 @@ module.exports = done => {
         return setImmediate(() => done(null, false));
     }
 
-    spamChecks = prepareSpamChecks(config.spamHeader);
+    spamChecks = tools.prepareSpamChecks(config.spamHeader);
     spamHeaderKeys = spamChecks.map(check => check.key);
 
     messageHandler = new MessageHandler({
@@ -247,46 +247,3 @@ module.exports = done => {
         done(null, server);
     });
 };
-
-function prepareSpamChecks(spamHeader) {
-    return (Array.isArray(spamHeader) ? spamHeader : [].concat(spamHeader || []))
-        .map(header => {
-            if (!header) {
-                return false;
-            }
-
-            // If only a single header key is specified, check if it matches Yes
-            if (typeof header === 'string') {
-                header = {
-                    key: header,
-                    value: '^yes',
-                    target: '\\Junk'
-                };
-            }
-
-            let key = (header.key || '')
-                .toString()
-                .trim()
-                .toLowerCase();
-            let value = (header.value || '').toString().trim();
-            try {
-                if (value) {
-                    value = new RegExp(value, 'i');
-                    value.isRegex = true;
-                }
-            } catch (E) {
-                value = false;
-                log.error('LMTP', 'Failed loading spam header rule %s. %s', JSON.stringify(header.value), E.message);
-            }
-            if (!key || !value) {
-                return false;
-            }
-            let target = (header.target || '').toString().trim() || 'INBOX';
-            return {
-                key,
-                value,
-                target
-            };
-        })
-        .filter(check => check);
-}
