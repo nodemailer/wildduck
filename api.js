@@ -60,7 +60,6 @@ server.use((req, res, next) => {
     if (req.route.path === '/users/:user/updates') {
         req.headers['accept-encoding'] = '';
     }
-    log.http(req.method, req.url);
     next();
 });
 server.use(restify.plugins.gzipResponse());
@@ -144,6 +143,11 @@ module.exports = done => {
     autoreplyRoutes(db, server);
     submitRoutes(db, server, messageHandler, userHandler);
     domainaliasRoutes(db, server);
+
+    server.use((req, res, next) => {
+        log.http(req.method, '%s - %s %s', req.url, res.statusCode, req.connection.remoteAddress);
+        next();
+    });
 
     server.on('error', err => {
         if (!started) {
