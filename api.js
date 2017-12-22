@@ -3,6 +3,7 @@
 const config = require('wild-config');
 const restify = require('restify');
 const log = require('npmlog');
+const logger = require('restify-logger');
 const UserHandler = require('./lib/user-handler');
 const MailboxHandler = require('./lib/mailbox-handler');
 const MessageHandler = require('./lib/message-handler');
@@ -60,9 +61,9 @@ server.use((req, res, next) => {
     if (req.route.path === '/users/:user/updates') {
         req.headers['accept-encoding'] = '';
     }
-    log.http(req.method, '%s - %s %s', req.url, res.statusCode, req.connection.remoteAddress);
     next();
 });
+
 server.use(restify.plugins.gzipResponse());
 
 server.use(restify.plugins.queryParser());
@@ -95,6 +96,19 @@ server.use((req, res, next) => {
     }
     next();
 });
+
+server.use(
+    logger(':color[90]:method :url :status-color:status:color[90] :time-spent:color-reset :append', {
+        stream: {
+            write: message => {
+                message = (message || '').toString();
+                if (message) {
+                    log.http('API', message.replace('\n', '').trim());
+                }
+            }
+        }
+    })
+);
 
 module.exports = done => {
     if (!config.imap.enabled) {
