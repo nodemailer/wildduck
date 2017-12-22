@@ -98,7 +98,7 @@ server.use((req, res, next) => {
 });
 
 server.use(
-    logger(':color[90]:method :url :status-color:status:color[90] :time-spent:color-reset :append', {
+    logger(':method :url :status :time-spent :append', {
         stream: {
             write: message => {
                 message = (message || '').toString();
