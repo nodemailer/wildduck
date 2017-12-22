@@ -60,6 +60,7 @@ server.use((req, res, next) => {
     if (req.route.path === '/users/:user/updates') {
         req.headers['accept-encoding'] = '';
     }
+    log.http(req.method, req.url);
     next();
 });
 server.use(restify.plugins.gzipResponse());
