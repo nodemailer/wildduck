@@ -131,7 +131,6 @@ const serverOptions = {
             let stored = 0;
 
             let transactionId = new ObjectID();
-
             let prepared = false;
 
             let storeNext = () => {
