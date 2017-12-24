@@ -15,6 +15,8 @@ HOSTNAME="$1"
 WILDDUCK_COMMIT="8425671aa6f33ce0d3a1c2a16ceeec22b46b6115"
 ZONEMTA_COMMIT="e058fccbf75a87c2d84df43e012ea579d2f9b481"
 WEBMAIL_COMMIT="be67abbad78c0f912394e0aaaf699629477e3985"
+HARAKA_VERSION="2.8.14"
+HARAKA_PLUGIN_WILDDUCK_VERSION="1.6.2"
 
 if [[ $EUID -ne 0 ]]; then
    echo "This script must be run as root" 1>&2
@@ -30,7 +32,9 @@ useradd wildduck
 
 # mongo
 apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 0C49F3730359A14518585931BC711F9BA15703C6
-echo "deb [ arch=amd64,arm64 ] http://repo.mongodb.org/apt/ubuntu xenial/mongodb-org/3.4 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-3.4.list
+gpg --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 58712A2291FA4AD5
+gpg --armor --export 58712A2291FA4AD5 | apt-key add -
+echo "deb [ arch=amd64,arm64 ] http://repo.mongodb.org/apt/ubuntu xenial/mongodb-org/3.6 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-3.6.list
 
 # node
 curl -sL https://deb.nodesource.com/setup_8.x | bash -
@@ -121,16 +125,16 @@ systemctl enable wildduck.service
 
 ####### HARAKA #######
 cd
-sudo npm install --unsafe-perm -g Haraka
+sudo npm install --unsafe-perm -g Haraka@$HARAKA_VERSION
 haraka -i /opt/haraka
 cd /opt/haraka
-sudo npm install --save haraka-plugin-wildduck haraka-plugin-rspamd Haraka
+sudo npm install --save haraka-plugin-wildduck@$HARAKA_PLUGIN_WILDDUCK_VERSION haraka-plugin-rspamd Haraka@$HARAKA_VERSION
 
 mv config/plugins config/pluginbs.bak
 
 echo "26214400" > config/databytes
-
 echo "$HOSTNAME" > config/me
+echo "WildDuck MX" > config/smtpgreeting
 
 echo "spf
 
