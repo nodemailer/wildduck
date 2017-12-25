@@ -16,6 +16,7 @@ This install script installs and configures the following components:
 6. **acme.sh** to manage Let's Encrypt certificates
 7. **Rspamd** to check messages for spam. Messages detected as spam are routed to Junk Mail folder by default
 8. **ClamAV** to check messages for viruses. ClamAV is disabled by default, you need to enable it in the Haraka plugins file
+9. Unprivileged **Deploy** user to easily checkout and publish code changes via git
 
 What it does not configure:
 
@@ -47,3 +48,17 @@ Configuration files are installed to the following locations:
 2. ZoneMTA: /etc/zone-mta
 3. WildDuck Webmail: /etc/wildduck/wildduck-webmail.toml
 4. Haraka: /opt/haraka/config
+
+## Code changes
+
+Install script sets up applications as remote git repositories. You can clone these to your own machine using a special deploy user. If you push changes back to the remote repo, related services are restarted automatically.
+
+```
+$ git clone deploy@hostname:/var/opt/wildduck.git
+$ cd wildduck
+$ git checkout master
+$ .... make some changes
+$ git add .
+$ git commit -m "made some changes"
+$ git push origin master -f
+```

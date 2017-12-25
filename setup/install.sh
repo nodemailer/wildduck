@@ -28,7 +28,26 @@ set -e
 
 export DEBIAN_FRONTEND=noninteractive
 
+function hook_script {
+    echo "#!/bin/bash
+    git --git-dir=/var/opt/$1.git --work-tree=\"/opt/$1\" checkout "\$3" -f
+    cd \"/opt/$1\"
+    rm -rf package-lock.json
+    npm install --production --progress=false
+    sudo /bin/systemctl restart $1 || echo \"Failed restarting service\"" > "/var/opt/$1.git/hooks/update"
+    chmod +x "/var/opt/$1.git/hooks/update"
+}
+
+# create user for running applications
 useradd wildduck
+
+# create user for deploying code
+useradd deploy
+mkdir -p /home/deploy/.ssh
+# add your own key to the authorized_keys file
+echo "# Add your public key here
+" > /home/deploy/.ssh/authorized_keys
+chown -R deploy:deploy /home/deploy
 
 # mongo
 apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 0C49F3730359A14518585931BC711F9BA15703C6
@@ -81,10 +100,20 @@ echo "HOSTNAME: $HOSTNAME"
 
 cd /var/opt
 git clone --bare git://github.com/nodemailer/wildduck.git
+
+# create update hook so we can later deploy to this location
+hook_script wildduck
+
+# allow deploy user to restart wildduck service
+echo 'deploy ALL = (root) NOPASSWD: /bin/systemctl restart wildduck' >> /etc/sudoers.d/wildduck
+
+# checkout files from git to working directory
 mkdir /opt/wildduck
 git --git-dir=/var/opt/wildduck.git --work-tree=/opt/wildduck checkout "$WILDDUCK_COMMIT"
 cp -r /opt/wildduck/config /etc/wildduck
 mv /etc/wildduck/default.toml /etc/wildduck/wildduck.toml
+
+mv /opt/wildduck/emails/example.json.disabled /opt/wildduck/emails/example.json
 
 sed -i -e "s/999/99/g;s/localhost/$HOSTNAME/g" /etc/wildduck/imap.toml
 sed -i -e "s/999/99/g;s/localhost/$HOSTNAME/g" /etc/wildduck/pop3.toml
@@ -100,10 +129,10 @@ emailDomain=\"$HOSTNAME\"" | cat - /etc/wildduck/wildduck.toml > temp && mv temp
 sed -i -e "s/localhost:3000/$HOSTNAME/g;s/localhost/$HOSTNAME/g;s/2587/587/g" /etc/wildduck/wildduck.toml
 
 cd /opt/wildduck
-sudo npm install --production
+npm install --production
 
-chown -R wildduck:wildduck /var/opt/wildduck.git
-chown -R wildduck:wildduck /opt/wildduck
+chown -R deploy:deploy /var/opt/wildduck.git
+chown -R deploy:deploy /opt/wildduck
 
 echo '[Unit]
 Description=Wild Duck Mail Server
@@ -125,10 +154,10 @@ systemctl enable wildduck.service
 
 ####### HARAKA #######
 cd
-sudo npm install --unsafe-perm -g Haraka@$HARAKA_VERSION
+npm install --unsafe-perm -g Haraka@$HARAKA_VERSION
 haraka -i /opt/haraka
 cd /opt/haraka
-sudo npm install --save haraka-plugin-wildduck@$HARAKA_PLUGIN_WILDDUCK_VERSION haraka-plugin-rspamd Haraka@$HARAKA_VERSION
+npm install --save haraka-plugin-wildduck@$HARAKA_PLUGIN_WILDDUCK_VERSION haraka-plugin-rspamd Haraka@$HARAKA_VERSION
 
 mv config/plugins config/pluginbs.bak
 
@@ -210,6 +239,14 @@ systemctl enable haraka.service
 
 cd /var/opt
 git clone --bare git://github.com/zone-eu/zone-mta-template.git zone-mta.git
+
+# create update hook so we can later deploy to this location
+hook_script zone-mta
+
+# allow deploy user to restart zone-mta service
+echo 'deploy ALL = (root) NOPASSWD: /bin/systemctl restart zone-mta' >> /etc/sudoers.d/zone-mta
+
+# checkout files from git to working directory
 mkdir /opt/zone-mta
 git --git-dir=/var/opt/zone-mta.git --work-tree=/opt/zone-mta checkout "$ZONEMTA_COMMIT"
 cp -r /opt/zone-mta/config /etc/zone-mta
@@ -258,11 +295,11 @@ openssl rsa -in "$HOSTNAME-dkim.pem" -out "$HOSTNAME-dkim.cert" -pubout
 DNS_ADDRESS="v=DKIM1;p=$(grep -v -e '^-' $HOSTNAME-dkim.cert | tr -d "\n")"
 
 cd /opt/zone-mta
-sudo npm install zonemta-wildduck --save
-sudo npm install --production
+npm install zonemta-wildduck --save
+npm install --production
 
-chown -R wildduck:wildduck /var/opt/zone-mta.git
-chown -R wildduck:wildduck /opt/zone-mta
+chown -R deploy:deploy /var/opt/zone-mta.git
+chown -R deploy:deploy /opt/zone-mta
 
 echo '[Unit]
 Description=Zone Mail Transport Agent
@@ -286,6 +323,15 @@ systemctl enable zone-mta.service
 
 cd /var/opt
 git clone --bare git://github.com/nodemailer/wildduck-webmail.git
+
+# create update hook so we can later deploy to this location
+hook_script wildduck-webmail
+chmod +x /var/opt/wildduck-webmail.git/hooks/update
+
+# allow deploy user to restart zone-mta service
+echo 'deploy ALL = (root) NOPASSWD: /bin/systemctl restart wildduck-webmail' >> /etc/sudoers.d/wildduck-webmail
+
+# checkout files from git to working directory
 mkdir /opt/wildduck-webmail
 git --git-dir=/var/opt/wildduck-webmail.git --work-tree=/opt/wildduck-webmail checkout "$WEBMAIL_COMMIT"
 cp /opt/wildduck-webmail/config/default.toml /etc/wildduck/wildduck-webmail.toml
@@ -293,10 +339,10 @@ cp /opt/wildduck-webmail/config/default.toml /etc/wildduck/wildduck-webmail.toml
 sed -i -e "s/localhost/$HOSTNAME/g;s/999/99/g;s/2587/587/g" /etc/wildduck/wildduck-webmail.toml
 
 cd /opt/wildduck-webmail
-sudo npm install --production
+npm install --production
 
-chown -R wildduck:wildduck /var/opt/wildduck-webmail.git
-chown -R wildduck:wildduck /opt/wildduck-webmail
+chown -R deploy:deploy /var/opt/wildduck-webmail.git
+chown -R deploy:deploy /opt/wildduck-webmail
 
 echo '[Unit]
 Description=Wildduck Webmail
@@ -425,7 +471,19 @@ systemctl reload nginx
 
 cd "$INSTALLDIR"
 
-echo "NAMESERVER SETUP
+echo "DEPLOY SETUP
+
+1. Add your ssh key to /home/deploy/.ssh/authorized_keys
+
+2. Clone application code
+\$ git clone deploy@$HOSTNAME:/var/opt/wildduck.git
+\$ git clone deploy@$HOSTNAME:/var/opt/zone-mta.git
+\$ git clone deploy@$HOSTNAME:/var/opt/wildduck-webmail.git
+
+3. After making a change in local copy deploy to server
+\$ git push origin master
+
+NAMESERVER SETUP
 ================
 
 MX
