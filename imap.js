@@ -310,7 +310,7 @@ function clearExpiredMessages() {
 
                         return db.database.collection('messagelog').insertOne(
                             {
-                                id: messageData.meta.queueId || messageData._id.toString(),
+                                id: (messageData.meta && messageData.meta.queueId) || messageData._id.toString(),
                                 action: 'DELETED',
                                 parentId: messageData._id,
                                 created: new Date()
