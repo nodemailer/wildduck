@@ -30,11 +30,11 @@ export DEBIAN_FRONTEND=noninteractive
 
 function hook_script {
     echo "#!/bin/bash
-    git --git-dir=/var/opt/$1.git --work-tree=\"/opt/$1\" checkout "\$3" -f
-    cd \"/opt/$1\"
-    rm -rf package-lock.json
-    npm install --production --progress=false
-    sudo /bin/systemctl restart $1 || echo \"Failed restarting service\"" > "/var/opt/$1.git/hooks/update"
+git --git-dir=/var/opt/$1.git --work-tree=\"/opt/$1\" checkout "\$3" -f
+cd \"/opt/$1\"
+rm -rf package-lock.json
+npm install --production --progress=false
+sudo /bin/systemctl restart $1 || echo \"Failed restarting service\"" > "/var/opt/$1.git/hooks/update"
     chmod +x "/var/opt/$1.git/hooks/update"
 }
 
@@ -153,11 +153,32 @@ WantedBy=multi-user.target' > /etc/systemd/system/wildduck.service
 systemctl enable wildduck.service
 
 ####### HARAKA #######
+
+cd /var/opt
+git clone --bare git://github.com/nodemailer/haraka-plugin-wildduck.git
+echo "#!/bin/bash
+git --git-dir=/var/opt/haraka-plugin-wildduck.git --work-tree=/opt/haraka/plugins/wildduck checkout "\$3" -f
+cd /opt/haraka/plugins/wildduck
+rm -rf package-lock.json
+npm install --production --progress=false
+sudo /bin/systemctl restart haraka || echo \"Failed restarting service\"" > "/var/opt/haraka-plugin-wildduck.git/hooks/update"
+chmod +x "/var/opt/haraka-plugin-wildduck.git/hooks/update"
+
+# allow deploy user to restart wildduck service
+echo 'deploy ALL = (root) NOPASSWD: /bin/systemctl restart haraka' >> /etc/sudoers.d/wildduck
+
 cd
 npm install --unsafe-perm -g Haraka@$HARAKA_VERSION
 haraka -i /opt/haraka
 cd /opt/haraka
-npm install --save haraka-plugin-wildduck@$HARAKA_PLUGIN_WILDDUCK_VERSION haraka-plugin-rspamd Haraka@$HARAKA_VERSION
+npm install --save haraka-plugin-rspamd Haraka@$HARAKA_VERSION
+
+# Haraka WIldDuck plugin. Install as separate repo as it can be edited more easily later
+mkdir -p plugins/wildduck
+git --git-dir=/var/opt/haraka-plugin-wildduck.git --work-tree=/opt/haraka/plugins/wildduck checkout "v$HARAKA_PLUGIN_WILDDUCK_VERSION"
+cd plugins/wildduck
+npm install --production --progress=false
+cd /opt/haraka
 
 mv config/plugins config/pluginbs.bak
 
@@ -211,7 +232,7 @@ echo 'clamd_socket = /var/run/clamav/clamd.ctl
 virus=true
 error=false' > config/clamd.ini
 
-cp node_modules/haraka-plugin-wildduck/config/wildduck.yaml config/wildduck.yaml
+cp plugins/wildduck/config/wildduck.yaml config/wildduck.yaml
 sed -i -e "s/secret value/$SRS_SECRET/g" config/wildduck.yaml
 
 echo '[Unit]
@@ -231,7 +252,12 @@ WantedBy=multi-user.target' > /etc/systemd/system/haraka.service
 echo 'user=wildduck
 group=wildduck' >> config/smtp.ini
 
-chown -R wildduck:wildduck /opt/haraka
+chown -R deploy:deploy /opt/haraka
+chown -R deploy:deploy /var/opt/haraka-plugin-wildduck.git
+
+# ensure queue folder for Haraka
+mkdir -p /opt/haraka/queue
+chown -R wildduck:wildduck /opt/haraka/queue
 
 systemctl enable haraka.service
 
@@ -479,6 +505,7 @@ echo "DEPLOY SETUP
 \$ git clone deploy@$HOSTNAME:/var/opt/wildduck.git
 \$ git clone deploy@$HOSTNAME:/var/opt/zone-mta.git
 \$ git clone deploy@$HOSTNAME:/var/opt/wildduck-webmail.git
+\$ git clone deploy@$HOSTNAME:/var/opt/haraka-plugin-wildduck.git
 
 3. After making a change in local copy deploy to server
 \$ git push origin master
