@@ -327,6 +327,8 @@ npm install --unsafe-perm --production
 
 chown -R deploy:deploy /var/opt/zone-mta.git
 chown -R deploy:deploy /opt/zone-mta
+# DKIM key must be readable to wildduck process
+chown wildduck:wildduck /opt/zone-mta/keys/wildduck.email-dkim.pem
 
 echo '[Unit]
 Description=Zone Mail Transport Agent
