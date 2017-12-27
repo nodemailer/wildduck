@@ -39,14 +39,15 @@ sudo /bin/systemctl restart $1 || echo \"Failed restarting service\"" > "/var/op
 }
 
 # create user for running applications
-useradd wildduck
+useradd wildduck || echo "User wildduck already exists"
 
 # create user for deploying code
-useradd deploy
+useradd deploy || echo "User deploy already exists"
+
 mkdir -p /home/deploy/.ssh
 # add your own key to the authorized_keys file
 echo "# Add your public key here
-" > /home/deploy/.ssh/authorized_keys
+" >> /home/deploy/.ssh/authorized_keys
 chown -R deploy:deploy /home/deploy
 
 # mongo
@@ -129,7 +130,7 @@ emailDomain=\"$HOSTNAME\"" | cat - /etc/wildduck/wildduck.toml > temp && mv temp
 sed -i -e "s/localhost:3000/$HOSTNAME/g;s/localhost/$HOSTNAME/g;s/2587/587/g" /etc/wildduck/wildduck.toml
 
 cd /opt/wildduck
-npm install --production
+npm install --unsafe-perm --production
 
 chown -R deploy:deploy /var/opt/wildduck.git
 chown -R deploy:deploy /opt/wildduck
@@ -171,13 +172,13 @@ cd
 npm install --unsafe-perm -g Haraka@$HARAKA_VERSION
 haraka -i /opt/haraka
 cd /opt/haraka
-npm install --save haraka-plugin-rspamd Haraka@$HARAKA_VERSION
+npm install --unsafe-perm --save haraka-plugin-rspamd Haraka@$HARAKA_VERSION
 
 # Haraka WIldDuck plugin. Install as separate repo as it can be edited more easily later
 mkdir -p plugins/wildduck
 git --git-dir=/var/opt/haraka-plugin-wildduck.git --work-tree=/opt/haraka/plugins/wildduck checkout "v$HARAKA_PLUGIN_WILDDUCK_VERSION"
 cd plugins/wildduck
-npm install --production --progress=false
+npm install --unsafe-perm --production --progress=false
 cd /opt/haraka
 
 mv config/plugins config/pluginbs.bak
@@ -321,8 +322,8 @@ openssl rsa -in "$HOSTNAME-dkim.pem" -out "$HOSTNAME-dkim.cert" -pubout
 DNS_ADDRESS="v=DKIM1;p=$(grep -v -e '^-' $HOSTNAME-dkim.cert | tr -d "\n")"
 
 cd /opt/zone-mta
-npm install zonemta-wildduck --save
-npm install --production
+npm install --unsafe-perm zonemta-wildduck --save
+npm install --unsafe-perm --production
 
 chown -R deploy:deploy /var/opt/zone-mta.git
 chown -R deploy:deploy /opt/zone-mta
@@ -365,7 +366,7 @@ cp /opt/wildduck-webmail/config/default.toml /etc/wildduck/wildduck-webmail.toml
 sed -i -e "s/localhost/$HOSTNAME/g;s/999/99/g;s/2587/587/g" /etc/wildduck/wildduck-webmail.toml
 
 cd /opt/wildduck-webmail
-npm install --production
+npm install --unsafe-perm --production
 
 chown -R deploy:deploy /var/opt/wildduck-webmail.git
 chown -R deploy:deploy /opt/wildduck-webmail
