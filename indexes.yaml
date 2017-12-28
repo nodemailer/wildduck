@@ -435,18 +435,10 @@ indexes:
 
 - collection: dkim
   index:
-    name: dkim_paging_desc
-    key:
-      domain: 1
-      _id: -1
-
-- collection: dkim
-  index:
-    name: dkim_selector
+    name: dkim_primary
     unique: true
     key:
       domain: 1
-      selector: 1
 
 # Indexes for the journal collection
 
