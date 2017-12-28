@@ -24,6 +24,7 @@ const authRoutes = require('./lib/api/auth');
 const autoreplyRoutes = require('./lib/api/autoreply');
 const submitRoutes = require('./lib/api/submit');
 const domainaliasRoutes = require('./lib/api/domainaliases');
+const dkimRoutes = require('./lib/api/dkim');
 
 const serverOptions = {
     name: 'Wild Duck API',
@@ -158,6 +159,7 @@ module.exports = done => {
     autoreplyRoutes(db, server);
     submitRoutes(db, server, messageHandler, userHandler);
     domainaliasRoutes(db, server);
+    dkimRoutes(db, server);
 
     server.on('error', err => {
         if (!started) {

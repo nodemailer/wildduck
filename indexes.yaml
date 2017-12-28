@@ -424,6 +424,30 @@ indexes:
       files_id: 1
       n: 1
 
+# Indexes for the DKIm collection
+
+- collection: dkim
+  index:
+    name: dkim_paging
+    key:
+      domain: 1
+      _id: 1
+
+- collection: dkim
+  index:
+    name: dkim_paging_desc
+    key:
+      domain: 1
+      _id: -1
+
+- collection: dkim
+  index:
+    name: dkim_selector
+    unique: true
+    key:
+      domain: 1
+      selector: 1
+
 # Indexes for the journal collection
 
 - collection: journal
