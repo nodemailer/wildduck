@@ -42,6 +42,7 @@
         "ioredis": "3.2.2",
         "joi": "13.0.2",
         "js-yaml": "3.10.0",
+        "key-fingerprint": "1.1.0",
         "libbase64": "1.0.2",
         "libmime": "3.1.0",
         "libqp": "1.1.0",
