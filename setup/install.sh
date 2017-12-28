@@ -12,7 +12,7 @@ fi
 
 HOSTNAME="$1"
 
-WILDDUCK_COMMIT="6fb85d597fcd1452a675e106a1723a7340275d4a"
+WILDDUCK_COMMIT="34a3243a4d6d9a67d39d872c08f3969bd548683e"
 ZONEMTA_COMMIT="e058fccbf75a87c2d84df43e012ea579d2f9b481"
 WEBMAIL_COMMIT="be67abbad78c0f912394e0aaaf699629477e3985"
 HARAKA_VERSION="2.8.14" # do not use 2.8.16
@@ -56,12 +56,15 @@ gpg --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 58712A2291FA4AD
 gpg --armor --export 58712A2291FA4AD5 | apt-key add -
 echo "deb [ arch=amd64,arm64 ] http://repo.mongodb.org/apt/ubuntu xenial/mongodb-org/3.6 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-3.6.list
 
+apt-get update
+apt-get -q -y install curl pwgen git ufw build-essential libssl-dev dnsutils python software-properties-common nginx lsb-release wget
+
 # node
 curl -sL https://deb.nodesource.com/setup_8.x | bash -
 
 apt-get update
 
-apt-get -q -y install mongodb-org pwgen nodejs git ufw build-essential libssl-dev dnsutils python software-properties-common nginx lsb-release wget
+apt-get -q -y install mongodb-org nodejs
 
 SRS_SECRET=`pwgen 12 -1`
 
@@ -196,7 +199,7 @@ echo "spf
 
 rspamd
 tls
-dkim_verify
+#dkim_verify
 
 # Wild Duck plugin handles recipient checking and queueing
 wildduck" > config/plugins
@@ -278,6 +281,7 @@ mkdir /opt/zone-mta
 git --git-dir=/var/opt/zone-mta.git --work-tree=/opt/zone-mta checkout "$ZONEMTA_COMMIT"
 cp -r /opt/zone-mta/config /etc/zone-mta
 sed -i -e 's/port=2525/port=587/g;s/host="127.0.0.1"/host="0.0.0.0"/g;s/authentication=false/authentication=true/g' /etc/zone-mta/interfaces/feeder.toml
+rm -rf /etc/zone-mta/plugins/dkim.toml
 echo '# @include "../wildduck/dbs.toml"' > /etc/zone-mta/dbs-production.toml
 echo 'user="wildduck"
 group="wildduck"' | cat - /etc/zone-mta/zonemta.toml > temp && mv temp /etc/zone-mta/zonemta.toml
@@ -314,12 +318,18 @@ rewriteDomain=\"$HOSTNAME\"
 # Use LMTP instead of SMTP
 localLmtp=false" > /etc/zone-mta/plugins/wildduck.toml
 
-sed -i -e "s/test/wildduck/g;s/example.com/$HOSTNAME/g;s/signTransportDomain=true/signTransportDomain=false/g;" /etc/zone-mta/plugins/dkim.toml
 cd /opt/zone-mta/keys
 openssl genrsa -out "$HOSTNAME-dkim.pem" 2048
 chmod 400 "$HOSTNAME-dkim.pem"
 openssl rsa -in "$HOSTNAME-dkim.pem" -out "$HOSTNAME-dkim.cert" -pubout
 DNS_ADDRESS="v=DKIM1;p=$(grep -v -e '^-' $HOSTNAME-dkim.cert | tr -d "\n")"
+
+DKIM_JSON=`DOMAIN="$HOSTNAME" node -e 'console.log(JSON.stringify({
+  domain: process.env.DOMAIN,
+  selector: "wildduck",
+  description: "Default DKIM key for "+process.env.DOMAIN,
+  privateKey: fs.readFileSync("/opt/zone-mta/keys/"+process.env.DOMAIN+"-dkim.pem", "UTF-8")
+}))'`
 
 cd /opt/zone-mta
 npm install --unsafe-perm zonemta-wildduck --save
@@ -327,8 +337,6 @@ npm install --unsafe-perm --production
 
 chown -R deploy:deploy /var/opt/zone-mta.git
 chown -R deploy:deploy /opt/zone-mta
-# DKIM key must be readable to wildduck process
-chown wildduck:wildduck /opt/zone-mta/keys/wildduck.email-dkim.pem
 
 echo '[Unit]
 Description=Zone Mail Transport Agent
@@ -542,6 +550,17 @@ assigned their own hostname, then edit /etc/zone-mta/pools.toml and replace
 the hostname $HOSTNAME with the actual hostname of this server.
 
 (this text is also stored to $INSTALLDIR/$HOSTNAME-nameserver.txt)" > "$INSTALLDIR/$HOSTNAME-nameserver.txt"
+
+echo "Waiting for the server to start up..."
+sleep 15
+
+# Ensure DKIM key
+echo "Registering DKIM key for $HOSTNAME"
+echo $DKIM_JSON
+
+curl -i -XPOST http://localhost:8080/dkim \
+-H 'Content-type: application/json' \
+-d "$DKIM_JSON"
 
 echo ""
 cat "$INSTALLDIR/$HOSTNAME-nameserver.txt"
