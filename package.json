@@ -1,6 +1,6 @@
 {
     "name": "wildduck",
-    "version": "1.0.101",
+    "version": "1.0.102",
     "description": "IMAP server built with Node.js and MongoDB",
     "main": "server.js",
     "scripts": {
@@ -54,7 +54,7 @@
         "nodemailer": "4.4.1",
         "npmlog": "4.1.2",
         "openpgp": "2.6.1",
-        "qrcode": "1.0.0",
+        "qrcode": "1.0.1",
         "restify": "6.3.4",
         "restify-logger": "2.0.1",
         "seq-index": "1.1.0",
