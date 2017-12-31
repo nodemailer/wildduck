@@ -13,7 +13,7 @@
         "mail server"
     ],
     "author": "Andris Reinman",
-    "license": "EUPL-1.1",
+    "license": "EUPL-1.1+",
     "devDependencies": {
         "apidoc": "^0.17.6",
         "browserbox": "^0.9.1",

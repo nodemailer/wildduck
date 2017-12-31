@@ -384,4 +384,4 @@ Beware though that if configuration loading fails, then it ends with an exceptio
 
 ## License
 
-Wild Duck Mail Agent is licensed under the [European Union Public License 1.1](http://ec.europa.eu/idabc/eupl.html).
+Wild Duck Mail Agent is licensed under the [European Union Public License 1.1](http://ec.europa.eu/idabc/eupl.html) or later.
