@@ -29,6 +29,13 @@ bugsnagCode=""
 [dbs]
 # @include "dbs.toml"
 
+[dkim]
+    # If enabled then encrypt DKIM keys with the secret password. By default DKIM keys
+    # are not encrypted and stored as cleartext. Once set up do not change these values,
+    # otherwise decrypting DKIM keys is going to fail
+    #cipher="aes192"
+    #secret="a secret cat"
+
 [totp]
     # If enabled then encrypt TOTP seed tokens with the secret password. By default TOTP seeds
     # are not encrypted and stored as cleartext. Once set up do not change these values,
