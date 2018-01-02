@@ -12,11 +12,11 @@ fi
 
 HOSTNAME="$1"
 
-WILDDUCK_COMMIT="7a65db049aae2fb4b172ccef58ada8500651b2de"
+WILDDUCK_COMMIT="f3c7e5d87b88211b0bc1e1cc5a6456a72a635f58"
 ZONEMTA_COMMIT="e058fccbf75a87c2d84df43e012ea579d2f9b481"
 WEBMAIL_COMMIT="fc2b8d52c972caa439fc1d0f9e1da42f6ea650cc"
-WILDDUCK_ZONEMTA_COMMIT="e7da85cde393de6c2e885d1301ece0216c00fd0f"
-WILDDUCK_HARAKA_COMMIT="abf4fd6d29a2861e45d1862d9732d9efe0cc0a51"
+WILDDUCK_ZONEMTA_COMMIT="53f25c5bc841b7eba10caca2ebc377287e56ebaa"
+WILDDUCK_HARAKA_COMMIT="04b91a5eaabc2ff4b284f4f8f991e9be4029e4cd"
 HARAKA_VERSION="2.8.14" # do not use 2.8.16
 
 if [[ $EUID -ne 0 ]]; then
@@ -68,6 +68,7 @@ apt-get update
 apt-get -q -y install mongodb-org nodejs
 
 SRS_SECRET=`pwgen 12 -1`
+DKIM_SECRET=`pwgen 12 -1`
 
 systemctl enable mongod.service
 
@@ -127,6 +128,10 @@ echo "enabled=true
 port=24
 disableSTARTTLS=true" > /etc/wildduck/lmtp.toml
 
+# make sure that DKIM keys are not stored to database as cleartext
+echo "secret=\"$DKIM_SECRET\"
+cipher=\"aes192\"" >> /etc/wildduck/dkim.toml
+
 echo "user=\"wildduck\"
 group=\"wildduck\"
 emailDomain=\"$HOSTNAME\"" | cat - /etc/wildduck/wildduck.toml > temp && mv temp /etc/wildduck/wildduck.toml
@@ -181,10 +186,11 @@ npm install --unsafe-perm --save haraka-plugin-rspamd Haraka@$HARAKA_VERSION
 # Haraka WIldDuck plugin. Install as separate repo as it can be edited more easily later
 mkdir -p plugins/wildduck
 git --git-dir=/var/opt/haraka-plugin-wildduck.git --work-tree=/opt/haraka/plugins/wildduck checkout "$WILDDUCK_HARAKA_COMMIT"
+
 cd plugins/wildduck
 npm install --unsafe-perm --production --progress=false
-cd /opt/haraka
 
+cd /opt/haraka
 mv config/plugins config/pluginbs.bak
 
 echo "26214400" > config/databytes
@@ -276,11 +282,11 @@ git clone --bare git://github.com/nodemailer/zonemta-wildduck.git
 hook_script zone-mta
 echo "#!/bin/bash
 git --git-dir=/var/opt/zonemta-wildduck.git --work-tree=/opt/zone-mta/plugins/wildduck checkout "\$3" -f
-cd /opt/haraka/plugins/wildduck
+cd /opt/zone-mta/plugins/wildduck
 rm -rf package-lock.json
 npm install --production --progress=false
-sudo /bin/systemctl restart haraka || echo \"Failed restarting service\"" > "/var/opt/haraka-plugin-wildduck.git/hooks/update"
-chmod +x "/var/opt/haraka-plugin-wildduck.git/hooks/update"
+sudo /bin/systemctl restart zone-mta || echo \"Failed restarting service\"" > "/var/opt/zonemta-wildduck.git/hooks/update"
+chmod +x "/var/opt/zonemta-wildduck.git/hooks/update"
 
 # allow deploy user to restart zone-mta service
 echo 'deploy ALL = (root) NOPASSWD: /bin/systemctl restart zone-mta' >> /etc/sudoers.d/zone-mta
@@ -288,12 +294,14 @@ echo 'deploy ALL = (root) NOPASSWD: /bin/systemctl restart zone-mta' >> /etc/sud
 # checkout files from git to working directory
 mkdir /opt/zone-mta
 git --git-dir=/var/opt/zone-mta.git --work-tree=/opt/zone-mta checkout "$ZONEMTA_COMMIT"
+
 mkdir /opt/zone-mta/plugins/wildduck
+git --git-dir=/var/opt/zonemta-wildduck.git --work-tree=/opt/zone-mta/plugins/wildduck checkout "$WILDDUCK_ZONEMTA_COMMIT"
 
 cp -r /opt/zone-mta/config /etc/zone-mta
 sed -i -e 's/port=2525/port=587/g;s/host="127.0.0.1"/host="0.0.0.0"/g;s/authentication=false/authentication=true/g' /etc/zone-mta/interfaces/feeder.toml
 rm -rf /etc/zone-mta/plugins/dkim.toml
-echo '# @include "../wildduck/dbs.toml"' > /etc/zone-mta/dbs-production.toml
+echo '# @include "/etc/wildduck/dbs.toml"' > /etc/zone-mta/dbs-production.toml
 echo 'user="wildduck"
 group="wildduck"' | cat - /etc/zone-mta/zonemta.toml > temp && mv temp /etc/zone-mta/zonemta.toml
 
@@ -530,9 +538,11 @@ echo "DEPLOY SETUP
 \$ git clone deploy@$HOSTNAME:/var/opt/zone-mta.git
 \$ git clone deploy@$HOSTNAME:/var/opt/wildduck-webmail.git
 \$ git clone deploy@$HOSTNAME:/var/opt/haraka-plugin-wildduck.git
+\$ git clone deploy@$HOSTNAME:/var/opt/zonemta-wildduck.git
 
 3. After making a change in local copy deploy to server
 \$ git push origin master
+(you might need to use -f when pushing first time)
 
 NAMESERVER SETUP
 ================
