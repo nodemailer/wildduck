@@ -12,11 +12,12 @@ fi
 
 HOSTNAME="$1"
 
-WILDDUCK_COMMIT="2d2e4a1641fc55d431c6f1378e414f652ba5ed32"
+WILDDUCK_COMMIT="7a65db049aae2fb4b172ccef58ada8500651b2de"
 ZONEMTA_COMMIT="e058fccbf75a87c2d84df43e012ea579d2f9b481"
 WEBMAIL_COMMIT="fc2b8d52c972caa439fc1d0f9e1da42f6ea650cc"
+WILDDUCK_ZONEMTA_COMMIT="e7da85cde393de6c2e885d1301ece0216c00fd0f"
+WILDDUCK_HARAKA_COMMIT="abf4fd6d29a2861e45d1862d9732d9efe0cc0a51"
 HARAKA_VERSION="2.8.14" # do not use 2.8.16
-HARAKA_PLUGIN_WILDDUCK_VERSION="1.7.1"
 
 if [[ $EUID -ne 0 ]]; then
    echo "This script must be run as root" 1>&2
@@ -179,7 +180,7 @@ npm install --unsafe-perm --save haraka-plugin-rspamd Haraka@$HARAKA_VERSION
 
 # Haraka WIldDuck plugin. Install as separate repo as it can be edited more easily later
 mkdir -p plugins/wildduck
-git --git-dir=/var/opt/haraka-plugin-wildduck.git --work-tree=/opt/haraka/plugins/wildduck checkout "v$HARAKA_PLUGIN_WILDDUCK_VERSION"
+git --git-dir=/var/opt/haraka-plugin-wildduck.git --work-tree=/opt/haraka/plugins/wildduck checkout "$WILDDUCK_HARAKA_COMMIT"
 cd plugins/wildduck
 npm install --unsafe-perm --production --progress=false
 cd /opt/haraka
@@ -269,9 +270,17 @@ systemctl enable haraka.service
 
 cd /var/opt
 git clone --bare git://github.com/zone-eu/zone-mta-template.git zone-mta.git
+git clone --bare git://github.com/nodemailer/zonemta-wildduck.git
 
-# create update hook so we can later deploy to this location
+# create update hooks so we can later deploy to this location
 hook_script zone-mta
+echo "#!/bin/bash
+git --git-dir=/var/opt/zonemta-wildduck.git --work-tree=/opt/zone-mta/plugins/wildduck checkout "\$3" -f
+cd /opt/haraka/plugins/wildduck
+rm -rf package-lock.json
+npm install --production --progress=false
+sudo /bin/systemctl restart haraka || echo \"Failed restarting service\"" > "/var/opt/haraka-plugin-wildduck.git/hooks/update"
+chmod +x "/var/opt/haraka-plugin-wildduck.git/hooks/update"
 
 # allow deploy user to restart zone-mta service
 echo 'deploy ALL = (root) NOPASSWD: /bin/systemctl restart zone-mta' >> /etc/sudoers.d/zone-mta
@@ -279,6 +288,8 @@ echo 'deploy ALL = (root) NOPASSWD: /bin/systemctl restart zone-mta' >> /etc/sud
 # checkout files from git to working directory
 mkdir /opt/zone-mta
 git --git-dir=/var/opt/zone-mta.git --work-tree=/opt/zone-mta checkout "$ZONEMTA_COMMIT"
+mkdir /opt/zone-mta/plugins/wildduck
+
 cp -r /opt/zone-mta/config /etc/zone-mta
 sed -i -e 's/port=2525/port=587/g;s/host="127.0.0.1"/host="0.0.0.0"/g;s/authentication=false/authentication=true/g' /etc/zone-mta/interfaces/feeder.toml
 rm -rf /etc/zone-mta/plugins/dkim.toml
@@ -290,7 +301,7 @@ echo "[[default]]
 address=\"0.0.0.0\"
 name=\"$HOSTNAME\"" > /etc/zone-mta/pools.toml
 
-echo "[\"modules/zonemta-wildduck\"]
+echo "[\"wildduck\"]
 enabled=[\"receiver\", \"sender\"]
 
 # which interfaces this plugin applies to
@@ -305,18 +316,18 @@ authlogExpireDays=30
 
 # SRS settings for forwarded emails
 
-# Handle rewriting of forwarded emails
-forwardedSRS=true
-# SRS secret value. Must be the same as in the MX side
-secret=\"$SRS_SECRET\"
-# SRS domain, must resolve back to MX
-rewriteDomain=\"$HOSTNAME\"
+[srs]
+    # Handle rewriting of forwarded emails
+    enabled=true
+    # SRS secret value. Must be the same as in the MX side
+    secret=\"$SRS_SECRET\"
+    # SRS domain, must resolve back to MX
+    rewriteDomain=\"$HOSTNAME\"
 
-# Delivery settings for local messages
-# do not set these values if you do not want to use local delivery
-
-# Use LMTP instead of SMTP
-localLmtp=false" > /etc/zone-mta/plugins/wildduck.toml
+[dkim]
+# share config with WildDuck installation
+# @include \"/etc/wildduck/dkim.toml\"
+" > /etc/zone-mta/plugins/wildduck.toml
 
 cd /opt/zone-mta/keys
 openssl genrsa -out "$HOSTNAME-dkim.pem" 2048
@@ -332,7 +343,9 @@ DKIM_JSON=`DOMAIN="$HOSTNAME" node -e 'console.log(JSON.stringify({
 }))'`
 
 cd /opt/zone-mta
-npm install --unsafe-perm zonemta-wildduck --save
+npm install --unsafe-perm --production
+
+cd /opt/zone-mta/plugins/wildduck
 npm install --unsafe-perm --production
 
 chown -R deploy:deploy /var/opt/zone-mta.git
