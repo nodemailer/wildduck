@@ -1,6 +1,6 @@
 # HTTP API
 
-Wild Duck Mail Server is a scalable IMAP / POP3 server that natively exposes internal data through an HTTP API.
+WildDuck Mail Server is a scalable IMAP / POP3 server that natively exposes internal data through an HTTP API.
 
 This API is not meant to be used by end users but your application.
 
@@ -159,7 +159,7 @@ All failed responses look like the following:
 
 ### Paging
 
-For paging lists longer than allowed limit, Wild Duck API returns cursors for `next` and `previous` pages.
+For paging lists longer than allowed limit, WildDuck API returns cursors for `next` and `previous` pages.
 
 ```json
 {
@@ -316,10 +316,10 @@ Creates a new user, returns the ID upon success.
 * **quota** is the maximum storage in bytes allowed for this user. If not set then the default value is used
 * **retention** is the default retention time in ms for mailboxes. Messages in Trash and Junk folders have a capped retention time of 30 days.
 * **language** is the language code for the user, eg. "en" or "et". Mailbox names for the default mailboxes (eg. "Trash") depend on the language
-* **recipients** is the maximum number of recipients allowed to send mail to in a 24h window. Requires ZoneMTA with the Wild Duck plugin
-* **forwards** is the maximum number of forwarded emails in a 24h window. Requires ZoneMTA with the Wild Duck plugin
+* **recipients** is the maximum number of recipients allowed to send mail to in a 24h window. Requires ZoneMTA with the WildDuck plugin
+* **forwards** is the maximum number of forwarded emails in a 24h window. Requires ZoneMTA with the WildDuck plugin
 * **tags** is an array of tags to be associated with that user. Tags can be used for filtering.
-* **pubKey** is an optional PGP public key. Wild Duck uses OpnePGP.js so keys using EC might not pass validation.
+* **pubKey** is an optional PGP public key. WildDuck uses OpnePGP.js so keys using EC might not pass validation.
 * **encryptMessages** (boolean) indicates if messages stored should be encrypted using the PGP key
 * **encryptForwarded** (boolean) indicates if forwarded messages stored be encrypted using the PGP key. Encryption applies after filter rules
 * **sess** an optional string of user session to be stored in security log
@@ -363,10 +363,10 @@ Updates the properties of an user. Only specify these fields that you want to be
 * **quota** is the maximum storage in bytes allowed for this user
 * **retention** is the default retention time in ms for mailboxes. Messages in Trash and Junk folders have a capped retention time of 30 days.
 * **language** is the language code for the user, eg. "en" or "et"
-* **recipients** is the maximum number of recipients allowed to send mail to in a 24h window. Requires ZoneMTA with the Wild Duck plugin
-* **forwards** is the maximum number of forwarded emails in a 24h window. Requires ZoneMTA with the Wild Duck plugin
+* **recipients** is the maximum number of recipients allowed to send mail to in a 24h window. Requires ZoneMTA with the WildDuck plugin
+* **forwards** is the maximum number of forwarded emails in a 24h window. Requires ZoneMTA with the WildDuck plugin
 * **tags** is an array of tags to be associated with that user. Tags can be used for filtering.
-* **pubKey** is an optional PGP public key. Wild Duck uses OpnePGP.js so keys using EC might not pass validation.
+* **pubKey** is an optional PGP public key. WildDuck uses OpnePGP.js so keys using EC might not pass validation.
 * **encryptMessages** (boolean) indicates if messages stored should be encrypted using the PGP key
 * **encryptForwarded** (boolean) indicates if forwarded messages stored be encrypted using the PGP key. Encryption applies after filter rules
 * **sess** an optional string of user session to be stored in security log
@@ -574,7 +574,7 @@ Log entries expire after 30 days.
 
 ## 2FA
 
-Wild Duck supports TOTP and U2f based 2FA. If 2FA is enabled then users are requested to enter authentication token after successful login. Also, with 2FA
+WildDuck supports TOTP and U2f based 2FA. If 2FA is enabled then users are requested to enter authentication token after successful login. Also, with 2FA
 enabled, master password can not be used in IMAP, POP3 or SMTP. The user must create an [Application Specific Password](#application-specific-passwords) with a
 correct scope for email clients using these protocols.
 
@@ -1674,7 +1674,7 @@ Response for a successful operation:
 
 ```
 HTTP/1.1 200 OK
-Server: Wild Duck API
+Server: WildDuck API
 Content-Type: message/rfc822
 Date: Fri, 21 Jul 2017 19:11:04 GMT
 Connection: keep-alive
@@ -1708,7 +1708,7 @@ Response for a successful operation:
 
 ```
 HTTP/1.1 200 OK
-Server: Wild Duck API
+Server: WildDuck API
 Content-Type: image/png
 Date: Fri, 21 Jul 2017 18:39:05 GMT
 Connection: keep-alive
@@ -1910,7 +1910,7 @@ Response for a successful operation:
 
 ## Autoreplies
 
-Wild Duck supports setting up autoreply messages that are sent to senders by LMTP process.
+WildDuck supports setting up autoreply messages that are sent to senders by LMTP process.
 
 ### Setup Autoreply
 

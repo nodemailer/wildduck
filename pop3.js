@@ -32,7 +32,7 @@ const serverOptions = {
     ignoredHosts: config.pop3.ignoredHosts,
 
     id: {
-        name: config.pop3.name || 'Wild Duck POP3 Server',
+        name: config.pop3.name || 'WildDuck POP3 Server',
         version: config.pop3.version || packageData.version
     },
 

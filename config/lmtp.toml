@@ -1,4 +1,5 @@
-# If enabled then Wild Duck exposes a LMTP interface for pushing messages to mail store
+# If enabled then WildDuck exposes a LMTP interface for pushing messages to mail store
+# NB! If you are using WildDuck plugin for Haraka then LMTP is not needed
 enabled=true
 port=2424
 
@@ -12,7 +13,7 @@ maxMB=25
 disableSTARTTLS=true
 
 # Greeting message for connecting client
-banner="Welcome to Wild Duck Mail Server"
+banner="Welcome to WildDuck Mail Server"
 
 # Server hostname. Defaults to os.hostname() if false
 name=false

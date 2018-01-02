@@ -1,9 +1,9 @@
-[FNAME], welcome to Wild Duck email service!
+[FNAME], welcome to WildDuck email service!
 
 If you are seeing this message then it means you have reached the inbox of your new email address [EMAIL]. Be aware though that the service is in a constant change, so this address might disappear during the next database schema update. Don't start using it as your main email address!
 
 This message was generated and inserted to this mailbox from the /emails folder using the default template.
 
-Your friends from the Wild Duck team
+Your friends from the WildDuck team
 
-– Check out Wild Duck on Github: https://github.com/nodemailer/wildduck
+– Check out WildDuck on Github: https://github.com/nodemailer/wildduck

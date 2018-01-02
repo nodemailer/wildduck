@@ -1,10 +1,10 @@
-# If enabled then Wild Duck exposes an IMAP interface for listing and fetching emails
+# If enabled then WildDuck exposes an IMAP interface for listing and fetching emails
 enabled=true
 port=9993
 host="0.0.0.0"
 
 # Use `true` for port 993 and `false` for 143. If connection is not secured
-# on connection then Wild Duck enables STARTTLS extension
+# on connection then WildDuck enables STARTTLS extension
 secure=true
 
 # Max size for messages uploaded via APPEND
@@ -37,9 +37,9 @@ useProxy=false
 # an array of IP addresses to ignore (not logged)
 ignoredHosts=[]
 
-#name="Wild Duck IMAP"
+#name="WildDuck IMAP"
 #version="1.0.0"
-#vendor="Wild Duck"
+#vendor="WildDuck"
 
 # Add extra IMAP interfaces
 #[[interface]]

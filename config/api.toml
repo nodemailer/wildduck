@@ -24,16 +24,16 @@ secure=false
 identifier="com.email.wildduck"
 
 # A human-readable name for the profile. This value is displayed on the Detail screen. It does not have to be unique.
-displayName="Wild Duck Mail"
+displayName="WildDuck Mail"
 
 # A human-readable string containing the name of the organization that provided the profile.
-organization="Wild Duck Mail Services"
+organization="WildDuck Mail Services"
 
 # A description of the profile, shown on the Detail screen for the profile. This should be descriptive enough to help the user decide whether to install the profile.
 displayDescription="Install this profile to setup {email}"
 
 # A user-visible description of the email account, shown in the Mail and Settings applications.
-accountDescription="Wild Duck ({email})"
+accountDescription="WildDuck ({email})"
 
 [mobileconfig.tls]
 # If certificate path is not defined, use global or built-in self-signed certs

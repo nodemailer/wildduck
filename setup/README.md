@@ -1,6 +1,6 @@
-# Wild Duck Installer
+# WildDuck Installer
 
-Here you can find an example install script to install Wild Duck with Haraka and ZoneMTA. The install script is self contained, you can upload to your server and start it as root. It fetches all required files from Github.
+Here you can find an example install script to install WildDuck with Haraka and ZoneMTA. The install script is self contained, you can upload to your server and start it as root. It fetches all required files from Github.
 
 The install script is tested on Ubuntu 16.04 and the server must be blank. Blank meaning that there should be no existing software installed (eg. Apache, MySQL or Postfix). If the server already has something installed, then remove the extra applications before running this script. This also means that you should not run the install script in a VPS that you already use for other stuff.
 
@@ -8,10 +8,10 @@ The install script is tested on Ubuntu 16.04 and the server must be blank. Blank
 
 This install script installs and configures the following components:
 
-1. **Wild Duck Mail Server** for IMAP and POP3
-2. **Haraka** with Wild Duck plugin for incoming email
-3. **ZoneMTA** with Wild Duck plugin for outbound email
-4. **Wild Duck Webmail** for creating accounts and viewing messages
+1. **WildDuck Mail Server** for IMAP and POP3
+2. **Haraka** with WildDuck plugin for incoming email
+3. **ZoneMTA** with WildDuck plugin for outbound email
+4. **WildDuck Webmail** for creating accounts and viewing messages
 5. **Nginx** to serve the webmail component
 6. **acme.sh** to manage Let's Encrypt certificates
 7. **Rspamd** to check messages for spam. Messages detected as spam are routed to Junk Mail folder by default
@@ -38,7 +38,7 @@ Make sure that mydomain.com points to current server as the install script tries
 
 If the installation succeeds then the installer writes DNS configuration to domainname-nameserver.txt file. Set up the provided DNS entries from this file before sending and receiving email.
 
-Next point your browser to https://mydomain.com/ and you should see the Wild Duck example webmail app where you can create an email account.
+Next point your browser to https://mydomain.com/ and you should see the WildDuck example webmail app where you can create an email account.
 
 ## Config files
 

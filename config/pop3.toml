@@ -1,4 +1,4 @@
-# If enabled then Wild Duck exposes a limited POP3 interface for listing and fetching emails
+# If enabled then WildDuck exposes a limited POP3 interface for listing and fetching emails
 enabled=true
 port=9995
 # by default bind to localhost only
@@ -23,7 +23,7 @@ useProxy=false
 # an array of IP addresses to ignore (not logged)
 ignoredHosts=[]
 
-#name="Wild Duck POP3"
+#name="WildDuck POP3"
 #version="1.0.0"
 
 [tls]

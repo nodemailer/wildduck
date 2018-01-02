@@ -139,7 +139,7 @@ chown -R deploy:deploy /var/opt/wildduck.git
 chown -R deploy:deploy /opt/wildduck
 
 echo '[Unit]
-Description=Wild Duck Mail Server
+Description=WildDuck Mail Server
 Conflicts=cyrus.service dovecot.service
 After=mongod.service redis.service
 
@@ -201,7 +201,7 @@ rspamd
 tls
 #dkim_verify
 
-# Wild Duck plugin handles recipient checking and queueing
+# WildDuck plugin handles recipient checking and queueing
 wildduck" > config/plugins
 
 echo "key=/etc/wildduck/certs/privkey.pem

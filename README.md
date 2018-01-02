@@ -1,13 +1,13 @@
-# Wild Duck Mail Server
+# WildDuck Mail Server
 
 ![](https://raw.githubusercontent.com/nodemailer/wildduck/master/public/duck.png)
 
-Wild Duck is a scalable no-SPOF IMAP/POP3 mail server. Wild Duck uses a distributed database (sharded + replicated MongoDB) as a backend for storing all data,
+WildDuck is a scalable no-SPOF IMAP/POP3 mail server. WildDuck uses a distributed database (sharded + replicated MongoDB) as a backend for storing all data,
 including emails.
 
-Wild Duck tries to follow Gmail in architectural design. If there's a decision to be made then usually the answer is to do whatever Gmail has done.
+WildDuck tries to follow Gmail in architectural design. If there's a decision to be made then usually the answer is to do whatever Gmail has done.
 
-> **NB!** Wild Duck is currently in **beta**. Use it on your own responsibility.
+> **NB!** WildDuck is currently in **beta**. Use it on your own responsibility.
 
 ## Requirements
 
@@ -20,11 +20,11 @@ Wild Duck tries to follow Gmail in architectural design. If there's a decision t
 * Redis Sentinel for automatic Redis failover
 * Build tools to install optional dependencies that need compiling
 
-Wild Duck can be installed on any Node.js compatible platform.
+WildDuck can be installed on any Node.js compatible platform.
 
 ## No-SPOF architecture
 
-Every component of the Wild Duck mail server can be replicated which eliminates potential single point of failures.
+Every component of the WildDuck mail server can be replicated which eliminates potential single point of failures.
 
 ![](https://raw.githubusercontent.com/nodemailer/wildduck/master/public/wd.png)
 
@@ -42,13 +42,13 @@ If you have a blank VPS and a free domain name that you can point to that VPS th
 
 [Installation instructions](./setup)
 
-Install script installs and configures all required dependencies and services, including Let's Encrypt based certs, to run Wild Duck as a mail server.
+Install script installs and configures all required dependencies and services, including Let's Encrypt based certs, to run WildDuck as a mail server.
 
 Tested on a 10$ DigitalOcean Ubuntu 16.04 instance.
 
 ![](https://cldup.com/TZoTfxPugm.png)
 
-* Web interface at https://wildduck.email that uses Wild Duck API
+* Web interface at https://wildduck.email that uses WildDuck API
 
 ### Manual install
 
@@ -105,7 +105,7 @@ Any IMAP or POP3 client will do. Use the credentials from step 4\. to log in.
 
 # HTTP API
 
-Users, mailboxes and messages can be managed with HTTP requests against Wild Duck API
+Users, mailboxes and messages can be managed with HTTP requests against WildDuck API
 
 **[API Docs](https://api.wildduck.email/)**
 
@@ -117,17 +117,17 @@ Yes, it does. You can run the server and get working IMAP and POP3 servers for m
 [HTTP API](https://api.wildduck.email/) server to create new users. All handled by Node.js, MongoDB and Redis, no additional dependencies needed. Provided
 services can be disabled and enabled one by one so, for example you could process just IMAP in one host and LMTP in another.
 
-### How is security implemented in Wild Duck?
+### How is security implemented in WildDuck?
 
-Read about Wild Duck security implementation from the [Wiki](https://github.com/nodemailer/wildduck/wiki/Security-implementation)
+Read about WildDuck security implementation from the [Wiki](https://github.com/nodemailer/wildduck/wiki/Security-implementation)
 
 ### What are the killer features?
 
-1. **Stateless.** Start as many instances as you want. You can start multiple Wild Duck instances in different machines and as long as they share the same
+1. **Stateless.** Start as many instances as you want. You can start multiple WildDuck instances in different machines and as long as they share the same
    MongoDB and Redis settings, users can connect to any instances. This is very different from the traditional IMAP servers where a single user always needs to
-   connect (or be proxied) to the same IMAP server. Wild Duck keeps all required state information in MongoDB, so it does not matter which IMAP instance you
+   connect (or be proxied) to the same IMAP server. WildDuck keeps all required state information in MongoDB, so it does not matter which IMAP instance you
    use.
-2. **Scalable** as Wild Duck uses sharded MongoDB cluster for the backend storage. If you're running out of space, add a new shard.
+2. **Scalable** as WildDuck uses sharded MongoDB cluster for the backend storage. If you're running out of space, add a new shard.
 3. **No SPOF.** You can run multiple instances of every required service.
 4. **Centralized authentication** which allows modern features like 2FA, application specific passwords, authentication scopes, revoking authentication tokens,
    audit logging and even profile files to auto-configure Apple email clients without master password
@@ -163,12 +163,12 @@ Here's a list of alternative email servers that also use a database for storing 
 
 ### How does it work?
 
-Whenever a message is received Wild Duck parses it into a tree-like structure based on the MIME tree and stores this tree to MongoDB. Attachments are removed
-from the tree and stored separately in GridStore. If a message needs to be loaded then Wild Duck fetches the tree structure first and, if needed, loads
+Whenever a message is received WildDuck parses it into a tree-like structure based on the MIME tree and stores this tree to MongoDB. Attachments are removed
+from the tree and stored separately in GridStore. If a message needs to be loaded then WildDuck fetches the tree structure first and, if needed, loads
 attachments from GridStore and then compiles it back into the original RFC822 message. The result should be identical to the original messages unless the
 original message used unix newlines, these might be partially replaced with windows newlines.
 
-Wild Duck tries to keep minimal state for sessions (basically just a list of currently known UIDs and latest MODSEQ value) to be able to distribute sessions
+WildDuck tries to keep minimal state for sessions (basically just a list of currently known UIDs and latest MODSEQ value) to be able to distribute sessions
 between different hosts. Whenever a mailbox is opened the entire message list is loaded as an array of UID values. The first UID in the array element points to
 the message nr. 1 in IMAP, second one points to message nr. 2 etc.
 
@@ -180,7 +180,7 @@ and the user continues to see the old state.
 
 ## E-Mail Protocol support
 
-Wild Duck IMAP server supports the following IMAP standards:
+WildDuck IMAP server supports the following IMAP standards:
 
 * The entire **IMAP4rev1** suite with some minor differences from the spec. See below for [IMAP Protocol Differences](#imap-protocol-differences) for a complete
   list
@@ -196,27 +196,27 @@ Wild Duck IMAP server supports the following IMAP standards:
 * **MOVE** ([RFC6851](https://tools.ietf.org/html/rfc6851))
 * **AUTHENTICATE PLAIN** ([RFC4959](https://tools.ietf.org/html/rfc4959)) and **SASL-IR**
 * **APPENDLIMIT** ([RFC7889](https://tools.ietf.org/html/rfc7889)) – maximum global allowed message size is advertised in CAPABILITY listing
-* **UTF8=ACCEPT** ([RFC6855](https://tools.ietf.org/html/rfc6855)) – this also means that Wild Duck natively supports unicode email usernames. For example
-  [андрис@уайлддак.орг](mailto:андрис@уайлддак.орг) is a valid email address that is hosted by a test instance of Wild Duck
+* **UTF8=ACCEPT** ([RFC6855](https://tools.ietf.org/html/rfc6855)) – this also means that WildDuck natively supports unicode email usernames. For example
+  [андрис@уайлддак.орг](mailto:андрис@уайлддак.орг) is a valid email address that is hosted by a test instance of WildDuck
 * **QUOTA** ([RFC2087](https://tools.ietf.org/html/rfc2087)) – Quota size is global for an account, using a single quota root. Be aware that quota size does not
   mean actual byte storage in disk, it is calculated as the sum of the [RFC822](https://tools.ietf.org/html/rfc822) sources of stored messages.
 * **COMPRESS=DEFLATE** ([RFC4978](https://tools.ietf.org/html/rfc4978)) – Compress traffic between the client and the server
 
-Wild Duck more or less passes the [ImapTest](https://www.imapwiki.org/ImapTest/TestFeatures) Stress Testing run. Common errors that arise in the test are
-unknown labels (Wild Duck doesn't send unsolicited `FLAGS` updates even though it does send unsolicited `FETCH FLAGS` updates) and sometimes NO for `STORE`
+WildDuck more or less passes the [ImapTest](https://www.imapwiki.org/ImapTest/TestFeatures) Stress Testing run. Common errors that arise in the test are
+unknown labels (WildDuck doesn't send unsolicited `FLAGS` updates even though it does send unsolicited `FETCH FLAGS` updates) and sometimes NO for `STORE`
 (messages deleted in one session can not be updated in another).
 
-In comparison Wild Duck is slower in processing single user than Dovecot. Especially when fetching messages, which is expected as Dovecot is reading directly
-from filesystem while Wild Duck is recomposing messages from different parts.
+In comparison WildDuck is slower in processing single user than Dovecot. Especially when fetching messages, which is expected as Dovecot is reading directly
+from filesystem while WildDuck is recomposing messages from different parts.
 
-Raw read/write speed for a single user is usually not relevant anyway as fetching entire mailbox content is not something that happens often. Wild Duck offers
+Raw read/write speed for a single user is usually not relevant anyway as fetching entire mailbox content is not something that happens often. WildDuck offers
 better parallelization through MongoDB sharding, so more users should not mean slower response times. It is also more important to offer fast synchronization
-speeds between clients (eg. notifications about new email and such) where Wild Duck excels due to the write ahead log and the ability to push this log to
+speeds between clients (eg. notifications about new email and such) where WildDuck excels due to the write ahead log and the ability to push this log to
 clients.
 
 ### POP3 Support
 
-In addition to the required POP3 commands ([RFC1939](https://tools.ietf.org/html/rfc1939)) Wild Duck supports the following extensions:
+In addition to the required POP3 commands ([RFC1939](https://tools.ietf.org/html/rfc1939)) WildDuck supports the following extensions:
 
 * **UIDL**
 * **USER**
@@ -236,7 +236,7 @@ POP3 listing displays the newest 250 messages in INBOX (configurable)
 
 ##### UIDL
 
-Wild Duck uses message `_id` value (24 byte hex) as the unique ID. If a message is moved from one mailbox to another then it might _re-appear_ in the listing.
+WildDuck uses message `_id` value (24 byte hex) as the unique ID. If a message is moved from one mailbox to another then it might _re-appear_ in the listing.
 
 ##### RETR
 
@@ -248,9 +248,9 @@ If a messages is deleted by a client this message gets marked as Seen and moved 
 
 ## Message filtering
 
-Wild Duck has built-in message filtering in LMTP server. This is somewhat similar to Sieve even though the filters are not scripts.
+WildDuck has built-in message filtering in LMTP server. This is somewhat similar to Sieve even though the filters are not scripts.
 
-Filters can be managed via the [Wild Duck API](https://api.wildduck.email/#api-Filters).
+Filters can be managed via the [WildDuck API](https://api.wildduck.email/#api-Filters).
 
 ## IMAP Protocol Differences
 
@@ -258,10 +258,10 @@ This is a list of known differences from the IMAP specification. Listed differen
 
 1. `\Recent` flags is not implemented and most probably never will be (RFC3501 2.3.2.)
 2. `RENAME` does not touch subfolders which is against the spec (RFC3501 6.3.5\. _If the name has inferior hierarchical names, then the inferior hierarchical
-   names MUST also be renamed._). Wild Duck stores all folders using flat hierarchy, the "/" separator is fake and only used for listing mailboxes
-3. Unsolicited `FLAGS` responses (RFC3501 7.2.6.) and `PERMANENTFLAGS` are not sent (except for as part of `SELECT` and `EXAMINE` responses). Wild Duck notifies
+   names MUST also be renamed._). WildDuck stores all folders using flat hierarchy, the "/" separator is fake and only used for listing mailboxes
+3. Unsolicited `FLAGS` responses (RFC3501 7.2.6.) and `PERMANENTFLAGS` are not sent (except for as part of `SELECT` and `EXAMINE` responses). WildDuck notifies
    about flag updates only with unsolicited FETCH updates.
-4. Wild Duck responds with `NO` for `STORE` if matching messages were deleted in another session
+4. WildDuck responds with `NO` for `STORE` if matching messages were deleted in another session
 5. `CHARSET` argument for the `SEARCH` command is ignored (RFC3501 6.4.4.)
 6. Metadata arguments for `SEARCH MODSEQ` are ignored (RFC7162 3.1.5.). You can define `<entry-name>` and `<entry-type-req>` values but these are not used for
    anything
@@ -288,14 +288,14 @@ you should promptly see the new message.
 Use [WildDuck MTA](https://github.com/nodemailer/wildduck-mta) (which under the hood is [ZoneMTA](https://github.com/zone-eu/zone-mta) with the
 [ZoneMTA-WildDuck](https://github.com/nodemailer/zonemta-wildduck) plugin).
 
-This gives you an outbound SMTP server that uses Wild Duck accounts for authentication. The plugin authenticates user credentials and also rewrites headers if
+This gives you an outbound SMTP server that uses WildDuck accounts for authentication. The plugin authenticates user credentials and also rewrites headers if
 needed (if the header From: address does not match user address or aliases then it is rewritten). Additionally a copy of the sent message is uploaded to the
-Sent Mail folder. Local delivery is done directly to Wild Duck LMTP.
+Sent Mail folder. Local delivery is done directly to WildDuck LMTP.
 
 ## Inbound SMTP
 
-Use [Haraka](http://haraka.github.io/) with [queue/lmtp](http://haraka.github.io/manual/plugins/queue/lmtp.html) plugin to deliver messages to Wild Duck and
-[haraka-plugins-wildduck](https://github.com/nodemailer/haraka-plugin-wildduck) to validate recipient addresses and quota usage against the Wild Duck users
+Use [Haraka](http://haraka.github.io/) with [queue/lmtp](http://haraka.github.io/manual/plugins/queue/lmtp.html) plugin to deliver messages to WildDuck and
+[haraka-plugins-wildduck](https://github.com/nodemailer/haraka-plugin-wildduck) to validate recipient addresses and quota usage against the WildDuck users
 database.
 
 ## Future considerations
@@ -303,19 +303,19 @@ database.
 * Optimize FETCH queries to load only partial data for BODY subparts
 * Parse incoming message into the mime tree as a stream. Currently the entire message is buffered in memory before being parsed.
 * Maybe allow some kind of message manipulation through plugins
-* Wild Duck does not plan to be the most feature-rich IMAP client in the world. Most IMAP extensions are useless because there aren't too many clients that are
-  able to benefit from these extensions. There are a few extensions though that would make sense to be added to Wild Duck:
+* WildDuck does not plan to be the most feature-rich IMAP client in the world. Most IMAP extensions are useless because there aren't too many clients that are
+  able to benefit from these extensions. There are a few extensions though that would make sense to be added to WildDuck:
 
   * IMAP4 non-synchronizing literals, LITERAL- ([RFC7888](https://tools.ietf.org/html/rfc7888)). Synchronized literals are needed for APPEND to check mailbox
     quota, small values could go with the non-synchronizing version.
   * LIST-STATUS ([RFC5819](https://tools.ietf.org/html/rfc5819))
   * _What else?_ (definitely not NOTIFY nor QRESYNC)
 
-## Operating Wild Duck
+## Operating WildDuck
 
 ### Sharding
 
-Wild Duck supports MongoDB sharding. Consider using sharding only if you know that your data storage is large enough to outgrow single replica. Some actions
+WildDuck supports MongoDB sharding. Consider using sharding only if you know that your data storage is large enough to outgrow single replica. Some actions
 require scattered queries to be made that might be a hit on performance on a large cluster but most queries include the shard key by default.
 
 Shard the following collections by these keys (assuming you keep attachments in a separate database):
@@ -350,11 +350,11 @@ MongoDB does not complain about existing folders so you can prepare the mount be
 
 ### Redis Sentinel
 
-Wild Duck is able to use Redis Sentinel instead of single Redis master for automatic failover. When using Sentinel and the Redis master fails then it might take
+WildDuck is able to use Redis Sentinel instead of single Redis master for automatic failover. When using Sentinel and the Redis master fails then it might take
 a moment until new master is elected. Pending requests are cached during that window, so most operations should succeed eventually. You might want to test
 failover under load though, to see how it behaves.
 
-Redis Sentinel failover does not guarantee consistency. Wild Duck does not store critical information in Redis, so even if some data loss occurs, it should not
+Redis Sentinel failover does not guarantee consistency. WildDuck does not store critical information in Redis, so even if some data loss occurs, it should not
 be noticeable.
 
 ### HAProxy
@@ -380,8 +380,8 @@ You can live-reload updated certificates by sending SIGHUP to the master process
 only affects only some settings, for example all TLS certificates are loaded and updated. In this case existing processes continue as is, while new ones use the
 updated certs.
 
-Beware though that if configuration loading fails, then it ends with an exception. Make sure that TLS certificate files are readable for the Wild Duck user.
+Beware though that if configuration loading fails, then it ends with an exception. Make sure that TLS certificate files are readable for the WildDuck user.
 
 ## License
 
-Wild Duck Mail Agent is licensed under the [European Union Public License 1.1](http://ec.europa.eu/idabc/eupl.html) or later.
+WildDuck Mail Agent is licensed under the [European Union Public License 1.1](http://ec.europa.eu/idabc/eupl.html) or later.

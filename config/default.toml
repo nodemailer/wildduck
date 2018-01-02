@@ -21,9 +21,12 @@ maxForwards=2000
 # If usernames are not email addresses then use this domain as hostname part
 #emailDomain="mydomain.info"
 
+# Bugsnag API key
+# If set then reports errors to Bugsnag
 bugsnagCode=""
 
 # Header rules for routing spam
+# This does not affect WildDuck plugin for Haraka
 # @include "spamheaders.toml"
 
 [dbs]

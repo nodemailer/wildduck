@@ -1,6 +1,6 @@
 # Default messages
 
-Add here default email messages that should be inserted to new users account. To test it out, rename example.json.disabled to example.json, restart Wild Duck and create a new account. Your INBOX should include the message composed from the example.
+Add here default email messages that should be inserted to new users account. To test it out, rename example.json.disabled to example.json, restart WildDuck and create a new account. Your INBOX should include the message composed from the example.
 
 ## Creating default messages
 

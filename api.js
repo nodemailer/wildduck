@@ -27,7 +27,7 @@ const domainaliasRoutes = require('./lib/api/domainaliases');
 const dkimRoutes = require('./lib/api/dkim');
 
 const serverOptions = {
-    name: 'Wild Duck API',
+    name: 'WildDuck API',
     strictRouting: true,
     formatters: {
         'application/json; q=0.4': (req, res, body) => {

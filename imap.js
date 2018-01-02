@@ -364,7 +364,7 @@ let createInterface = (ifaceOptions, callback) => {
         ignoredHosts: config.imap.ignoredHosts,
 
         id: {
-            name: config.imap.name || 'Wild Duck IMAP Server',
+            name: config.imap.name || 'WildDuck IMAP Server',
             version: config.imap.version || packageData.version,
             vendor: config.imap.vendor || 'Kreata'
         },
