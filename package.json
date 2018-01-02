@@ -1,6 +1,6 @@
 {
     "name": "wildduck",
-    "version": "1.0.105",
+    "version": "1.0.106",
     "description": "IMAP server built with Node.js and MongoDB",
     "main": "server.js",
     "scripts": {
@@ -8,10 +8,7 @@
         "test": "mongo --eval 'db.dropDatabase()' wildduck-test && redis-cli -n 13 flushdb && NODE_ENV=test grunt",
         "apidoc": "apidoc -i lib/api/ -o docs/"
     },
-    "keywords": [
-        "imap",
-        "mail server"
-    ],
+    "keywords": ["imap", "mail server"],
     "author": "Andris Reinman",
     "license": "EUPL-1.1+",
     "devDependencies": {
