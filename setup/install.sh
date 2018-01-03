@@ -69,6 +69,8 @@ apt-get -q -y install mongodb-org nodejs
 
 SRS_SECRET=`pwgen 12 -1`
 DKIM_SECRET=`pwgen 12 -1`
+ZONEMTA_SECRET=`pwgen 12 -1`
+DKIM_SELECTOR=`node -e 'console.log(Date().toString().substr(4, 3).toLowerCase() + new Date().getFullYear())'`
 
 systemctl enable mongod.service
 
@@ -309,6 +311,11 @@ echo "[[default]]
 address=\"0.0.0.0\"
 name=\"$HOSTNAME\"" > /etc/zone-mta/pools.toml
 
+echo "[\"modules/zonemta-loop-breaker\"]
+enabled=\"sender\"
+secret=\"$ZONEMTA_SECRET\"
+algo=\"md5\"" > /etc/zone-mta/plugins/loop-breaker.toml
+
 echo "[\"wildduck\"]
 enabled=[\"receiver\", \"sender\"]
 
@@ -343,9 +350,9 @@ chmod 400 "$HOSTNAME-dkim.pem"
 openssl rsa -in "$HOSTNAME-dkim.pem" -out "$HOSTNAME-dkim.cert" -pubout
 DNS_ADDRESS="v=DKIM1;p=$(grep -v -e '^-' $HOSTNAME-dkim.cert | tr -d "\n")"
 
-DKIM_JSON=`DOMAIN="$HOSTNAME" node -e 'console.log(JSON.stringify({
+DKIM_JSON=`DOMAIN="$HOSTNAME" SELECTOR="$DKIM_SELECTOR" node -e 'console.log(JSON.stringify({
   domain: process.env.DOMAIN,
-  selector: "wildduck",
+  selector: process.env.SELECTOR,
   description: "Default DKIM key for "+process.env.DOMAIN,
   privateKey: fs.readFileSync("/opt/zone-mta/keys/"+process.env.DOMAIN+"-dkim.pem", "UTF-8")
 }))'`
@@ -563,7 +570,7 @@ DKIM
 ----
 Add this TXT record to the $HOSTNAME DNS zone:
 
-wildduck._domainkey.$HOSTNAME. IN TXT \"$DNS_ADDRESS\"
+$DKIM_SELECTOR._domainkey.$HOSTNAME. IN TXT \"$DNS_ADDRESS\"
 
 PTR
 ---
