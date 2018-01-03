@@ -403,6 +403,7 @@ cd /opt/zone-mta/plugins/wildduck
 npm install --unsafe-perm --production
 
 chown -R deploy:deploy /var/opt/zone-mta.git
+chown -R deploy:deploy /var/opt/zonemta-wildduck.git
 chown -R deploy:deploy /opt/zone-mta
 
 echo '[Unit]
