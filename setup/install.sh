@@ -104,8 +104,23 @@ redis-server -v
 mongod --version
 echo "HOSTNAME: $HOSTNAME"
 
+# remove old sudoers file
+rm -rf /etc/sudoers.d/wildduck
+
 ####### WILD DUCK #######
 
+# clear previous install
+if [ -f "/etc/systemd/system/wildduck.service" ]
+then
+    systemctl stop wildduck || true
+    systemctl disable wildduck || true
+    rm -rf /etc/systemd/system/wildduck.service
+fi
+rm -rf /var/opt/wildduck.git
+rm -rf /opt/wildduck
+rm -rf /etc/wildduck
+
+# fresh install
 cd /var/opt
 git clone --bare git://github.com/nodemailer/wildduck.git
 
@@ -116,7 +131,7 @@ hook_script wildduck
 echo 'deploy ALL = (root) NOPASSWD: /bin/systemctl restart wildduck' >> /etc/sudoers.d/wildduck
 
 # checkout files from git to working directory
-mkdir /opt/wildduck
+mkdir -p /opt/wildduck
 git --git-dir=/var/opt/wildduck.git --work-tree=/opt/wildduck checkout "$WILDDUCK_COMMIT"
 cp -r /opt/wildduck/config /etc/wildduck
 mv /etc/wildduck/default.toml /etc/wildduck/wildduck.toml
@@ -131,8 +146,8 @@ port=24
 disableSTARTTLS=true" > /etc/wildduck/lmtp.toml
 
 # make sure that DKIM keys are not stored to database as cleartext
-echo "secret=\"$DKIM_SECRET\"
-cipher=\"aes192\"" >> /etc/wildduck/dkim.toml
+#echo "secret=\"$DKIM_SECRET\"
+#cipher=\"aes192\"" >> /etc/wildduck/dkim.toml
 
 echo "user=\"wildduck\"
 group=\"wildduck\"
@@ -166,6 +181,17 @@ systemctl enable wildduck.service
 
 ####### HARAKA #######
 
+# clear previous install
+if [ -f "/etc/systemd/system/haraka.service" ]
+then
+    systemctl stop haraka || true
+    systemctl disable haraka || true
+    rm -rf /etc/systemd/system/haraka.service
+fi
+rm -rf /var/opt/haraka-plugin-wildduck.git
+rm -rf /opt/haraka
+
+# fresh install
 cd /var/opt
 git clone --bare git://github.com/nodemailer/haraka-plugin-wildduck.git
 echo "#!/bin/bash
@@ -193,7 +219,7 @@ cd plugins/wildduck
 npm install --unsafe-perm --production --progress=false
 
 cd /opt/haraka
-mv config/plugins config/pluginbs.bak
+mv config/plugins config/plugins.bak
 
 echo "26214400" > config/databytes
 echo "$HOSTNAME" > config/me
@@ -276,6 +302,19 @@ systemctl enable haraka.service
 
 #### ZoneMTA ####
 
+# clear previous install
+if [ -f "/etc/systemd/system/zone-mta.service" ]
+then
+    systemctl stop zone-mta || true
+    systemctl disable zone-mta || true
+    rm -rf /etc/systemd/system/zone-mta.service
+fi
+rm -rf /var/opt/zone-mta.git
+rm -rf /var/opt/zonemta-wildduck.git
+rm -rf /opt/zone-mta
+rm -rf /etc/zone-mta
+
+# fresh install
 cd /var/opt
 git clone --bare git://github.com/zone-eu/zone-mta-template.git zone-mta.git
 git clone --bare git://github.com/nodemailer/zonemta-wildduck.git
@@ -294,10 +333,10 @@ chmod +x "/var/opt/zonemta-wildduck.git/hooks/update"
 echo 'deploy ALL = (root) NOPASSWD: /bin/systemctl restart zone-mta' >> /etc/sudoers.d/zone-mta
 
 # checkout files from git to working directory
-mkdir /opt/zone-mta
+mkdir -p /opt/zone-mta
 git --git-dir=/var/opt/zone-mta.git --work-tree=/opt/zone-mta checkout "$ZONEMTA_COMMIT"
 
-mkdir /opt/zone-mta/plugins/wildduck
+mkdir -p /opt/zone-mta/plugins/wildduck
 git --git-dir=/var/opt/zonemta-wildduck.git --work-tree=/opt/zone-mta/plugins/wildduck checkout "$WILDDUCK_ZONEMTA_COMMIT"
 
 cp -r /opt/zone-mta/config /etc/zone-mta
@@ -385,7 +424,18 @@ WantedBy=multi-user.target' > /etc/systemd/system/zone-mta.service
 systemctl enable zone-mta.service
 
 #### WWW ####
+####
+# clear previous install
+if [ -f "/etc/systemd/system/wildduck-webmail.service" ]
+then
+    systemctl stop wildduck-webmail || true
+    systemctl disable wildduck-webmail || true
+    rm -rf /etc/systemd/system/wildduck-webmail.service
+fi
+rm -rf /var/opt/wildduck-webmail.git
+rm -rf /opt/wildduck-webmail
 
+# fresh install
 cd /var/opt
 git clone --bare git://github.com/nodemailer/wildduck-webmail.git
 
@@ -397,7 +447,7 @@ chmod +x /var/opt/wildduck-webmail.git/hooks/update
 echo 'deploy ALL = (root) NOPASSWD: /bin/systemctl restart wildduck-webmail' >> /etc/sudoers.d/wildduck-webmail
 
 # checkout files from git to working directory
-mkdir /opt/wildduck-webmail
+mkdir -p /opt/wildduck-webmail
 git --git-dir=/var/opt/wildduck-webmail.git --work-tree=/opt/wildduck-webmail checkout "$WEBMAIL_COMMIT"
 cp /opt/wildduck-webmail/config/default.toml /etc/wildduck/wildduck-webmail.toml
 
@@ -429,7 +479,7 @@ systemctl enable wildduck-webmail.service
 #### NGINX ####
 
 # Create initial certs. These will be overwritten later by Let's Encrypt certs
-mkdir /etc/wildduck/certs
+mkdir -p /etc/wildduck/certs
 cd /etc/wildduck/certs
 openssl req -subj "/CN=$HOSTNAME/O=My Company Name LTD./C=US" -new -newkey rsa:2048 -days 365 -nodes -x509 -keyout privkey.pem -out fullchain.pem
 
@@ -454,6 +504,7 @@ echo "server {
         proxy_redirect off;
     }
 }" > "/etc/nginx/sites-available/$HOSTNAME"
+rm -rf "/etc/nginx/sites-enabled/$HOSTNAME"
 ln -s "/etc/nginx/sites-available/$HOSTNAME" "/etc/nginx/sites-enabled/$HOSTNAME"
 systemctl reload nginx
 
@@ -581,8 +632,13 @@ the hostname $HOSTNAME with the actual hostname of this server.
 
 (this text is also stored to $INSTALLDIR/$HOSTNAME-nameserver.txt)" > "$INSTALLDIR/$HOSTNAME-nameserver.txt"
 
-echo "Waiting for the server to start up..."
-sleep 15
+printf "Waiting for the server to start up.."
+
+until $(curl --output /dev/null --silent --fail http://localhost:8080/users); do
+    printf '.'
+    sleep 2
+done
+echo "."
 
 # Ensure DKIM key
 echo "Registering DKIM key for $HOSTNAME"
