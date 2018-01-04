@@ -5,7 +5,7 @@
 WildDuck is a scalable no-SPOF IMAP/POP3 mail server. WildDuck uses a distributed database (sharded + replicated MongoDB) as a backend for storing all data,
 including emails.
 
-WildDuck tries to follow Gmail in architectural design. If there's a decision to be made then usually the answer is to do whatever Gmail has done.
+WildDuck tries to follow Gmail in product design. If there's a decision to be made then usually the answer is to do whatever Gmail has done.
 
 > **NB!** WildDuck is currently in **beta**. Use it on your own responsibility.
 
