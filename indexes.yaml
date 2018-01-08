@@ -57,19 +57,18 @@ indexes:
     sparse: true
 
 # Indexes for the addresses collection
-# note: is it really needed? maybe sort and list using addrview?
-- collection: addresses
-  type: users # index applies to users database
-  index:
-    name: address
-    key:
-      address: 1
-
 - collection: addresses
   type: users # index applies to users database
   index:
     name: address_dotless
     unique: true
+    key:
+      addrview: 1
+
+- collection: addresses
+  type: users # index applies to users database
+  index:
+    name: address_paging
     key:
       addrview: 1
       _id: 1
