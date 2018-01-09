@@ -1,7 +1,3 @@
-# Push messages to ZoneMTA queue for delivery
-# if `false` then no messages are sent
-enabled=true
-
 # which ZoneMTA queue to use by default
 zone="default"
 
