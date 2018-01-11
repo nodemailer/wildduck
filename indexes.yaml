@@ -104,16 +104,6 @@ indexes:
     name: asps_user
     key:
       user: 1
-      active: 1
-      expires: 1
-
-- collection: asps
-  index:
-    name: asps_autoexpire
-    # autoremove expired asps entries after 180 days
-    expireAfterSeconds: 15552000
-    key:
-      expires: 1
 
 # Indexes for the authentication log collection
 - collection: authlog
