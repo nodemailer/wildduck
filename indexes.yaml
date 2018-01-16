@@ -68,6 +68,14 @@ indexes:
 - collection: addresses
   type: users # index applies to users database
   index:
+    name: address_tags
+    key:
+      tagsview: 1
+    sparse: true
+
+- collection: addresses
+  type: users # index applies to users database
+  index:
     name: address_paging
     key:
       addrview: 1
@@ -253,6 +261,13 @@ indexes:
     key:
       mailbox: 1
       idate: 1
+
+- collection: messages
+  index:
+    name: by_idate_reverse
+    key:
+      mailbox: 1
+      idate: -1
 
 - collection: messages
   index:
