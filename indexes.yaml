@@ -344,6 +344,13 @@ indexes:
 
 - collection: messages
   index:
+    name: user_searchable_flag
+    key:
+      user: 1
+      searchable: 1
+
+- collection: messages
+  index:
     name: mailbox_draft_flag
     key:
       mailbox: 1
