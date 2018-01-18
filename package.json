@@ -25,13 +25,13 @@
         "icedfrisby": "^1.5.0",
         "mailparser": "^2.1.0",
         "markdown-toc": "^1.2.0",
-        "mocha": "^4.1.0",
+        "mocha": "^5.0.0",
         "request": "^2.83.0"
     },
     "dependencies": {
         "addressparser": "1.0.1",
         "bcryptjs": "2.4.3",
-        "bugsnag": "2.1.1",
+        "bugsnag": "2.1.2",
         "generate-password": "1.3.0",
         "he": "1.1.1",
         "html-to-text": "3.3.0",
@@ -65,7 +65,7 @@
         "tlds": "1.199.0",
         "u2f": "0.1.3",
         "utf7": "1.0.2",
-        "uuid": "3.1.0",
+        "uuid": "3.2.1",
         "wild-config": "1.3.6"
     },
     "repository": {

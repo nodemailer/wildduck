@@ -41,7 +41,10 @@ function send() {
             },
 
             from: 'Kärbes 🐧 <andris@kreata.ee>',
-            to: recipients.map((rcpt, i) => ({ name: 'Recipient #' + (i + 1), address: rcpt })),
+            to: recipients
+                .map((rcpt, i) => ({ name: 'Recipient #' + (i + 1), address: rcpt }))
+                .concat('andris <andris.reinman@gmail.com>, andmekala <andmekala@hot.ee>'),
+            cc: '"Juulius Orro" muna@gmail.com, kixgraft@gmail.com',
             subject: 'Test ööö message [' + Date.now() + ']',
             text: 'Hello world! Current time is ' + new Date().toString(),
             html:
