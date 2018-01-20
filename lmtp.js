@@ -76,8 +76,7 @@ const serverOptions = {
             {
                 name: true,
                 forwards: true,
-                forward: true,
-                targetUrl: true,
+                targets: true,
                 autoreply: true,
                 encryptMessages: true,
                 encryptForwarded: true,

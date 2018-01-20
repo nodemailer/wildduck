@@ -1,5 +1,7 @@
 # HTTP API
 
+**DEPRECATED DOCS**, see https://api.wildduck.email
+
 WildDuck Mail Server is a scalable IMAP / POP3 server that natively exposes internal data through an HTTP API.
 
 This API is not meant to be used by end users but your application.
@@ -223,8 +225,6 @@ Response for a successful operation:
             "name": null,
             "address": "testuser01@example.com",
             "tags": ["green", "blue"],
-            "forward": [],
-            "targetUrl": "",
             "encryptMessages": false,
             "encryptForwarded": false,
             "quota": {
@@ -270,8 +270,6 @@ Response for a successful operation:
     "encryptForwarded": false,
     "pubKey": "",
     "keyInfo": false,
-    "forward": [],
-    "targetUrl": "",
     "limits": {
         "quota": {
             "allowed": 107374182400,
@@ -311,8 +309,6 @@ Creates a new user, returns the ID upon success.
 * **address** is the main email address for the user. If address is not set then a new one is generated based on the username and current domain name
 * **emptyAddress** if true, then do not set up an address for the user
 * **name** is the name for the user
-* **forward** is an array of email addresses to where all messages are forwarded to
-* **targetUrl** is an URL to where all messages are uploaded to
 * **quota** is the maximum storage in bytes allowed for this user. If not set then the default value is used
 * **retention** is the default retention time in ms for mailboxes. Messages in Trash and Junk folders have a capped retention time of 30 days.
 * **language** is the language code for the user, eg. "en" or "et". Mailbox names for the default mailboxes (eg. "Trash") depend on the language
@@ -358,8 +354,6 @@ Updates the properties of an user. Only specify these fields that you want to be
 * **user** (required) is the ID of the user
 * **name** is the updated name for the user
 * **password** is the updated password for the user (do not set if you do not want to change user password)
-* **forward** is an array of email addresses to where all messages are forwarded to
-* **targetUrl** is an URL to where all messages are uploaded to
 * **quota** is the maximum storage in bytes allowed for this user
 * **retention** is the default retention time in ms for mailboxes. Messages in Trash and Junk folders have a capped retention time of 30 days.
 * **language** is the language code for the user, eg. "en" or "et"

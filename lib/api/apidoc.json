@@ -1,7 +1,7 @@
 {
     "name": "wildduck",
     "version": "1.0.0",
-    "description": "WildDuck API docs. Under construction, see old docs here: https://github.com/nodemailer/wildduck/blob/master/docs/api.md",
+    "description": "WildDuck API docs",
     "title": "WildDuck API",
-    "url": "http://localhost:8080"
+    "url": "https://api.wildduck.email"
 }
