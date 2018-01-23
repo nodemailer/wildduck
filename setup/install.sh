@@ -12,11 +12,11 @@ fi
 
 HOSTNAME="$1"
 
-WILDDUCK_COMMIT="53564ede30d195c459eaacee9949bd28b2b3331d"
+WILDDUCK_COMMIT="4262c24bd755ecb3e5d61c9a55501531363cbd66"
 ZONEMTA_COMMIT="e058fccbf75a87c2d84df43e012ea579d2f9b481"
-WEBMAIL_COMMIT="9157f1d24e3cc08ef724af14f37f62d403a664ce"
+WEBMAIL_COMMIT="4104ccc0a1bd7b0757d6d6f0ad9e54bfb77070e7"
 WILDDUCK_ZONEMTA_COMMIT="53f25c5bc841b7eba10caca2ebc377287e56ebaa"
-WILDDUCK_HARAKA_COMMIT="04b91a5eaabc2ff4b284f4f8f991e9be4029e4cd"
+WILDDUCK_HARAKA_COMMIT="8d42557d962ed0c212840c7d64889c22bfdeabac"
 HARAKA_VERSION="2.8.14" # do not use 2.8.16
 
 if [[ $EUID -ne 0 ]]; then
@@ -35,6 +35,17 @@ git --git-dir=/var/opt/$1.git --work-tree=\"/opt/$1\" checkout "\$3" -f
 cd \"/opt/$1\"
 rm -rf package-lock.json
 npm install --production --progress=false
+sudo /bin/systemctl restart $1 || echo \"Failed restarting service\"" > "/var/opt/$1.git/hooks/update"
+    chmod +x "/var/opt/$1.git/hooks/update"
+}
+
+function hook_script_bower {
+    echo "#!/bin/bash
+git --git-dir=/var/opt/$1.git --work-tree=\"/opt/$1\" checkout "\$3" -f
+cd \"/opt/$1\"
+rm -rf package-lock.json
+npm install --progress=false
+npm run bowerdeps
 sudo /bin/systemctl restart $1 || echo \"Failed restarting service\"" > "/var/opt/$1.git/hooks/update"
     chmod +x "/var/opt/$1.git/hooks/update"
 }
@@ -441,7 +452,7 @@ cd /var/opt
 git clone --bare git://github.com/nodemailer/wildduck-webmail.git
 
 # create update hook so we can later deploy to this location
-hook_script wildduck-webmail
+hook_script_bower wildduck-webmail
 chmod +x /var/opt/wildduck-webmail.git/hooks/update
 
 # allow deploy user to restart zone-mta service
