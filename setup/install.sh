@@ -466,10 +466,13 @@ cp /opt/wildduck-webmail/config/default.toml /etc/wildduck/wildduck-webmail.toml
 sed -i -e "s/localhost/$HOSTNAME/g;s/999/99/g;s/2587/587/g;s/proxy=false/proxy=true/g" /etc/wildduck/wildduck-webmail.toml
 
 cd /opt/wildduck-webmail
-npm install --unsafe-perm --production
 
 chown -R deploy:deploy /var/opt/wildduck-webmail.git
 chown -R deploy:deploy /opt/wildduck-webmail
+
+# we need to run bower which reject root
+HOME=/home/deploy sudo -u deploy npm install
+HOME=/home/deploy sudo -u deploy npm run bowerdeps
 
 echo '[Unit]
 Description=Wildduck Webmail
