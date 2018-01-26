@@ -8,33 +8,33 @@ Messages are formatted according to the [Nodemailer message structure](https://n
 
 All string values in the JSON structure can use the following template tags (case sensitive) that are replaced while compiling:
 
-- **[USERNAME]** will be replaced by the username of the user
-- **[EMAIL]** will be replaced by the email address of the user
-- **[DOMAIN]** will be replaced by the domain part of the email address
-- **[NAME]** will be replaced by the registered name of the user
-- **[FNAME]** will be replaced by the first name of the registered user
-- **[LNAME]** will be replaced by the last name of the registered user
+* **[USERNAME]** will be replaced by the username of the user
+* **[EMAIL]** will be replaced by the email address of the user
+* **[DOMAIN]** will be replaced by the domain part of the email address
+* **[NAME]** will be replaced by the registered name of the user
+* **[FNAME]** will be replaced by the first name of the registered user
+* **[LNAME]** will be replaced by the last name of the registered user
 
 > NB! All values are replaced as is, except in the `html` field. For `html` the replaced values are html encoded.
 
 You can also specify some extra options with the mail data object
 
-- **flag** is a boolean. If true, then the message is flagged
-- **seen** is a boolean. If true, then the message is marked as seen
-- **mailbox** is a string with one of the following values (case insensitive):
-  - **'INBOX'** (the default) to store the message to INBOX
-  - **'Sent'** to store the message to the Sent Mail folder
-  - **'Trash'** to store the message to the Trash folder
-  - **'Junk'** to store the message to the Spam folder
-  - **'Drafts'** to store the message to the Drafts folder
-  - **'Archive'** to store the message to the Archive folder
+* **flag** is a boolean. If true, then the message is flagged
+* **seen** is a boolean. If true, then the message is marked as seen
+* **mailbox** is a string with one of the following values (case insensitive):
+    * **'INBOX'** (the default) to store the message to INBOX
+    * **'Sent'** to store the message to the Sent Mail folder
+    * **'Trash'** to store the message to the Trash folder
+    * **'Junk'** to store the message to the Spam folder
+    * **'Drafts'** to store the message to the Drafts folder
+    * **'Archive'** to store the message to the Archive folder
 
 You can include some resources as external files by using the same name prefix as the main json file. Name prefix can be anything, it is used to sort the messages (if you want to insert multiple messages at once) and also to group resources related to that message.
 
-- **name.json** is the main message file, this includes the general message structure
-- **name.html** or **name.htm** is the HTML content of the message. If this file exists then it sets or overrides the `html` property in message json structure
-- **name.text** or **name.txt** is the plaintext content of the message. If this file exists then it sets or overrides the `text` property in message json structure
-- **name.filename.ext** is included in the message as an attachment
+* **name.json** is the main message file, this includes the general message structure
+* **name.html** or **name.htm** is the HTML content of the message. If this file exists then it sets or overrides the `html` property in message json structure
+* **name.text** or **name.txt** is the plaintext content of the message. If this file exists then it sets or overrides the `text` property in message json structure
+* **name.filename.ext** is included in the message as an attachment
 
 ### Embedded images
 
