@@ -12,9 +12,9 @@ fi
 
 HOSTNAME="$1"
 
-WILDDUCK_COMMIT="96a4c29633a7a71594e9a46acaa66b072adba274"
+WILDDUCK_COMMIT="9e00b1d7b047f815c3d14526b9387b0612cd0bca"
 ZONEMTA_COMMIT="e058fccbf75a87c2d84df43e012ea579d2f9b481"
-WEBMAIL_COMMIT="cd1ef8b8f66e93f1a3dd43af81cbfa7cc299cc57"
+WEBMAIL_COMMIT="edccc3ada2c2758b8f39acfb2f578bf0f1578af8"
 WILDDUCK_ZONEMTA_COMMIT="53f25c5bc841b7eba10caca2ebc377287e56ebaa"
 WILDDUCK_HARAKA_COMMIT="8d42557d962ed0c212840c7d64889c22bfdeabac"
 HARAKA_VERSION="2.8.14" # do not use 2.8.16
@@ -74,9 +74,14 @@ apt-get -q -y install curl pwgen git ufw build-essential libssl-dev dnsutils pyt
 # node
 curl -sL https://deb.nodesource.com/setup_8.x | bash -
 
+echo 'deb http://deb.torproject.org/torproject.org xenial main
+deb-src http://deb.torproject.org/torproject.org xenial main' > /etc/apt/sources.list.d/tor.list
+gpg --keyserver keys.gnupg.net --recv A3C4F0F979CAA22CDBA8F512EE8CBC9E886DDD89
+gpg --export A3C4F0F979CAA22CDBA8F512EE8CBC9E886DDD89 | sudo apt-key add -
+
 apt-get update
 
-apt-get -q -y install mongodb-org nodejs
+apt-get -q -y install mongodb-org nodejs tor deb.torproject.org-keyring
 
 SRS_SECRET=`pwgen 12 -1`
 DKIM_SECRET=`pwgen 12 -1`
@@ -366,6 +371,12 @@ enabled=\"sender\"
 secret=\"$ZONEMTA_SECRET\"
 algo=\"md5\"" > /etc/zone-mta/plugins/loop-breaker.toml
 
+echo '["modules/zonemta-onion"]
+enabled=["sender"]
+["modules/zonemta-onion".proxy]
+host="127.0.0.1"
+port=9050' > /etc/zone-mta/plugins/onion.toml
+
 echo "[\"wildduck\"]
 enabled=[\"receiver\", \"sender\"]
 
@@ -409,6 +420,9 @@ DKIM_JSON=`DOMAIN="$HOSTNAME" SELECTOR="$DKIM_SELECTOR" node -e 'console.log(JSO
 
 cd /opt/zone-mta
 npm install --unsafe-perm --production
+npm install zonemta-onion --save
+git add package.json
+git commit -m "Added onion plugin"
 
 cd /opt/zone-mta/plugins/wildduck
 npm install --unsafe-perm --production
