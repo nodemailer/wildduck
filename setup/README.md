@@ -1,6 +1,6 @@
 # WildDuck Installer
 
-Here you can find an example install script to install WildDuck with Haraka and ZoneMTA. The install script is self contained, you can upload to your server and start it as root. It fetches all required files from Github.
+Here you can find an example install script to install WildDuck with Haraka and ZoneMTA. The install script is self contained, you can upload to your server and start it as root. It fetches all required files from Github. After installation you should see exactly the same web interface as in https://wildduck.email/
 
 The install script is tested on Ubuntu 16.04 and the server must be blank. Blank meaning that there should be no existing software installed (eg. Apache, MySQL or Postfix). If the server already has something installed, then remove the extra applications before running this script. This also means that you should not run the install script in a VPS that you already use for other stuff.
 
@@ -17,6 +17,7 @@ This install script installs and configures the following components:
 7. **Rspamd** to check messages for spam. Messages detected as spam are routed to Junk Mail folder by default
 8. **ClamAV** to check messages for viruses. ClamAV is disabled by default, you need to enable it in the Haraka plugins file
 9. Unprivileged **Deploy** user to easily checkout and publish code changes via git
+10. **ufw** firewall to only allow public ports (so make sure your ssh runs on port 22 or otherwise change the install script first)
 
 What it does not configure:
 
