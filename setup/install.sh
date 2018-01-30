@@ -14,7 +14,7 @@ HOSTNAME="$1"
 
 WILDDUCK_COMMIT="3cc1edd4db842bbae14eb2274a1b6447da9dc733"
 ZONEMTA_COMMIT="be89e4cebce5ff022f80483928892388821c42ce"
-WEBMAIL_COMMIT="ea4aaa5c40f1f438a3ed4ea5c935f33596842628"
+WEBMAIL_COMMIT="300b05e4ad7c1421890e3f4166dbd456bfafd04c"
 WILDDUCK_ZONEMTA_COMMIT="1a27ef9ff5020aaaa1b1032deb557525bba7e7ca"
 WILDDUCK_HARAKA_COMMIT="52d29396657ef41e8a9967f337c023d335218517"
 HARAKA_VERSION="2.8.14" # do not use 2.8.16
@@ -529,6 +529,18 @@ echo "server {
     location /api/events {
         proxy_http_version 1.1;
         gzip off;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header HOST \$http_host;
+        proxy_set_header X-NginX-Proxy true;
+        proxy_pass http://127.0.0.1:3000;
+        proxy_redirect off;
+    }
+
+    # special config for uploads
+    location /webmail/send {
+        client_max_body_size 15M;
+        proxy_http_version 1.1;
         proxy_set_header X-Real-IP \$remote_addr;
         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
         proxy_set_header HOST \$http_host;
