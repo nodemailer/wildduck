@@ -80,7 +80,8 @@ const serverOptions = {
                 autoreply: true,
                 encryptMessages: true,
                 encryptForwarded: true,
-                pubKey: true
+                pubKey: true,
+                spamLevel: true
             },
             (err, userData) => {
                 if (err) {

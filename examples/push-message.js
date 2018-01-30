@@ -36,8 +36,9 @@ function send() {
             },
 
             headers: {
-                // set to Yes to send this message to Junk folder
-                'x-rspamd-spam': 'No'
+                'X-Rspamd-Bar': '/',
+                'X-Rspamd-Report': 'R_PARTS_DIFFER(0.5) MIME_GOOD(-0.1) R_DKIM_ALLOW(-0.2) R_SPF_ALLOW(-0.2)',
+                'X-Rspamd-Score': '22.6'
             },
 
             from: 'Kärbes 🐧 <andris@kreata.ee>',
