@@ -1,6 +1,6 @@
 {
     "name": "wildduck",
-    "version": "1.0.115",
+    "version": "1.0.116",
     "description": "IMAP/POP3 server built with Node.js and MongoDB",
     "main": "server.js",
     "scripts": {
@@ -25,7 +25,7 @@
         "icedfrisby": "^1.5.0",
         "mailparser": "^2.2.0",
         "markdown-toc": "^1.2.0",
-        "mocha": "^5.0.0",
+        "mocha": "^5.0.1",
         "request": "^2.83.0"
     },
     "dependencies": {
