@@ -8,7 +8,10 @@
         "test": "mongo --eval 'db.dropDatabase()' wildduck-test && redis-cli -n 13 flushdb && NODE_ENV=test grunt",
         "apidoc": "apidoc -i lib/api/ -o docs/"
     },
-    "keywords": ["imap", "mail server"],
+    "keywords": [
+        "imap",
+        "mail server"
+    ],
     "author": "Andris Reinman",
     "license": "EUPL-1.1+",
     "devDependencies": {
@@ -23,7 +26,7 @@
         "grunt-shell-spawn": "^0.3.10",
         "grunt-wait": "^0.1.0",
         "icedfrisby": "^1.5.0",
-        "mailparser": "2.2.0",
+        "mailparser": "2.2.3",
         "markdown-toc": "^1.2.0",
         "mocha": "^5.1.0",
         "request": "^2.85.0"
@@ -57,7 +60,7 @@
         "npmlog": "4.1.2",
         "openpgp": "3.0.4",
         "qrcode": "1.2.0",
-        "restify": "7.1.1",
+        "restify": "6.4.0",
         "restify-logger": "2.0.1",
         "seq-index": "1.1.0",
         "smtp-server": "3.4.2",
