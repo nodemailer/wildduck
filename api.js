@@ -18,6 +18,7 @@ const messagesRoutes = require('./lib/api/messages');
 const filtersRoutes = require('./lib/api/filters');
 const aspsRoutes = require('./lib/api/asps');
 const totpRoutes = require('./lib/api/2fa/totp');
+const custom2faRoutes = require('./lib/api/2fa/custom');
 const u2fRoutes = require('./lib/api/2fa/u2f');
 const updatesRoutes = require('./lib/api/updates');
 const authRoutes = require('./lib/api/auth');
@@ -153,6 +154,7 @@ module.exports = done => {
     filtersRoutes(db, server);
     aspsRoutes(db, server, userHandler);
     totpRoutes(db, server, userHandler);
+    custom2faRoutes(db, server, userHandler);
     u2fRoutes(db, server, userHandler);
     updatesRoutes(db, server, notifier);
     authRoutes(db, server, userHandler);
