@@ -6,7 +6,8 @@
     "scripts": {
         "toc": "markdown-toc -i docs/api.md",
         "test": "mongo --eval 'db.dropDatabase()' wildduck-test && redis-cli -n 13 flushdb && NODE_ENV=test grunt",
-        "apidoc": "apidoc -i lib/api/ -o docs/"
+        "apidoc": "apidoc -i lib/api/ -o docs/",
+        "show": "NODE_CONFIG_ONLY=true node server.js"
     },
     "keywords": ["imap", "mail server"],
     "author": "Andris Reinman",
@@ -40,7 +41,7 @@
         "iconv-lite": "0.4.21",
         "ioredfour": "1.0.2-ioredis",
         "ioredis": "3.2.2",
-        "joi": "13.1.2",
+        "joi": "13.2.0",
         "js-yaml": "3.11.0",
         "key-fingerprint": "1.1.0",
         "libbase64": "1.0.2",
@@ -55,7 +56,7 @@
         "node-forge": "0.7.5",
         "nodemailer": "4.6.4",
         "npmlog": "4.1.2",
-        "openpgp": "3.0.4",
+        "openpgp": "3.0.7",
         "qrcode": "1.2.0",
         "restify": "6.4.0",
         "restify-logger": "2.0.1",
@@ -73,7 +74,6 @@
         "url": "git://github.com/wildduck-email/wildduck.git"
     },
     "optionalDependencies": {
-        "@ronomon/crypto-async": "2.3.0",
-        "modern-syslog": "1.1.4"
+        "@ronomon/crypto-async": "2.3.0"
     }
 }

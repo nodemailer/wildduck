@@ -12,17 +12,54 @@ fi
 
 HOSTNAME="$1"
 
-WILDDUCK_COMMIT="0b164d0b8956efff78f19d100e6bf0e19a084ca6"
-ZONEMTA_COMMIT="be89e4cebce5ff022f80483928892388821c42ce"
-WEBMAIL_COMMIT="300b05e4ad7c1421890e3f4166dbd456bfafd04c"
+if [ -z "$HOSTNAME" ]
+  then
+    PUBLIC_IP=`curl -s https://api.ipify.org`
+    if [ ! -z "$PUBLIC_IP" ]; then
+        HOSTNAME=`dig +short -x $PUBLIC_IP | sed 's/\.$//'`
+        HOSTNAME="${HOSTNAME:-$PUBLIC_IP}"
+    fi
+    HOSTNAME="${HOSTNAME:-`hostname`}"
+fi
+
+MAILDOMAIN="${2:-$HOSTNAME}"
+
+if lsof -Pi :25 -sTCP:LISTEN -t >/dev/null ; then
+    echo "Error: SMTP server already running on port 25"
+    exit 1
+fi
+
+if lsof -Pi :587 -sTCP:LISTEN -t >/dev/null ; then
+    echo "Error: SMTP server already running on port 587"
+    exit 1
+fi
+
+if lsof -Pi :993 -sTCP:LISTEN -t >/dev/null ; then
+    echo "Error: IMAP server already running on port 993"
+    exit 1
+fi
+
+if lsof -Pi :995 -sTCP:LISTEN -t >/dev/null ; then
+    echo "Error: POP3 server already running on port 995"
+    exit 1
+fi
+
+if lsof -Pi :80 -sTCP:LISTEN -t >/dev/null ; then
+    echo "Error: HTTP server already running on port 80"
+    exit 1
+fi
+
+if lsof -Pi :443 -sTCP:LISTEN -t >/dev/null ; then
+    echo "Error: HTTPS server already running on port 443"
+    exit 1
+fi
+
+WILDDUCK_COMMIT="c72bf2e6ad033a955acb23ffd42b533d3222980f"
+ZONEMTA_COMMIT="3a29c8048c6afed8e985a6c4eb9df61b93f49756"
+WEBMAIL_COMMIT="221783539bd4382917d750989bb2ab425804f80a"
 WILDDUCK_ZONEMTA_COMMIT="1a27ef9ff5020aaaa1b1032deb557525bba7e7ca"
 WILDDUCK_HARAKA_COMMIT="92eba398676dd2418a0830256aa554efd09fb546"
 HARAKA_VERSION="2.8.17"
-
-if [[ $EUID -ne 0 ]]; then
-   echo "This script must be run as root" 1>&2
-   exit 1
-fi
 
 # stop on first error
 set -e
@@ -35,7 +72,7 @@ git --git-dir=/var/opt/$1.git --work-tree=\"/opt/$1\" checkout "\$3" -f
 cd \"/opt/$1\"
 rm -rf package-lock.json
 npm install --production --progress=false
-sudo /bin/systemctl restart $1 || echo \"Failed restarting service\"" > "/var/opt/$1.git/hooks/update"
+sudo $SYSTEMCTL_PATH restart $1 || echo \"Failed restarting service\"" > "/var/opt/$1.git/hooks/update"
     chmod +x "/var/opt/$1.git/hooks/update"
 }
 
@@ -46,7 +83,7 @@ cd \"/opt/$1\"
 rm -rf package-lock.json
 npm install --progress=false
 npm run bowerdeps
-sudo /bin/systemctl restart $1 || echo \"Failed restarting service\"" > "/var/opt/$1.git/hooks/update"
+sudo $SYSTEMCTL_PATH restart $1 || echo \"Failed restarting service\"" > "/var/opt/$1.git/hooks/update"
     chmod +x "/var/opt/$1.git/hooks/update"
 }
 
@@ -69,7 +106,7 @@ gpg --armor --export 58712A2291FA4AD5 | apt-key add -
 echo "deb [ arch=amd64,arm64 ] http://repo.mongodb.org/apt/ubuntu xenial/mongodb-org/3.6 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-3.6.list
 
 apt-get update
-apt-get -q -y install curl pwgen git ufw build-essential libssl-dev dnsutils python software-properties-common nginx lsb-release wget
+apt-get -q -y install pwgen git ufw build-essential libssl-dev dnsutils python software-properties-common nginx lsb-release wget
 
 # node
 curl -sL https://deb.nodesource.com/setup_8.x | bash -
@@ -86,12 +123,15 @@ apt-get update
 
 apt-get -q -y install mongodb-org nodejs tor deb.torproject.org-keyring
 
+NODE_PATH=`which node`
+SYSTEMCTL_PATH=`which systemctl`
+
 SRS_SECRET=`pwgen 12 -1`
 DKIM_SECRET=`pwgen 12 -1`
 ZONEMTA_SECRET=`pwgen 12 -1`
-DKIM_SELECTOR=`node -e 'console.log(Date().toString().substr(4, 3).toLowerCase() + new Date().getFullYear())'`
+DKIM_SELECTOR=`$NODE_PATH -e 'console.log(Date().toString().substr(4, 3).toLowerCase() + new Date().getFullYear())'`
 
-systemctl enable mongod.service
+$SYSTEMCTL_PATH enable mongod.service
 
 # redis
 apt-add-repository -y ppa:chris-lea/redis-server
@@ -108,16 +148,6 @@ apt-get -q -y --no-install-recommends install rspamd
 
 apt-get clean
 
-if [ -z "$HOSTNAME" ]
-  then
-    PUBLIC_IP=`curl -s https://api.ipify.org`
-    if [ ! -z "$PUBLIC_IP" ]; then
-        HOSTNAME=`dig +short -x $PUBLIC_IP | sed 's/\.$//'`
-        HOSTNAME="${HOSTNAME:-$PUBLIC_IP}"
-    fi
-    HOSTNAME="${HOSTNAME:-`hostname`}"
-fi
-
 node -v
 redis-server -v
 mongod --version
@@ -131,8 +161,8 @@ rm -rf /etc/sudoers.d/wildduck
 # clear previous install
 if [ -f "/etc/systemd/system/wildduck.service" ]
 then
-    systemctl stop wildduck || true
-    systemctl disable wildduck || true
+    $SYSTEMCTL_PATH stop wildduck || true
+    $SYSTEMCTL_PATH disable wildduck || true
     rm -rf /etc/systemd/system/wildduck.service
 fi
 rm -rf /var/opt/wildduck.git
@@ -147,7 +177,7 @@ git clone --bare git://github.com/nodemailer/wildduck.git
 hook_script wildduck
 
 # allow deploy user to restart wildduck service
-echo 'deploy ALL = (root) NOPASSWD: /bin/systemctl restart wildduck' >> /etc/sudoers.d/wildduck
+echo "deploy ALL = (root) NOPASSWD: $SYSTEMCTL_PATH restart wildduck" >> /etc/sudoers.d/wildduck
 
 # checkout files from git to working directory
 mkdir -p /opt/wildduck
@@ -170,7 +200,7 @@ disableSTARTTLS=true" > /etc/wildduck/lmtp.toml
 
 echo "user=\"wildduck\"
 group=\"wildduck\"
-emailDomain=\"$HOSTNAME\"" | cat - /etc/wildduck/wildduck.toml > temp && mv temp /etc/wildduck/wildduck.toml
+emailDomain=\"$MAILDOMAIN\"" | cat - /etc/wildduck/wildduck.toml > temp && mv temp /etc/wildduck/wildduck.toml
 
 sed -i -e "s/localhost:3000/$HOSTNAME/g;s/localhost/$HOSTNAME/g;s/2587/587/g" /etc/wildduck/wildduck.toml
 
@@ -180,31 +210,32 @@ npm install --unsafe-perm --production
 chown -R deploy:deploy /var/opt/wildduck.git
 chown -R deploy:deploy /opt/wildduck
 
-echo '[Unit]
+echo "[Unit]
 Description=WildDuck Mail Server
 Conflicts=cyrus.service dovecot.service
 After=mongod.service redis.service
 
 [Service]
-Environment="NODE_ENV=production"
+Environment=\"NODE_ENV=production\"
 WorkingDirectory=/opt/wildduck
-ExecStart=/usr/bin/node server.js --config="/etc/wildduck/wildduck.toml"
-ExecReload=/bin/kill -HUP $MAINPID
+ExecStart=$NODE_PATH server.js --config=\"/etc/wildduck/wildduck.toml\"
+ExecReload=/bin/kill -HUP \$MAINPID
 Type=simple
 Restart=always
+SyslogIdentifier=wildduck-server
 
 [Install]
-WantedBy=multi-user.target' > /etc/systemd/system/wildduck.service
+WantedBy=multi-user.target" > /etc/systemd/system/wildduck.service
 
-systemctl enable wildduck.service
+$SYSTEMCTL_PATH enable wildduck.service
 
 ####### HARAKA #######
 
 # clear previous install
 if [ -f "/etc/systemd/system/haraka.service" ]
 then
-    systemctl stop haraka || true
-    systemctl disable haraka || true
+    $SYSTEMCTL_PATH stop haraka || true
+    $SYSTEMCTL_PATH disable haraka || true
     rm -rf /etc/systemd/system/haraka.service
 fi
 rm -rf /var/opt/haraka-plugin-wildduck.git
@@ -218,11 +249,11 @@ git --git-dir=/var/opt/haraka-plugin-wildduck.git --work-tree=/opt/haraka/plugin
 cd /opt/haraka/plugins/wildduck
 rm -rf package-lock.json
 npm install --production --progress=false
-sudo /bin/systemctl restart haraka || echo \"Failed restarting service\"" > "/var/opt/haraka-plugin-wildduck.git/hooks/update"
+sudo $SYSTEMCTL_PATH restart haraka || echo \"Failed restarting service\"" > "/var/opt/haraka-plugin-wildduck.git/hooks/update"
 chmod +x "/var/opt/haraka-plugin-wildduck.git/hooks/update"
 
 # allow deploy user to restart wildduck service
-echo 'deploy ALL = (root) NOPASSWD: /bin/systemctl restart haraka' >> /etc/sudoers.d/wildduck
+echo "deploy ALL = (root) NOPASSWD: $SYSTEMCTL_PATH restart haraka" >> /etc/sudoers.d/wildduck
 
 cd
 npm install --unsafe-perm -g Haraka@$HARAKA_VERSION
@@ -303,6 +334,7 @@ WorkingDirectory=/opt/haraka
 ExecStart=/usr/bin/node ./node_modules/.bin/haraka -c .
 Type=simple
 Restart=always
+SyslogIdentifier=haraka
 
 [Install]
 WantedBy=multi-user.target' > /etc/systemd/system/haraka.service
@@ -317,15 +349,15 @@ chown -R deploy:deploy /var/opt/haraka-plugin-wildduck.git
 mkdir -p /opt/haraka/queue
 chown -R wildduck:wildduck /opt/haraka/queue
 
-systemctl enable haraka.service
+$SYSTEMCTL_PATH enable haraka.service
 
 #### ZoneMTA ####
 
 # clear previous install
 if [ -f "/etc/systemd/system/zone-mta.service" ]
 then
-    systemctl stop zone-mta || true
-    systemctl disable zone-mta || true
+    $SYSTEMCTL_PATH stop zone-mta || true
+    $SYSTEMCTL_PATH disable zone-mta || true
     rm -rf /etc/systemd/system/zone-mta.service
 fi
 rm -rf /var/opt/zone-mta.git
@@ -345,11 +377,11 @@ git --git-dir=/var/opt/zonemta-wildduck.git --work-tree=/opt/zone-mta/plugins/wi
 cd /opt/zone-mta/plugins/wildduck
 rm -rf package-lock.json
 npm install --production --progress=false
-sudo /bin/systemctl restart zone-mta || echo \"Failed restarting service\"" > "/var/opt/zonemta-wildduck.git/hooks/update"
+sudo $SYSTEMCTL_PATH restart zone-mta || echo \"Failed restarting service\"" > "/var/opt/zonemta-wildduck.git/hooks/update"
 chmod +x "/var/opt/zonemta-wildduck.git/hooks/update"
 
 # allow deploy user to restart zone-mta service
-echo 'deploy ALL = (root) NOPASSWD: /bin/systemctl restart zone-mta' >> /etc/sudoers.d/zone-mta
+echo "deploy ALL = (root) NOPASSWD: $SYSTEMCTL_PATH restart zone-mta" >> /etc/sudoers.d/zone-mta
 
 # checkout files from git to working directory
 mkdir -p /opt/zone-mta
@@ -401,7 +433,7 @@ authlogExpireDays=30
     # SRS secret value. Must be the same as in the MX side
     secret=\"$SRS_SECRET\"
     # SRS domain, must resolve back to MX
-    rewriteDomain=\"$HOSTNAME\"
+    rewriteDomain=\"$MAILDOMAIN\"
 
 [dkim]
 # share config with WildDuck installation
@@ -409,12 +441,12 @@ authlogExpireDays=30
 " > /etc/zone-mta/plugins/wildduck.toml
 
 cd /opt/zone-mta/keys
-openssl genrsa -out "$HOSTNAME-dkim.pem" 2048
-chmod 400 "$HOSTNAME-dkim.pem"
-openssl rsa -in "$HOSTNAME-dkim.pem" -out "$HOSTNAME-dkim.cert" -pubout
-DNS_ADDRESS="v=DKIM1;p=$(grep -v -e '^-' $HOSTNAME-dkim.cert | tr -d "\n")"
+openssl genrsa -out "$MAILDOMAIN-dkim.pem" 2048
+chmod 400 "$MAILDOMAIN-dkim.pem"
+openssl rsa -in "$MAILDOMAIN-dkim.pem" -out "$MAILDOMAIN-dkim.cert" -pubout
+DNS_ADDRESS="v=DKIM1;p=$(grep -v -e '^-' $MAILDOMAIN-dkim.cert | tr -d "\n")"
 
-DKIM_JSON=`DOMAIN="$HOSTNAME" SELECTOR="$DKIM_SELECTOR" node -e 'console.log(JSON.stringify({
+DKIM_JSON=`DOMAIN="$MAILDOMAIN" SELECTOR="$DKIM_SELECTOR" node -e 'console.log(JSON.stringify({
   domain: process.env.DOMAIN,
   selector: process.env.SELECTOR,
   description: "Default DKIM key for "+process.env.DOMAIN,
@@ -444,19 +476,20 @@ ExecStart=/usr/bin/node index.js --config="/etc/zone-mta/zonemta.toml"
 ExecReload=/bin/kill -HUP $MAINPID
 Type=simple
 Restart=always
+SyslogIdentifier=zone-mta
 
 [Install]
 WantedBy=multi-user.target' > /etc/systemd/system/zone-mta.service
 
-systemctl enable zone-mta.service
+$SYSTEMCTL_PATH enable zone-mta.service
 
 #### WWW ####
 ####
 # clear previous install
 if [ -f "/etc/systemd/system/wildduck-webmail.service" ]
 then
-    systemctl stop wildduck-webmail || true
-    systemctl disable wildduck-webmail || true
+    $SYSTEMCTL_PATH stop wildduck-webmail || true
+    $SYSTEMCTL_PATH disable wildduck-webmail || true
     rm -rf /etc/systemd/system/wildduck-webmail.service
 fi
 rm -rf /var/opt/wildduck-webmail.git
@@ -471,7 +504,7 @@ hook_script_bower wildduck-webmail
 chmod +x /var/opt/wildduck-webmail.git/hooks/update
 
 # allow deploy user to restart zone-mta service
-echo 'deploy ALL = (root) NOPASSWD: /bin/systemctl restart wildduck-webmail' >> /etc/sudoers.d/wildduck-webmail
+echo "deploy ALL = (root) NOPASSWD: $SYSTEMCTL_PATH restart wildduck-webmail" >> /etc/sudoers.d/wildduck-webmail
 
 # checkout files from git to working directory
 mkdir -p /opt/wildduck-webmail
@@ -500,11 +533,12 @@ ExecStart=/usr/bin/node server.js --config="/etc/wildduck/wildduck-webmail.toml"
 ExecReload=/bin/kill -HUP $MAINPID
 Type=simple
 Restart=always
+SyslogIdentifier=wildduck-www
 
 [Install]
 WantedBy=multi-user.target' > /etc/systemd/system/wildduck-webmail.service
 
-systemctl enable wildduck-webmail.service
+$SYSTEMCTL_PATH enable wildduck-webmail.service
 
 #### NGINX ####
 
@@ -561,7 +595,7 @@ echo "server {
 }" > "/etc/nginx/sites-available/$HOSTNAME"
 rm -rf "/etc/nginx/sites-enabled/$HOSTNAME"
 ln -s "/etc/nginx/sites-available/$HOSTNAME" "/etc/nginx/sites-enabled/$HOSTNAME"
-systemctl reload nginx
+$SYSTEMCTL_PATH reload nginx
 
 #### UFW ####
 
@@ -620,25 +654,25 @@ server {
         proxy_redirect off;
     }
 }" > "/etc/nginx/sites-available/$HOSTNAME"
-systemctl reload nginx
+$SYSTEMCTL_PATH reload nginx
 
 # update reload script for future updates
-echo '#!/bin/bash
-/bin/systemctl reload nginx
-/bin/systemctl reload wildduck
-/bin/systemctl restart zone-mta
-/bin/systemctl restart haraka
-/bin/systemctl restart wildduck-webmail' > /usr/local/bin/reload-services.sh
+echo "#!/bin/bash
+$SYSTEMCTL_PATH reload nginx
+$SYSTEMCTL_PATH reload wildduck
+$SYSTEMCTL_PATH restart zone-mta
+$SYSTEMCTL_PATH restart haraka
+$SYSTEMCTL_PATH restart wildduck-webmail" > /usr/local/bin/reload-services.sh
 chmod +x /usr/local/bin/reload-services.sh
 
 ### start services ####
 
-systemctl start mongod
-systemctl start wildduck
-systemctl start haraka
-systemctl start zone-mta
-systemctl start wildduck-webmail
-systemctl reload nginx
+$SYSTEMCTL_PATH start mongod
+$SYSTEMCTL_PATH start wildduck
+$SYSTEMCTL_PATH start haraka
+$SYSTEMCTL_PATH start zone-mta
+$SYSTEMCTL_PATH start wildduck-webmail
+$SYSTEMCTL_PATH reload nginx
 
 cd "$INSTALLDIR"
 
@@ -662,21 +696,21 @@ NAMESERVER SETUP
 
 MX
 --
-Add this MX record to the $HOSTNAME DNS zone:
+Add this MX record to the $MAILDOMAIN DNS zone:
 
-$HOSTNAME. IN MX 5 $HOSTNAME.
+$MAILDOMAIN. IN MX 5 $HOSTNAME.
 
 SPF
 ---
-Add this TXT record to the $HOSTNAME DNS zone:
+Add this TXT record to the $MAILDOMAIN DNS zone:
 
-$HOSTNAME. IN TXT \"v=spf1 a ~all\"
+$MAILDOMAIN. IN TXT \"v=spf1 a:$HOSTNAME ~all\"
 
 DKIM
 ----
-Add this TXT record to the $HOSTNAME DNS zone:
+Add this TXT record to the $MAILDOMAIN DNS zone:
 
-$DKIM_SELECTOR._domainkey.$HOSTNAME. IN TXT \"$DNS_ADDRESS\"
+$DKIM_SELECTOR._domainkey.$MAILDOMAIN. IN TXT \"$DNS_ADDRESS\"
 
 PTR
 ---
@@ -685,7 +719,7 @@ If your hosting provider does not allow you to set PTR records but has
 assigned their own hostname, then edit /etc/zone-mta/pools.toml and replace
 the hostname $HOSTNAME with the actual hostname of this server.
 
-(this text is also stored to $INSTALLDIR/$HOSTNAME-nameserver.txt)" > "$INSTALLDIR/$HOSTNAME-nameserver.txt"
+(this text is also stored to $INSTALLDIR/$MAILDOMAIN-nameserver.txt)" > "$INSTALLDIR/$MAILDOMAIN-nameserver.txt"
 
 printf "Waiting for the server to start up.."
 
@@ -696,7 +730,7 @@ done
 echo "."
 
 # Ensure DKIM key
-echo "Registering DKIM key for $HOSTNAME"
+echo "Registering DKIM key for $MAILDOMAIN"
 echo $DKIM_JSON
 
 curl -i -XPOST http://localhost:8080/dkim \
@@ -704,6 +738,6 @@ curl -i -XPOST http://localhost:8080/dkim \
 -d "$DKIM_JSON"
 
 echo ""
-cat "$INSTALLDIR/$HOSTNAME-nameserver.txt"
+cat "$INSTALLDIR/$MAILDOMAIN-nameserver.txt"
 echo ""
 echo "All done, open https://$HOSTNAME/ in your browser"

@@ -1,9 +1,10 @@
 # Uncomment if you start the app as root and want to downgrade
 # once all privileged actions are completed
+# If you do not use privileged ports then you can start the app already under required user account
 #user="wildduck"
 #group="wildduck"
 
-# process title and syslog ident
+# process title
 ident="wildduck"
 
 # how many processes to start
@@ -48,9 +49,6 @@ bugsnagCode=""
 
 [log]
     level="silly"
-    # log to syslog if true
-    # not needed if you run the app as systemd service
-    syslog=false
 
     # delete authentication log entries after 30 days
     # changing this value only affects new entries

@@ -17,7 +17,6 @@ const log = require('npmlog');
 const packageData = require('./package.json');
 
 log.level = config.log.level;
-require('./logger');
 
 const printLogo = () => {
     let logo = fs
