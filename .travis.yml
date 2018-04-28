@@ -6,6 +6,7 @@ services:
 node_js:
   - 6
   - 8
+  - 10
 notifications:
   email:
     - andris@kreata.ee
