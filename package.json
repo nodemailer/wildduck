@@ -1,6 +1,6 @@
 {
     "name": "wildduck",
-    "version": "1.0.117",
+    "version": "1.1.0",
     "description": "IMAP/POP3 server built with Node.js and MongoDB",
     "main": "server.js",
     "scripts": {
@@ -9,10 +9,7 @@
         "apidoc": "apidoc -i lib/api/ -o docs/",
         "show": "NODE_CONFIG_ONLY=true node server.js"
     },
-    "keywords": [
-        "imap",
-        "mail server"
-    ],
+    "keywords": ["imap", "mail server"],
     "author": "Andris Reinman",
     "license": "EUPL-1.1+",
     "devDependencies": {
