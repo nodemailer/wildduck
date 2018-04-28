@@ -440,7 +440,7 @@ class TokenParser {
                             throw new Error('Unexpected whitespace at position ' + (this.pos + i));
                         }
 
-                        if (this.currentNode.value.substr(-1) === '*' && this.currentNode.value.substr(-2, 1) !== ':') {
+                        if (this.currentNode.value !== '*' && this.currentNode.value.substr(-1) === '*' && this.currentNode.value.substr(-2, 1) !== ':') {
                             throw new Error('Unexpected whitespace at position ' + (this.pos + i));
                         }
 
