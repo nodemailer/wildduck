@@ -185,8 +185,10 @@ git --git-dir=/var/opt/wildduck.git --work-tree=/opt/wildduck checkout "$WILDDUC
 cp -r /opt/wildduck/config /etc/wildduck
 mv /etc/wildduck/default.toml /etc/wildduck/wildduck.toml
 
-mv /opt/wildduck/emails/example.json.disabled /opt/wildduck/emails/example.json
+# enable example message
+sed -i -e 's/"disabled": true/"disabled": false/g' /opt/wildduck/emails/00-example.json
 
+# update ports
 sed -i -e "s/999/99/g;s/localhost/$HOSTNAME/g" /etc/wildduck/imap.toml
 sed -i -e "s/999/99/g;s/localhost/$HOSTNAME/g" /etc/wildduck/pop3.toml
 
