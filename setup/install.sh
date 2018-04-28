@@ -635,12 +635,9 @@ chmod +x /usr/local/bin/reload-services.sh
 # Update site config, make sure ssl is enabled
 echo "server {
     listen 80;
-    server_name $HOSTNAME;
-    return 301 https://\$server_name\$request_uri;
-}
-
-server {
+    listen [::]:80;
     listen 443 ssl http2;
+    listen [::]:443 ssl http2;
 
     server_name $HOSTNAME;
 
