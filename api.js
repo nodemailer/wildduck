@@ -77,13 +77,6 @@ server.use(
         overrideParams: false
     })
 );
-server.get(
-    /\/public\/?.*/,
-    restify.plugins.serveStatic({
-        directory: __dirname,
-        default: 'index.html'
-    })
-);
 
 server.use((req, res, next) => {
     if (config.api.accessToken && ![req.query.accessToken, req.headers['x-access-token']].includes(config.api.accessToken)) {

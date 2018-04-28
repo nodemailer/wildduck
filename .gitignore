@@ -5,7 +5,3 @@ npm-debug.log
 config/production.*
 config/development.*
 package-lock.json*
-
-emails/*
-!emails/README.md
-!emails/example.*

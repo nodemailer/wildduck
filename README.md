@@ -1,6 +1,6 @@
 # WildDuck Mail Server
 
-![](https://raw.githubusercontent.com/nodemailer/wildduck/master/public/duck.png)
+![](https://raw.githubusercontent.com/nodemailer/wildduck/master/assets/duck.png)
 
 WildDuck is a scalable no-SPOF IMAP/POP3 mail server. WildDuck uses a distributed database (sharded + replicated MongoDB) as a backend for storing all data,
 including emails.
@@ -11,14 +11,14 @@ WildDuck tries to follow Gmail in product design. If there's a decision to be ma
 
 ## Requirements
 
-* _MongoDB_ to store all data
-* _Redis_ for pubsub and counters
-* _Node.js_ at least version 6.0.0
+*   _MongoDB_ to store all data
+*   _Redis_ for pubsub and counters
+*   _Node.js_ at least version 6.0.0
 
 **Optional requirements**
 
-* Redis Sentinel for automatic Redis failover
-* Build tools to install optional dependencies that need compiling
+*   Redis Sentinel for automatic Redis failover
+*   Build tools to install optional dependencies that need compiling
 
 WildDuck can be installed on any Node.js compatible platform.
 
@@ -26,13 +26,13 @@ WildDuck can be installed on any Node.js compatible platform.
 
 Every component of the WildDuck mail server can be replicated which eliminates potential single point of failures.
 
-![](https://raw.githubusercontent.com/nodemailer/wildduck/master/public/wd.png)
+![](https://raw.githubusercontent.com/nodemailer/wildduck/master/assets/wd.png)
 
 ## Storage
 
 Attachment de-duplication and compression gives up to 56% of storage size reduction.
 
-![](https://raw.githubusercontent.com/nodemailer/wildduck/master/public/storage.png)
+![](https://raw.githubusercontent.com/nodemailer/wildduck/master/assets/storage.png)
 
 ## Usage
 
@@ -48,7 +48,7 @@ Tested on a 10$ DigitalOcean Ubuntu 16.04 instance.
 
 ![](https://cldup.com/TZoTfxPugm.png)
 
-* Web interface at https://wildduck.email that uses WildDuck API
+*   Web interface at https://wildduck.email that uses WildDuck API
 
 ### Manual install
 
@@ -96,12 +96,12 @@ Any IMAP or POP3 client will do. Use the credentials from step 4\. to log in.
 
 ## Goals of the Project
 
-1. Build a scalable and distributed IMAP/POP3 server that uses clustered database instead of single machine file system as mail store
-2. Allow using internationalized email addresses
-3. Provide Gmail-like features like pushing sent messages automatically to Sent Mail folder or notifying about messages moved to Junk folder so these could be
-   marked as spam
-4. Provide parsed mailbox and message data over HTTP. This should make creating webmail interfaces super easy, no need to parse RFC822 messages to get text
-   content or attachments
+1.  Build a scalable and distributed IMAP/POP3 server that uses clustered database instead of single machine file system as mail store
+2.  Allow using internationalized email addresses
+3.  Provide Gmail-like features like pushing sent messages automatically to Sent Mail folder or notifying about messages moved to Junk folder so these could be
+    marked as spam
+4.  Provide parsed mailbox and message data over HTTP. This should make creating webmail interfaces super easy, no need to parse RFC822 messages to get text
+    content or attachments
 
 # HTTP API
 
@@ -123,20 +123,20 @@ Read about WildDuck security implementation from the [Wiki](https://github.com/n
 
 ### What are the killer features?
 
-1. **Stateless.** Start as many instances as you want. You can start multiple WildDuck instances in different machines and as long as they share the same
-   MongoDB and Redis settings, users can connect to any instances. This is very different from the traditional IMAP servers where a single user always needs to
-   connect (or be proxied) to the same IMAP server. WildDuck keeps all required state information in MongoDB, so it does not matter which IMAP instance you
-   use.
-2. **Scalable** as WildDuck uses sharded MongoDB cluster for the backend storage. If you're running out of space, add a new shard.
-3. **No SPOF.** You can run multiple instances of every required service.
-4. **Centralized authentication** which allows modern features like 2FA, application specific passwords, authentication scopes, revoking authentication tokens,
-   audit logging and even profile files to auto-configure Apple email clients without master password
-5. **Works on any OS including Windows.** At least if you get MongoDB and Redis running first.
-6. Focus on **internationalization**, ie. supporting email addresses with non-ascii characters
-7. **Deduplication of attachments.** If the same attachment is referenced by different messages then only a single copy of the attachment is stored.
-8. Access messages both using **IMAP and [HTTP API](https://api.wildduck.email/)**. The latter serves parsed data, so no need to fetch RFC822 messages and parse
-   out html, plaintext content or attachments. It is super easy to create a webmail interface on top of this.
-9. Built in **address labels**: _username+label@example.com_ is delivered to _username@example.com_
+1.  **Stateless.** Start as many instances as you want. You can start multiple WildDuck instances in different machines and as long as they share the same
+    MongoDB and Redis settings, users can connect to any instances. This is very different from the traditional IMAP servers where a single user always needs to
+    connect (or be proxied) to the same IMAP server. WildDuck keeps all required state information in MongoDB, so it does not matter which IMAP instance you
+    use.
+2.  **Scalable** as WildDuck uses sharded MongoDB cluster for the backend storage. If you're running out of space, add a new shard.
+3.  **No SPOF.** You can run multiple instances of every required service.
+4.  **Centralized authentication** which allows modern features like 2FA, application specific passwords, authentication scopes, revoking authentication tokens,
+    audit logging and even profile files to auto-configure Apple email clients without master password
+5.  **Works on any OS including Windows.** At least if you get MongoDB and Redis running first.
+6.  Focus on **internationalization**, ie. supporting email addresses with non-ascii characters
+7.  **Deduplication of attachments.** If the same attachment is referenced by different messages then only a single copy of the attachment is stored.
+8.  Access messages both using **IMAP and [HTTP API](https://api.wildduck.email/)**. The latter serves parsed data, so no need to fetch RFC822 messages and parse
+    out html, plaintext content or attachments. It is super easy to create a webmail interface on top of this.
+9.  Built in **address labels**: _username+label@example.com_ is delivered to _username@example.com_
 10. Dots in usernames and addresses are informational only. username@example.com is the same as user.name@example.com
 11. **HTTP Event Source** to push modifications in user email account to browser for super snappy webmail clients
 12. **Super easy to tweak.** The entire codebase is pure JavaScript, so there's nothing to compile or anything platform specific. If you need to tweak something
@@ -157,9 +157,9 @@ specific, so (at least in theory) it could be replaced with any object store.
 
 Here's a list of alternative email servers that also use a database for storing email messages:
 
-* [DBMail](http://www.dbmail.org/) (MySQL, IMAP)
-* [Archiveopteryx](http://archiveopteryx.org/) (PostgreSQL, IMAP)
-* [ElasticInbox](http://www.elasticinbox.com/) (Cassandra, POP3)
+*   [DBMail](http://www.dbmail.org/) (MySQL, IMAP)
+*   [Archiveopteryx](http://archiveopteryx.org/) (PostgreSQL, IMAP)
+*   [ElasticInbox](http://www.elasticinbox.com/) (Cassandra, POP3)
 
 ### How does it work?
 
@@ -182,25 +182,25 @@ and the user continues to see the old state.
 
 WildDuck IMAP server supports the following IMAP standards:
 
-* The entire **IMAP4rev1** suite with some minor differences from the spec. See below for [IMAP Protocol Differences](#imap-protocol-differences) for a complete
-  list
-* **IDLE** ([RFC2177](https://tools.ietf.org/html/rfc2177)) – notfies about new and deleted messages and also about flag updates
-* **CONDSTORE** ([RFC4551](https://tools.ietf.org/html/rfc4551)) and **ENABLE** ([RFC5161](https://tools.ietf.org/html/rfc5161)) – supports most of the spec,
-  except metadata stuff which is ignored
-* **STARTTLS** ([RFC2595](https://tools.ietf.org/html/rfc2595))
-* **NAMESPACE** ([RFC2342](https://tools.ietf.org/html/rfc2342)) – minimal support, just lists the single user namespace with hierarchy separator
-* **UNSELECT** ([RFC3691](https://tools.ietf.org/html/rfc3691))
-* **UIDPLUS** ([RFC4315](https://tools.ietf.org/html/rfc4315))
-* **SPECIAL-USE** ([RFC6154](https://tools.ietf.org/html/rfc6154))
-* **ID** ([RFC2971](https://tools.ietf.org/html/rfc2971))
-* **MOVE** ([RFC6851](https://tools.ietf.org/html/rfc6851))
-* **AUTHENTICATE PLAIN** ([RFC4959](https://tools.ietf.org/html/rfc4959)) and **SASL-IR**
-* **APPENDLIMIT** ([RFC7889](https://tools.ietf.org/html/rfc7889)) – maximum global allowed message size is advertised in CAPABILITY listing
-* **UTF8=ACCEPT** ([RFC6855](https://tools.ietf.org/html/rfc6855)) – this also means that WildDuck natively supports unicode email usernames. For example
-  [андрис@уайлддак.орг](mailto:андрис@уайлддак.орг) is a valid email address that is hosted by a test instance of WildDuck
-* **QUOTA** ([RFC2087](https://tools.ietf.org/html/rfc2087)) – Quota size is global for an account, using a single quota root. Be aware that quota size does not
-  mean actual byte storage in disk, it is calculated as the sum of the [RFC822](https://tools.ietf.org/html/rfc822) sources of stored messages.
-* **COMPRESS=DEFLATE** ([RFC4978](https://tools.ietf.org/html/rfc4978)) – Compress traffic between the client and the server
+*   The entire **IMAP4rev1** suite with some minor differences from the spec. See below for [IMAP Protocol Differences](#imap-protocol-differences) for a complete
+    list
+*   **IDLE** ([RFC2177](https://tools.ietf.org/html/rfc2177)) – notfies about new and deleted messages and also about flag updates
+*   **CONDSTORE** ([RFC4551](https://tools.ietf.org/html/rfc4551)) and **ENABLE** ([RFC5161](https://tools.ietf.org/html/rfc5161)) – supports most of the spec,
+    except metadata stuff which is ignored
+*   **STARTTLS** ([RFC2595](https://tools.ietf.org/html/rfc2595))
+*   **NAMESPACE** ([RFC2342](https://tools.ietf.org/html/rfc2342)) – minimal support, just lists the single user namespace with hierarchy separator
+*   **UNSELECT** ([RFC3691](https://tools.ietf.org/html/rfc3691))
+*   **UIDPLUS** ([RFC4315](https://tools.ietf.org/html/rfc4315))
+*   **SPECIAL-USE** ([RFC6154](https://tools.ietf.org/html/rfc6154))
+*   **ID** ([RFC2971](https://tools.ietf.org/html/rfc2971))
+*   **MOVE** ([RFC6851](https://tools.ietf.org/html/rfc6851))
+*   **AUTHENTICATE PLAIN** ([RFC4959](https://tools.ietf.org/html/rfc4959)) and **SASL-IR**
+*   **APPENDLIMIT** ([RFC7889](https://tools.ietf.org/html/rfc7889)) – maximum global allowed message size is advertised in CAPABILITY listing
+*   **UTF8=ACCEPT** ([RFC6855](https://tools.ietf.org/html/rfc6855)) – this also means that WildDuck natively supports unicode email usernames. For example
+    [андрис@уайлддак.орг](mailto:андрис@уайлддак.орг) is a valid email address that is hosted by a test instance of WildDuck
+*   **QUOTA** ([RFC2087](https://tools.ietf.org/html/rfc2087)) – Quota size is global for an account, using a single quota root. Be aware that quota size does not
+    mean actual byte storage in disk, it is calculated as the sum of the [RFC822](https://tools.ietf.org/html/rfc822) sources of stored messages.
+*   **COMPRESS=DEFLATE** ([RFC4978](https://tools.ietf.org/html/rfc4978)) – Compress traffic between the client and the server
 
 WildDuck more or less passes the [ImapTest](https://www.imapwiki.org/ImapTest/TestFeatures) Stress Testing run. Common errors that arise in the test are
 unknown labels (WildDuck doesn't send unsolicited `FLAGS` updates even though it does send unsolicited `FETCH FLAGS` updates) and sometimes NO for `STORE`
@@ -218,12 +218,12 @@ clients.
 
 In addition to the required POP3 commands ([RFC1939](https://tools.ietf.org/html/rfc1939)) WildDuck supports the following extensions:
 
-* **UIDL**
-* **USER**
-* **PASS**
-* **SASL PLAIN**
-* **PIPELINING**
-* **TOP**
+*   **UIDL**
+*   **USER**
+*   **PASS**
+*   **SASL PLAIN**
+*   **PIPELINING**
+*   **TOP**
 
 #### POP3 command behaviors
 
@@ -256,19 +256,19 @@ Filters can be managed via the [WildDuck API](https://api.wildduck.email/#api-Fi
 
 This is a list of known differences from the IMAP specification. Listed differences are either intentional or are bugs that became features.
 
-1. `\Recent` flags is not implemented and most probably never will be (RFC3501 2.3.2.)
-2. `RENAME` does not touch subfolders which is against the spec (RFC3501 6.3.5\. _If the name has inferior hierarchical names, then the inferior hierarchical
-   names MUST also be renamed._). WildDuck stores all folders using flat hierarchy, the "/" separator is fake and only used for listing mailboxes
-3. Unsolicited `FLAGS` responses (RFC3501 7.2.6.) and `PERMANENTFLAGS` are not sent (except for as part of `SELECT` and `EXAMINE` responses). WildDuck notifies
-   about flag updates only with unsolicited FETCH updates.
-4. WildDuck responds with `NO` for `STORE` if matching messages were deleted in another session
-5. `CHARSET` argument for the `SEARCH` command is ignored (RFC3501 6.4.4.)
-6. Metadata arguments for `SEARCH MODSEQ` are ignored (RFC7162 3.1.5.). You can define `<entry-name>` and `<entry-type-req>` values but these are not used for
-   anything
-7. `SEARCH TEXT` and `SEARCH BODY` both use MongoDB [$text index](https://docs.mongodb.com/v3.4/reference/operator/query/text/) against decoded plaintext
-   version of the message. RFC3501 assumes that it should be a string match either against full message (`TEXT`) or body section (`BODY`).
-8. What happens when FETCH is called for messages that were deleted in another session? _Not sure, need to check_
-9. **Autoexpunge**, meaning that an EXPUNGE is called on background whenever a messages gets a `\Deleted` flag set. This is not in conflict with IMAP RFCs.
+1.  `\Recent` flags is not implemented and most probably never will be (RFC3501 2.3.2.)
+2.  `RENAME` does not touch subfolders which is against the spec (RFC3501 6.3.5\. _If the name has inferior hierarchical names, then the inferior hierarchical
+    names MUST also be renamed._). WildDuck stores all folders using flat hierarchy, the "/" separator is fake and only used for listing mailboxes
+3.  Unsolicited `FLAGS` responses (RFC3501 7.2.6.) and `PERMANENTFLAGS` are not sent (except for as part of `SELECT` and `EXAMINE` responses). WildDuck notifies
+    about flag updates only with unsolicited FETCH updates.
+4.  WildDuck responds with `NO` for `STORE` if matching messages were deleted in another session
+5.  `CHARSET` argument for the `SEARCH` command is ignored (RFC3501 6.4.4.)
+6.  Metadata arguments for `SEARCH MODSEQ` are ignored (RFC7162 3.1.5.). You can define `<entry-name>` and `<entry-type-req>` values but these are not used for
+    anything
+7.  `SEARCH TEXT` and `SEARCH BODY` both use MongoDB [$text index](https://docs.mongodb.com/v3.4/reference/operator/query/text/) against decoded plaintext
+    version of the message. RFC3501 assumes that it should be a string match either against full message (`TEXT`) or body section (`BODY`).
+8.  What happens when FETCH is called for messages that were deleted in another session? _Not sure, need to check_
+9.  **Autoexpunge**, meaning that an EXPUNGE is called on background whenever a messages gets a `\Deleted` flag set. This is not in conflict with IMAP RFCs.
 
 Any other differences are most probably real bugs and unintentional.
 
@@ -300,16 +300,16 @@ database.
 
 ## Future considerations
 
-* Optimize FETCH queries to load only partial data for BODY subparts
-* Parse incoming message into the mime tree as a stream. Currently the entire message is buffered in memory before being parsed.
-* Maybe allow some kind of message manipulation through plugins
-* WildDuck does not plan to be the most feature-rich IMAP client in the world. Most IMAP extensions are useless because there aren't too many clients that are
-  able to benefit from these extensions. There are a few extensions though that would make sense to be added to WildDuck:
+*   Optimize FETCH queries to load only partial data for BODY subparts
+*   Parse incoming message into the mime tree as a stream. Currently the entire message is buffered in memory before being parsed.
+*   Maybe allow some kind of message manipulation through plugins
+*   WildDuck does not plan to be the most feature-rich IMAP client in the world. Most IMAP extensions are useless because there aren't too many clients that are
+    able to benefit from these extensions. There are a few extensions though that would make sense to be added to WildDuck:
 
-  * IMAP4 non-synchronizing literals, LITERAL- ([RFC7888](https://tools.ietf.org/html/rfc7888)). Synchronized literals are needed for APPEND to check mailbox
-    quota, small values could go with the non-synchronizing version.
-  * LIST-STATUS ([RFC5819](https://tools.ietf.org/html/rfc5819))
-  * _What else?_ (definitely not NOTIFY nor QRESYNC)
+    *   IMAP4 non-synchronizing literals, LITERAL- ([RFC7888](https://tools.ietf.org/html/rfc7888)). Synchronized literals are needed for APPEND to check mailbox
+        quota, small values could go with the non-synchronizing version.
+    *   LIST-STATUS ([RFC5819](https://tools.ietf.org/html/rfc5819))
+    *   _What else?_ (definitely not NOTIFY nor QRESYNC)
 
 ## Operating WildDuck
 

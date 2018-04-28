@@ -1,5 +1,8 @@
 {
+    "disabled": true,
+
     "flag": true,
+
     "from": {
         "name": "WildDuck Support",
         "address": "info@[DOMAIN]"
@@ -8,5 +11,6 @@
         "name": "[NAME]",
         "address": "[EMAIL]"
     },
+
     "subject": "[FNAME], welcome to our awesome service!"
 }
