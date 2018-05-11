@@ -19,7 +19,7 @@ class LengthLimiter extends Transform {
 
     _transform(chunk, encoding, done) {
         if (encoding !== 'buffer') {
-            chunk = new Buffer(chunk, encoding);
+            chunk = Buffer.from(chunk, encoding);
         }
 
         if (!chunk || !chunk.length || this.finished) {
@@ -63,7 +63,7 @@ class LengthLimiter extends Transform {
     _flush(done) {
         if (!this.finished) {
             // add padding if incoming stream stopped too early
-            let buf = new Buffer(this.padding.repeat(this.expectedLength - this.byteCounter));
+            let buf = Buffer.from(this.padding.repeat(this.expectedLength - this.byteCounter));
             this.push(buf);
             this.finished = true;
         }

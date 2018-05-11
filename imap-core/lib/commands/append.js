@@ -102,7 +102,7 @@ module.exports = {
             path,
             flags,
             internaldate,
-            new Buffer(typeof message.value === 'string' ? message.value : (message.value || '').toString(), 'binary'),
+            Buffer.from(typeof message.value === 'string' ? message.value : (message.value || '').toString(), 'binary'),
             this.session,
             (err, success, info) => {
                 if (err) {

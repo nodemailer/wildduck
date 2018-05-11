@@ -126,7 +126,7 @@ function runClientMockup(options, callback) {
 
                                     let part = command[i++];
 
-                                    socket.write(new Buffer(part + (i >= command.length ? '\r\n' : ''), 'binary'));
+                                    socket.write(Buffer.from(part + (i >= command.length ? '\r\n' : ''), 'binary'));
                                     if (debug) {
                                         console.log('C: ' + part);
                                     }
@@ -135,7 +135,7 @@ function runClientMockup(options, callback) {
 
                                 send();
                             } else {
-                                socket.write(new Buffer(command + '\r\n', 'binary'));
+                                socket.write(Buffer.from(command + '\r\n', 'binary'));
                                 if (debug) {
                                     console.log('C: ' + command);
                                 }

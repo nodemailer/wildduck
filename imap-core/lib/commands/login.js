@@ -119,7 +119,7 @@ module.exports = {
 
                 callback(null, {
                     response: 'OK',
-                    message: new Buffer(username + ' authenticated').toString('binary')
+                    message: Buffer.from(username + ' authenticated').toString('binary')
                 });
             }
         );

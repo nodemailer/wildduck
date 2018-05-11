@@ -25,7 +25,7 @@ module.exports = function(options) {
                     flags: [],
                     modseq: 100,
                     idate: new Date('14-Sep-2013 21:22:28 -0300'),
-                    mimeTree: parseMimeTree(new Buffer('from: sender@example.com\r\nto: to@example.com\r\ncc: cc@example.com\r\nsubject: test\r\n\r\nzzzz\r\n'))
+                    mimeTree: parseMimeTree(Buffer.from('from: sender@example.com\r\nto: to@example.com\r\ncc: cc@example.com\r\nsubject: test\r\n\r\nzzzz\r\n'))
                 },
                 {
                     uid: 49,

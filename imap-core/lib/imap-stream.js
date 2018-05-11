@@ -79,7 +79,7 @@ class IMAPStream extends Writable {
 
             if (data.length - pos >= this._expecting) {
                 // all bytes received
-                this._literal.end(new Buffer(data.substr(pos, this._expecting), 'binary'));
+                this._literal.end(Buffer.from(data.substr(pos, this._expecting), 'binary'));
                 pos += this._expecting;
                 this._expecting = 0;
                 this._literal = false;
@@ -93,7 +93,7 @@ class IMAPStream extends Writable {
                 }
             } else {
                 // data still pending
-                this._literal.write(new Buffer(data.substr(pos), 'binary'), done);
+                this._literal.write(Buffer.from(data.substr(pos), 'binary'), done);
                 this._expecting -= data.length - pos;
                 return; // wait for the next chunk
             }
@@ -163,7 +163,7 @@ class IMAPStream extends Writable {
         if (this._remainder) {
             line = this._remainder;
             this._remainder = '';
-            this.oncommand(new Buffer(line, 'binary'));
+            this.oncommand(Buffer.from(line, 'binary'));
         }
     }
 }

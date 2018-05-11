@@ -9,7 +9,10 @@
         "apidoc": "apidoc -i lib/api/ -o docs/",
         "show": "NODE_CONFIG_ONLY=true node server.js"
     },
-    "keywords": ["imap", "mail server"],
+    "keywords": [
+        "imap",
+        "mail server"
+    ],
     "author": "Andris Reinman",
     "license": "EUPL-1.1+",
     "devDependencies": {
@@ -38,10 +41,11 @@
         "html-to-text": "4.0.0",
         "humanname": "0.2.2",
         "humanparser": "1.5.0",
-        "iconv-lite": "0.4.22",
+        "iconv-lite": "0.4.23",
         "ioredfour": "1.0.2-ioredis",
         "ioredis": "3.2.2",
-        "joi": "13.2.0",
+        "isemail": "^3.1.2",
+        "joi": "13.3.0",
         "js-yaml": "3.11.0",
         "key-fingerprint": "1.1.0",
         "libbase64": "1.0.2",
@@ -51,12 +55,13 @@
         "mailsplit": "4.1.2",
         "mobileconfig": "2.1.0",
         "mongo-cursor-pagination-node6": "5.0.0",
-        "mongodb": "3.0.7",
+        "mongodb": "3.0.8",
         "mongodb-extended-json": "1.10.0",
         "node-forge": "0.7.5",
         "nodemailer": "4.6.4",
         "npmlog": "4.1.2",
         "openpgp": "3.0.9",
+        "pem": "^1.12.5",
         "qrcode": "1.2.0",
         "restify": "7.1.1",
         "restify-logger": "2.0.1",
@@ -72,8 +77,5 @@
     "repository": {
         "type": "git",
         "url": "git://github.com/wildduck-email/wildduck.git"
-    },
-    "optionalDependencies": {
-        "@ronomon/crypto-async": "2.3.0"
     }
 }

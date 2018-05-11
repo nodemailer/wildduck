@@ -512,7 +512,7 @@ describe('IMAP Command Compile Stream', function() {
             let emitter = () => {
                 let str = 'X'.repeat(128);
                 emitted += str.length;
-                limiter.write(new Buffer(str));
+                limiter.write(Buffer.from(str));
                 if (emitted >= len) {
                     limiter.end();
                 } else {
@@ -539,7 +539,7 @@ describe('IMAP Command Compile Stream', function() {
             let emitter = () => {
                 let str = 'X'.repeat(128);
                 emitted += str.length;
-                limiter.write(new Buffer(str));
+                limiter.write(Buffer.from(str));
                 if (emitted >= len) {
                     limiter.end();
                 } else {
@@ -566,7 +566,7 @@ describe('IMAP Command Compile Stream', function() {
             let emitter = () => {
                 let str = 'X'.repeat(128);
                 emitted += str.length;
-                limiter.write(new Buffer(str));
+                limiter.write(Buffer.from(str));
                 if (emitted >= len) {
                     limiter.end();
                 } else {
@@ -593,7 +593,7 @@ describe('IMAP Command Compile Stream', function() {
             let emitter = () => {
                 let str = 'X'.repeat(128);
                 emitted += str.length;
-                limiter.write(new Buffer(str));
+                limiter.write(Buffer.from(str));
                 if (emitted >= len) {
                     limiter.end();
                 } else {
@@ -639,7 +639,7 @@ describe('IMAP Command Compile Stream', function() {
                 let str = input.substr(emitted, 128);
                 emitted += str.length;
 
-                stream.write(new Buffer(str));
+                stream.write(Buffer.from(str));
                 if (emitted >= len) {
                     stream.end();
                 } else {

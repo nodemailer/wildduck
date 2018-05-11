@@ -4,6 +4,12 @@
 #cipher="aes192"
 #secret="a secret cat"
 
+# If true then spwans openssl command line executable for generating DKIM keys
+# Otherwise forge library is used which is cross-environment but slower
+useOpenSSL=true
+# Define path to openssl if not in default path
+#pathOpenSSL="/usr/local/bin/openssl"
+
 # If true then also adds a signature for the outbound domain
 # Affects WildDuck ZoneMTA plugin only
 signTransportDomain=false

@@ -183,7 +183,7 @@ describe('IMAP Protocol integration tests', function() {
 
     describe('AUTHENTICATE PLAIN', function() {
         it('should authenticate', function(done) {
-            let cmds = ['T1 AUTHENTICATE PLAIN', new Buffer('\x00testuser\x00pass', 'utf-8').toString('base64'), 'T2 LOGOUT'];
+            let cmds = ['T1 AUTHENTICATE PLAIN', Buffer.from('\x00testuser\x00pass', 'utf-8').toString('base64'), 'T2 LOGOUT'];
 
             testClient(
                 {
@@ -199,7 +199,7 @@ describe('IMAP Protocol integration tests', function() {
         });
 
         it('should authenticate using SASL-IR', function(done) {
-            let cmds = ['T1 AUTHENTICATE PLAIN ' + new Buffer('\x00testuser\x00pass', 'utf-8').toString('base64'), 'T2 LOGOUT'];
+            let cmds = ['T1 AUTHENTICATE PLAIN ' + Buffer.from('\x00testuser\x00pass', 'utf-8').toString('base64'), 'T2 LOGOUT'];
 
             testClient(
                 {
@@ -215,7 +215,7 @@ describe('IMAP Protocol integration tests', function() {
         });
 
         it('should fail authentication', function(done) {
-            let cmds = ['T1 AUTHENTICATE PLAIN', new Buffer('\x00testuser\x00wrongpass', 'utf-8').toString('base64'), 'T2 LOGOUT'];
+            let cmds = ['T1 AUTHENTICATE PLAIN', Buffer.from('\x00testuser\x00wrongpass', 'utf-8').toString('base64'), 'T2 LOGOUT'];
 
             testClient(
                 {
@@ -231,7 +231,7 @@ describe('IMAP Protocol integration tests', function() {
         });
 
         it('should reject client token', function(done) {
-            let cmds = ['T1 AUTHENTICATE PLAIN', new Buffer('\x00testuser\x00pass\x00token', 'utf-8').toString('base64'), 'T2 LOGOUT'];
+            let cmds = ['T1 AUTHENTICATE PLAIN', Buffer.from('\x00testuser\x00pass\x00token', 'utf-8').toString('base64'), 'T2 LOGOUT'];
 
             testClient(
                 {
@@ -247,7 +247,7 @@ describe('IMAP Protocol integration tests', function() {
         });
 
         it('should authenticate with client token', function(done) {
-            let cmds = ['T1 AUTHENTICATE PLAIN-CLIENTTOKEN', new Buffer('\x00testuser\x00pass\x00token', 'utf-8').toString('base64'), 'T2 LOGOUT'];
+            let cmds = ['T1 AUTHENTICATE PLAIN-CLIENTTOKEN', Buffer.from('\x00testuser\x00pass\x00token', 'utf-8').toString('base64'), 'T2 LOGOUT'];
 
             testClient(
                 {
@@ -520,7 +520,7 @@ describe('IMAP Protocol integration tests', function() {
 
     describe('APPEND', function() {
         it('should fail appending to nonexistent mailbox', function(done) {
-            let message = new Buffer('From: sender <sender@example.com>\r\nTo: receiver@example.com\r\nSubject: HELLO!\r\n\r\nWORLD!');
+            let message = Buffer.from('From: sender <sender@example.com>\r\nTo: receiver@example.com\r\nSubject: HELLO!\r\n\r\nWORLD!');
             let cmds = ['T1 LOGIN testuser pass', 'T2 APPEND zzz {' + message.length + '}\r\n' + message.toString('binary'), 'T3 LOGOUT'];
 
             testClient(
@@ -539,7 +539,7 @@ describe('IMAP Protocol integration tests', function() {
         });
 
         it('should append to mailbox', function(done) {
-            let message = new Buffer('From: sender <sender@example.com>\r\nTo: receiver@example.com\r\nSubject: HELLO!\r\n\r\nWORLD!');
+            let message = Buffer.from('From: sender <sender@example.com>\r\nTo: receiver@example.com\r\nSubject: HELLO!\r\n\r\nWORLD!');
             let cmds = ['T1 LOGIN testuser pass', 'T2 APPEND INBOX {' + message.length + '}\r\n' + message.toString('binary'), 'T3 LOGOUT'];
 
             testClient(
@@ -558,7 +558,7 @@ describe('IMAP Protocol integration tests', function() {
         });
 
         it('should append to mailbox with optional arguments', function(done) {
-            let message = new Buffer('From: sender <sender@example.com>\r\nTo: receiver@example.com\r\nSubject: HELLO!\r\n\r\nWORLD!');
+            let message = Buffer.from('From: sender <sender@example.com>\r\nTo: receiver@example.com\r\nSubject: HELLO!\r\n\r\nWORLD!');
             let cmds = [
                 'T1 LOGIN testuser pass',
                 'T2 APPEND INBOX (MyFlag) "14-Sep-2013 21:22:28 -0300" {' + message.length + '}\r\n' + message.toString('binary'),

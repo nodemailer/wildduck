@@ -47,7 +47,9 @@ module.exports = {
 };
 
 function authenticate(connection, token, requireClientToken, callback) {
-    let data = new Buffer(token, 'base64').toString().split('\x00');
+    let data = Buffer.from(token, 'base64')
+        .toString()
+        .split('\x00');
 
     if ((!requireClientToken && data.length !== 3) || (requireClientToken && data.length !== 4)) {
         return callback(null, {
@@ -132,7 +134,7 @@ function authenticate(connection, token, requireClientToken, callback) {
 
             callback(null, {
                 response: 'OK',
-                message: new Buffer(username + ' authenticated').toString('binary')
+                message: Buffer.from(username + ' authenticated').toString('binary')
             });
         }
     );

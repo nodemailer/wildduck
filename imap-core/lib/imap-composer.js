@@ -51,7 +51,7 @@ class IMAPComposer extends Transform {
             compiled
         );
 
-        this.push(new Buffer(compiled + '\r\n', 'binary'));
+        this.push(Buffer.from(compiled + '\r\n', 'binary'));
         done();
     }
 
