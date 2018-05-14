@@ -9,7 +9,10 @@
         "apidoc": "apidoc -i lib/api/ -o docs/",
         "show": "NODE_CONFIG_ONLY=true node server.js"
     },
-    "keywords": ["imap", "mail server"],
+    "keywords": [
+        "imap",
+        "mail server"
+    ],
     "author": "Andris Reinman",
     "license": "EUPL-1.1+",
     "devDependencies": {
@@ -52,7 +55,7 @@
         "mailsplit": "4.1.2",
         "mobileconfig": "2.1.0",
         "mongo-cursor-pagination-node6": "5.0.0",
-        "mongodb": "3.0.8",
+        "mongodb": "3.1.0-beta4",
         "mongodb-extended-json": "1.10.0",
         "node-forge": "0.7.5",
         "nodemailer": "4.6.4",
