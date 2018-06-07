@@ -31,9 +31,7 @@ All components use TLS/HTTPS with Let's Encrypt certificates by default. Webmail
 
 Run the following commands as root user. Before actually starting _install.sh_ you could inspect it to see what it exactly does.
 
-    $ wget https://raw.githubusercontent.com/nodemailer/wildduck/master/setup/install.sh
-    $ chmod +x install.sh
-    $ ./install.sh mydomain.com
+    $ wget -O - https://raw.githubusercontent.com/nodemailer/wildduck/master/setup/get_install.sh | bash
 
 Where mydomain.com is the domain name of your server.
 
