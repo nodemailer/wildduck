@@ -5,8 +5,8 @@ BASEURL="https://raw.githubusercontent.com/nodemailer/wildduck/master/setup/"
 
 ## declare an array
 declare -a arr=(
-"00_install_variables.sh"
-"01_install_commit_variables.sh"
+"00_install_global_functions_variables.sh"
+"01_install_commits.sh"
 "02_install_prerequisites.sh"
 "03_install_check_running_services.sh"
 "04_install_import_keys.sh"

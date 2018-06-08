@@ -1,6 +1,6 @@
 #! /bin/bash
 
-OURNAME=01_install_commit_variables.sh
+OURNAME=01_install_commits.sh
 
 WILDDUCK_COMMIT="538da537ca3cef0bbd714da70085cfd4cc734b49"
 ZONEMTA_COMMIT="f5f6a80ef6571c24afbb013eb18d74ec6e81ea1e" # zone-mta-template
