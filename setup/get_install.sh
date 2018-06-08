@@ -1,7 +1,7 @@
 #! /bin/bash
 
 # This script downloads all the installation files.
-BASEURL="https://raw.githubusercontent.com/bunyevacz/wildduck/install.sh/setup/"
+BASEURL="https://raw.githubusercontent.com/nodemailer/wildduck/master/setup/"
 
 ## declare an array
 declare -a arr=(
