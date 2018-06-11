@@ -95,10 +95,11 @@ authlogExpireDays=30
 " > /etc/zone-mta/plugins/wildduck.toml
 
 cd /opt/zone-mta/keys
-openssl genrsa -out "$MAILDOMAIN-dkim.pem" 2048
+# Many registrar limits dns TXT fields to 255 char. 1024bit is almost too long:-\
+openssl genrsa -out "$MAILDOMAIN-dkim.pem" 1024
 chmod 400 "$MAILDOMAIN-dkim.pem"
 openssl rsa -in "$MAILDOMAIN-dkim.pem" -out "$MAILDOMAIN-dkim.cert" -pubout
-DNS_ADDRESS="v=DKIM1;p=$(grep -v -e '^-' $MAILDOMAIN-dkim.cert | tr -d "\n")"
+DKIM_DNS="v=DKIM1;k=rsa;p=$(grep -v -e '^-' $MAILDOMAIN-dkim.cert | tr -d "\n")"
 
 DKIM_JSON=`DOMAIN="$MAILDOMAIN" SELECTOR="$DKIM_SELECTOR" node -e 'console.log(JSON.stringify({
   domain: process.env.DOMAIN,

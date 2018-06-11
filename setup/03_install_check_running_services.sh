@@ -36,6 +36,7 @@ if  ! [ -z $PORT25 ] ; then
     echo -e "`systemctl status $PORT25`"
     echo -e "\nList all enabled services:"
     echo -e "systemctl list-unit-files | grep enabled"
+    echo -e "stop a service: systemctl stop [service]"
     echo -e "${RED}QUITTING... (please stop the service and launch again)${NC}"
     exit 1
   else
@@ -55,6 +56,7 @@ if  ! [ -z $PORT587 ] ; then
     echo -e "`systemctl status $PORT587`"
     echo -e "\nList all enabled services:"
     echo -e "systemctl list-unit-files | grep enabled"
+    echo -e "stop a service: systemctl stop [service]"
     echo -e "${RED}QUITTING... (please stop the service and launch again)${NC}"
     exit 1
   else
@@ -74,6 +76,7 @@ if  ! [ -z $PORT993 ] ; then
     echo -e "`systemctl status $PORT993`"
     echo -e "\nList all enabled services:"
     echo -e "systemctl list-unit-files | grep enabled"
+    echo -e "stop a service: systemctl stop [service]"
     echo -e "${RED}QUITTING... (please stop the service and launch again)${NC}"
     exit 1
   else
@@ -93,6 +96,7 @@ if  ! [ -z $PORT995 ] ; then
     echo -e "`systemctl status $PORT995`"
     echo -e "\nList all enabled services:"
     echo -e "systemctl list-unit-files | grep enabled"
+    echo -e "stop a service: systemctl stop [service]"
     echo -e "${RED}QUITTING... (please stop the service and launch again)${NC}"
     exit 1
   else
@@ -112,6 +116,7 @@ if  ! [ -z $PORT80 ] ; then
     echo -e "`systemctl status $PORT80`"
     echo -e "\nList all enabled services:"
     echo -e "systemctl list-unit-files | grep enabled"
+    echo -e "stop a service: systemctl stop [service]"
     echo -e "${RED}QUITTING... (please stop the service and launch again)${NC}"
     exit 1
   else
@@ -131,6 +136,7 @@ if  ! [ -z $PORT443 ] ; then
     echo -e "`systemctl status $PORT443`"
     echo -e "\nList all enabled services:"
     echo -e "systemctl list-unit-files | grep enabled"
+    echo -e "stop a service: systemctl stop [service]"
     echo -e "${RED}QUITTING... (please stop the service and launch again)${NC}"
     exit 1
   else
