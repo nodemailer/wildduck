@@ -30,7 +30,6 @@
         "request": "^2.87.0"
     },
     "dependencies": {
-        "addressparser": "1.0.1",
         "bcryptjs": "2.4.3",
         "bugsnag": "2.4.2",
         "generate-password": "1.4.0",
@@ -55,7 +54,7 @@
         "mongodb": "3.1.0-beta4",
         "mongodb-extended-json": "1.10.0",
         "node-forge": "0.7.5",
-        "nodemailer": "4.6.6",
+        "nodemailer": "4.6.7",
         "npmlog": "4.1.2",
         "openpgp": "3.0.11",
         "pem": "^1.12.5",
@@ -63,7 +62,7 @@
         "restify": "7.2.1",
         "restify-logger": "2.0.1",
         "seq-index": "1.1.0",
-        "smtp-server": "3.4.5",
+        "smtp-server": "3.4.6",
         "speakeasy": "2.0.0",
         "tlds": "1.203.1",
         "u2f": "0.1.3",

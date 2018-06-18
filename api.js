@@ -106,7 +106,7 @@ server.use(
 );
 
 module.exports = done => {
-    if (!config.imap.enabled) {
+    if (!config.api.enabled) {
         return setImmediate(() => done(null, false));
     }
 
