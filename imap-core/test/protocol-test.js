@@ -323,6 +323,27 @@ describe('IMAP Protocol integration tests', function() {
             );
         });
 
+        it('should list all mailboxes using XLIST', function(done) {
+            let cmds = ['T1 LOGIN testuser pass', 'T2 XLIST "" "*"', 'T3 LOGOUT'];
+
+            testClient(
+                {
+                    commands: cmds,
+                    secure: true,
+                    port
+                },
+                function(resp) {
+                    resp = resp.toString();
+                    expect(resp.match(/^\* XLIST /gm).length).to.equal(6);
+                    expect(resp.indexOf('\r\n* XLIST (\\HasNoChildren \\Inbox) "/" "Inbox"\r\n') >= 0).to.be.true;
+                    expect(resp.indexOf('\r\n* XLIST (\\Noselect \\HasChildren) "/" "[Gmail]"\r\n') >= 0).to.be.true;
+                    expect(resp.indexOf('\r\n* XLIST (\\HasNoChildren \\Sent) "/" "[Gmail]/Sent Mail"\r\n') >= 0).to.be.true;
+                    expect(/^T2 OK/m.test(resp)).to.be.true;
+                    done();
+                }
+            );
+        });
+
         it('should list first level mailboxes', function(done) {
             let cmds = ['T1 LOGIN testuser pass', 'T2 LIST "" "%"', 'T3 LOGOUT'];
 

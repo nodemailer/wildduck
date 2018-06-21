@@ -17,6 +17,7 @@ const commands = new Map([
     ['AUTHENTICATE PLAIN-CLIENTTOKEN', require('./commands/authenticate-plain')],
     ['NAMESPACE', require('./commands/namespace')],
     ['LIST', require('./commands/list')],
+    ['XLIST', require('./commands/list')],
     ['LSUB', require('./commands/lsub')],
     ['SUBSCRIBE', require('./commands/subscribe')],
     ['UNSUBSCRIBE', require('./commands/unsubscribe')],
@@ -271,14 +272,14 @@ class IMAPCommand {
                                         .concat(
                                             response.code
                                                 ? {
-                                                    type: 'SECTION',
-                                                    section: [
-                                                        {
-                                                            type: 'TEXT',
-                                                            value: response.code
-                                                        }
-                                                    ]
-                                                }
+                                                      type: 'SECTION',
+                                                      section: [
+                                                          {
+                                                              type: 'TEXT',
+                                                              value: response.code
+                                                          }
+                                                      ]
+                                                  }
                                                 : []
                                         )
                                         .concat({
