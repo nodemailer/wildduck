@@ -19,6 +19,7 @@ module.exports = {
             capabilities.push('ID');
             capabilities.push('SASL-IR');
             capabilities.push('ENABLE');
+            capabilities.push('XLIST');
         } else {
             capabilities.push('CHILDREN');
             capabilities.push('ID');
@@ -31,6 +32,7 @@ module.exports = {
             capabilities.push('CONDSTORE');
             capabilities.push('UTF8=ACCEPT');
             capabilities.push('QUOTA');
+            capabilities.push('XLIST');
 
             capabilities.push('MOVE');
             capabilities.push('COMPRESS=DEFLATE');
