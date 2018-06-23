@@ -1,6 +1,6 @@
 {
     "name": "wildduck",
-    "version": "1.2.3",
+    "version": "1.2.4",
     "description": "IMAP/POP3 server built with Node.js and MongoDB",
     "main": "server.js",
     "scripts": {
@@ -34,7 +34,7 @@
     },
     "dependencies": {
         "bcryptjs": "2.4.3",
-        "bugsnag": "2.4.2",
+        "bugsnag": "2.4.3",
         "generate-password": "1.4.0",
         "he": "1.1.1",
         "html-to-text": "4.0.0",
@@ -54,7 +54,7 @@
         "mailsplit": "4.2.0",
         "mobileconfig": "2.1.0",
         "mongo-cursor-pagination-node6": "5.0.0",
-        "mongodb": "3.1.0-beta4",
+        "mongodb": "3.0.10",
         "mongodb-extended-json": "1.10.0",
         "node-forge": "0.7.5",
         "nodemailer": "4.6.7",
