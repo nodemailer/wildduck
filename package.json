@@ -1,6 +1,6 @@
 {
     "name": "wildduck",
-    "version": "1.2.4",
+    "version": "1.2.5",
     "description": "IMAP/POP3 server built with Node.js and MongoDB",
     "main": "server.js",
     "scripts": {
@@ -22,7 +22,7 @@
         "eslint-config-nodemailer": "^1.2.0",
         "grunt": "^1.0.3",
         "grunt-cli": "^1.2.0",
-        "grunt-eslint": "^20.2.0",
+        "grunt-eslint": "^21.0.0",
         "grunt-mocha-test": "^0.13.3",
         "grunt-shell-spawn": "^0.3.10",
         "grunt-wait": "^0.1.0",
