@@ -11,7 +11,10 @@ apt-get -q -y install pwgen git ufw build-essential libssl-dev dnsutils python s
 # install tor
 apt-get update
 
-apt-get -q -y install mongodb-org nodejs tor deb.torproject.org-keyring redis-server clamav clamav-daemon
+apt-get -q -y install mongodb-org nodejs redis-server clamav clamav-daemon
+
+# uncomment if you want to support tor
+#apt-get -q -y install tor deb.torproject.org-keyring
 
 # rspamd
 apt-get -q -y --no-install-recommends install rspamd

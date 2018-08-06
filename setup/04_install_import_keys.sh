@@ -35,10 +35,12 @@ echo "deb [ arch=amd64,arm64 ] http://repo.mongodb.org/apt/ubuntu xenial/mongodb
 # Setup tor to be able to send emails to .onion network.
 # Receiving from onion is not automatically set up, you would have to
 # create a hidden servcie first and then bridge port 25
-echo "deb http://deb.torproject.org/torproject.org $CODENAME main
-deb-src http://deb.torproject.org/torproject.org $CODENAME main" > /etc/apt/sources.list.d/tor.list
-gpg --keyserver keys.gnupg.net --recv A3C4F0F979CAA22CDBA8F512EE8CBC9E886DDD89
-gpg --export A3C4F0F979CAA22CDBA8F512EE8CBC9E886DDD89 | sudo apt-key add -
+# uncomment if you want to support TOR
+
+#echo "deb http://deb.torproject.org/torproject.org $CODENAME main
+#deb-src http://deb.torproject.org/torproject.org $CODENAME main" > /etc/apt/sources.list.d/tor.list
+#gpg --keyserver keys.gnupg.net --recv A3C4F0F979CAA22CDBA8F512EE8CBC9E886DDD89
+#gpg --export A3C4F0F979CAA22CDBA8F512EE8CBC9E886DDD89 | sudo apt-key add -
 
 # rspamd
 wget -O- https://rspamd.com/apt-stable/gpg.key | apt-key add -
