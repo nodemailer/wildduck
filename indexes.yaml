@@ -120,7 +120,16 @@ indexes:
     name: user
     key:
       user: 1
-      _id: -1
+      _id: -1 # sort newer first
+
+- collection: authlog
+  type: users # index applies to users database
+  index:
+    name: insert
+    key:
+      user: 1
+      created: 1
+      key: 1
 
 - collection: authlog
   type: users # index applies to users database
@@ -152,7 +161,7 @@ indexes:
   index:
     name: user_hashed
     key:
-      user: hashed
+      user: hashed # sharding
 
 - collection: authlog
   type: users # index applies to users database
