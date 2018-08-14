@@ -134,26 +134,20 @@ indexes:
 - collection: authlog
   type: users # index applies to users database
   index:
-    name: user_action
+    name: user_by_ip
     key:
       user: 1
-      action: 1
+      ip: 1 # List events for user by IP
       _id: -1
-
-- collection: authlog
-  type: users # index applies to users database
-  index:
-    name: by_session
-    key:
-      session: 1
-    sparse: true
+    partialFilterExpression:
+      ip: true
 
 - collection: authlog
   type: users # index applies to users database
   index:
     name: by_ip
     key:
-      ip: 1
+      ip: 1 # All events from this IP
     sparse: true
 
 - collection: authlog
