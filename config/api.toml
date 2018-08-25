@@ -10,6 +10,15 @@ secure=false
 # http://localhost:8080/users?accessToken=somesecretvalue
 #accessToken="somesecretvalue"
 
+[accessControl]
+# If true then require a valid access token to perform API calls
+enabled=false
+# If enabled then encrypt access tokens with the secret password. By default the tokens
+# are not encrypted and stored as cleartext. Once set up do not change these values,
+# otherwise decrypting tokens is going to fail
+#cipher="aes192"
+#secret="a secret cat"
+
 [tls]
 # If certificate path is not defined, use global or built-in self-signed certs
 #key="/path/to/server/key.pem"
