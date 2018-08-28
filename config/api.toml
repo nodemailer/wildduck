@@ -19,6 +19,9 @@ enabled=false
 #cipher="aes192"
 #secret="a secret cat"
 
+[roles]
+# @include "roles.json"
+
 [tls]
 # If certificate path is not defined, use global or built-in self-signed certs
 #key="/path/to/server/key.pem"

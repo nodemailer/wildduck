@@ -10,6 +10,8 @@ const MessageHandler = require('./lib/message-handler');
 const ImapNotifier = require('./lib/imap-notifier');
 const db = require('./lib/db');
 const certs = require('./lib/certs');
+const ObjectID = require('mongodb').ObjectID;
+const rootUser = new ObjectID('0'.repeat(24));
 
 const usersRoutes = require('./lib/api/users');
 const addressesRoutes = require('./lib/api/addresses');
@@ -79,21 +81,64 @@ server.use(
 );
 
 server.use((req, res, next) => {
-    if (config.api.accessToken && ![req.query.accessToken, req.headers['x-access-token']].includes(config.api.accessToken)) {
-        res.status(403);
-        res.charSet('utf-8');
-        return res.json({
-            error: 'Invalid accessToken value'
-        });
-    }
+    let accessToken = req.query.accessToken || req.headers['x-access-token'] || false;
     if (req.query.accessToken) {
         delete req.query.accessToken;
     }
+
+    let tokenRequired = false;
+
+    let fail = () => {
+        res.status(403);
+        res.charSet('utf-8');
+        return res.json({
+            error: 'Invalid accessToken value',
+            code: 'InvalidToken'
+        });
+    };
+
+    req.validate = permission => {
+        if (!permission.granted) {
+            let err = new Error('Not enough privileges');
+            err.responseCode = 403;
+            err.code = 'MissingPrivileges';
+            throw err;
+        }
+    };
+
+    // hard coded master token
+    if (config.api.accessToken) {
+        tokenRequired = true;
+        if (config.api.accessToken === accessToken) {
+            req.role = 'root';
+            req.user = rootUser;
+            return next();
+        }
+    }
+
+    // TODO: dynamically allocated tokens
+
+    if (tokenRequired) {
+        // no valid token found
+        return fail();
+    }
+
+    // allow all
+    req.role = 'root';
+    req.user = rootUser;
     next();
 });
 
+logger.token('user', req => (req.user && req.user.toString()) || '?'.repeat(24));
+logger.token('url', req => {
+    if (/\baccessToken=/.test(req.url)) {
+        return req.url.replace(/\baccessToken=[^&]+/g, 'accessToken=' + 'x'.repeat(6));
+    }
+    return req.url;
+});
+
 server.use(
-    logger(':method :url :status :time-spent :append', {
+    logger(':remote-addr :user :method :url :status :time-spent :append', {
         stream: {
             write: message => {
                 message = (message || '').toString();
