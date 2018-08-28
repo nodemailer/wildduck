@@ -2,7 +2,10 @@
 
 'use strict';
 
-const config = require('wild-config');
+// FUTURE FEATURE
+// this executable should generate and dispose access tokens for the API
+
+//const config = require('wild-config');
 const db = require('../lib/db');
 const errors = require('../lib/errors');
 const log = require('npmlog');
