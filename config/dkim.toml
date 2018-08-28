@@ -13,3 +13,6 @@ useOpenSSL=true
 # If true then also adds a signature for the outbound domain
 # Affects WildDuck ZoneMTA plugin only
 signTransportDomain=false
+
+# do not change this
+hashAlgo="sha256"
