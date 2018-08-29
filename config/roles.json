@@ -10,6 +10,13 @@
         "authentication": {
             "create:any": ["*"],
             "read:any": ["*"]
+        },
+
+        "users": {
+            "create:any": ["*"],
+            "read:any": ["*"],
+            "update:any": ["*"],
+            "delete:any": ["*"]
         }
     },
 
