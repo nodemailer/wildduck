@@ -10,8 +10,8 @@ const MessageHandler = require('./lib/message-handler');
 const ImapNotifier = require('./lib/imap-notifier');
 const db = require('./lib/db');
 const certs = require('./lib/certs');
-const ObjectID = require('mongodb').ObjectID;
-const rootUser = new ObjectID('0'.repeat(24));
+const tools = require('./lib/tools');
+const crypto = require('crypto');
 
 const usersRoutes = require('./lib/api/users');
 const addressesRoutes = require('./lib/api/addresses');
@@ -80,56 +80,111 @@ server.use(
     })
 );
 
-server.use((req, res, next) => {
-    let accessToken = req.query.accessToken || req.headers['x-access-token'] || false;
-    if (req.query.accessToken) {
-        delete req.query.accessToken;
-    }
+server.use(
+    tools.asyncifyJson(async (req, res, next) => {
+        let accessToken = req.query.accessToken || req.headers['x-access-token'] || false;
 
-    let tokenRequired = false;
-
-    let fail = () => {
-        res.status(403);
-        res.charSet('utf-8');
-        return res.json({
-            error: 'Invalid accessToken value',
-            code: 'InvalidToken'
-        });
-    };
-
-    req.validate = permission => {
-        if (!permission.granted) {
-            let err = new Error('Not enough privileges');
-            err.responseCode = 403;
-            err.code = 'MissingPrivileges';
-            throw err;
+        if (req.query.accessToken) {
+            req.query.accessToken = '';
         }
-    };
 
-    // hard coded master token
-    if (config.api.accessToken) {
-        tokenRequired = true;
-        if (config.api.accessToken === accessToken) {
-            req.role = 'root';
-            req.user = rootUser;
-            return next();
+        if (req.headers['x-access-token']) {
+            req.headers['x-access-token'] = '';
         }
-    }
 
-    // TODO: dynamically allocated tokens
+        let tokenRequired = false;
 
-    if (tokenRequired) {
-        // no valid token found
-        return fail();
-    }
+        let fail = () => {
+            res.status(403);
+            res.charSet('utf-8');
+            return res.json({
+                error: 'Invalid accessToken value',
+                code: 'InvalidToken'
+            });
+        };
 
-    // allow all
-    req.role = 'root';
-    req.user = rootUser;
-    next();
-});
+        req.validate = permission => {
+            if (!permission.granted) {
+                let err = new Error('Not enough privileges');
+                err.responseCode = 403;
+                err.code = 'MissingPrivileges';
+                throw err;
+            }
+        };
 
-logger.token('user', req => (req.user && req.user.toString()) || '?'.repeat(24));
+        // hard coded master token
+        if (config.api.accessToken) {
+            tokenRequired = true;
+            if (config.api.accessToken === accessToken) {
+                req.role = 'root';
+                req.user = 'root';
+                return next();
+            }
+        }
+
+        if (config.api.accessControl.enabled) {
+            tokenRequired = true;
+            if (accessToken && accessToken.length === 40 && /^[a-fA-F0-9]{40}$/.test(accessToken)) {
+                let tokenData;
+                let tokenHash = crypto
+                    .createHash('sha256')
+                    .update(accessToken)
+                    .digest('hex');
+
+                try {
+                    let key = 'tn:token:' + tokenHash;
+                    tokenData = await db.redis.hgetall(key);
+                } catch (err) {
+                    err.responseCode = 500;
+                    err.code = 'InternalDatabaseError';
+                    throw err;
+                }
+
+                if (tokenData && tokenData.user && tokenData.role && config.api.roles[tokenData.role]) {
+                    let signature = crypto
+                        .createHmac('sha256', config.api.accessControl.secret)
+                        .update(
+                            JSON.stringify({
+                                token: accessToken,
+                                user: tokenData.user,
+                                role: tokenData.role
+                            })
+                        )
+                        .digest('hex');
+
+                    if (signature !== tokenData.s) {
+                        // rogue token
+                        try {
+                            await db.redis
+                                .multi()
+                                .del('tn:token:' + tokenHash)
+                                .srem('tn:user:' + tokenData.user, tokenHash)
+                                .exec();
+                        } catch (err) {
+                            // ignore
+                        }
+                    } else {
+                        req.role = tokenData.role;
+                        req.user = tokenData.user;
+                    }
+                    return next();
+                }
+            }
+        }
+
+        if (tokenRequired) {
+            // no valid token found
+            return fail();
+        }
+
+        // allow all
+        req.role = 'root';
+        req.user = 'root';
+        next();
+    })
+);
+
+logger.token('user', req => (req.user && req.user.toString()) || '-');
 logger.token('url', req => {
     if (/\baccessToken=/.test(req.url)) {
         return req.url.replace(/\baccessToken=[^&]+/g, 'accessToken=' + 'x'.repeat(6));

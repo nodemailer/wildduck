@@ -13,11 +13,9 @@ secure=false
 [accessControl]
 # If true then require a valid access token to perform API calls
 enabled=false
-# If enabled then encrypt access tokens with the secret password. By default the tokens
-# are not encrypted and stored as cleartext. Once set up do not change these values,
-# otherwise decrypting tokens is going to fail
-#cipher="aes192"
-#secret="a secret cat"
+# Secret for HMAC
+# Changing this value invalidates all tokens
+secret="a secret cat"
 
 [roles]
 # @include "roles.json"

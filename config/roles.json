@@ -5,6 +5,17 @@
             "read:any": ["*"],
             "update:any": ["*"],
             "delete:any": ["*"]
+        },
+
+        "authentication": {
+            "create:any": ["*"],
+            "read:any": ["*"]
+        }
+    },
+
+    "auth": {
+        "authentication": {
+            "create:any": ["*"]
         }
     }
 }

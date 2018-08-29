@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 
+/* eslint no-console: 0*/
+
 'use strict';
 
 // FUTURE FEATURE
@@ -7,17 +9,141 @@
 
 //const config = require('wild-config');
 const db = require('../lib/db');
-const errors = require('../lib/errors');
-const log = require('npmlog');
+const crypto = require('crypto');
+const config = require('wild-config');
+const yargs = require('yargs');
+const util = require('util');
 
-// Initialize database connection
-db.connect(err => {
-    if (err) {
-        log.error('Db', 'Failed to setup database connection');
-        errors.notify(err);
-        return setTimeout(() => process.exit(1), 3000);
-    }
+const dbconnect = util.promisify(db.connect);
 
-    log.info('Future feature');
-    process.exit();
-});
+let argv = yargs
+    .usage('Usage: $0 <command> [options]')
+    .command(
+        'provision <user> <role>',
+        'Provision new access token',
+        yargs =>
+            yargs
+                .option('user', {
+                    alias: 'u',
+                    describe: 'Username',
+                    demandOption: true
+                })
+                .option('role', {
+                    alias: 'r',
+                    describe: 'Choose role',
+                    choices: Object.keys(config.api.roles),
+                    demandOption: true
+                }),
+        async argv => {
+            await dbconnect();
+
+            let accessToken = crypto.randomBytes(20).toString('hex');
+            let tokenHash = crypto
+                .createHash('sha256')
+                .update(accessToken)
+                .digest('hex');
+            let key = 'tn:token:' + tokenHash;
+
+            let tokenData = {
+                user: argv.user,
+                role: argv.role,
+                created: Date.now(),
+                // signature
+                s: crypto
+                    .createHmac('sha256', config.api.accessControl.secret)
+                    .update(
+                        JSON.stringify({
+                            token: accessToken,
+                            user: argv.user,
+                            role: argv.role
+                        })
+                    )
+                    .digest('hex')
+            };
+
+            await db.redis
+                .multi()
+                .hmset(key, tokenData)
+                .sadd('tn:user:' + argv.user, tokenHash)
+                .exec();
+
+            console.error('Generated access token for %s[%s]:', tokenData.user, tokenData.role);
+
+            process.stdout.write(accessToken);
+
+            console.error('');
+
+            process.exit();
+        }
+    )
+    .command(
+        'delete <token>',
+        'Delete existing access token',
+        yargs =>
+            yargs.option('token', {
+                alias: 't',
+                describe: 'Access token',
+                demandOption: true
+            }),
+        async argv => {
+            await dbconnect();
+
+            let accessToken = argv.token;
+
+            let tokenHash = crypto
+                .createHash('sha256')
+                .update(accessToken)
+                .digest('hex');
+
+            let key = 'tn:token:' + tokenHash;
+
+            let tokenData = await db.redis.hgetall(key);
+            if (tokenData) {
+                await db.redis.del(key);
+                if (tokenData.user) {
+                    await db.redis.srem('tn:user:' + tokenData.user, tokenHash);
+                }
+                console.error('Token deleted');
+            } else {
+                console.error('Token not found');
+            }
+
+            process.exit();
+        }
+    )
+    .command(
+        'clear <user>',
+        'Delete all tokens for an user',
+        yargs =>
+            yargs.option('user', {
+                alias: 'u',
+                describe: 'User to de-provision',
+                demandOption: true
+            }),
+        async argv => {
+            await dbconnect();
+
+            let user = argv.user;
+            let tokens = await db.redis.smembers('tn:user:' + user);
+            if (!tokens || !tokens.length) {
+                console.error('No tokens found for %s', user);
+                process.exit();
+            }
+
+            let query = db.redis.multi().del('tn:user:' + user);
+
+            tokens.forEach(tokenHash => {
+                query = query.del('tn:token:' + tokenHash);
+            });
+
+            await query.exec();
+
+            console.error('Deleted %s tokens for %s', tokens.length, user);
+
+            process.exit();
+        }
+    )
+    .help().argv;
+if (argv) {
+    // ignore
+}
