@@ -184,6 +184,9 @@ server.use(
     })
 );
 
+logger.token('user-ip', req => ((req.body && req.body.ip) || (req.query && req.query.ip)).toString().substr(0, 40) || '-');
+logger.token('user-sess', req => (req.body && req.body.sess) || (req.query && req.query.sess) || '-');
+
 logger.token('user', req => (req.user && req.user.toString()) || '-');
 logger.token('url', req => {
     if (/\baccessToken=/.test(req.url)) {
@@ -193,7 +196,7 @@ logger.token('url', req => {
 });
 
 server.use(
-    logger(':remote-addr :user :method :url :status :time-spent :append', {
+    logger(':remote-addr :user [:user-ip/:user-sess] :method :url :status :time-spent :append', {
         stream: {
             write: message => {
                 message = (message || '').toString();
