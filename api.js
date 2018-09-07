@@ -184,7 +184,7 @@ server.use(
     })
 );
 
-logger.token('user-ip', req => ((req.body && req.body.ip) || (req.query && req.query.ip)).toString().substr(0, 40) || '-');
+logger.token('user-ip', req => ((req.body && req.body.ip) || (req.query && req.query.ip) || '').toString().substr(0, 40) || '-');
 logger.token('user-sess', req => (req.body && req.body.sess) || (req.query && req.query.sess) || '-');
 
 logger.token('user', req => (req.user && req.user.toString()) || '-');
