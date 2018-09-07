@@ -60,6 +60,7 @@
         "mongo-cursor-pagination": "7.1.0",
         "mongodb": "3.1.4",
         "mongodb-extended-json": "1.10.0",
+        "nano-md5": "^1.0.3",
         "node-forge": "0.7.6",
         "nodemailer": "4.6.8",
         "npmlog": "4.1.2",
