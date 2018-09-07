@@ -64,7 +64,7 @@
         "node-forge": "0.7.6",
         "nodemailer": "4.6.8",
         "npmlog": "4.1.2",
-        "openpgp": "4.0.0",
+        "openpgp": "4.0.1",
         "pem": "1.12.5",
         "qrcode": "1.2.2",
         "restify": "7.2.1",
