@@ -66,7 +66,7 @@ enabled=["sender"]
 host="127.0.0.1"
 port=9050' > /etc/zone-mta/plugins/onion.toml
 
-echo "[\"wildduck\"]
+echo "[wildduck]
 enabled=[\"receiver\", \"sender\"]
 
 # which interfaces this plugin applies to
@@ -81,7 +81,7 @@ authlogExpireDays=30
 
 # SRS settings for forwarded emails
 
-[srs]
+[wildduck.srs]
     # Handle rewriting of forwarded emails
     enabled=true
     # SRS secret value. Must be the same as in the MX side
@@ -89,7 +89,7 @@ authlogExpireDays=30
     # SRS domain, must resolve back to MX
     rewriteDomain=\"$MAILDOMAIN\"
 
-[dkim]
+[wildduck.dkim]
 # share config with WildDuck installation
 # @include \"/etc/wildduck/dkim.toml\"
 " > /etc/zone-mta/plugins/wildduck.toml
