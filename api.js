@@ -32,6 +32,7 @@ const dkimRoutes = require('./lib/api/dkim');
 const serverOptions = {
     name: 'WildDuck API',
     strictRouting: true,
+    maxParamLength: 196,
     formatters: {
         'application/json; q=0.4': (req, res, body) => {
             let data = body ? JSON.stringify(body, false, 2) + '\n' : 'null';
