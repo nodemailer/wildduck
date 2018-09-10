@@ -86,7 +86,8 @@ server.use(
         let accessToken = req.query.accessToken || req.headers['x-access-token'] || false;
 
         if (req.query.accessToken) {
-            req.query.accessToken = '';
+            // delete or it will conflict with Joi schemes
+            delete req.query.accessToken;
         }
 
         if (req.headers['x-access-token']) {
