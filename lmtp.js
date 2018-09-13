@@ -25,6 +25,7 @@ config.on('reload', () => {
     if (filterHandler) {
         filterHandler.spamChecks = spamChecks;
         filterHandler.spamHeaderKeys = spamHeaderKeys;
+        filterHandler.spamScoreValue = config.lmtp.spamScore;
     }
 
     log.info('LMTP', 'Configuration reloaded');
@@ -226,7 +227,8 @@ module.exports = done => {
         sender: config.sender,
         messageHandler,
         spamHeaderKeys,
-        spamChecks
+        spamChecks,
+        spamScoreValue: config.lmtp.spamScore
     });
 
     let started = false;
