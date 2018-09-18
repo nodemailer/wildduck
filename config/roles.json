@@ -13,9 +13,9 @@
         },
 
         "users": {
-            "create:any": ["*"],
-            "read:any": ["*"],
-            "update:any": ["*"],
+            "create:any": ["*", "!audit"],
+            "read:any": ["*", "!audit"],
+            "update:any": ["*", "!audit"],
             "delete:any": ["*"]
         },
 
@@ -54,8 +54,8 @@
         },
 
         "users": {
-            "read:own": ["*"],
-            "update:own": ["*"]
+            "read:own": ["*", "!audit"],
+            "update:own": ["*", "!audit"]
         },
 
         "messages": {
@@ -76,6 +76,15 @@
     "auth": {
         "authentication": {
             "create:any": ["*"]
+        }
+    },
+
+    "audit": {
+        "users": {
+            "create:any": ["*"],
+            "read:any": ["*"],
+            "update:any": ["*"],
+            "delete:any": ["*"]
         }
     }
 }

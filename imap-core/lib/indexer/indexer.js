@@ -207,9 +207,12 @@ class Indexer {
 
                     attachmentStream.once('end', () => finalize());
 
-                    attachmentStream.pipe(res, {
-                        end: false
-                    });
+                    attachmentStream.pipe(
+                        res,
+                        {
+                            end: false
+                        }
+                    );
                 });
             }
 
@@ -494,7 +497,7 @@ class Indexer {
         }
 
         let newlines = Math.floor(b64size / 78);
-        return Math.ceil((b64size - newlines * 2) / 4 * 3);
+        return Math.ceil(((b64size - newlines * 2) / 4) * 3);
     }
 
     /**
