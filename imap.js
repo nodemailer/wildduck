@@ -137,14 +137,14 @@ function clearExpiredMessages() {
             );
             // find and delete all messages that are expired
             // NB! scattered query, searches over all mailboxes and thus over all shards
-            let cursor = db.database
-                .collection('messages')
-                .find({
-                    exp: true,
-                    rdate: {
-                        $lte: Date.now()
-                    }
-                })
+            let cursor = db.database.collection('messages').find({
+                exp: true,
+                rdate: {
+                    $lte: Date.now()
+                }
+            });
+            /*
+                // we need to fetch entire document as we want to push it to the archive
                 .project({
                     _id: true,
                     mailbox: true,
@@ -154,6 +154,7 @@ function clearExpiredMessages() {
                     magic: true,
                     unseen: true
                 });
+                */
 
             let deleted = 0;
             let clear = () =>
