@@ -2,7 +2,6 @@
 
 const stream = require('stream');
 const PassThrough = stream.PassThrough;
-const linkify = require('linkify-it')();
 const BodyStructure = require('./body-structure');
 const createEnvelope = require('./create-envelope');
 const parseMimeTree = require('./parse-mime-tree');
@@ -11,16 +10,8 @@ const libqp = require('libqp');
 const libbase64 = require('libbase64');
 const iconv = require('iconv-lite');
 const he = require('he');
-const tlds = require('tlds');
 const htmlToText = require('html-to-text');
 const crypto = require('crypto');
-
-linkify
-    .tlds(tlds) // Reload with full tlds list
-    .tlds('onion', true) // Add unofficial `.onion` domain
-    .add('git:', 'http:') // Add `git:` ptotocol as "alias"
-    .add('ftp:', null) // Disable `ftp:` ptotocol
-    .set({ fuzzyIP: true });
 
 class Indexer {
     constructor(options) {
@@ -738,40 +729,6 @@ function textToHtml(str) {
         .encode(str, {
             useNamedReferences: true
         });
-    try {
-        if (linkify.pretest(encoded)) {
-            let links = linkify.match(encoded) || [];
-            let result = [];
-            let last = 0;
-            links.forEach(link => {
-                if (last < link.index) {
-                    result.push(encoded.slice(last, link.index));
-                }
-
-                let url = he
-                    // encode special chars
-                    .encode(link.url, {
-                        useNamedReferences: true
-                    });
-
-                let text = he
-                    // encode special chars
-                    .encode(link.text, {
-                        useNamedReferences: true
-                    });
-
-                result.push(`<a href="${url}">${text}</a>`);
-
-                last = link.lastIndex;
-            });
-
-            result.push(encoded.slice(last));
-
-            encoded = result.join('');
-        }
-    } catch (E) {
-        // failed, don't linkify
-    }
     let text =
         '<p>' +
         encoded
