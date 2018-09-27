@@ -15,7 +15,8 @@ module.exports = {
 
         if (this.state === 'Not Authenticated') {
             capabilities.push('AUTH=PLAIN');
-            capabilities.push('AUTH=PLAIN-CLIENTTOKEN');
+            // might cause issues with some clients
+            // capabilities.push('AUTH=PLAIN-CLIENTTOKEN');
             capabilities.push('ID');
             capabilities.push('SASL-IR');
             capabilities.push('ENABLE');
