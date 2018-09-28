@@ -7,7 +7,9 @@
 // FUTURE FEATURE
 // this executable should generate and dispose access tokens for the API
 
-//const config = require('wild-config');
+const pathlib = require('path');
+process.env.NODE_CONFIG_DIR = pathlib.join(__dirname, '..', 'config');
+
 const db = require('../lib/db');
 const crypto = require('crypto');
 const config = require('wild-config');

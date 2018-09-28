@@ -1,0 +1,124 @@
+#!/usr/bin/env node
+
+/* eslint no-console: 0*/
+
+'use strict';
+
+// FUTURE FEATURE
+// this executable should generate and dispose access tokens for the API
+
+const pathlib = require('path');
+process.env.NODE_CONFIG_DIR = pathlib.join(__dirname, '..', 'config');
+
+const db = require('../lib/db');
+const yargs = require('yargs');
+const util = require('util');
+
+const dbconnect = util.promisify(db.connect);
+
+let argv = yargs
+    .usage('Usage: $0 <command> [options]')
+    .command(
+        'track <id>',
+        'Track message by queue ID',
+        yargs =>
+            yargs.option('id', {
+                alias: 'i',
+                describe: 'Queue ID',
+                demandOption: true
+            }),
+        async argv => {
+            await dbconnect();
+
+            let id = argv.id.trim();
+            let parentIds = new Set();
+            let ids = new Set();
+            let entries = new Map();
+
+            let rows = await db.database
+                .collection('messagelog')
+                .find({ id })
+                .toArray();
+
+            while (rows.length) {
+                let row = rows.shift();
+
+                let rowId = row._id.toString();
+                if (entries.has(rowId)) {
+                    continue;
+                }
+                entries.set(rowId, row);
+
+                let parentId = row.parentId && row.parentId.toString();
+                if (parentId && !parentIds.has(parentId)) {
+                    parentIds.add(parentId);
+                    let mRows = await db.database
+                        .collection('messagelog')
+                        .find({ parentId: row.parentId })
+                        .toArray();
+                    rows = rows.concat(mRows || []);
+                }
+
+                if (row.id && !ids.has(row.id)) {
+                    ids.add(row.id);
+                    let mRows = await db.database
+                        .collection('messagelog')
+                        .find({ id: row.id })
+                        .toArray();
+                    rows = rows.concat(mRows || []);
+                }
+            }
+
+            let indent = 6;
+
+            Array.from(entries)
+                .map(row => row[1])
+                .sort((a, b) => a.created - b.created)
+                .forEach(row => {
+                    console.log('%s: %s%s [%s] %s', row.action, row.id, row.seq ? '.' + row.seq : '', new Date(row.created).toISOString(), row._id);
+                    if (row['message-id'] || row.messageId) {
+                        console.log('%sMessage-ID: %s', ' '.repeat(indent), row['message-id'] || row.messageId);
+                    }
+                    if (row.from) {
+                        console.log('%sFrom: %s', ' '.repeat(indent), row.from);
+                    }
+
+                    if (row.to) {
+                        console.log(
+                            '%sTo: %s',
+                            ' '.repeat(indent),
+                            []
+                                .concat(row.to || [])
+                                .map(target => (target.value || target).toString())
+                                .join(', ')
+                        );
+                    }
+
+                    if (row.targets && row.targets.length) {
+                        console.log(
+                            '%sTargets: %s',
+                            ' '.repeat(indent),
+                            []
+                                .concat(row.targets || [])
+                                .map(target => (target.value || target).toString())
+                                .join(', ')
+                        );
+                    }
+
+                    Object.keys(row).forEach(key => {
+                        if (
+                            row[key] &&
+                            !['_id', 'id', 'seq', 'action', 'message-id', 'messageId', 'created', 'parentId', 'targets', 'from', 'to'].includes(key)
+                        ) {
+                            console.log('%s%s: %s', ' '.repeat(indent), key.replace(/^./, c => c.toUpperCase()), (row[key] || '').toString());
+                        }
+                    });
+                });
+
+            process.exit();
+        }
+    )
+    .help().argv;
+if (argv) {
+    // ignore
+}
