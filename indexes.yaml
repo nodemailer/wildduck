@@ -527,6 +527,13 @@ indexes:
 
 - collection: messagelog
   index:
+    name: messagelog_queue
+    key:
+      queueId: 1
+    sparse: true # only messages inserted by mail store have queueId set
+
+- collection: messagelog
+  index:
     name: messagelog_autoexpire
     # autoremove messagelog entries after 180 days
     expireAfterSeconds: 15552000
