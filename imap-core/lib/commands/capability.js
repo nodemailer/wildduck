@@ -15,25 +15,32 @@ module.exports = {
 
         if (this.state === 'Not Authenticated') {
             capabilities.push('AUTH=PLAIN');
-            // might cause issues with some clients
-            // capabilities.push('AUTH=PLAIN-CLIENTTOKEN');
-            capabilities.push('ID');
+            capabilities.push('AUTH=PLAIN-CLIENTTOKEN');
             capabilities.push('SASL-IR');
             capabilities.push('ENABLE');
-            capabilities.push('XLIST');
-        } else {
-            capabilities.push('CHILDREN');
+
             capabilities.push('ID');
+            capabilities.push('UNSELECT');
             capabilities.push('IDLE');
             capabilities.push('NAMESPACE');
+            capabilities.push('QUOTA');
+            capabilities.push('XLIST');
+            capabilities.push('CHILDREN');
+        } else {
+            capabilities.push('ID');
+            capabilities.push('UNSELECT');
+            capabilities.push('IDLE');
+            capabilities.push('NAMESPACE');
+            capabilities.push('QUOTA');
+            capabilities.push('XLIST');
+            capabilities.push('CHILDREN');
+
             capabilities.push('SPECIAL-USE');
             capabilities.push('UIDPLUS');
             capabilities.push('UNSELECT');
             capabilities.push('ENABLE');
             capabilities.push('CONDSTORE');
             capabilities.push('UTF8=ACCEPT');
-            capabilities.push('QUOTA');
-            capabilities.push('XLIST');
 
             capabilities.push('MOVE');
             capabilities.push('COMPRESS=DEFLATE');
