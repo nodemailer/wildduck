@@ -49,6 +49,3 @@ accountDescription="WildDuck ({email})"
 # If certificate path is not defined, use global or built-in self-signed certs
 #key="/path/to/server/key.pem"
 #cert="/path/to/server/cert.pem"
-key="/Users/andris/Temp/tls/key.pem"
-ca=["/Users/andris/Temp/tls/cacert.pem"]
-cert="/Users/andris/Temp/tls/crt.pem"
