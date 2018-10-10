@@ -539,3 +539,10 @@ indexes:
     expireAfterSeconds: 15552000
     key:
       created: 1
+
+- collection: tasks
+  index:
+    name: task
+    key:
+      locked: 1
+      lockedUntil: 1

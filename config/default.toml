@@ -80,6 +80,10 @@ bugsnagCode=""
 [plugins]
 # @include "plugins/*.toml"
 
+[tasks]
+# if enabled then process jobs like deleting expired messages etc
+enabled=true
+
 [smtp.setup]
 # Public configuration for SMTP MDA, needed for mobileconfig files
 hostname="localhost"
