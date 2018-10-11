@@ -395,6 +395,13 @@ indexes:
 
 - collection: archived
   index:
+    name: user_messages_archived
+    key:
+      user: 1
+      archived: 1
+
+- collection: archived
+  index:
     name: retention_time
     partialFilterExpression:
       exp: true

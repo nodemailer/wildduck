@@ -10,20 +10,7 @@ const fs = require('fs');
 const MessageHandler = require('./lib/message-handler');
 const setupIndexes = yaml.safeLoad(fs.readFileSync(__dirname + '/indexes.yaml', 'utf8'));
 
-let logger = {
-    info(...args) {
-        args.shift();
-        log.info('IMAP', ...args);
-    },
-    debug(...args) {
-        args.shift();
-        log.silly('IMAP', ...args);
-    },
-    error(...args) {
-        args.shift();
-        log.error('IMAP', ...args);
-    }
-};
+const taskRestore = require('./lib/tasks/restore');
 
 let messageHandler;
 let gcTimeout;
@@ -66,28 +53,13 @@ module.exports.start = callback => {
     let collectionpos = 0;
     let ensureCollections = next => {
         if (collectionpos >= collections.length) {
-            logger.info(
-                {
-                    tnx: 'mongo'
-                },
-                'Setup %s collections',
-                collections.length
-            );
+            log.info('Setup', 'Setup %s collections in MongoDB', collections.length);
             return next();
         }
         let collection = collections[collectionpos++];
         db[collection.type || 'database'].createCollection(collection.collection, collection.options, err => {
             if (err) {
-                logger.error(
-                    {
-                        err,
-                        tnx: 'mongo'
-                    },
-                    'Failed creating collection %s %s. %s',
-                    collectionpos,
-                    JSON.stringify(collection.collection),
-                    err.message
-                );
+                log.error('Setup', 'Failed creating collection %s %s. %s', collectionpos, JSON.stringify(collection.collection), err.message);
             }
 
             ensureCollections(next);
@@ -98,42 +70,18 @@ module.exports.start = callback => {
     let indexpos = 0;
     let ensureIndexes = next => {
         if (indexpos >= indexes.length) {
-            logger.info(
-                {
-                    tnx: 'mongo'
-                },
-                'Setup indexes for %s collections',
-                indexes.length
-            );
+            log.info('Setup', 'Setup indexes for %s collections', indexes.length);
             return next();
         }
         let index = indexes[indexpos++];
         db[index.type || 'database'].collection(index.collection).createIndexes([index.index], (err, r) => {
             if (err) {
-                logger.error(
-                    {
-                        err,
-                        tnx: 'mongo'
-                    },
-                    'Failed creating index %s %s. %s',
-                    indexpos,
-                    JSON.stringify(index.collection + '.' + index.index.name),
-                    err.message
-                );
+                log.error('Setup', 'Failed creating index %s %s. %s', indexpos, JSON.stringify(index.collection + '.' + index.index.name), err.message);
             } else if (r.numIndexesAfter !== r.numIndexesBefore) {
-                logger.debug(
-                    {
-                        tnx: 'mongo'
-                    },
-                    'Created index %s %s',
-                    indexpos,
-                    JSON.stringify(index.collection + '.' + index.index.name)
-                );
+                log.verbose('Setup', 'Created index %s %s', indexpos, JSON.stringify(index.collection + '.' + index.index.name));
             } else {
-                logger.debug(
-                    {
-                        tnx: 'mongo'
-                    },
+                log.verbose(
+                    'Setup',
                     'Skipped index %s %s: %s',
                     indexpos,
                     JSON.stringify(index.collection + '.' + index.index.name),
@@ -147,14 +95,7 @@ module.exports.start = callback => {
 
     gcLock.acquireLock('db_indexes', 1 * 60 * 1000, (err, lock) => {
         if (err) {
-            logger.error(
-                {
-                    tnx: 'gc',
-                    err
-                },
-                'Failed to acquire lock error=%s',
-                err.message
-            );
+            log.error('GC', 'Failed to acquire lock error=%s', err.message);
             return start();
         } else if (!lock.success) {
             return start();
@@ -166,14 +107,7 @@ module.exports.start = callback => {
                 setTimeout(() => {
                     gcLock.releaseLock(lock, err => {
                         if (err) {
-                            logger.error(
-                                {
-                                    tnx: 'gc',
-                                    err
-                                },
-                                'Failed to release lock error=%s',
-                                err.message
-                            );
+                            log.error('GC', 'Failed to release lock error=%s', err.message);
                         }
                     });
                 }, 60 * 1000);
@@ -190,47 +124,23 @@ function clearExpiredMessages() {
     // First, acquire the lock. This prevents multiple connected clients for deleting the same messages
     gcLock.acquireLock('gc_expired', Math.round(consts.GC_INTERVAL * 1.2) /* Lock expires if not released */, (err, lock) => {
         if (err) {
-            logger.error(
-                {
-                    tnx: 'gc',
-                    err
-                },
-                'Failed to acquire lock error=%s',
-                err.message
-            );
+            log.error('GC', 'Failed to acquire lock error=%s', err.message);
             gcTimeout = setTimeout(clearExpiredMessages, consts.GC_INTERVAL);
             gcTimeout.unref();
             return;
         } else if (!lock.success) {
-            logger.debug(
-                {
-                    tnx: 'gc'
-                },
-                'Lock already acquired'
-            );
+            log.verbose('GC', 'Lock already acquired');
             gcTimeout = setTimeout(clearExpiredMessages, consts.GC_INTERVAL);
             gcTimeout.unref();
             return;
         }
 
-        logger.debug(
-            {
-                tnx: 'gc'
-            },
-            'Got lock for garbage collector'
-        );
+        log.verbose('GC', 'Got lock for garbage collector');
 
         let done = () => {
             gcLock.releaseLock(lock, err => {
                 if (err) {
-                    logger.error(
-                        {
-                            tnx: 'gc',
-                            err
-                        },
-                        'Failed to release lock error=%s',
-                        err.message
-                    );
+                    log.error('GC', 'Failed to release lock error=%s', err.message);
                 }
                 gcTimeout = setTimeout(clearExpiredMessages, consts.GC_INTERVAL);
                 gcTimeout.unref();
@@ -251,12 +161,7 @@ function clearExpiredMessages() {
         };
 
         let archiveExpiredMessages = next => {
-            logger.debug(
-                {
-                    tnx: 'gc'
-                },
-                'Archiving expired messages'
-            );
+            log.verbose('GC', 'Archiving expired messages');
 
             // find and delete all messages that are expired
             // NB! scattered query, searches over all mailboxes and thus over all shards
@@ -271,13 +176,7 @@ function clearExpiredMessages() {
             let clear = () =>
                 cursor.close(() => {
                     if (deleted) {
-                        logger.debug(
-                            {
-                                tnx: 'gc'
-                            },
-                            'Deleted %s messages',
-                            deleted
-                        );
+                        log.verbose('GC', 'Deleted %s messages', deleted);
                     }
                     return deleteOrphaned(next);
                 });
@@ -304,25 +203,10 @@ function clearExpiredMessages() {
                         },
                         err => {
                             if (err) {
-                                logger.error(
-                                    {
-                                        tnx: 'gc',
-                                        err
-                                    },
-                                    'Failed to delete expired message id=%s. %s',
-                                    messageData._id,
-                                    err.message
-                                );
+                                log.error('GC', 'Failed to delete expired message id=%s. %s', messageData._id, err.message);
                                 return cursor.close(() => done(err));
                             }
-                            logger.debug(
-                                {
-                                    tnx: 'gc',
-                                    err
-                                },
-                                'Deleted expired message id=%s',
-                                messageData._id
-                            );
+                            log.verbose('GC', 'Deleted expired message id=%s', messageData._id);
                             deleted++;
                             if (consts.GC_DELAY_DELETE) {
                                 setTimeout(processNext, consts.GC_DELAY_DELETE);
@@ -338,12 +222,7 @@ function clearExpiredMessages() {
         };
 
         let purgeExpiredMessages = next => {
-            logger.debug(
-                {
-                    tnx: 'gc'
-                },
-                'Purging archived messages'
-            );
+            log.verbose('GC', 'Purging archived messages');
 
             // find and delete all messages that are expired
             // NB! scattered query, searches over all mailboxes and thus over all shards
@@ -370,13 +249,7 @@ function clearExpiredMessages() {
             let clear = () =>
                 cursor.close(() => {
                     if (deleted) {
-                        logger.debug(
-                            {
-                                tnx: 'gc'
-                            },
-                            'Purged %s messages',
-                            deleted
-                        );
+                        log.verbose('GC', 'Purged %s messages', deleted);
                     }
                     return deleteOrphaned(next);
                 });
@@ -398,25 +271,11 @@ function clearExpiredMessages() {
                     db.database.collection('archived').deleteOne({ _id: messageData._id }, err => {
                         if (err) {
                             //failed to delete
-                            logger.error(
-                                {
-                                    tnx: 'gc',
-                                    err
-                                },
-                                'Failed to delete archived message id=%s. %s',
-                                messageData._id,
-                                err.message
-                            );
+                            log.error('GC', 'Failed to delete archived message id=%s. %s', messageData._id, err.message);
                             return cursor.close(() => done(err));
                         }
 
-                        logger.debug(
-                            {
-                                tnx: 'gc'
-                            },
-                            'Deleted archived message id=%s',
-                            messageData._id
-                        );
+                        log.verbose('GC', 'Deleted archived message id=%s', messageData._id);
 
                         let attachmentIds = Object.keys(messageData.mimeTree.attachmentMap || {}).map(key => messageData.mimeTree.attachmentMap[key]);
 
@@ -472,19 +331,13 @@ function runTasks() {
         },
         {
             $set: {
-                locked: false
+                locked: false,
+                status: 'queued'
             }
         },
         err => {
             if (err) {
-                logger.error(
-                    {
-                        err,
-                        tnx: 'mongo'
-                    },
-                    'Failed releasing expired tasks. error=%s',
-                    err.message
-                );
+                log.error('Tasks', 'Failed releasing expired tasks. error=%s', err.message);
 
                 // back off processing tasks for 5 minutes
                 taskTimeout = setTimeout(runTasks, consts.TASK_STARTUP_INTERVAL);
@@ -501,7 +354,8 @@ function runTasks() {
                     {
                         $set: {
                             locked: true,
-                            lockedUntil: new Date(Date.now() + 1 * 3600 * 1000)
+                            lockedUntil: new Date(Date.now() + consts.TASK_LOCK_INTERVAL),
+                            status: 'processing'
                         }
                     },
                     {
@@ -509,14 +363,7 @@ function runTasks() {
                     },
                     (err, r) => {
                         if (err) {
-                            logger.error(
-                                {
-                                    err,
-                                    tnx: 'mongo'
-                                },
-                                'Failed releasing expired tasks. error=%s',
-                                err.message
-                            );
+                            log.error('Tasks', 'Failed releasing expired tasks. error=%s', err.message);
 
                             // back off processing tasks for 5 minutes
                             taskTimeout = setTimeout(runTasks, consts.TASK_STARTUP_INTERVAL);
@@ -532,18 +379,44 @@ function runTasks() {
 
                         let taskData = r.value;
 
+                        // keep lock alive
+                        let keepAliveTimer;
+                        let processed = false;
+                        let keepAlive = () => {
+                            clearTimeout(keepAliveTimer);
+                            keepAliveTimer = setTimeout(() => {
+                                if (processed) {
+                                    return;
+                                }
+                                db.database.collection('tasks').updateOne(
+                                    {
+                                        _id: taskData._id,
+                                        locked: true
+                                    },
+                                    {
+                                        $set: {
+                                            lockedUntil: new Date(Date.now() + consts.TASK_LOCK_INTERVAL),
+                                            status: 'processing'
+                                        }
+                                    },
+                                    (err, r) => {
+                                        if (!err && !processed && r.matchedCount) {
+                                            keepAlive();
+                                        }
+                                    }
+                                );
+                            }, consts.TASK_UPDATE_INTERVAL);
+                            keepAliveTimer.unref();
+                        };
+
+                        keepAlive();
+
                         // we have a task to process
                         processTask(taskData, (err, release) => {
+                            clearTimeout(keepAliveTimer);
+                            processed = true;
                             if (err) {
-                                logger.error(
-                                    {
-                                        err,
-                                        tnx: 'mongo'
-                                    },
-                                    'Failed processing task id=%s error=%s',
-                                    taskData._id,
-                                    err.message
-                                );
+                                log.error('Tasks', 'Failed processing task id=%s error=%s', taskData._id, err.message);
 
                                 // back off processing tasks for 5 minutes
                                 taskTimeout = setTimeout(runTasks, consts.TASK_STARTUP_INTERVAL);
@@ -558,13 +431,15 @@ function runTasks() {
                                     nextTask()
                                 );
                             } else {
+                                // requeue
                                 db.database.collection('tasks').updateOne(
                                     {
                                         _id: taskData._id
                                     },
                                     {
                                         $set: {
-                                            locked: false
+                                            locked: false,
+                                            status: 'queued'
                                         }
                                     },
                                     nextTask()
@@ -580,8 +455,25 @@ function runTasks() {
 }
 
 function processTask(taskData, callback) {
-    console.log(taskData);
+    log.verbose('Tasks', 'task=%s', JSON.stringify(taskData));
 
-    // release task by returning true
-    return callback(null, true);
+    switch (taskData.task) {
+        case 'restore':
+            return taskRestore(
+                taskData,
+                {
+                    messageHandler
+                },
+                err => {
+                    if (err) {
+                        return callback(err);
+                    }
+                    // release
+                    callback(null, true);
+                }
+            );
+        default:
+            // release task by returning true
+            return callback(null, true);
+    }
 }
