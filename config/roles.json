@@ -19,6 +19,12 @@
             "delete:any": ["*"]
         },
 
+        "asps": {
+            "create:any": ["*"],
+            "read:any": ["*"],
+            "delete:any": ["*"]
+        },
+
         "messages": {
             "create:any": ["*"],
             "read:any": ["*"],
@@ -56,6 +62,12 @@
         "users": {
             "read:own": ["*", "!audit"],
             "update:own": ["*", "!audit"]
+        },
+
+        "asps": {
+            "create:own": ["*"],
+            "read:own": ["*"],
+            "delete:own": ["*"]
         },
 
         "messages": {
