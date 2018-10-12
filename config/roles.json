@@ -1,5 +1,9 @@
 {
     "root": {
+        "addresslisting": {
+            "read:any": ["*"]
+        },
+
         "addresses": {
             "create:any": ["*"],
             "read:any": ["*"],
@@ -10,6 +14,10 @@
         "authentication": {
             "create:any": ["*"],
             "read:any": ["*"]
+        },
+
+        "userlisting": {
+            "read:any": ["*", "!audit"]
         },
 
         "users": {
@@ -69,6 +77,10 @@
     },
 
     "manager": {
+        "addresslisting": {
+            "read:any": ["*"]
+        },
+
         "addresses": {
             "create:any": ["*"],
             "read:any": ["*"],
@@ -79,6 +91,10 @@
         "authentication": {
             "create:any": ["*"],
             "read:any": ["*"]
+        },
+
+        "userlisting": {
+            "read:any": ["*", "!audit"]
         },
 
         "users": {
@@ -177,6 +193,10 @@
     },
 
     "user": {
+        "addresslisting": {
+            "read:own": ["*"]
+        },
+
         "addresses": {
             "create:own": ["*"],
             "read:own": ["*"],
@@ -186,6 +206,10 @@
 
         "authentication": {
             "read:own": ["*"]
+        },
+
+        "userlisting": {
+            "read:own": ["*", "!audit"]
         },
 
         "users": {
