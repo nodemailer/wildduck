@@ -68,6 +68,59 @@
         }
     },
 
+    "webmail": {
+        "addresses": {
+            "create:any": ["*"],
+            "read:any": ["*"],
+            "update:any": ["*"],
+            "delete:any": ["*"]
+        },
+
+        "authentication": {
+            "create:any": ["*"],
+            "read:any": ["*"]
+        },
+
+        "users": {
+            "read:any": ["*", "!audit"],
+            "update:any": ["*", "!audit"]
+        },
+
+        "asps": {
+            "create:any": ["*"],
+            "read:any": ["*"],
+            "delete:any": ["*"]
+        },
+
+        "messages": {
+            "create:any": ["*"],
+            "read:any": ["*"],
+            "update:any": ["*"],
+            "delete:any": ["*"]
+        },
+
+        "mailboxes": {
+            "create:any": ["*"],
+            "read:any": ["*"],
+            "update:any": ["*"],
+            "delete:any": ["*"]
+        },
+
+        "autoreplies": {
+            "create:any": ["*"],
+            "read:any": ["*"],
+            "update:any": ["*"],
+            "delete:any": ["*"]
+        },
+
+        "filters": {
+            "create:any": ["*"],
+            "read:any": ["*"],
+            "update:any": ["*"],
+            "delete:any": ["*"]
+        }
+    },
+
     "user": {
         "addresses": {
             "create:own": ["*"],
