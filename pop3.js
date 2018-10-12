@@ -302,7 +302,9 @@ function markAsSeen(session, messages, callback) {
 
             let mailboxData = item && item.value;
             if (!item) {
-                return callback(new Error('Mailbox does not exist'));
+                let err = new Error('Selected mailbox does not exist');
+                err.code = 'NoSuchMailbox';
+                return callback(err);
             }
 
             db.database.collection('messages').updateMany(

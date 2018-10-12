@@ -39,7 +39,28 @@
             "delete:any": ["*"]
         },
 
+        "autoreplies": {
+            "create:any": ["*"],
+            "read:any": ["*"],
+            "update:any": ["*"],
+            "delete:any": ["*"]
+        },
+
+        "filters": {
+            "create:any": ["*"],
+            "read:any": ["*"],
+            "update:any": ["*"],
+            "delete:any": ["*"]
+        },
+
         "dkim": {
+            "create:any": ["*"],
+            "read:any": ["*"],
+            "update:any": ["*"],
+            "delete:any": ["*"]
+        },
+
+        "domainaliases": {
             "create:any": ["*"],
             "read:any": ["*"],
             "update:any": ["*"],
@@ -78,6 +99,20 @@
         },
 
         "mailboxes": {
+            "create:own": ["*"],
+            "read:own": ["*"],
+            "update:own": ["*"],
+            "delete:own": ["*"]
+        },
+
+        "autoreplies": {
+            "create:own": ["*"],
+            "read:own": ["*"],
+            "update:own": ["*"],
+            "delete:own": ["*"]
+        },
+
+        "filters": {
             "create:own": ["*"],
             "read:own": ["*"],
             "update:own": ["*"],
