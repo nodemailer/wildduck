@@ -74,30 +74,35 @@ const serverOptions = {
                 if (!value) {
                     return;
                 }
+
                 if (['password'].includes(key)) {
                     value = '***';
                 } else if (value.length > 64) {
                     value = value.substr(0, 63) + '…';
                 }
+
                 if (key.length > 30) {
                     key = key.substr(0, 30) + '…';
                 }
+
                 message['_req_' + key] = value;
             });
 
             Object.keys(body).forEach(key => {
-                let value = (body[key] || '').toString().trim();
-                if (!value || ['success', 'error', 'code']) {
+                let value = body[key];
+                if (!body || !['id'].includes(key)) {
                     return;
                 }
-                if (['secretKey'].includes(key)) {
-                    value = '***';
-                } else if (value.length > 64) {
+                value = (value || '').toString().trim();
+
+                if (value.length > 64) {
                     value = value.substr(0, 63) + '…';
                 }
+
                 if (key.length > 30) {
                     key = key.substr(0, 30) + '…';
                 }
+
                 message['_res_' + key] = value;
             });
 
