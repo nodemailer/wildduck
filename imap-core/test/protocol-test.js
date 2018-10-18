@@ -18,7 +18,9 @@ describe('IMAP Protocol integration tests', function() {
     let port = 9993;
 
     beforeEach(function(done) {
-        exec(__dirname + '/prepare.sh ' + config.dbs.dbname, { cwd: __dirname }, err => {
+        exec(__dirname + '/prepare.sh ' + config.dbs.dbname, { cwd: __dirname }, (err, stdout, stderr) => {
+            console.log(stdout.toString());
+            console.log(stderr.toString());
             if (err) {
                 return done(err);
             }
