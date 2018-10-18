@@ -158,7 +158,13 @@ module.exports = done => {
                 short_message: message
             };
         }
+
         message = message || {};
+
+        if (!message.short_message || message.short_message.indexOf(component.toUpperCase()) !== 0) {
+            message.short_message = component.toUpperCase() + ' ' + (message.short_message || '');
+        }
+
         message.facility = component; // facility is deprecated but set by the driver if not provided
         message.host = hostname;
         message.timestamp = Date.now() / 1000;
