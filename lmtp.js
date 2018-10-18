@@ -12,10 +12,13 @@ const UserHandler = require('./lib/user-handler');
 const FilterHandler = require('./lib/filter-handler');
 const db = require('./lib/db');
 const certs = require('./lib/certs');
+const Gelf = require('gelf');
+const os = require('os');
 
 let messageHandler;
 let userHandler;
 let filterHandler;
+let loggelf;
 let spamChecks, spamHeaderKeys;
 
 config.on('reload', () => {
@@ -204,6 +207,35 @@ module.exports = done => {
         return setImmediate(() => done(null, false));
     }
 
+    const component = config.log.gelf.component || 'wildduck';
+    const hostname = config.log.gelf.hostname || os.hostname();
+    const gelf =
+        config.log.gelf && config.log.gelf.enabled
+            ? new Gelf(config.log.gelf.options)
+            : {
+                  // placeholder
+                  emit: () => false
+              };
+
+    loggelf = message => {
+        if (typeof message === 'string') {
+            message = {
+                short_message: message
+            };
+        }
+        message = message || {};
+        message.facility = component; // facility is deprecated but set by the driver if not provided
+        message.host = hostname;
+        message.timestamp = Date.now() / 1000;
+        message._component = component;
+        Object.keys(message).forEach(key => {
+            if (!message[key]) {
+                delete message[key];
+            }
+        });
+        gelf.emit('gelf.log', message);
+    };
+
     spamChecks = tools.prepareSpamChecks(config.spamHeader);
     spamHeaderKeys = spamChecks.map(check => check.key);
 
@@ -212,14 +244,16 @@ module.exports = done => {
         users: db.users,
         redis: db.redis,
         gridfs: db.gridfs,
-        attachments: config.attachments
+        attachments: config.attachments,
+        loggelf: message => loggelf(message)
     });
 
     userHandler = new UserHandler({
         database: db.database,
         users: db.users,
         redis: db.redis,
-        authlogExpireDays: config.log.authlogExpireDays
+        authlogExpireDays: config.log.authlogExpireDays,
+        loggelf: message => loggelf(message)
     });
 
     filterHandler = new FilterHandler({
@@ -228,7 +262,8 @@ module.exports = done => {
         messageHandler,
         spamHeaderKeys,
         spamChecks,
-        spamScoreValue: config.lmtp.spamScore
+        spamScoreValue: config.lmtp.spamScore,
+        loggelf: message => loggelf(message)
     });
 
     let started = false;

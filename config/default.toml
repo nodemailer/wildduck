@@ -56,6 +56,15 @@ bugsnagCode=""
     # set to 0 to keep the logs infinitely
     authlogExpireDays=30
 
+    [log.gelf]
+        enabled=false
+        hostname=false # defaults to os.hostname()
+        component="wildduck"
+        [log.gelf.options]
+            graylogPort=12201
+            graylogHostname='127.0.0.1'
+            connection='lan'
+
 [imap]
 # @include "imap.toml"
 

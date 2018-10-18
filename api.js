@@ -12,6 +12,8 @@ const db = require('./lib/db');
 const certs = require('./lib/certs');
 const tools = require('./lib/tools');
 const crypto = require('crypto');
+const Gelf = require('gelf');
+const os = require('os');
 
 const usersRoutes = require('./lib/api/users');
 const addressesRoutes = require('./lib/api/addresses');
@@ -29,6 +31,12 @@ const submitRoutes = require('./lib/api/submit');
 const domainaliasRoutes = require('./lib/api/domainaliases');
 const dkimRoutes = require('./lib/api/dkim');
 
+let userHandler;
+let mailboxHandler;
+let messageHandler;
+let notifier;
+let loggelf;
+
 const serverOptions = {
     name: 'WildDuck API',
     strictRouting: true,
@@ -36,7 +44,65 @@ const serverOptions = {
     formatters: {
         'application/json; q=0.4': (req, res, body) => {
             let data = body ? JSON.stringify(body, false, 2) + '\n' : 'null';
-            res.setHeader('Content-Length', Buffer.byteLength(data));
+            let size = Buffer.byteLength(data);
+            res.setHeader('Content-Length', size);
+            if (!body) {
+                return data;
+            }
+
+            let path = (req.route && req.route.path) || (req.url || '').replace(/(accessToken=)[^&]+/, '$1xxxxxx');
+
+            let message = {
+                short_message: 'API [' + path + '] ' + (body.success ? 'OK' : 'FAILED'),
+
+                _ip: req.headers['x-forwarded-for'] || req.connection.remoteAddress,
+                _client_ip: ((req.body && req.body.ip) || (req.query && req.query.ip) || '').toString().substr(0, 40) || '',
+
+                _route_path: path,
+                _user: req.user,
+                _role: req.role,
+
+                _success: body.success ? 'yes' : 'no',
+                _error: body.error,
+                _error_code: body.code,
+
+                _size: size
+            };
+
+            Object.keys(req.params || {}).forEach(key => {
+                let value = (req.params[key] || '').toString().trim();
+                if (!value) {
+                    return;
+                }
+                if (['password'].includes(key)) {
+                    value = '***';
+                } else if (value.length > 64) {
+                    value = value.substr(0, 63) + '…';
+                }
+                if (key.length > 30) {
+                    key = key.substr(0, 30) + '…';
+                }
+                message['_req_' + key] = value;
+            });
+
+            Object.keys(body).forEach(key => {
+                let value = (body[key] || '').toString().trim();
+                if (!value || ['success', 'error', 'code']) {
+                    return;
+                }
+                if (['secretKey'].includes(key)) {
+                    value = '***';
+                } else if (value.length > 64) {
+                    value = value.substr(0, 63) + '…';
+                }
+                if (key.length > 30) {
+                    key = key.substr(0, 30) + '…';
+                }
+                message['_res_' + key] = value;
+            });
+
+            loggelf(message);
+
             return data;
         }
     }
@@ -54,11 +120,6 @@ if (config.api.secure && certOptions.key) {
 }
 
 const server = restify.createServer(serverOptions);
-
-let userHandler;
-let mailboxHandler;
-let messageHandler;
-let notifier;
 
 // disable compression for EventSource response
 // this needs to be called before gzipResponse
@@ -217,6 +278,35 @@ module.exports = done => {
 
     let started = false;
 
+    const component = config.log.gelf.component || 'wildduck';
+    const hostname = config.log.gelf.hostname || os.hostname();
+    const gelf =
+        config.log.gelf && config.log.gelf.enabled
+            ? new Gelf(config.log.gelf.options)
+            : {
+                  // placeholder
+                  emit: () => false
+              };
+
+    loggelf = message => {
+        if (typeof message === 'string') {
+            message = {
+                short_message: message
+            };
+        }
+        message = message || {};
+        message.facility = component; // facility is deprecated but set by the driver if not provided
+        message.host = hostname;
+        message.timestamp = Date.now() / 1000;
+        message._component = component;
+        Object.keys(message).forEach(key => {
+            if (!message[key]) {
+                delete message[key];
+            }
+        });
+        gelf.emit('gelf.log', message);
+    };
+
     notifier = new ImapNotifier({
         database: db.database,
         redis: db.redis
@@ -227,7 +317,8 @@ module.exports = done => {
         users: db.users,
         redis: db.redis,
         gridfs: db.gridfs,
-        attachments: config.attachments
+        attachments: config.attachments,
+        loggelf: message => loggelf(message)
     });
 
     userHandler = new UserHandler({
@@ -235,15 +326,19 @@ module.exports = done => {
         users: db.users,
         redis: db.redis,
         messageHandler,
-        authlogExpireDays: config.log.authlogExpireDays
+        authlogExpireDays: config.log.authlogExpireDays,
+        loggelf: message => loggelf(message)
     });
 
     mailboxHandler = new MailboxHandler({
         database: db.database,
         users: db.users,
         redis: db.redis,
-        notifier
+        notifier,
+        loggelf: message => loggelf(message)
     });
+
+    server.loggelf = message => loggelf(message);
 
     usersRoutes(db, server, userHandler);
     addressesRoutes(db, server);

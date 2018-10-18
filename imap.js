@@ -12,6 +12,8 @@ const MailboxHandler = require('./lib/mailbox-handler');
 const db = require('./lib/db');
 const packageData = require('./package.json');
 const certs = require('./lib/certs');
+const Gelf = require('gelf');
+const os = require('os');
 
 const onFetch = require('./lib/handlers/on-fetch');
 const onAuth = require('./lib/handlers/on-auth');
@@ -53,6 +55,7 @@ let notifier;
 let messageHandler;
 let userHandler;
 let mailboxHandler;
+let loggelf;
 
 let createInterface = (ifaceOptions, callback) => {
     // Setup server
@@ -139,6 +142,35 @@ module.exports = done => {
         return setImmediate(() => done(null, false));
     }
 
+    const component = config.log.gelf.component || 'wildduck';
+    const hostname = config.log.gelf.hostname || os.hostname();
+    const gelf =
+        config.log.gelf && config.log.gelf.enabled
+            ? new Gelf(config.log.gelf.options)
+            : {
+                  // placeholder
+                  emit: () => false
+              };
+
+    loggelf = message => {
+        if (typeof message === 'string') {
+            message = {
+                short_message: message
+            };
+        }
+        message = message || {};
+        message.facility = component; // facility is deprecated but set by the driver if not provided
+        message.host = hostname;
+        message.timestamp = Date.now() / 1000;
+        message._component = component;
+        Object.keys(message).forEach(key => {
+            if (!message[key]) {
+                delete message[key];
+            }
+        });
+        gelf.emit('gelf.log', message);
+    };
+
     indexer = new Indexer({
         database: db.database
     });
@@ -153,21 +185,24 @@ module.exports = done => {
         database: db.database,
         redis: db.redis,
         gridfs: db.gridfs,
-        attachments: config.attachments
+        attachments: config.attachments,
+        loggelf: message => loggelf(message)
     });
 
     userHandler = new UserHandler({
         database: db.database,
         users: db.users,
         redis: db.redis,
-        authlogExpireDays: config.log.authlogExpireDays
+        authlogExpireDays: config.log.authlogExpireDays,
+        loggelf: message => loggelf(message)
     });
 
     mailboxHandler = new MailboxHandler({
         database: db.database,
         users: db.users,
         redis: db.redis,
-        notifier
+        notifier,
+        loggelf: message => loggelf(message)
     });
 
     let ifaceOptions = [

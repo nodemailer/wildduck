@@ -10,11 +10,14 @@ const ObjectID = require('mongodb').ObjectID;
 const db = require('./lib/db');
 const certs = require('./lib/certs');
 const LimitedFetch = require('./lib/limited-fetch');
+const Gelf = require('gelf');
+const os = require('os');
 
 const MAX_MESSAGES = 250;
 
 let messageHandler;
 let userHandler;
+let loggelf;
 
 const serverOptions = {
     port: config.pop3.port,
@@ -367,18 +370,49 @@ module.exports = done => {
 
     let started = false;
 
+    const component = config.log.gelf.component || 'wildduck';
+    const hostname = config.log.gelf.hostname || os.hostname();
+    const gelf =
+        config.log.gelf && config.log.gelf.enabled
+            ? new Gelf(config.log.gelf.options)
+            : {
+                  // placeholder
+                  emit: () => false
+              };
+
+    loggelf = message => {
+        if (typeof message === 'string') {
+            message = {
+                short_message: message
+            };
+        }
+        message = message || {};
+        message.facility = component; // facility is deprecated but set by the driver if not provided
+        message.host = hostname;
+        message.timestamp = Date.now() / 1000;
+        message._component = component;
+        Object.keys(message).forEach(key => {
+            if (!message[key]) {
+                delete message[key];
+            }
+        });
+        gelf.emit('gelf.log', message);
+    };
+
     messageHandler = new MessageHandler({
         database: db.database,
         redis: db.redis,
         gridfs: db.gridfs,
-        attachments: config.attachments
+        attachments: config.attachments,
+        loggelf: message => loggelf(message)
     });
 
     userHandler = new UserHandler({
         database: db.database,
         users: db.users,
         redis: db.redis,
-        authlogExpireDays: config.log.authlogExpireDays
+        authlogExpireDays: config.log.authlogExpireDays,
+        loggelf: message => loggelf(message)
     });
 
     server.on('error', err => {
