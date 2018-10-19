@@ -518,35 +518,6 @@ indexes:
     key:
       updated: 1
 
-# messagelog
-- collection: messagelog
-  index:
-    name: messagelog_id_hashed
-    key:
-      id: hashed
-
-- collection: messagelog
-  index:
-    name: messagelog_parent
-    key:
-      parentId: 1
-    sparse: true # only messages inserted by mail store have parentId set
-
-- collection: messagelog
-  index:
-    name: messagelog_queue
-    key:
-      queueId: 1
-    sparse: true # only messages inserted by mail store have queueId set
-
-- collection: messagelog
-  index:
-    name: messagelog_autoexpire
-    # autoremove messagelog entries after 180 days
-    expireAfterSeconds: 15552000
-    key:
-      created: 1
-
 - collection: tasks
   index:
     name: task

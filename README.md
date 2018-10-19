@@ -313,6 +313,10 @@ database.
 
 ## Operating WildDuck
 
+### Logging
+
+WildDuck sends gelf-formatted log messages to a Graylog server
+
 ### Sharding
 
 WildDuck supports MongoDB sharding. Consider using sharding only if you know that your data storage is large enough to outgrow single replica. Some actions
@@ -326,7 +330,6 @@ sh.enableSharding('wildduck');
 sh.shardCollection('wildduck.messages', { mailbox: 1, uid: 1 });
 sh.shardCollection('wildduck.archived', { user: 1, _id: 1 });
 sh.shardCollection('wildduck.threads', { user: 'hashed' });
-sh.shardCollection('wildduck.messagelog', { id: 'hashed' });
 sh.shardCollection('wildduck.authlog', { user: 'hashed' });
 
 sh.enableSharding('attachments');
