@@ -295,6 +295,10 @@ needed (if the header From: address does not match user address or aliases then 
 
 Use [Haraka](http://haraka.github.io/) with [haraka-plugins-wildduck](https://github.com/nodemailer/haraka-plugin-wildduck) to validate recipient addresses and quota usage against the WildDuck users database and to store/filter messages.
 
+#### Spam detection
+
+Use [Rspamd plugin for Haraka](https://github.com/haraka/haraka-plugin-rspamd) in order to detect spam. WildDuck plugin detects Rspamd output and uses this information to send the message either to Inbox or Junk.
+
 ## Future considerations
 
 -   Optimize FETCH queries to load only partial data for BODY subparts
