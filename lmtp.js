@@ -19,18 +19,8 @@ let messageHandler;
 let userHandler;
 let filterHandler;
 let loggelf;
-let spamChecks, spamHeaderKeys;
 
 config.on('reload', () => {
-    spamChecks = tools.prepareSpamChecks(config.spamHeader);
-    spamHeaderKeys = spamChecks.map(check => check.key);
-
-    if (filterHandler) {
-        filterHandler.spamChecks = spamChecks;
-        filterHandler.spamHeaderKeys = spamHeaderKeys;
-        filterHandler.spamScoreValue = config.lmtp.spamScore;
-    }
-
     log.info('LMTP', 'Configuration reloaded');
 });
 
@@ -241,9 +231,6 @@ module.exports = done => {
         gelf.emit('gelf.log', message);
     };
 
-    spamChecks = tools.prepareSpamChecks(config.spamHeader);
-    spamHeaderKeys = spamChecks.map(check => check.key);
-
     messageHandler = new MessageHandler({
         database: db.database,
         users: db.users,
@@ -265,9 +252,6 @@ module.exports = done => {
         db,
         sender: config.sender,
         messageHandler,
-        spamHeaderKeys,
-        spamChecks,
-        spamScoreValue: config.lmtp.spamScore,
         loggelf: message => loggelf(message)
     });
 

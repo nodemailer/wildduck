@@ -35,15 +35,6 @@ function send() {
                 to: recipients
             },
 
-            headers: {
-                /*
-                // uncomment to send the messge to Junk
-                'X-Rspamd-Bar': '/',
-                'X-Rspamd-Report': 'R_PARTS_DIFFER(0.5) MIME_GOOD(-0.1) R_DKIM_ALLOW(-0.2) R_SPF_ALLOW(-0.2)',
-                'X-Rspamd-Score': '22.6'
-                */
-            },
-
             from: 'Kärbes 🐧 <andris@kreata.ee>',
             to: recipients
                 .map((rcpt, i) => ({ name: 'Recipient #' + (i + 1), address: rcpt }))

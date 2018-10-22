@@ -26,10 +26,6 @@ maxForwards=2000
 # If set then reports errors to Bugsnag
 bugsnagCode=""
 
-# Header rules for routing spam
-# This does not affect WildDuck plugin for Haraka
-# @include "spamheaders.toml"
-
 [dbs]
 # @include "dbs.toml"
 
