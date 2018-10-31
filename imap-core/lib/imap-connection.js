@@ -287,26 +287,28 @@ class IMAPConnection extends EventEmitter {
 
         this._server.connections.delete(this);
 
-        if (typeof this._server.notifier.releaseConnection === 'function') {
-            this._server.notifier.releaseConnection(
-                {
-                    service: 'imap',
-                    session: this.session,
-                    user: this.user
-                },
-                () => false
-            );
-        }
+        if (this.user) {
+            if (typeof this._server.notifier.releaseConnection === 'function') {
+                this._server.notifier.releaseConnection(
+                    {
+                        service: 'imap',
+                        session: this.session,
+                        user: this.user
+                    },
+                    () => false
+                );
+            }
 
-        this.loggelf({
-            short_message: '[CONNRELEASE] Connection closed for ' + this.user,
-            _connection: 'release',
-            _service: 'imap',
-            _session: this.session && this.session.id,
-            _user: this.user,
-            _cid: this.id,
-            _ip: this.remoteAddress
-        });
+            this.loggelf({
+                short_message: '[CONNRELEASE] Connection released for ' + this.user.id,
+                _connection: 'release',
+                _service: 'imap',
+                _session: this.session && this.session.id,
+                _user: this.user.id,
+                _cid: this.id,
+                _ip: this.remoteAddress
+            });
+        }
 
         this._closed = true;
         this._closing = false;
