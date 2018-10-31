@@ -52,7 +52,8 @@ module.exports = {
             {
                 method: 'LOGIN',
                 username,
-                password
+                password,
+                connection: this
             },
             this.session,
             (err, response) => {

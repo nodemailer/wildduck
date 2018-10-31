@@ -127,6 +127,10 @@ let createInterface = (ifaceOptions, callback) => {
     server.onGetQuotaRoot = onGetQuotaRoot(server);
     server.onGetQuota = onGetQuota(server);
 
+    if (loggelf) {
+        server.loggelf = loggelf;
+    }
+
     // start listening
     server.listen(ifaceOptions.port, ifaceOptions.host, () => {
         if (started) {

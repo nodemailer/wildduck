@@ -100,6 +100,8 @@ class IMAPConnection extends EventEmitter {
                 }
             };
         });
+
+        this.loggelf = () => false;
     }
 
     /**
@@ -296,9 +298,15 @@ class IMAPConnection extends EventEmitter {
             );
         }
 
-        if (this._closed) {
-            return;
-        }
+        this.loggelf({
+            short_message: '[CONNRELEASE] Connection closed for ' + this.user,
+            _connection: 'release',
+            _service: 'imap',
+            _session: this.session,
+            _user: this.user,
+            _cid: this.id,
+            _ip: this.remoteAddress
+        });
 
         this._closed = true;
         this._closing = false;
@@ -774,9 +782,9 @@ class IMAPConnection extends EventEmitter {
                                     flag && flag.value
                                         ? flag
                                         : {
-                                            type: 'ATOM',
-                                            value: flag
-                                        }
+                                              type: 'ATOM',
+                                              value: flag
+                                          }
                             );
                             break;
 
@@ -785,9 +793,9 @@ class IMAPConnection extends EventEmitter {
                                 value && value.value
                                     ? value
                                     : {
-                                        type: 'ATOM',
-                                        value: (value || '0').toString()
-                                    };
+                                          type: 'ATOM',
+                                          value: (value || '0').toString()
+                                      };
                             break;
 
                         case 'MODSEQ':
@@ -795,9 +803,9 @@ class IMAPConnection extends EventEmitter {
                                 value && value.value
                                     ? value
                                     : {
-                                        type: 'ATOM',
-                                        value: (value || '0').toString()
-                                    }
+                                          type: 'ATOM',
+                                          value: (value || '0').toString()
+                                      }
                             );
                             break;
                     }

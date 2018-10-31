@@ -52,13 +52,19 @@ class IMAPServer extends EventEmitter {
                         // ignore, should not happen
                     }
                     if (this.options.secured) {
-                        return this.connect(socket, socketOptions);
+                        return this.connect(
+                            socket,
+                            socketOptions
+                        );
                     }
                     this._upgrade(socket, (err, tlsSocket) => {
                         if (err) {
                             return this._onError(err);
                         }
-                        this.connect(tlsSocket, socketOptions);
+                        this.connect(
+                            tlsSocket,
+                            socketOptions
+                        );
                     });
                 });
             });
@@ -68,16 +74,22 @@ class IMAPServer extends EventEmitter {
                     if (err) {
                         // ignore, should not happen
                     }
-                    this.connect(socket, socketOptions);
+                    this.connect(
+                        socket,
+                        socketOptions
+                    );
                 })
             );
         }
 
         this._setListeners();
+
+        this.loggelf = () => false;
     }
 
     connect(socket, socketOptions) {
         let connection = new IMAPConnection(this, socket, socketOptions);
+        connection.loggelf = message => this.loggelf(message);
         this.connections.add(connection);
         connection.on('error', this._onError.bind(this));
         connection.init();

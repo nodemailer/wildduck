@@ -68,7 +68,8 @@ function authenticate(connection, token, requireClientToken, callback) {
             method: 'PLAIN',
             username,
             password,
-            clientToken
+            clientToken,
+            connection
         },
         connection.session,
         (err, response) => {
