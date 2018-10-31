@@ -178,7 +178,11 @@ module.exports = done => {
                 delete message[key];
             }
         });
-        gelf.emit('gelf.log', message);
+        try {
+            gelf.emit('gelf.log', message);
+        } catch (err) {
+            log.error('Gelf', err);
+        }
     };
 
     indexer = new Indexer({

@@ -302,7 +302,7 @@ class IMAPConnection extends EventEmitter {
             short_message: '[CONNRELEASE] Connection closed for ' + this.user,
             _connection: 'release',
             _service: 'imap',
-            _session: this.session,
+            _session: this.session && this.session.id,
             _user: this.user,
             _cid: this.id,
             _ip: this.remoteAddress
