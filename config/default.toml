@@ -58,8 +58,8 @@ bugsnagCode=""
         component="wildduck"
         [log.gelf.options]
             graylogPort=12201
-            graylogHostname='127.0.0.1'
-            connection='lan'
+            graylogHostname="127.0.0.1"
+            connection="lan"
 
 [imap]
 # @include "imap.toml"

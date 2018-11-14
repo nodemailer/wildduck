@@ -77,6 +77,7 @@ class IMAPCommand {
 
                 if (!this.command || !this.tag) {
                     let err = new Error('Invalid tag');
+                    err.code = 'InvalidTag';
                     if (this.payload) {
                         // no payload means empty line
                         errors.notifyConnection(this.connection, err, {
@@ -89,6 +90,7 @@ class IMAPCommand {
 
                 if (!commands.has(this.command)) {
                     let err = new Error('Unknown command');
+                    err.code = 'UnknownCommand';
                     errors.notifyConnection(this.connection, err, {
                         payload: this.payload ? (this.payload.length < 256 ? this.payload : this.payload.toString().substr(0, 150) + '...') : false
                     });
@@ -101,7 +103,9 @@ class IMAPCommand {
         if (command.literal) {
             // check if the literal size is in acceptable bounds
             if (isNaN(command.expecting) || isNaN(command.expecting) < 0 || command.expecting > Number.MAX_SAFE_INTEGER) {
-                errors.notifyConnection(this.connection, new Error('Invalid literal size'), {
+                let err = new Error('Invalid literal size');
+                err.code = 'InvalidLiteralSize';
+                errors.notifyConnection(this.connection, err, {
                     command: {
                         expecting: command.expecting
                     }
@@ -109,7 +113,7 @@ class IMAPCommand {
                 this.connection.send(this.tag + ' BAD Invalid literal size');
                 this.payload = '';
                 this.first = true;
-                return callback(new Error('Literal too big'));
+                return callback(err);
             }
 
             let maxAllowed = Math.max(Number(this.connection._server.options.maxMessage) || 0, MAX_MESSAGE_SIZE);
@@ -138,7 +142,9 @@ class IMAPCommand {
                     this.connection.send(this.tag + ' NO Literal too large');
                 }
 
-                return callback(new Error('Literal too big'));
+                let err = new Error('Literal too large');
+                err.code = 'InvalidLiteralSize';
+                return callback(err);
             }
 
             // Accept literal input
@@ -319,7 +325,9 @@ class IMAPCommand {
 
         // Check if the command can be run in current state
         if (handler.state && [].concat(handler.state || []).indexOf(this.connection.state) < 0) {
-            return callback(new Error(parsed.command.toUpperCase() + ' not allowed now'));
+            let err = new Error(parsed.command.toUpperCase() + ' not allowed now');
+            err.code = 'InvalidState';
+            return callback(err);
         }
 
         if (handler.schema === false) {
@@ -329,12 +337,16 @@ class IMAPCommand {
 
         // Deny commands with too many arguments
         if (parsed.attributes && parsed.attributes.length > maxArgs) {
-            return callback(new Error('Too many arguments provided'));
+            let err = new Error('Too many arguments provided');
+            err.code = 'InvalidArguments';
+            return callback(err);
         }
 
         // Deny commands with too little arguments
         if (((parsed.attributes && parsed.attributes.length) || 0) < minArgs) {
-            return callback(new Error('Not enough arguments provided'));
+            let err = new Error('Not enough arguments provided');
+            err.code = 'InvalidArguments';
+            return callback(err);
         }
 
         callback();
