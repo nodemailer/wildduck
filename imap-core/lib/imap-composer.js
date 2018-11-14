@@ -19,18 +19,23 @@ class IMAPComposer extends Transform {
 
         if (typeof obj.pipe === 'function') {
             // pipe stream to socket and wait until it finishes before continuing
+
+            let description = [obj.description, obj._mailbox, obj._message, obj._uid].filter(v => v).join('/');
             this.connection.logger.debug(
                 {
                     tnx: 'pipeout',
                     cid: this.connection.id
                 },
-                '[%s] S: %s<pipe message stream to socket>',
+                '[%s] S: <fetch response%s>',
                 this.connection.id,
-                obj.description || ''
+                description ? ' ' + description : ''
             );
-            obj.pipe(this.connection[!this.connection.compression ? '_socket' : '_deflate'], {
-                end: false
-            });
+            obj.pipe(
+                this.connection[!this.connection.compression ? '_socket' : '_deflate'],
+                {
+                    end: false
+                }
+            );
             obj.once('error', err => this.emit('error', err));
             obj.once('end', () => {
                 this.push('\r\n');
