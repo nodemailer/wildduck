@@ -14,6 +14,7 @@ const tools = require('./lib/tools');
 const crypto = require('crypto');
 const Gelf = require('gelf');
 const os = require('os');
+const util = require('util');
 
 const usersRoutes = require('./lib/api/users');
 const addressesRoutes = require('./lib/api/addresses');
@@ -72,15 +73,22 @@ const serverOptions = {
             };
 
             Object.keys(req.params || {}).forEach(key => {
-                let value = (req.params[key] || '').toString().trim();
+                let value =
+                    typeof req.params[key] === 'string'
+                        ? req.params[key]
+                        : util
+                              .inspect(req.params[key], false, 3)
+                              .toString()
+                              .trim();
+
                 if (!value) {
                     return;
                 }
 
                 if (['password'].includes(key)) {
                     value = '***';
-                } else if (value.length > 64) {
-                    value = value.substr(0, 63) + '…';
+                } else if (value.length > 128) {
+                    value = value.substr(0, 128) + '…';
                 }
 
                 if (key.length > 30) {
@@ -95,10 +103,16 @@ const serverOptions = {
                 if (!body || !['id'].includes(key)) {
                     return;
                 }
-                value = (value || '').toString().trim();
+                value =
+                    typeof value === 'string'
+                        ? value
+                        : util
+                              .inspect(value, false, 3)
+                              .toString()
+                              .trim();
 
-                if (value.length > 64) {
-                    value = value.substr(0, 63) + '…';
+                if (value.length > 128) {
+                    value = value.substr(0, 128) + '…';
                 }
 
                 if (key.length > 30) {

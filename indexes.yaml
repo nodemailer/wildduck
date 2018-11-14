@@ -113,6 +113,15 @@ indexes:
     key:
       user: 1
 
+- collection: asps
+  type: users # index applies to users database
+  index:
+    name: entry_autoexpire
+    # autoremove log entries after expire seconds
+    expireAfterSeconds: 0
+    key:
+      expires: 1
+
 # Indexes for the authentication log collection
 - collection: authlog
   type: users # index applies to users database
