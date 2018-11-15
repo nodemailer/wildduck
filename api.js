@@ -54,7 +54,7 @@ const serverOptions = {
             let path = (req.route && req.route.path) || (req.url || '').replace(/(accessToken=)[^&]+/, '$1xxxxxx');
 
             let message = {
-                short_message: 'HTTP [' + path + '] ' + (body.success ? 'OK' : 'FAILED'),
+                short_message: 'HTTP [' + req.method + ' ' + path + '] ' + (body.success ? 'OK' : 'FAILED'),
 
                 _ip: req.headers['x-forwarded-for'] || req.connection.remoteAddress,
                 _client_ip: ((req.body && req.body.ip) || (req.query && req.query.ip) || '').toString().substr(0, 40) || '',
@@ -64,8 +64,8 @@ const serverOptions = {
                 _user: req.user,
                 _role: req.role,
 
-                _api_response: 'yes',
-                _success: body.success ? 'yes' : 'no',
+                _api_response: body.success ? 'success' : 'fail',
+
                 _error: body.error,
                 _error_code: body.code,
 
