@@ -46,6 +46,8 @@ bugsnagCode=""
 [log]
     level="silly"
 
+    skipFetchLog=false # if true, then does not output individual * FETCH responses to log
+
     # delete authentication log entries after 30 days
     # changing this value only affects new entries
     # set to false to not log authentication events

@@ -82,6 +82,8 @@ class IMAPServer extends EventEmitter {
             );
         }
 
+        this.skipFetchLog = options.skipFetchLog;
+
         this._setListeners();
 
         this.loggelf = () => false;

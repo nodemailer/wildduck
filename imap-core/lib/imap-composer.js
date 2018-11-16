@@ -9,7 +9,9 @@ class IMAPComposer extends Transform {
         Transform.call(this, {
             writableObjectMode: true
         });
+        options = options || {};
         this.connection = options.connection;
+        this.skipFetchLog = options.skipFetchLog;
     }
 
     _transform(obj, encoding, done) {
@@ -20,16 +22,19 @@ class IMAPComposer extends Transform {
         if (typeof obj.pipe === 'function') {
             // pipe stream to socket and wait until it finishes before continuing
 
-            let description = [obj.description, obj._mailbox, obj._message, obj._uid].filter(v => v).join('/');
-            this.connection.logger.debug(
-                {
-                    tnx: 'pipeout',
-                    cid: this.connection.id
-                },
-                '[%s] S: <fetch response%s>',
-                this.connection.id,
-                description ? ' ' + description : ''
-            );
+            if (!this.skipFetchLog) {
+                let description = [obj.description, obj._mailbox, obj._message, obj._uid].filter(v => v).join('/');
+                this.connection.logger.debug(
+                    {
+                        tnx: 'pipeout',
+                        cid: this.connection.id
+                    },
+                    '[%s] S: <fetch response%s>',
+                    this.connection.id,
+                    description ? ' ' + description : ''
+                );
+            }
+
             obj.pipe(
                 this.connection[!this.connection.compression ? '_socket' : '_deflate'],
                 {

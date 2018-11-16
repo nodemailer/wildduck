@@ -40,7 +40,8 @@ class IMAPConnection extends EventEmitter {
         this._socket = socket;
 
         this.writeStream = new IMAPComposer({
-            connection: this
+            connection: this,
+            skipFetchLog: server.skipFetchLog
         });
         this.writeStream.pipe(this._socket);
         this.writeStream.on('error', this._onError.bind(this));

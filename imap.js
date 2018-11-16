@@ -78,7 +78,9 @@ let createInterface = (ifaceOptions, callback) => {
         logger,
 
         maxMessage: config.imap.maxMB * 1024 * 1024,
-        maxStorage: config.maxStorage * 1024 * 1024
+        maxStorage: config.maxStorage * 1024 * 1024,
+
+        skipFetchLog: config.log.skipFetchLog
     };
 
     certs.loadTLSOptions(serverOptions, 'imap');
