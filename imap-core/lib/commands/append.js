@@ -113,7 +113,7 @@ module.exports = {
 
         this._server.onAppend(path, flags, internaldate, raw, this.session, (err, success, info) => {
             Object.keys(info || {}).forEach(key => {
-                logdata['_' + key.replace(/[A-Z]+/g, c => '_' + c.toLowerCase())] = info.key;
+                logdata['_' + key.replace(/[A-Z]+/g, c => '_' + c.toLowerCase())] = info[key];
             });
 
             if (err) {
