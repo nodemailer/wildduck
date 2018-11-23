@@ -267,7 +267,11 @@ module.exports = {
             this.session,
             (err, success, info) => {
                 Object.keys(info || {}).forEach(key => {
-                    logdata['_' + key.replace(/[A-Z]+/g, c => '_' + c.toLowerCase())] = info[key];
+                    let vkey = '_' + key.replace(/[A-Z]+/g, c => '_' + c.toLowerCase());
+                    if (vkey === '_id') {
+                        vkey = '_fetch_id';
+                    }
+                    logdata[vkey] = info[key];
                 });
 
                 if (err) {
