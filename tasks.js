@@ -11,6 +11,8 @@ const MessageHandler = require('./lib/message-handler');
 const setupIndexes = yaml.safeLoad(fs.readFileSync(__dirname + '/indexes.yaml', 'utf8'));
 
 const taskRestore = require('./lib/tasks/restore');
+const taskUserDelete = require('./lib/tasks/user-delete');
+const taskQuota = require('./lib/tasks/quota');
 
 let messageHandler;
 let gcTimeout;
@@ -462,6 +464,22 @@ function processTask(taskData, callback) {
                     callback(null, true);
                 }
             );
+        case 'user-delete':
+            return taskUserDelete(taskData, {}, err => {
+                if (err) {
+                    return callback(err);
+                }
+                // release
+                callback(null, true);
+            });
+        case 'quota':
+            return taskQuota(taskData, {}, err => {
+                if (err) {
+                    return callback(err);
+                }
+                // release
+                callback(null, true);
+            });
         default:
             // release task by returning true
             return callback(null, true);
