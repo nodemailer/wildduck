@@ -98,25 +98,42 @@ module.exports = {
             return true;
         });
 
-        this._server.onAppend(
-            path,
-            flags,
-            internaldate,
-            Buffer.from(typeof message.value === 'string' ? message.value : (message.value || '').toString(), 'binary'),
-            this.session,
-            (err, success, info) => {
-                if (err) {
-                    return callback(err);
-                }
+        let raw = Buffer.from(typeof message.value === 'string' ? message.value : (message.value || '').toString(), 'binary');
 
-                let code = typeof success === 'string' ? success.toUpperCase() : 'APPENDUID ' + info.uidValidity + ' ' + info.uid;
+        let logdata = {
+            short_message: '[APPEND] ' + this.selected.mailbox,
+            _path: path,
+            _user: this.session.user.id.toString(),
+            _mailbox: this.selected.mailbox,
+            _sess: this.id,
+            _flags: flags.join(', '),
+            _internaldate: internaldate,
+            _size: raw.length
+        };
 
-                callback(null, {
-                    response: success === true ? 'OK' : 'NO',
-                    code
-                });
+        this._server.onAppend(path, flags, internaldate, raw, this.session, (err, success, info) => {
+            Object.keys(info || {}).forEach(key => {
+                logdata['_' + key.replace(/[A-Z]+/g, c => '_' + c.toLowerCase())] = info.key;
+            });
+
+            if (err) {
+                logdata._error = err.message;
+                logdata._error_code = err.code;
+                logdata._response = err.response;
+                this._server.loggelf(logdata);
+                return callback(err);
             }
-        );
+
+            let code = typeof success === 'string' ? success.toUpperCase() : 'APPENDUID ' + info.uidValidity + ' ' + info.uid;
+
+            logdata._response = success;
+            this._server.loggelf(logdata);
+
+            callback(null, {
+                response: success === true ? 'OK' : 'NO',
+                code
+            });
+        });
     }
 };
 

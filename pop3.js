@@ -149,7 +149,7 @@ const serverOptions = {
     },
 
     onFetchMessage(message, session, callback) {
-        userHandler.userCache.get(session.user.id, 'pop3MaxDownload', (config.pop3.maxDownloadMB || 10) * 1024 * 1024, (err, limit) => {
+        userHandler.userCache.get(session.user.id, 'pop3MaxDownload', (config.pop3.maxDownloadMB || 10000) * 1024 * 1024, (err, limit) => {
             if (err) {
                 return callback(err);
             }

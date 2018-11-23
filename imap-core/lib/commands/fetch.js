@@ -241,6 +241,18 @@ module.exports = {
             })
         );
 
+        let logdata = {
+            short_message: '[FETCH] ' + this.selected.mailbox,
+            _user: this.session.user.id.toString(),
+            _mailbox: this.selected.mailbox,
+            _sess: this.id,
+            _mark_seen: markAsSeen ? 'yes' : 'no',
+            _is_uid: isUid ? 'yes' : 'no',
+            _message_count: messages.length,
+            _modseq: changedSince,
+            _full_message: JSON.stringify(query, false, 2)
+        };
+
         this._server.onFetch(
             this.selected.mailbox,
             {
@@ -252,10 +264,21 @@ module.exports = {
                 isUid
             },
             this.session,
-            (err, success) => {
+            (err, success, info) => {
+                Object.keys(info || {}).forEach(key => {
+                    logdata['_' + key.replace(/[A-Z]+/g, c => '_' + c.toLowerCase())] = info.key;
+                });
+
                 if (err) {
+                    logdata._error = err.message;
+                    logdata._error_code = err.code;
+                    logdata._response = err.response;
+                    this._server.loggelf(logdata);
                     return callback(err);
                 }
+
+                logdata._response = success;
+                this._server.loggelf(logdata);
 
                 callback(null, {
                     response: success === true ? 'OK' : 'NO',
