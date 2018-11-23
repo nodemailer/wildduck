@@ -132,7 +132,7 @@ let argv = yargs
                 process.exit();
             }
 
-            let query = db.redis.multi().del('tn:user:' + user);
+            let query = await db.redis.multi().del('tn:user:' + user);
 
             tokens.forEach(tokenHash => {
                 query = query.del('tn:token:' + tokenHash);
