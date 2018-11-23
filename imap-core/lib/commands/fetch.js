@@ -272,7 +272,7 @@ module.exports = {
 
                 if (err) {
                     logdata._error = err.message;
-                    logdata._error_code = err.code;
+                    logdata._code = err.code;
                     logdata._response = err.response;
                     this._server.loggelf(logdata);
                     return callback(err);

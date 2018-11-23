@@ -67,7 +67,7 @@ const serverOptions = {
                 _api_response: body.success ? 'success' : 'fail',
 
                 _error: body.error,
-                _error_code: body.code,
+                _code: body.code,
 
                 _size: size
             };
