@@ -102,6 +102,7 @@ module.exports = {
 
         let logdata = {
             short_message: '[APPEND] ' + this.selected.mailbox,
+            _mail_action: 'append',
             _path: path,
             _user: this.session.user.id.toString(),
             _mailbox: this.selected.mailbox,
