@@ -242,7 +242,7 @@ module.exports = {
         );
 
         let logdata = {
-            short_message: '[FETCH] ' + this.selected.mailbox,
+            short_message: '[FETCH]',
             _mail_action: 'fetch',
             _user: this.session.user.id.toString(),
             _mailbox: this.selected.mailbox.toString(),

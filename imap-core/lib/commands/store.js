@@ -118,6 +118,19 @@ module.exports = {
 
         let messages = imapTools.getMessageRange(this.selected.uidList, range, false);
 
+        let logdata = {
+            short_message: '[STORE]',
+            _mail_action: 'store',
+            _user: this.session.user.id.toString(),
+            _mailbox: this.selected.mailbox,
+            _sess: this.id,
+            _message_count: messages.lentgh,
+            _flags: flags.join(', '),
+            _store_action: action,
+            _silent: silent ? 'yes' : '',
+            _modseq: unchangedSince
+        };
+
         this._server.onStore(
             this.selected.mailbox,
             {
@@ -131,11 +144,16 @@ module.exports = {
             this.session,
             (err, success, modified) => {
                 if (err) {
+                    logdata._error = err.message;
+                    logdata._code = err.code;
+                    logdata._response = err.response;
+                    this._server.loggelf(logdata);
                     return callback(err);
                 }
 
                 // STORE returns MODIFIED as sequence numbers, so convert UIDs to sequence list
                 if (modified && modified.length) {
+                    logdata._modified = modified.length;
                     modified = modified.map(uid => this.selected.uidList.indexOf(uid) + 1).filter(
                         seq =>
                             // ensure that deleted items (eg seq=0) do not end up in the list
@@ -150,12 +168,18 @@ module.exports = {
                     message = 'Conditional STORE completed';
                 }
 
+                logdata._response = success;
+                logdata._message = message;
+                this._server.loggelf(logdata);
+
                 let response = {
                     response: success === true ? 'OK' : 'NO',
                     code:
                         typeof success === 'string'
                             ? success.toUpperCase()
-                            : modified && modified.length ? 'MODIFIED ' + imapTools.packMessageRange(modified) : false,
+                            : modified && modified.length
+                                ? 'MODIFIED ' + imapTools.packMessageRange(modified)
+                                : false,
                     message
                 };
 

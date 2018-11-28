@@ -41,6 +41,16 @@ module.exports = {
 
         let messages = imapTools.getMessageRange(this.selected.uidList, range, cmd === 'UID COPY');
 
+        let logdata = {
+            short_message: '[COPY]',
+            _mail_action: 'copy',
+            _destination: path,
+            _user: this.session.user.id.toString(),
+            _mailbox: this.selected.mailbox,
+            _sess: this.id,
+            _message_count: messages.lentgh
+        };
+
         this._server.onCopy(
             this.selected.mailbox,
             {
@@ -49,9 +59,29 @@ module.exports = {
             },
             this.session,
             (err, success, info) => {
+                Object.keys(info || {}).forEach(key => {
+                    let vkey = '_' + key.replace(/[A-Z]+/g, c => '_' + c.toLowerCase());
+                    if (vkey === '_id') {
+                        vkey = '_copy_id';
+                    }
+
+                    let value = info[key];
+                    if (['sourceUid', 'destinationUid'].includes(key)) {
+                        value = imapTools.packMessageRange(value);
+                    }
+                    logdata[vkey] = value;
+                });
+
                 if (err) {
+                    logdata._error = err.message;
+                    logdata._code = err.code;
+                    logdata._response = err.response;
+                    this._server.loggelf(logdata);
                     return callback(err);
                 }
+
+                logdata._response = success;
+                this._server.loggelf(logdata);
 
                 let code =
                     typeof success === 'string'

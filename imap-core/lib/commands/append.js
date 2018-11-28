@@ -101,7 +101,7 @@ module.exports = {
         let raw = Buffer.from(typeof message.value === 'string' ? message.value : (message.value || '').toString(), 'binary');
 
         let logdata = {
-            short_message: '[APPEND] ' + this.selected.mailbox,
+            short_message: '[APPEND]',
             _mail_action: 'append',
             _path: path,
             _user: this.session.user.id.toString(),
