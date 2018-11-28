@@ -44,10 +44,26 @@ module.exports = {
             });
         }
 
-        this._server.onDelete(path, this.session, (err, success) => {
+        let logdata = {
+            short_message: '[DELETE]',
+            _mail_action: 'create',
+            _path: path,
+            _user: this.session.user.id.toString(),
+            _sess: this.id
+        };
+
+        this._server.onDelete(path, this.session, (err, success, mailbox) => {
             if (err) {
+                logdata._error = err.message;
+                logdata._code = err.code;
+                logdata._response = err.response;
+                this._server.loggelf(logdata);
                 return callback(err);
             }
+
+            logdata._rmailbox = mailbox && mailbox.toString();
+            logdata._response = success;
+            this._server.loggelf(logdata);
 
             if (success !== true) {
                 return callback(null, {
