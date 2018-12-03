@@ -244,7 +244,7 @@ function clearExpiredMessages() {
                         {
                             messageData,
                             // do not archive messages of deleted users
-                            archive: !messageData.userDeleted
+                            archive: !messageData.userDeleted && !messageData.copied
                         },
                         err => {
                             if (err) {
