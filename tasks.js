@@ -9,6 +9,8 @@ const yaml = require('js-yaml');
 const fs = require('fs');
 const MessageHandler = require('./lib/message-handler');
 const setupIndexes = yaml.safeLoad(fs.readFileSync(__dirname + '/indexes.yaml', 'utf8'));
+const Gelf = require('gelf');
+const os = require('os');
 
 const taskRestore = require('./lib/tasks/restore');
 const taskUserDelete = require('./lib/tasks/user-delete');
@@ -18,11 +20,51 @@ let messageHandler;
 let gcTimeout;
 let taskTimeout;
 let gcLock;
+let loggelf;
 
 module.exports.start = callback => {
     if (!config.tasks.enabled) {
         return setImmediate(() => callback(null, false));
     }
+
+    const component = config.log.gelf.component || 'wildduck';
+    const hostname = config.log.gelf.hostname || os.hostname();
+    const gelf =
+        config.log.gelf && config.log.gelf.enabled
+            ? new Gelf(config.log.gelf.options)
+            : {
+                  // placeholder
+                  emit: () => false
+              };
+
+    loggelf = message => {
+        if (typeof message === 'string') {
+            message = {
+                short_message: message
+            };
+        }
+
+        message = message || {};
+
+        if (!message.short_message || message.short_message.indexOf(component.toUpperCase()) !== 0) {
+            message.short_message = component.toUpperCase() + ' ' + (message.short_message || '');
+        }
+
+        message.facility = component; // facility is deprecated but set by the driver if not provided
+        message.host = hostname;
+        message.timestamp = Date.now() / 1000;
+        message._component = component;
+        Object.keys(message).forEach(key => {
+            if (!message[key]) {
+                delete message[key];
+            }
+        });
+        try {
+            gelf.emit('gelf.log', message);
+        } catch (err) {
+            log.error('Gelf', err);
+        }
+    };
 
     gcLock = new RedFour({
         redis: db.redis,
@@ -454,7 +496,8 @@ function processTask(taskData, callback) {
             return taskRestore(
                 taskData,
                 {
-                    messageHandler
+                    messageHandler,
+                    loggelf
                 },
                 err => {
                     if (err) {
@@ -465,7 +508,7 @@ function processTask(taskData, callback) {
                 }
             );
         case 'user-delete':
-            return taskUserDelete(taskData, {}, err => {
+            return taskUserDelete(taskData, { loggelf }, err => {
                 if (err) {
                     return callback(err);
                 }
@@ -473,7 +516,7 @@ function processTask(taskData, callback) {
                 callback(null, true);
             });
         case 'quota':
-            return taskQuota(taskData, {}, err => {
+            return taskQuota(taskData, { loggelf }, err => {
                 if (err) {
                     return callback(err);
                 }
