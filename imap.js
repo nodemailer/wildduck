@@ -198,6 +198,7 @@ module.exports = done => {
     });
 
     messageHandler = new MessageHandler({
+        users: db.users,
         database: db.database,
         redis: db.redis,
         gridfs: db.gridfs,
