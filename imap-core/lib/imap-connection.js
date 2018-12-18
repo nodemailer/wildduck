@@ -337,6 +337,15 @@ class IMAPConnection extends EventEmitter {
         }
 
         if (['ECONNRESET', 'EPIPE', 'ETIMEDOUT', 'EHOSTUNREACH'].includes(err.code)) {
+            this.logger.info(
+                {
+                    tnx: 'connection',
+                    cid: this.id
+                },
+                '[%s] Closing connection due to %s',
+                this.id,
+                err.code
+            );
             this.close(); // mark connection as 'closing'
             return;
         }
@@ -782,14 +791,13 @@ class IMAPConnection extends EventEmitter {
 
                     switch (key) {
                         case 'FLAGS':
-                            value = [].concat(value || []).map(
-                                flag =>
-                                    flag && flag.value
-                                        ? flag
-                                        : {
-                                              type: 'ATOM',
-                                              value: flag
-                                          }
+                            value = [].concat(value || []).map(flag =>
+                                flag && flag.value
+                                    ? flag
+                                    : {
+                                          type: 'ATOM',
+                                          value: flag
+                                      }
                             );
                             break;
 
