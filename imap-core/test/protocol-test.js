@@ -542,6 +542,8 @@ describe('IMAP Protocol integration tests', function() {
     });
 
     describe('APPEND', function() {
+        this.timeout(60000); // eslint-disable-line no-invalid-this
+
         it('should fail appending to nonexistent mailbox', function(done) {
             let message = Buffer.from('From: sender <sender@example.com>\r\nTo: receiver@example.com\r\nSubject: HELLO!\r\n\r\nWORLD!');
             let cmds = ['T1 LOGIN testuser pass', 'T2 APPEND zzz {' + message.length + '}\r\n' + message.toString('binary'), 'T3 LOGOUT'];
@@ -604,7 +606,7 @@ describe('IMAP Protocol integration tests', function() {
             );
         });
 
-        it('should append large file in chunks', function(done) {
+        it.only('should append large file in chunks', function(done) {
             let lchunks = [].concat(chunks);
             let message = lchunks.join('');
 
