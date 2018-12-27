@@ -624,6 +624,7 @@ describe('IMAP Protocol integration tests', function() {
                 {
                     commands: cmds,
                     secure: true,
+                    debug: true,
                     port //debug: true
                 },
                 function(resp) {
