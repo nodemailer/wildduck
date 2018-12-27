@@ -4,7 +4,6 @@
     "description": "IMAP/POP3 server built with Node.js and MongoDB",
     "main": "server.js",
     "scripts": {
-        "toc": "markdown-toc -i docs/api.md",
         "test": "mongo --eval 'db.dropDatabase()' wildduck-test && redis-cli -n 13 flushdb && NODE_ENV=test grunt",
         "apidoc": "apidoc -i lib/api/ -o docs/",
         "show": "NODE_CONFIG_ONLY=true node server.js"
@@ -31,7 +30,6 @@
         "grunt-wait": "0.3.0",
         "icedfrisby": "1.5.0",
         "mailparser": "2.4.3",
-        "markdown-toc": "1.2.0",
         "mocha": "5.2.0",
         "request": "2.88.0"
     },
@@ -40,7 +38,6 @@
         "accesscontrol": "2.2.1",
         "base32.js": "0.1.0",
         "bcryptjs": "2.4.3",
-        "bugsnag": "2.4.3",
         "gelf": "2.0.1",
         "generate-password": "1.4.1",
         "he": "1.2.0",
