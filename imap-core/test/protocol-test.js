@@ -18,9 +18,9 @@ describe('IMAP Protocol integration tests', function() {
     let port = 9993;
 
     beforeEach(function(done) {
-        exec(__dirname + '/prepare.sh ' + config.dbs.dbname, { cwd: __dirname }, (err, stdout, stderr) => {
-            console.log(stdout.toString());
-            console.log(stderr.toString());
+        exec(__dirname + '/prepare.sh ' + config.dbs.dbname, { cwd: __dirname }, (err /*, stdout, stderr*/) => {
+            // console.log(stdout.toString());
+            // console.log(stderr.toString());
             if (err) {
                 return done(err);
             }
@@ -606,8 +606,7 @@ describe('IMAP Protocol integration tests', function() {
             );
         });
 
-        it.only('should append large file in chunks', function(done) {
-            console.log(0);
+        it('should append large file in chunks', function(done) {
             let lchunks = [].concat(chunks);
             let message = lchunks.join('');
 
@@ -618,19 +617,15 @@ describe('IMAP Protocol integration tests', function() {
                 'T3 LOGOUT'
             ];
 
-            console.log(0, cmds.length);
-            console.log(1);
             testClient(
                 {
                     commands: cmds,
                     secure: true,
-                    debug: true,
-                    port //debug: true
+                    //debug: true,
+                    port
                 },
                 function(resp) {
-                    console.log(2);
                     resp = resp.toString();
-                    console.log(resp);
                     expect(/^T2 OK/m.test(resp)).to.be.true;
                     expect(resp.indexOf('\r\n* LIST (\\HasNoChildren) "/" "testfolder"\r\n') >= 0).to.be.false;
                     expect(/^[^\s]+ BAD/m.test(resp)).to.be.false;
