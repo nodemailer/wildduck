@@ -607,6 +607,7 @@ describe('IMAP Protocol integration tests', function() {
         });
 
         it.only('should append large file in chunks', function(done) {
+            console.log(0);
             let lchunks = [].concat(chunks);
             let message = lchunks.join('');
 
@@ -617,6 +618,8 @@ describe('IMAP Protocol integration tests', function() {
                 'T3 LOGOUT'
             ];
 
+            console.log(0, cmds.length);
+            console.log(1);
             testClient(
                 {
                     commands: cmds,
@@ -624,7 +627,9 @@ describe('IMAP Protocol integration tests', function() {
                     port //debug: true
                 },
                 function(resp) {
+                    console.log(2);
                     resp = resp.toString();
+                    console.log(resp);
                     expect(/^T2 OK/m.test(resp)).to.be.true;
                     expect(resp.indexOf('\r\n* LIST (\\HasNoChildren) "/" "testfolder"\r\n') >= 0).to.be.false;
                     expect(/^[^\s]+ BAD/m.test(resp)).to.be.false;
