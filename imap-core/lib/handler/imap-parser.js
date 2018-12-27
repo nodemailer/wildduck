@@ -382,11 +382,14 @@ class TokenParser {
                         if (chr === '\u0000') {
                             throw new Error('Unexpected \\x00 at position ' + (this.pos + i));
                         }
-                        this.currentNode.value += chr;
 
-                        if (this.currentNode.value.length >= this.currentNode.literalLength) {
+                        this.currentNode.chBuffer[this.currentNode.chPos++] = chr.charCodeAt(0);
+
+                        if (this.currentNode.chPos >= this.currentNode.literalLength) {
                             this.currentNode.endPos = this.pos + i;
                             this.currentNode.closed = true;
+                            this.currentNode.value = this.currentNode.chBuffer.toString('binary');
+                            this.currentNode.chBuffer = Buffer.alloc(0);
                             this.currentNode = this.currentNode.parentNode;
                             this.state = 'NORMAL';
                             checkSP();
@@ -410,6 +413,7 @@ class TokenParser {
                         } else {
                             throw new Error('Unexpected char at position ' + (this.pos + i));
                         }
+
                         this.currentNode.literalLength = Number(this.currentNode.literalLength);
                         this.currentNode.started = true;
 
@@ -421,6 +425,11 @@ class TokenParser {
                             this.currentNode = this.currentNode.parentNode;
                             this.state = 'NORMAL';
                             checkSP();
+                        } else {
+                            // Allocate expected size buffer. Max size check is already performed
+                            // Maybe should use allocUnsafe instead?
+                            this.currentNode.chBuffer = Buffer.alloc(this.currentNode.literalLength);
+                            this.currentNode.chPos = 0;
                         }
                         break;
                     }

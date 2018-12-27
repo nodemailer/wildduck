@@ -137,7 +137,8 @@ class IMAPCommand {
 
                 if (command.expecting > maxAllowed) {
                     // APPENDLIMIT response for too large messages
-                    this.connection.send(this.tag + ' BAD [TOOBIG] Literal too large');
+                    // TOOBIG: https://tools.ietf.org/html/rfc4469#section-4.2
+                    this.connection.send(this.tag + ' NO [TOOBIG] Literal too large');
                 } else {
                     this.connection.send(this.tag + ' NO Literal too large');
                 }
