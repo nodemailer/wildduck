@@ -1,5 +1,7 @@
 'use strict';
 
+const imapTools = require('../imap-tools');
+
 module.exports = {
     state: 'Not Authenticated',
 
@@ -117,6 +119,7 @@ module.exports = {
                 this.setUser(response.user);
                 this.state = 'Authenticated';
                 this.setupNotificationListener();
+                imapTools.sendCapabilityResponse(this);
 
                 callback(null, {
                     response: 'OK',

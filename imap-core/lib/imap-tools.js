@@ -690,3 +690,62 @@ module.exports.getQueryResponse = function(query, message, options) {
 
     return values;
 };
+
+/**
+ * Builds and emits an untagged CAPABILITY response depending on current state
+ *
+ * @param {Object} connection IMAP connection object
+ */
+module.exports.sendCapabilityResponse = connection => {
+    let capabilities = [];
+
+    if (!connection.secure) {
+        if (!connection._server.options.disableSTARTTLS) {
+            capabilities.push('STARTTLS');
+            if (!connection._server.options.ignoreSTARTTLS) {
+                capabilities.push('LOGINDISABLED');
+            }
+        }
+    }
+
+    if (connection.state === 'Not Authenticated') {
+        capabilities.push('AUTH=PLAIN');
+        capabilities.push('AUTH=PLAIN-CLIENTTOKEN');
+        capabilities.push('SASL-IR');
+        capabilities.push('ENABLE');
+
+        capabilities.push('ID');
+        capabilities.push('UNSELECT');
+        capabilities.push('IDLE');
+        capabilities.push('NAMESPACE');
+        capabilities.push('QUOTA');
+        capabilities.push('XLIST');
+        capabilities.push('CHILDREN');
+    } else {
+        capabilities.push('ID');
+        capabilities.push('UNSELECT');
+        capabilities.push('IDLE');
+        capabilities.push('NAMESPACE');
+        capabilities.push('QUOTA');
+        capabilities.push('XLIST');
+        capabilities.push('CHILDREN');
+
+        capabilities.push('SPECIAL-USE');
+        capabilities.push('UIDPLUS');
+        capabilities.push('UNSELECT');
+        capabilities.push('ENABLE');
+        capabilities.push('CONDSTORE');
+        capabilities.push('UTF8=ACCEPT');
+
+        capabilities.push('MOVE');
+        capabilities.push('COMPRESS=DEFLATE');
+
+        if (connection._server.options.maxMessage) {
+            capabilities.push('APPENDLIMIT=' + connection._server.options.maxMessage);
+        }
+    }
+
+    capabilities.sort((a, b) => a.localeCompare(b));
+
+    connection.send('* CAPABILITY ' + ['IMAP4rev1'].concat(capabilities).join(' '));
+};
