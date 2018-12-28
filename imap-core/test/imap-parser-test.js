@@ -341,14 +341,14 @@ describe('IMAP Command Parser', function() {
 
     describe('get literal', function() {
         it('should succeed', function() {
-            expect(imapHandler.parser('TAG1 CMD {4}\r\nabcd').attributes).to.deep.equal([
+            expect(imapHandler.parser('TAG1 CMD {4}\r\n', { literals: [Buffer.from('abcd')] }).attributes).to.deep.equal([
                 {
                     type: 'LITERAL',
                     value: 'abcd'
                 }
             ]);
 
-            expect(imapHandler.parser('TAG1 CMD {4}\r\nabcd {4}\r\nkere').attributes).to.deep.equal([
+            expect(imapHandler.parser('TAG1 CMD {4}\r\n {4}\r\n', { literals: [Buffer.from('abcd'), Buffer.from('kere')] }).attributes).to.deep.equal([
                 {
                     type: 'LITERAL',
                     value: 'abcd'
@@ -359,7 +359,7 @@ describe('IMAP Command Parser', function() {
                 }
             ]);
 
-            expect(imapHandler.parser('TAG1 CMD ({4}\r\nabcd {4}\r\nkere)').attributes).to.deep.equal([
+            expect(imapHandler.parser('TAG1 CMD ({4}\r\n {4}\r\n)', { literals: [Buffer.from('abcd'), Buffer.from('kere')] }).attributes).to.deep.equal([
                 [
                     {
                         type: 'LITERAL',
@@ -375,7 +375,7 @@ describe('IMAP Command Parser', function() {
 
         it('should fail', function() {
             expect(function() {
-                imapHandler.parser('TAG1 CMD {4}\r\nabcd{4}  \r\nkere');
+                imapHandler.parser('TAG1 CMD {4}\r\n{4}  \r\n', { literals: [Buffer.from('abcd'), Buffer.from('kere')] });
             }).to.throw(Error);
         });
 

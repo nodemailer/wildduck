@@ -56,6 +56,7 @@ class IMAPCommand {
     constructor(connection) {
         this.connection = connection;
         this.payload = '';
+        this.literals = [];
         this.first = true;
     }
 
@@ -112,6 +113,7 @@ class IMAPCommand {
                 });
                 this.connection.send(this.tag + ' BAD Invalid literal size');
                 this.payload = '';
+                this.literals = [];
                 this.first = true;
                 return callback(err);
             }
@@ -134,6 +136,7 @@ class IMAPCommand {
                 );
 
                 this.payload = ''; // reset payload
+                this.literals = [];
 
                 if (command.expecting > maxAllowed) {
                     // APPENDLIMIT response for too large messages
@@ -159,7 +162,8 @@ class IMAPCommand {
             });
 
             command.literal.on('end', () => {
-                this.payload += '\r\n' + Buffer.concat(chunks, chunklen).toString('binary');
+                this.payload += '\r\n'; //  + Buffer.concat(chunks, chunklen).toString('binary');
+                this.literals.push(Buffer.concat(chunks, chunklen));
                 command.readyCallback(); // call this once stream is fully processed and ready to accept next data
             });
         }
@@ -206,7 +210,7 @@ class IMAPCommand {
             }
 
             try {
-                this.parsed = imapHandler.parser(this.payload);
+                this.parsed = imapHandler.parser(this.payload, { literals: this.literals });
             } catch (E) {
                 errors.notifyConnection(this.connection, E, {
                     payload: this.payload ? (this.payload.length < 256 ? this.payload : this.payload.toString().substr(0, 150) + '...') : false

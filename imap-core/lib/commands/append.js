@@ -98,7 +98,12 @@ module.exports = {
             return true;
         });
 
-        let raw = Buffer.from(typeof message.value === 'string' ? message.value : (message.value || '').toString(), 'binary');
+        let raw;
+        if (Buffer.isBuffer(message.value)) {
+            raw = message.value;
+        } else {
+            raw = Buffer.from(typeof message.value === 'string' ? message.value : (message.value || '').toString(), 'binary');
+        }
 
         let logdata = {
             short_message: '[APPEND]',
