@@ -40,7 +40,13 @@ module.exports = {
             });
         }
 
-        let path = Buffer.from((command.attributes.shift() || {}).value || 'binary').toString();
+        let path = (command.attributes.shift() || {}).value;
+        if (!Buffer.isBuffer(path)) {
+            path = path.toString();
+        } else {
+            path = Buffer.from(path, 'binary').toString();
+        }
+
         path = imapTools.normalizeMailbox(path, !this.acceptUTF8Enabled);
         let message = command.attributes.pop();
         let flags = [];
@@ -69,6 +75,8 @@ module.exports = {
         }
 
         if (internaldate) {
+            internaldate = internaldate.toString(); // might be Buffer
+
             if (!validateInternalDate(internaldate)) {
                 return callback(new Error('Invalid date argument for APPEND'));
             }
