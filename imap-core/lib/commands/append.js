@@ -128,8 +128,8 @@ module.exports = {
         this._server.onAppend(path, flags, internaldate, raw, this.session, (err, success, info) => {
             Object.keys(info || {}).forEach(key => {
                 let vkey = '_' + key.replace(/[A-Z]+/g, c => '_' + c.toLowerCase());
-                if (vkey === '_id') {
-                    vkey = '_append_id';
+                if (['_id', '_status'].includes(vkey)) {
+                    vkey = '_append' + vkey;
                 }
                 logdata[vkey] = info[key];
             });
