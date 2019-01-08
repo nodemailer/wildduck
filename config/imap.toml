@@ -28,6 +28,9 @@ disableRetention=false
 # If true, then disables STARTTLS support
 disableSTARTTLS=false
 
+# If true, then advertises COMPRESS=DEFLATE capability
+enableCompression=false
+
 # If true, then expect HAProxy PROXY header as the first line of data
 useProxy=false
 # useProxy=true # expect PROXY from all conections

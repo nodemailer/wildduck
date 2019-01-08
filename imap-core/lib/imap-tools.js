@@ -738,7 +738,10 @@ module.exports.sendCapabilityResponse = connection => {
         capabilities.push('UTF8=ACCEPT');
 
         capabilities.push('MOVE');
-        capabilities.push('COMPRESS=DEFLATE');
+
+        if (connection._server.options.enableCompression) {
+            capabilities.push('COMPRESS=DEFLATE');
+        }
 
         if (connection._server.options.maxMessage) {
             capabilities.push('APPENDLIMIT=' + connection._server.options.maxMessage);

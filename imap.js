@@ -80,6 +80,8 @@ let createInterface = (ifaceOptions, callback) => {
         maxMessage: config.imap.maxMB * 1024 * 1024,
         maxStorage: config.maxStorage * 1024 * 1024,
 
+        enableCompression: !!config.imap.enableCompression,
+
         skipFetchLog: config.log.skipFetchLog
     };
 
