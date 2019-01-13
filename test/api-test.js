@@ -16,6 +16,23 @@ describe('API tests', function() {
     this.timeout(10000); // eslint-disable-line no-invalid-this
 
     frisby
+        .create('POST domainaliases')
+        .post(
+            URL + '/domainaliases',
+            {
+                alias: 'jõgeva.öö',
+                domain: 'example.com'
+            },
+            { json: true }
+        )
+        .expectStatus(200)
+        .afterJSON(response => {
+            expect(response).to.exist;
+            expect(response.success).to.be.true;
+        })
+        .toss();
+
+    frisby
         .create('POST users')
         .post(
             URL + '/users',
@@ -58,6 +75,136 @@ describe('API tests', function() {
                 .afterJSON(response => {
                     expect(response).to.exist;
                     expect(response.success).to.be.true;
+                })
+                .toss();
+
+            frisby
+                .create('POST authenticate')
+                .post(
+                    URL + '/authenticate',
+                    {
+                        username: 'testuser@example.com',
+                        password: 'secretpass',
+                        scope: 'master'
+                    },
+                    { json: true }
+                )
+                .expectStatus(200)
+                .afterJSON(response => {
+                    expect(response).to.exist;
+                    expect(response.success).to.be.true;
+                })
+                .toss();
+
+            frisby
+                .create('POST authenticate - failure')
+                .post(
+                    URL + '/authenticate',
+                    {
+                        username: 'testuser@example.com',
+                        password: 'invalid',
+                        scope: 'master'
+                    },
+                    { json: true }
+                )
+                .afterJSON(response => {
+                    expect(response).to.exist;
+                    expect(response.error).to.exist;
+                    expect(response.success).to.not.be.true;
+                })
+                .toss();
+
+            frisby
+                .create('POST authenticate - using aliasdomain')
+                .post(
+                    URL + '/authenticate',
+                    {
+                        username: 'testuser@jõgeva.öö',
+                        password: 'secretpass',
+                        scope: 'master'
+                    },
+                    { json: true }
+                )
+                .expectStatus(200)
+                .afterJSON(response => {
+                    expect(response).to.exist;
+                    expect(response.success).to.be.true;
+                })
+                .toss();
+
+            frisby
+                .create('POST authenticate - failure using aliasdomain')
+                .post(
+                    URL + '/authenticate',
+                    {
+                        username: 'testuser@jõgeva.öö',
+                        password: 'invalid',
+                        scope: 'master'
+                    },
+                    { json: true }
+                )
+                .afterJSON(response => {
+                    expect(response).to.exist;
+                    expect(response.error).to.exist;
+                    expect(response.success).to.not.be.true;
+                })
+                .toss();
+
+            frisby
+                .create('POST users/{id}/asps - generate ASP')
+                .post(
+                    URL + '/users/' + userId + '/asps',
+                    {
+                        description: 'test',
+                        scopes: ['imap', 'smtp'],
+                        generateMobileconfig: true
+                    },
+                    { json: true }
+                )
+                .afterJSON(response => {
+                    expect(response).to.exist;
+                    expect(response.error).to.not.exist;
+                    expect(response.success).to.be.true;
+                    expect(response.password).to.exist;
+                    expect(response.mobileconfig).to.exist;
+
+                    let asp = response.password;
+
+                    frisby
+                        .create('POST authenticate - success on correct scope')
+                        .post(
+                            URL + '/authenticate',
+                            {
+                                username: 'testuser@example.com',
+                                password: asp,
+                                scope: 'imap'
+                            },
+                            { json: true }
+                        )
+                        .expectStatus(200)
+                        .afterJSON(response => {
+                            expect(response).to.exist;
+                            expect(response.success).to.be.true;
+                        })
+                        .toss();
+
+                    frisby
+                        .create('POST authenticate - failure on incorrect scope')
+                        .post(
+                            URL + '/authenticate',
+                            {
+                                username: 'testuser@example.com',
+                                password: asp,
+                                scope: 'master'
+                            },
+                            { json: true }
+                        )
+                        .afterJSON(response => {
+                            expect(response).to.exist;
+                            expect(response.error).to.exist;
+                            expect(response.success).to.not.be.true;
+                        })
+                        .toss();
                 })
                 .toss();
 
