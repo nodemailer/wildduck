@@ -43,6 +43,15 @@ module.exports = {
             this.condstoreEnabled = this.selected.condstoreEnabled = true;
         }
 
+        let logdata = {
+            short_message: '[SEARCH]',
+            _mail_action: 'search',
+            _user: this.session.user.id.toString(),
+            _mailbox: this.selected.mailbox,
+            _sess: this.id,
+            _query: JSON.stringify(parsed.query),
+            _terms: JSON.stringify(parsed.terms)
+        };
         this._server.onSearch(
             this.selected.mailbox,
             {
@@ -53,7 +62,14 @@ module.exports = {
             this.session,
             (err, results) => {
                 if (err) {
-                    return callback(err);
+                    logdata._error = err.message;
+                    logdata._code = err.code;
+                    logdata._response = err.response;
+                    this._server.loggelf(logdata);
+                    return callback(null, {
+                        response: 'NO',
+                        code: 'TEMPFAIL'
+                    });
                 }
 
                 let matches = results.uidList;

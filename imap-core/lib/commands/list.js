@@ -109,9 +109,25 @@ module.exports = {
 
         let query = imapTools.normalizeMailbox(reference + path, !this.acceptUTF8Enabled);
 
+        let logdata = {
+            short_message: '[GETQUOTAROOT]',
+            _mail_action: 'list',
+            _query: query,
+            _user: this.session.user.id.toString(),
+            _sess: this.id
+        };
+
         let listResponse = (err, list) => {
             if (err) {
-                return callback(err);
+                logdata._error = err.message;
+                logdata._code = err.code;
+                logdata._response = err.response;
+                this._server.loggelf(logdata);
+
+                return callback(null, {
+                    response: 'NO',
+                    code: 'TEMPFAIL'
+                });
             }
 
             imapTools.filterFolders(imapTools.generateFolderListing(list), query).forEach(folder => {

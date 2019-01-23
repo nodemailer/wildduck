@@ -35,6 +35,6 @@ module.exports = {
         this.clearNotificationListener();
         this.send('* BYE Logout requested');
         this.send(command.tag + ' OK ' + quotes[Math.floor(Math.random() * quotes.length)]);
-        this.close();
+        setImmediate(() => this.close());
     }
 };

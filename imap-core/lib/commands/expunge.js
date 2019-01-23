@@ -19,6 +19,14 @@ module.exports = {
             });
         }
 
+        let logdata = {
+            short_message: '[EXPUNGE]',
+            _mail_action: 'expunge',
+            _mailbox: this.selected.mailbox,
+            _user: this.session.user.id.toString(),
+            _sess: this.id
+        };
+
         this._server.onExpunge(
             this.selected.mailbox,
             {
@@ -27,8 +35,19 @@ module.exports = {
             this.session,
             (err, success) => {
                 if (err) {
-                    return callback(err);
+                    logdata._error = err.message;
+                    logdata._code = err.code;
+                    logdata._response = err.response;
+                    this._server.loggelf(logdata);
+                    // do not return actual error to user
+                    return callback(null, {
+                        response: 'NO',
+                        code: 'TEMPFAIL'
+                    });
                 }
+
+                logdata._response = success;
+                this._server.loggelf(logdata);
 
                 callback(null, {
                     response: success === true ? 'OK' : 'NO',

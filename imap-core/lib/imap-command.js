@@ -3,6 +3,7 @@
 const imapHandler = require('./handler/imap-handler');
 const errors = require('../../lib/errors.js');
 const MAX_MESSAGE_SIZE = 1 * 1024 * 1024;
+const MAX_BAD_COMMANDS = 50;
 
 const commands = new Map([
     /*eslint-disable global-require*/
@@ -58,6 +59,7 @@ class IMAPCommand {
         this.payload = '';
         this.literals = [];
         this.first = true;
+        this.connection._badCount = this.connection._badCount || 0;
     }
 
     append(command, callback) {
@@ -192,6 +194,10 @@ class IMAPCommand {
                     this.connection.id,
                     this.payload || ''
                 );
+                if (!this.countBadResponses()) {
+                    // stop processing
+                    return;
+                }
                 return next(err);
             }
 
@@ -226,6 +232,10 @@ class IMAPCommand {
                     this.payload
                 );
                 this.connection.send(this.tag + ' BAD ' + E.message);
+                if (!this.countBadResponses()) {
+                    // stop processing
+                    return;
+                }
                 return next();
             }
 
@@ -256,6 +266,10 @@ class IMAPCommand {
                         payload: payload ? (payload.length < 256 ? payload : payload.toString().substr(0, 150) + '...') : false
                     });
                     this.connection.send(this.tag + ' ' + (err.response || 'BAD') + ' ' + err.message);
+                    if (!this.countBadResponses()) {
+                        // stop processing
+                        return;
+                    }
                     return next(err);
                 }
 
@@ -270,6 +284,12 @@ class IMAPCommand {
                                     payload: payload ? (payload.length < 256 ? payload : payload.toString().substr(0, 150) + '...') : false
                                 });
                                 this.connection.send(this.tag + ' ' + (err.response || 'BAD') + ' ' + err.message);
+                                if (!err.response || err.response === 'BAD') {
+                                    if (!this.countBadResponses()) {
+                                        // stop processing
+                                        return;
+                                    }
+                                }
                                 return next(err);
                             }
 
@@ -355,6 +375,16 @@ class IMAPCommand {
         }
 
         callback();
+    }
+
+    countBadResponses() {
+        this.connection._badCount++;
+        if (this.connection._badCount > MAX_BAD_COMMANDS) {
+            this.connection.send('* BYE Too many protocol errors');
+            setImmediate(() => this.connection.close(true));
+            return false;
+        }
+        return true;
     }
 }
 

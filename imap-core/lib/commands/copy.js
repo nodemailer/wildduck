@@ -77,7 +77,12 @@ module.exports = {
                     logdata._code = err.code;
                     logdata._response = err.response;
                     this._server.loggelf(logdata);
-                    return callback(err);
+
+                    // do not return actual error to user
+                    return callback(null, {
+                        response: 'NO',
+                        code: 'TEMPFAIL'
+                    });
                 }
 
                 logdata._response = success;

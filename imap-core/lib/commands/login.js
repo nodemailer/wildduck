@@ -78,7 +78,11 @@ module.exports = {
                         'LOGIN',
                         err.message
                     );
-                    return callback(err);
+
+                    return callback(null, {
+                        response: 'NO',
+                        code: 'TEMPFAIL'
+                    });
                 }
 
                 if (!response || !response.user) {

@@ -146,7 +146,7 @@ class IMAPServer extends EventEmitter {
 
                 this.connections.forEach(connection => {
                     connection.send('* BYE System shutdown');
-                    connection.close();
+                    setImmediate(() => connection.close());
                 });
             }
         }, timeout);

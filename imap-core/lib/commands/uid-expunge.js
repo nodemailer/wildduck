@@ -34,6 +34,14 @@ module.exports = {
         }
         let messages = imapTools.getMessageRange(this.selected.uidList, range, true);
 
+        let logdata = {
+            short_message: '[UID EXPUNGE]',
+            _mail_action: 'uid expunge',
+            _user: this.session.user.id.toString(),
+            _mailbox: this.selected.mailbox,
+            _sess: this.id
+        };
+
         this._server.onExpunge(
             this.selected.mailbox,
             {
@@ -43,7 +51,14 @@ module.exports = {
             this.session,
             (err, success) => {
                 if (err) {
-                    return callback(err);
+                    logdata._error = err.message;
+                    logdata._code = err.code;
+                    logdata._response = err.response;
+                    this._server.loggelf(logdata);
+                    return callback(null, {
+                        response: 'NO',
+                        code: 'TEMPFAIL'
+                    });
                 }
 
                 callback(null, {

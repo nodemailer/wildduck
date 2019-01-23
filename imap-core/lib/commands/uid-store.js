@@ -136,7 +136,10 @@ module.exports = {
                     logdata._code = err.code;
                     logdata._response = err.response;
                     this._server.loggelf(logdata);
-                    return callback(err);
+                    return callback(null, {
+                        response: 'NO',
+                        code: 'TEMPFAIL'
+                    });
                 }
 
                 let message = success === true ? 'UID STORE completed' : false;

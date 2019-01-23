@@ -406,7 +406,7 @@ class IMAPConnection extends EventEmitter {
         }
 
         this.send('* BYE Idle timeout, closing connection');
-        this.close(true); // force connection to close
+        setImmediate(() => this.close(true));
     }
 
     /**
@@ -478,14 +478,14 @@ class IMAPConnection extends EventEmitter {
                         case 'LOGOUT':
                             conn.clearNotificationListener();
                             conn.send('* BYE ' + (message.reason || 'Logout requested'));
-                            conn.close();
+                            setImmediate(() => conn.close());
                             break;
 
                         case 'DROP':
                             if (isSelected(message.mailbox)) {
                                 conn.clearNotificationListener();
                                 conn.send('* BYE Selected mailbox was deleted, have to disconnect');
-                                conn.close();
+                                setImmediate(() => conn.close());
                                 break;
                             }
                     }
@@ -791,13 +791,14 @@ class IMAPConnection extends EventEmitter {
 
                     switch (key) {
                         case 'FLAGS':
-                            value = [].concat(value || []).map(flag =>
-                                flag && flag.value
-                                    ? flag
-                                    : {
-                                          type: 'ATOM',
-                                          value: flag
-                                      }
+                            value = [].concat(value || []).map(
+                                flag =>
+                                    flag && flag.value
+                                        ? flag
+                                        : {
+                                              type: 'ATOM',
+                                              value: flag
+                                          }
                             );
                             break;
 
