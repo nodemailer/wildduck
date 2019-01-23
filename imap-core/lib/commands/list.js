@@ -110,7 +110,7 @@ module.exports = {
         let query = imapTools.normalizeMailbox(reference + path, !this.acceptUTF8Enabled);
 
         let logdata = {
-            short_message: '[GETQUOTAROOT]',
+            short_message: '[LIST]',
             _mail_action: 'list',
             _query: query,
             _user: this.session.user.id.toString(),
