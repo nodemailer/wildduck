@@ -12,9 +12,15 @@ module.exports = function(response, asArray, isLogging) {
     let resp = (response.tag || '') + (response.command ? ' ' + response.command : '');
     let val;
     let lastType;
-    let walk = function(node) {
-        if (lastType === 'LITERAL' || (['(', '<', '['].indexOf(resp.substr(-1)) < 0 && resp.length)) {
-            resp += ' ';
+    let walk = function(node, options) {
+        options = options || {};
+
+        if (lastType === 'LITERAL' || (!['(', '<', '['].includes(resp.substr(-1)) && resp.length)) {
+            if (options.subArray) {
+                // ignore separator
+            } else {
+                resp += ' ';
+            }
         }
 
         if (node && node.buffer && !Buffer.isBuffer(node)) {
@@ -25,7 +31,16 @@ module.exports = function(response, asArray, isLogging) {
         if (Array.isArray(node)) {
             lastType = 'LIST';
             resp += '(';
-            node.forEach(walk);
+
+            // check if we need to skip separtor WS between two arrays
+            let subArray = node.length > 1 && Array.isArray(node[0]);
+
+            node.forEach(child => {
+                if (subArray && !Array.isArray(child)) {
+                    subArray = false;
+                }
+                walk(child, { subArray });
+            });
             resp += ')';
             return;
         }
@@ -99,7 +114,7 @@ module.exports = function(response, asArray, isLogging) {
 
                 if (node.section) {
                     resp += '[';
-                    node.section.forEach(walk);
+                    node.section.forEach(child => walk(child));
                     resp += ']';
                 }
                 if (node.partial) {
@@ -109,7 +124,7 @@ module.exports = function(response, asArray, isLogging) {
         }
     };
 
-    [].concat(response.attributes || []).forEach(walk);
+    [].concat(response.attributes || []).forEach(child => walk(child));
 
     if (resp.length) {
         respParts.push(resp);

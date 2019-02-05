@@ -72,9 +72,12 @@ module.exports = function(response, isLogging) {
 
             let limiter = new LengthLimiter(expectedLength, ' ', startFrom);
 
-            value.stream.pipe(limiter).pipe(output, {
-                end: false
-            });
+            value.stream.pipe(limiter).pipe(
+                output,
+                {
+                    end: false
+                }
+            );
 
             // pass errors to output
             value.stream.once('error', err => {
@@ -99,9 +102,14 @@ module.exports = function(response, isLogging) {
         }
     };
 
-    let walk = function(node, callback) {
-        if (lastType === 'LITERAL' || (['(', '<', '['].indexOf((resp || lr).substr(-1)) < 0 && (resp || lr).length)) {
-            resp += ' ';
+    let walk = function(node, options, callback) {
+        options = options || {};
+        if (lastType === 'LITERAL' || (!['(', '<', '['].includes((resp || lr).substr(-1)) && (resp || lr).length)) {
+            if (options.subArray) {
+                // ignore separator
+            } else {
+                resp += ' ';
+            }
         }
 
         if (node && node.buffer && !Buffer.isBuffer(node)) {
@@ -113,13 +121,21 @@ module.exports = function(response, isLogging) {
             lastType = 'LIST';
             resp += '(';
 
+            // check if we need to skip separtor WS between two arrays
+            let subArray = node.length > 1 && Array.isArray(node[0]);
+
             let pos = 0;
             let next = () => {
                 if (pos >= node.length) {
                     resp += ')';
                     return setImmediate(callback);
                 }
-                walk(node[pos++], next);
+                let child = node[pos++];
+
+                if (subArray && !Array.isArray(child)) {
+                    subArray = false;
+                }
+                walk(child, { subArray }, next);
             };
 
             return setImmediate(next);
@@ -230,7 +246,7 @@ module.exports = function(response, isLogging) {
                             resp += ']';
                             return setImmediate(finalize);
                         }
-                        walk(node.section[pos++], next);
+                        walk(node.section[pos++], false, next);
                     };
 
                     return setImmediate(next);
@@ -252,7 +268,7 @@ module.exports = function(response, isLogging) {
         if (pos >= attribs.length) {
             return setImmediate(finalize);
         }
-        walk(attribs[pos++], next);
+        walk(attribs[pos++], false, next);
     };
     setImmediate(next);
 
