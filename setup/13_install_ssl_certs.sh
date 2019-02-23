@@ -38,7 +38,32 @@ echo "server {
     ssl_certificate /etc/wildduck/certs/fullchain.pem;
     ssl_certificate_key /etc/wildduck/certs/privkey.pem;
 
+    # special config for EventSource to disable gzip
+    location /api/events {
+        proxy_http_version 1.1;
+        gzip off;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header HOST \$http_host;
+        proxy_set_header X-NginX-Proxy true;
+        proxy_pass http://127.0.0.1:3000;
+        proxy_redirect off;
+    }
+
+    # special config for uploads
+    location /webmail/send {
+        client_max_body_size 15M;
+        proxy_http_version 1.1;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header HOST \$http_host;
+        proxy_set_header X-NginX-Proxy true;
+        proxy_pass http://127.0.0.1:3000;
+        proxy_redirect off;
+    }
+
     location / {
+        proxy_http_version 1.1;
         proxy_set_header X-Real-IP \$remote_addr;
         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
         proxy_set_header HOST \$http_host;
