@@ -107,43 +107,62 @@ const serverOptions = {
 
                 session.user.mailbox = mailbox._id;
 
-                db.database
-                    .collection('messages')
-                    .find({
+                db.redis.hget('pop3uid', mailbox._id.toString(), (err, lastIndex) => {
+                    let query = {
                         mailbox: mailbox._id
-                    })
-                    .project({
-                        uid: true,
-                        size: true,
-                        mailbox: true,
-                        // required to decide if we need to update flags after RETR
-                        flags: true,
-                        unseen: true
-                    })
-                    .sort([['uid', -1]])
-                    .limit(config.pop3.maxMessages || MAX_MESSAGES)
-                    .toArray((err, messages) => {
-                        if (err) {
-                            return callback(err);
-                        }
+                    };
+                    if (!err && lastIndex && !isNaN(lastIndex)) {
+                        query.uid = { $gte: Number(lastIndex) };
+                    }
 
-                        return callback(null, {
-                            messages: messages
-                                // showolder first
-                                .reverse()
-                                // compose message objects
-                                .map(message => ({
-                                    id: message._id.toString(),
-                                    uid: message.uid,
-                                    mailbox: message.mailbox,
-                                    size: message.size,
-                                    flags: message.flags,
-                                    seen: !message.unseen
-                                })),
-                            count: messages.length,
-                            size: messages.reduce((acc, message) => acc + message.size, 0)
+                    db.database
+                        .collection('messages')
+                        .find(query)
+                        .project({
+                            uid: true,
+                            size: true,
+                            mailbox: true,
+                            // required to decide if we need to update flags after RETR
+                            flags: true,
+                            unseen: true
+                        })
+                        .sort([['uid', -1]])
+                        .limit(config.pop3.maxMessages || MAX_MESSAGES)
+                        .toArray((err, messages) => {
+                            if (err) {
+                                return callback(err);
+                            }
+
+                            let updateUIDIndex = done => {
+                                // first is the newest, last the oldest
+                                let oldestMessageData = messages && messages.length && messages[messages.length - 1];
+                                if (oldestMessageData || !oldestMessageData.uid) {
+                                    return done();
+                                }
+                                // try to update index, ignore result
+                                db.redis.hset('pop3uid', mailbox._id.toString(), oldestMessageData.uid, done);
+                            };
+
+                            updateUIDIndex(() => {
+                                return callback(null, {
+                                    messages: messages
+                                        // show older first
+                                        .reverse()
+                                        // compose message objects
+                                        .map(message => ({
+                                            id: message._id.toString(),
+                                            uid: message.uid,
+                                            mailbox: message.mailbox,
+                                            size: message.size,
+                                            flags: message.flags,
+                                            seen: !message.unseen
+                                        })),
+                                    count: messages.length,
+                                    size: messages.reduce((acc, message) => acc + message.size, 0)
+                                });
+                            });
                         });
-                    });
+                });
             }
         );
     },
