@@ -240,7 +240,7 @@ module.exports = done => {
     let iPos = 0;
     let startInterfaces = () => {
         if (iPos >= ifaceOptions.length) {
-            return done();
+            return db.redis.del('lim:imap', () => done());
         }
         let opts = ifaceOptions[iPos++];
 

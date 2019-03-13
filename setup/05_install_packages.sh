@@ -11,3 +11,9 @@ apt-get -q -y install pwgen git ufw build-essential libssl-dev dnsutils python s
 # rspamd
 apt-get -q -y --no-install-recommends install rspamd
 apt-get clean
+
+# DMARC policy=reject rules
+echo 'actions = {
+    quarantine = "add_header";
+    reject = "reject";
+}' > /etc/rspamd/override.d/dmarc.conf

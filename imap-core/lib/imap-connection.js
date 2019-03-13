@@ -13,7 +13,7 @@ const EventEmitter = require('events').EventEmitter;
 const packageInfo = require('../../package');
 const errors = require('../../lib/errors.js');
 
-const SOCKET_TIMEOUT = 10 * 60 * 1000;
+const SOCKET_TIMEOUT = 5 * 60 * 1000;
 
 /**
  * Creates a handler for new socket
@@ -202,7 +202,40 @@ class IMAPConnection extends EventEmitter {
      */
     send(payload, callback) {
         if (this._socket && this._socket.writable) {
-            this[!this.compression ? '_socket' : '_deflate'].write(payload + '\r\n', 'binary', callback);
+            try {
+                this[!this.compression ? '_socket' : '_deflate'].write(payload + '\r\n', 'binary', (...args) => {
+                    if (args[0]) {
+                        // write error
+                        this.logger.error(
+                            {
+                                tnx: 'send',
+                                cid: this.id,
+                                err: args[0]
+                            },
+                            '[%s] Send error: %s',
+                            this.id,
+                            args[0].message || args[0]
+                        );
+                        return this.close();
+                    }
+                    if (typeof callback === 'function') {
+                        return callback(...args);
+                    }
+                });
+            } catch (err) {
+                // write error
+                this.logger.error(
+                    {
+                        tnx: 'send',
+                        cid: this.id,
+                        err
+                    },
+                    '[%s] Send error: %s',
+                    this.id,
+                    err.message || err
+                );
+                return this.close();
+            }
             if (this.compression) {
                 // make sure we transmit the message immediatelly
                 this._deflate.flush();
@@ -216,6 +249,9 @@ class IMAPConnection extends EventEmitter {
                 this.id,
                 payload
             );
+        } else {
+            // socket is not there anymore
+            this.close();
         }
     }
 
@@ -223,11 +259,32 @@ class IMAPConnection extends EventEmitter {
      * Close socket
      */
     close(force) {
+        if (this._closed || this._closing) {
+            return;
+        }
+
         if (!this._socket.destroyed && this._socket.writable) {
             this._socket[!force ? 'end' : 'destroy']();
         }
 
         this._server.connections.delete(this);
+
+        if (!force) {
+            // allow socket to close in 1500ms or force it to close
+            this._closingTimeout = setTimeout(() => {
+                if (this._closed) {
+                    return;
+                }
+
+                try {
+                    this._socket.destroy();
+                } catch (err) {
+                    // ignore
+                }
+
+                setImmediate(() => this._onClose());
+            }, 1500);
+        }
 
         this._closing = true;
         if (force) {
@@ -263,6 +320,8 @@ class IMAPConnection extends EventEmitter {
      * @event
      */
     _onClose(/* hadError */) {
+        clearTimeout(this._closingTimeout);
+
         if (this._closed) {
             return;
         }
@@ -401,7 +460,8 @@ class IMAPConnection extends EventEmitter {
 
         if (this.idling) {
             // see if the connection still works
-            this.send('* OK Still here');
+            this.send('* OK Still here (' + Date.now() + ')');
+            this._socket.setTimeout(this._server.options.socketTimeout || SOCKET_TIMEOUT, this._onTimeout.bind(this));
             return;
         }
 
@@ -464,6 +524,12 @@ class IMAPConnection extends EventEmitter {
      */
     setupNotificationListener() {
         let conn = this;
+
+        if (this._closing || this._closed) {
+            // nothing to do here
+            return;
+        }
+
         let isSelected = mailbox => mailbox && conn.selected && conn.selected.mailbox && conn.selected.mailbox.toString() === mailbox.toString();
 
         this._listenerData = {
@@ -471,6 +537,10 @@ class IMAPConnection extends EventEmitter {
             cleared: false,
             callback(message) {
                 let selectedMailbox = conn.selected && conn.selected.mailbox;
+                if (this._closing || this._closed) {
+                    conn.clearNotificationListener();
+                    return;
+                }
 
                 if (message) {
                     // global triggers
@@ -791,14 +861,13 @@ class IMAPConnection extends EventEmitter {
 
                     switch (key) {
                         case 'FLAGS':
-                            value = [].concat(value || []).map(
-                                flag =>
-                                    flag && flag.value
-                                        ? flag
-                                        : {
-                                              type: 'ATOM',
-                                              value: flag
-                                          }
+                            value = [].concat(value || []).map(flag =>
+                                flag && flag.value
+                                    ? flag
+                                    : {
+                                          type: 'ATOM',
+                                          value: flag
+                                      }
                             );
                             break;
 
