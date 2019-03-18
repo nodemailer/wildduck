@@ -136,7 +136,7 @@ const serverOptions = {
                             let updateUIDIndex = done => {
                                 // first is the newest, last the oldest
                                 let oldestMessageData = messages && messages.length && messages[messages.length - 1];
-                                if (oldestMessageData || !oldestMessageData.uid) {
+                                if (!oldestMessageData || !oldestMessageData.uid) {
                                     return done();
                                 }
                                 // try to update index, ignore result
