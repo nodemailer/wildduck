@@ -247,6 +247,25 @@ server.use(
                         } catch (err) {
                             // ignore
                         }
+                    } else if (tokenData.ttl && isNaN(tokenData.ttl) && Number(tokenData.ttl) > 0) {
+                        let tokenTTL = Number(tokenData.ttl);
+                        let tokenLifetime = config.api.accessControl.tokenLifetime || 30 * 24 * 3600;
+
+                        // check if token is not too old
+                        if (tokenLifetime < (Date.now() - Number(tokenData.created)) / 1000) {
+                            // token is still usable, increase session length
+                            try {
+                                await db.redis
+                                    .multi()
+                                    .expire('tn:token:' + tokenHash, tokenTTL)
+                                    .expire('tn:user:' + tokenData.user, tokenTTL)
+                                    .exec();
+                            } catch (err) {
+                                // ignore
+                            }
+                            req.role = tokenData.role;
+                            req.user = tokenData.user;
+                        }
                     } else {
                         req.role = tokenData.role;
                         req.user = tokenData.user;

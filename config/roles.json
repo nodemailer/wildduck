@@ -254,6 +254,12 @@
 
     "auth": {
         "authentication": {
+            "create:any": ["*", "!token"]
+        }
+    },
+
+    "tokenAuth": {
+        "authentication": {
             "create:any": ["*"]
         }
     },
