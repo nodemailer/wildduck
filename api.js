@@ -206,7 +206,7 @@ server.use(
             }
         }
 
-        if (config.api.accessControl.enabled) {
+        if (config.api.accessControl.enabled || accessToken) {
             tokenRequired = true;
             if (accessToken && accessToken.length === 40 && /^[a-fA-F0-9]{40}$/.test(accessToken)) {
                 let tokenData;
@@ -270,6 +270,11 @@ server.use(
                         req.role = tokenData.role;
                         req.user = tokenData.user;
                     }
+
+                    if (req.params && req.params.user === 'me' && /^[0-9a-f]{24}$/i.test(req.user)) {
+                        req.params.user = req.user;
+                    }
+
                     return next();
                 }
             }

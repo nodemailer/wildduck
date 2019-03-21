@@ -209,12 +209,12 @@
         },
 
         "userlisting": {
-            "read:own": ["*", "!audit"]
+            "read:own": ["*", "!tags", "!metaData", "!disabledScopes", "!audit"]
         },
 
         "users": {
-            "read:own": ["*", "!audit"],
-            "update:own": ["*", "!audit"]
+            "read:own": ["*", "!tags", "!metaData", "!disabledScopes", "!audit"],
+            "update:own": ["*", "!tags", "!metaData", "!disabledScopes", "!audit"]
         },
 
         "asps": {
