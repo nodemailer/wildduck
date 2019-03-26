@@ -40,6 +40,13 @@
             "delete:any": ["*"]
         },
 
+        "storage": {
+            "create:any": ["*"],
+            "read:any": ["*"],
+            "update:any": ["*"],
+            "delete:any": ["*"]
+        },
+
         "mailboxes": {
             "create:any": ["*"],
             "read:any": ["*"],
@@ -170,6 +177,13 @@
             "delete:any": ["*"]
         },
 
+        "storage": {
+            "create:any": ["*"],
+            "read:any": ["*"],
+            "update:any": ["*"],
+            "delete:any": ["*"]
+        },
+
         "mailboxes": {
             "create:any": ["*"],
             "read:any": ["*"],
@@ -224,6 +238,13 @@
         },
 
         "messages": {
+            "create:own": ["*"],
+            "read:own": ["*"],
+            "update:own": ["*"],
+            "delete:own": ["*"]
+        },
+
+        "storage": {
             "create:own": ["*"],
             "read:own": ["*"],
             "update:own": ["*"],

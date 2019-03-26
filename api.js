@@ -7,6 +7,7 @@ const logger = require('restify-logger');
 const UserHandler = require('./lib/user-handler');
 const MailboxHandler = require('./lib/mailbox-handler');
 const MessageHandler = require('./lib/message-handler');
+const StorageHandler = require('./lib/storage-handler');
 const ImapNotifier = require('./lib/imap-notifier');
 const db = require('./lib/db');
 const certs = require('./lib/certs');
@@ -20,6 +21,7 @@ const usersRoutes = require('./lib/api/users');
 const addressesRoutes = require('./lib/api/addresses');
 const mailboxesRoutes = require('./lib/api/mailboxes');
 const messagesRoutes = require('./lib/api/messages');
+const storageRoutes = require('./lib/api/storage');
 const filtersRoutes = require('./lib/api/filters');
 const aspsRoutes = require('./lib/api/asps');
 const totpRoutes = require('./lib/api/2fa/totp');
@@ -35,6 +37,7 @@ const dkimRoutes = require('./lib/api/dkim');
 let userHandler;
 let mailboxHandler;
 let messageHandler;
+let storageHandler;
 let notifier;
 let loggelf;
 
@@ -371,6 +374,13 @@ module.exports = done => {
         loggelf: message => loggelf(message)
     });
 
+    storageHandler = new StorageHandler({
+        database: db.database,
+        users: db.users,
+        gridfs: db.gridfs,
+        loggelf: message => loggelf(message)
+    });
+
     userHandler = new UserHandler({
         database: db.database,
         users: db.users,
@@ -393,7 +403,8 @@ module.exports = done => {
     usersRoutes(db, server, userHandler);
     addressesRoutes(db, server);
     mailboxesRoutes(db, server, mailboxHandler);
-    messagesRoutes(db, server, messageHandler, userHandler);
+    messagesRoutes(db, server, messageHandler, userHandler, storageHandler);
+    storageRoutes(db, server, storageHandler);
     filtersRoutes(db, server);
     aspsRoutes(db, server, userHandler);
     totpRoutes(db, server, userHandler);

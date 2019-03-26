@@ -44,7 +44,7 @@ If you have a blank VPS and a free domain name that you can point to that VPS th
 
 Install script installs and configures all required dependencies and services, including Let's Encrypt based certs, to run WildDuck as a mail server.
 
-Tested on a 10$ DigitalOcean Ubuntu 16.04 instance.
+Tested on a 10\$ DigitalOcean Ubuntu 16.04 instance.
 
 ![](https://cldup.com/TZoTfxPugm.png)
 
@@ -265,7 +265,7 @@ This is a list of known differences from the IMAP specification. Listed differen
 5.  `CHARSET` argument for the `SEARCH` command is ignored (RFC3501 6.4.4.)
 6.  Metadata arguments for `SEARCH MODSEQ` are ignored (RFC7162 3.1.5.). You can define `<entry-name>` and `<entry-type-req>` values but these are not used for
     anything
-7.  `SEARCH TEXT` and `SEARCH BODY` both use MongoDB [$text index](https://docs.mongodb.com/v3.4/reference/operator/query/text/) against decoded plaintext
+7.  `SEARCH TEXT` and `SEARCH BODY` both use MongoDB [\$text index](https://docs.mongodb.com/v3.4/reference/operator/query/text/) against decoded plaintext
     version of the message. RFC3501 assumes that it should be a string match either against full message (`TEXT`) or body section (`BODY`).
 8.  What happens when FETCH is called for messages that were deleted in another session? _Not sure, need to check_
 9.  **Autoexpunge**, meaning that an EXPUNGE is called on background whenever a messages gets a `\Deleted` flag set. This is not in conflict with IMAP RFCs.
@@ -343,6 +343,10 @@ sh.enableSharding('attachments');
 // attachment _id is a sha256 hash of attachment contents
 sh.shardCollection('attachments.attachments.files', { _id: 'hashed' });
 sh.shardCollection('attachments.attachments.chunks', { files_id: 'hashed' });
+
+// storage _id is an ObjectID
+sh.shardCollection('attachments.storage.files', { _id: 'hashed' });
+sh.shardCollection('attachments.storage.chunks', { files_id: 'hashed' });
 ```
 
 ### Disk usage
