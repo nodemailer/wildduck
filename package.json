@@ -1,6 +1,6 @@
 {
     "name": "wildduck",
-    "version": "1.16.2",
+    "version": "1.17.0",
     "description": "IMAP/POP3 server built with Node.js and MongoDB",
     "main": "server.js",
     "scripts": {
@@ -19,7 +19,7 @@
         "apidoc": "0.17.7",
         "browserbox": "0.9.1",
         "chai": "4.2.0",
-        "eslint": "5.15.3",
+        "eslint": "5.16.0",
         "eslint-config-nodemailer": "1.2.0",
         "eslint-config-prettier": "4.1.0",
         "grunt": "1.0.4",
@@ -29,7 +29,7 @@
         "grunt-shell-spawn": "0.4.0",
         "grunt-wait": "0.3.0",
         "icedfrisby": "1.5.0",
-        "mailparser": "2.5.0",
+        "mailparser": "2.6.0",
         "mocha": "5.2.0",
         "request": "2.88.0"
     },
@@ -53,7 +53,7 @@
         "libbase64": "1.0.3",
         "libmime": "4.0.1",
         "libqp": "1.1.0",
-        "mailsplit": "4.2.4",
+        "mailsplit": "4.3.1",
         "mobileconfig": "2.2.0",
         "mongo-cursor-pagination": "7.1.0",
         "mongodb": "3.2.2",

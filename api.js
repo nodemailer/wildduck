@@ -12,6 +12,7 @@ const ImapNotifier = require('./lib/imap-notifier');
 const db = require('./lib/db');
 const certs = require('./lib/certs');
 const tools = require('./lib/tools');
+const consts = require('./lib/consts');
 const crypto = require('crypto');
 const Gelf = require('gelf');
 const os = require('os');
@@ -156,7 +157,7 @@ server.use((req, res, next) => {
 
 server.use(restify.plugins.gzipResponse());
 
-server.use(restify.plugins.queryParser());
+server.use(restify.plugins.queryParser({ allowDots: true }));
 server.use(
     restify.plugins.bodyParser({
         maxBodySize: 0,
@@ -240,19 +241,18 @@ server.use(
                         .digest('hex');
 
                     if (signature !== tokenData.s) {
-                        // rogue token
+                        // rogue token or invalidated secret
                         try {
                             await db.redis
                                 .multi()
                                 .del('tn:token:' + tokenHash)
-                                .srem('tn:user:' + tokenData.user, tokenHash)
                                 .exec();
                         } catch (err) {
                             // ignore
                         }
                     } else if (tokenData.ttl && isNaN(tokenData.ttl) && Number(tokenData.ttl) > 0) {
                         let tokenTTL = Number(tokenData.ttl);
-                        let tokenLifetime = config.api.accessControl.tokenLifetime || 30 * 24 * 3600;
+                        let tokenLifetime = config.api.accessControl.tokenLifetime || consts.ACCESS_TOKEN_MAX_LIFETIME;
 
                         // check if token is not too old
                         if (tokenLifetime < (Date.now() - Number(tokenData.created)) / 1000) {
@@ -261,13 +261,26 @@ server.use(
                                 await db.redis
                                     .multi()
                                     .expire('tn:token:' + tokenHash, tokenTTL)
-                                    .expire('tn:user:' + tokenData.user, tokenTTL)
                                     .exec();
                             } catch (err) {
                                 // ignore
                             }
                             req.role = tokenData.role;
                             req.user = tokenData.user;
+                            req.accessToken = {
+                                hash: tokenHash,
+                                user: tokenData.user
+                            };
+                        } else {
+                            // expired token, clear it
+                            try {
+                                await db.redis
+                                    .multi()
+                                    .del('tn:token:' + tokenHash)
+                                    .exec();
+                            } catch (err) {
+                                // ignore
+                            }
                         }
                     } else {
                         req.role = tokenData.role;

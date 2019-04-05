@@ -12,10 +12,18 @@ secure=false
 
 [accessControl]
 # If true then require a valid access token to perform API calls
+# If a client provides a token then it is validated even if using a token is not required
 enabled=false
+
 # Secret for HMAC
 # Changing this value invalidates all tokens
 secret="a secret cat"
+
+# Generated access token TTL in seconds. Token TTL gets extended by this value every time the token is used. Defaults to 14 days
+#tokenTTL=1209600
+
+# Generated access token max lifetime in seconds. Defaults to 180 days
+#tokenLifetime=15552000
 
 [roles]
 # @include "roles.json"
