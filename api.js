@@ -250,12 +250,12 @@ server.use(
                         } catch (err) {
                             // ignore
                         }
-                    } else if (tokenData.ttl && isNaN(tokenData.ttl) && Number(tokenData.ttl) > 0) {
+                    } else if (tokenData.ttl && !isNaN(tokenData.ttl) && Number(tokenData.ttl) > 0) {
                         let tokenTTL = Number(tokenData.ttl);
                         let tokenLifetime = config.api.accessControl.tokenLifetime || consts.ACCESS_TOKEN_MAX_LIFETIME;
 
                         // check if token is not too old
-                        if (tokenLifetime < (Date.now() - Number(tokenData.created)) / 1000) {
+                        if ((Date.now() - Number(tokenData.created)) / 1000 < tokenLifetime) {
                             // token is still usable, increase session length
                             try {
                                 await db.redis
@@ -267,6 +267,7 @@ server.use(
                             }
                             req.role = tokenData.role;
                             req.user = tokenData.user;
+
                             req.accessToken = {
                                 hash: tokenHash,
                                 user: tokenData.user
@@ -289,6 +290,10 @@ server.use(
 
                     if (req.params && req.params.user === 'me' && /^[0-9a-f]{24}$/i.test(req.user)) {
                         req.params.user = req.user;
+                    }
+
+                    if (!req.role) {
+                        return fail();
                     }
 
                     return next();
