@@ -50,6 +50,9 @@ module.exports = {
         let flagsExist = false;
         let uidExist = false;
         let modseqExist = false;
+        let bodystructureExist = true;
+        let rfc822sizeExist = true;
+        let envelopeExist = true;
         let markAsSeen = false;
         let metadataOnly = true;
         let changedSince = 0;
@@ -115,6 +118,18 @@ module.exports = {
                 modseqExist = true;
             }
 
+            if (param.value.toUpperCase() === 'BODYSTRUCTURE') {
+                bodystructureExist = true;
+            }
+
+            if (param.value.toUpperCase() === 'RFC822.SIZE') {
+                rfc822sizeExist = true;
+            }
+
+            if (param.value.toUpperCase() === 'ENVELOPE') {
+                envelopeExist = true;
+            }
+
             if (!this.selected.readOnly) {
                 if (param.value.toUpperCase() === 'BODY' && param.section) {
                     // BODY[...]
@@ -129,7 +144,7 @@ module.exports = {
                 param.value = 'BODY';
             }
 
-            if (['BODY', 'RFC822', 'RFC822.SIZE', 'RFC822.HEADER', 'RFC822.TEXT', 'BODYSTRUCTURE'].indexOf(param.value.toUpperCase()) >= 0) {
+            if (['BODY', 'RFC822', 'RFC822.HEADER', 'RFC822.TEXT'].indexOf(param.value.toUpperCase()) >= 0) {
                 metadataOnly = false;
             }
         }
@@ -257,6 +272,9 @@ module.exports = {
         this._server.onFetch(
             this.selected.mailbox,
             {
+                bodystructureExist,
+                rfc822sizeExist,
+                envelopeExist,
                 metadataOnly: !!metadataOnly,
                 markAsSeen: !!markAsSeen,
                 messages,

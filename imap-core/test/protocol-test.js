@@ -1211,7 +1211,7 @@ describe('IMAP Protocol integration tests', function() {
         describe('Multiple values', function() {
             it('should list mixed data', function(done) {
                 let cmds = ['T1 LOGIN testuser pass', 'T2 SELECT INBOX', 'T3 FETCH 1:* (UID BODYSTRUCTURE ENVELOPE)', 'T4 LOGOUT'];
-
+                console.log(cmds);
                 testClient(
                     {
                         commands: cmds,
@@ -1220,6 +1220,7 @@ describe('IMAP Protocol integration tests', function() {
                     },
                     function(resp) {
                         resp = resp.toString();
+                        console.log(resp);
                         expect(
                             resp
                                 .slice(/\n/)
