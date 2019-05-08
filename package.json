@@ -1,6 +1,6 @@
 {
     "name": "wildduck",
-    "version": "1.19.0",
+    "version": "1.19.1",
     "description": "IMAP/POP3 server built with Node.js and MongoDB",
     "main": "server.js",
     "scripts": {
@@ -45,7 +45,7 @@
         "humanname": "0.2.2",
         "iconv-lite": "0.4.24",
         "ioredfour": "1.0.2-ioredis-02",
-        "ioredis": "4.9.0",
+        "ioredis": "4.9.3",
         "isemail": "3.2.0",
         "joi": "14.3.1",
         "js-yaml": "3.13.1",

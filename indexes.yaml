@@ -274,10 +274,12 @@ indexes:
 
     - collection: messages
       index:
-          name: by_idate_reverse
+          # index used by api pagination
+          name: by_idate_reverse_uid
           key:
               mailbox: 1
               idate: -1
+              _id: -1
 
     - collection: messages
       index:
