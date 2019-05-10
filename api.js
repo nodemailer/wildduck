@@ -419,7 +419,7 @@ module.exports = done => {
     server.loggelf = message => loggelf(message);
 
     usersRoutes(db, server, userHandler);
-    addressesRoutes(db, server);
+    addressesRoutes(db, server, userHandler);
     mailboxesRoutes(db, server, mailboxHandler);
     messagesRoutes(db, server, messageHandler, userHandler, storageHandler);
     storageRoutes(db, server, storageHandler);
