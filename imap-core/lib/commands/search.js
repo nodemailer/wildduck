@@ -234,8 +234,14 @@ function parseQueryTerms(terms, uidList) {
 
             case 'date':
             case 'internaldate':
-                response.operator = curTerm[1];
-                response.value = (curTerm[2] || '').toString();
+                {
+                    let dateval = (curTerm[2] || '').toString();
+                    if (!imapTools.validateSearchDate(dateval)) {
+                        throw new Error('Invalid date argument for ' + term.toUpperCase());
+                    }
+                    response.operator = curTerm[1];
+                    response.value = dateval;
+                }
                 break;
 
             case 'size':

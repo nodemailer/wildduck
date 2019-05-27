@@ -752,3 +752,17 @@ module.exports.sendCapabilityResponse = connection => {
 
     connection.send('* CAPABILITY ' + ['IMAP4rev1'].concat(capabilities).join(' '));
 };
+
+module.exports.validateInternalDate = internaldate => {
+    if (!internaldate || typeof internaldate !== 'string') {
+        return false;
+    }
+    return /^([ \d]\d)-(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)-(\d{4}) (\d{2}):(\d{2}):(\d{2}) ([-+])(\d{2})(\d{2})$/i.test(internaldate);
+};
+
+module.exports.validateSearchDate = internaldate => {
+    if (!internaldate || typeof internaldate !== 'string') {
+        return false;
+    }
+    return /^\d{1,2}-(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)-\d{4}$/i.test(internaldate);
+};
