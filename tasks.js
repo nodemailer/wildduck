@@ -8,6 +8,7 @@ const RedFour = require('ioredfour');
 const yaml = require('js-yaml');
 const fs = require('fs');
 const MessageHandler = require('./lib/message-handler');
+const MailboxHandler = require('./lib/mailbox-handler');
 const setupIndexes = yaml.safeLoad(fs.readFileSync(__dirname + '/indexes.yaml', 'utf8'));
 const Gelf = require('gelf');
 const os = require('os');
@@ -17,6 +18,7 @@ const taskUserDelete = require('./lib/tasks/user-delete');
 const taskQuota = require('./lib/tasks/quota');
 
 let messageHandler;
+let mailboxHandler;
 let gcTimeout;
 let taskTimeout;
 let gcLock;
@@ -76,7 +78,16 @@ module.exports.start = callback => {
         database: db.database,
         redis: db.redis,
         gridfs: db.gridfs,
-        attachments: config.attachments
+        attachments: config.attachments,
+        loggelf: message => loggelf(message)
+    });
+
+    mailboxHandler = new MailboxHandler({
+        database: db.database,
+        users: db.users,
+        redis: db.redis,
+        notifier: messageHandler.notifier,
+        loggelf: message => loggelf(message)
     });
 
     let start = () => {
@@ -498,6 +509,7 @@ function processTask(taskData, callback) {
                 taskData,
                 {
                     messageHandler,
+                    mailboxHandler,
                     loggelf
                 },
                 err => {
