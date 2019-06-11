@@ -403,8 +403,8 @@ class Indexer {
                     body: node.body
                 });
 
-                // do not include text content, multipart elements and embedded messages in the attachment list
-                if (!isInlineText && !/^(multipart|message)\//i.test(contentType)) {
+                // do not include text content and multipart elements in the attachment list
+                if (!isInlineText && !/^(multipart)\//i.test(contentType)) {
                     // list in the attachments array
                     maildata.attachments.push({
                         id: attachmentId,
