@@ -3,7 +3,7 @@
 OURNAME=01_install_commits.sh
 
 NODEREPO="node_10.x"
-MONGODB="3.6"
+MONGODB="4.0"
 CODENAME=`lsb_release -c -s`
 
 WILDDUCK_COMMIT="a289063435b1c0be91aac6ece415d12e851e6c46"

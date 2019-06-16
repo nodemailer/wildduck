@@ -28,8 +28,7 @@ echo "deb-src https://deb.nodesource.com/$NODEREPO $CODENAME main" >> /etc/apt/s
 
 # mongo keys
 wget -qO- https://www.mongodb.org/static/pgp/server-${MONGODB}.asc | sudo apt-key add
-# hardcode xenial as at this time there are no non-dev packages for bionic (http://repo.mongodb.org/apt/ubuntu/dists/)
-echo "deb [ arch=amd64,arm64 ] http://repo.mongodb.org/apt/ubuntu xenial/mongodb-org/$MONGODB multiverse" > /etc/apt/sources.list.d/mongodb-org.list
+echo "deb [ arch=amd64 ] http://repo.mongodb.org/apt/ubuntu $CODENAME/mongodb-org/$MONGODB multiverse" > /etc/apt/sources.list.d/mongodb-org.list
 
 # rspamd
 wget -O- https://rspamd.com/apt-stable/gpg.key | apt-key add -
