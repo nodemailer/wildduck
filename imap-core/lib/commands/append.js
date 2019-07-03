@@ -140,6 +140,14 @@ module.exports = {
                 logdata._response = err.response;
                 this._server.loggelf(logdata);
 
+                if (err.code === 10334) {
+                    // 10334 is Mongodb BSONObjectTooLarge
+                    return callback(null, {
+                        response: 'NO',
+                        message: 'Message text too large'
+                    });
+                }
+
                 // do not return actual error to user
                 return callback(null, {
                     response: 'NO',

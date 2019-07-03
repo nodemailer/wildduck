@@ -13,6 +13,8 @@ const he = require('he');
 const htmlToText = require('html-to-text');
 const crypto = require('crypto');
 
+const MAX_HTML_PARSE_LENGTH = 2 * 1024 * 1024; // do not parse HTML messages larger than 2MB to plaintext
+
 class Indexer {
     constructor(options) {
         this.options = options || {};
@@ -347,8 +349,10 @@ class Indexer {
                         htmlContent.push(content.trim());
                         if (!alternative) {
                             try {
-                                let text = htmlToText.fromString(content);
-                                textContent.push(text.trim());
+                                if (content && content.length < MAX_HTML_PARSE_LENGTH) {
+                                    let text = htmlToText.fromString(content);
+                                    textContent.push(text.trim());
+                                }
                             } catch (E) {
                                 // ignore
                             }
