@@ -115,7 +115,7 @@ let argv = yargs
     )
     .command(
         'clear <user>',
-        'Delete all tokens for an user',
+        'Delete all tokens for a user',
         yargs =>
             yargs.option('user', {
                 alias: 'u',
