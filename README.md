@@ -86,7 +86,7 @@ node server.js --config=/etc/wildduck.toml
 
 > For additional config options, see the _wild-config_ [documentation](https://github.com/nodemailer/wild-config).
 
-### Step 4\. Create an user account
+### Step 4\. Create a user account
 
 See [API Docs](https://api.wildduck.email/#api-Users-PostUser) for details about creating new user accounts
 
