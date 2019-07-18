@@ -12,8 +12,11 @@ const iconv = require('iconv-lite');
 const he = require('he');
 const htmlToText = require('html-to-text');
 const crypto = require('crypto');
+const util = require('util');
 
 const MAX_HTML_PARSE_LENGTH = 2 * 1024 * 1024; // do not parse HTML messages larger than 2MB to plaintext
+
+const NEWLINE = Buffer.from('\r\n');
 
 class Indexer {
     constructor(options) {
@@ -21,6 +24,12 @@ class Indexer {
         this.fetchOptions = this.options.fetchOptions || {};
 
         this.attachmentStorage = this.options.attachmentStorage;
+
+        if (this.attachmentStorage) {
+            this.getAttachment = util.promisify(this.attachmentStorage.get.bind(this.attachmentStorage));
+        } else {
+            this.getAttachment = async () => ({});
+        }
 
         // create logger
         this.logger = this.options.logger || {
@@ -60,7 +69,7 @@ class Indexer {
 
             let finalize = () => {
                 if (node.boundary) {
-                    append('--' + node.boundary + '--\r\n');
+                    append(`--${node.boundary}--\r\n`);
                 }
 
                 append();
@@ -76,7 +85,7 @@ class Indexer {
             }
 
             if (node.boundary) {
-                append('--' + node.boundary);
+                append(`--${node.boundary}`);
             }
 
             if (Array.isArray(node.childNodes)) {
@@ -88,7 +97,7 @@ class Indexer {
                     let childNode = node.childNodes[pos++];
                     walk(childNode, () => {
                         if (pos < node.childNodes.length) {
-                            append('--' + node.boundary);
+                            append(`--${node.boundary}`);
                         }
                         return processChildNodes();
                     });
@@ -109,145 +118,155 @@ class Indexer {
      *
      * @param  {Object} mimeTree Parsed mimeTree object
      * @param  {Boolean} textOnly If true, do not include the message header in the response
+     * @param  {Object} [options]
      * @param  {Boolean} skipExternal If true, do not include the external nodes
      * @return {Stream} Message stream
      */
-    rebuild(mimeTree, textOnly, skipExternal) {
-        let res = new PassThrough();
-        let first = true;
-        let root = true;
-        let remainder = false;
+    rebuild(mimeTree, textOnly, options) {
+        options = options || {};
 
+        let output = new PassThrough();
         let aborted = false;
 
-        // make sure that mixed body + mime gets rebuilt correctly
-        let append = (data, force) => {
-            if (Array.isArray(data)) {
-                data = data.join('\r\n');
-            }
-            if (remainder || data || force) {
-                if (!first) {
-                    res.write('\r\n');
-                } else {
-                    first = false;
-                }
+        let processStream = async () => {
+            let firstLine = true;
+            let isRootNode = true;
+            let remainder = false;
 
-                if (remainder && remainder.length) {
-                    res.write(remainder);
-                }
-
-                if (data) {
-                    res.write(Buffer.from(data, 'binary'));
-                }
-            }
-            remainder = false;
-        };
-
-        let walk = (node, next) => {
-            if (aborted) {
-                return next();
-            }
-
-            if (!textOnly || !root) {
-                append(formatHeaders(node.header).join('\r\n') + '\r\n');
-            }
-
-            root = false;
-            if (Buffer.isBuffer(node.body)) {
-                // node Buffer
-                remainder = node.body;
-            } else if (node.body && node.body.buffer) {
-                // mongodb Binary
-                remainder = node.body.buffer;
-            } else if (typeof node.body === 'string') {
-                // binary string
-                remainder = Buffer.from(node.body, 'binary');
-            } else {
-                // whatever
-                remainder = node.body;
-            }
-
-            let finalize = () => {
-                if (node.boundary) {
-                    append('--' + node.boundary + '--\r\n');
-                }
-
-                append();
-                next();
+            let drain = async () => {
+                return new Promise(resolve => {
+                    output.once('drain', resolve());
+                });
             };
 
-            if (node.boundary) {
-                append('--' + node.boundary);
-            } else if (node.attachmentId && !skipExternal) {
-                append(false, true); // force newline between header and contents
-
-                let attachmentId = node.attachmentId;
-                if (mimeTree.attachmentMap && mimeTree.attachmentMap[node.attachmentId]) {
-                    attachmentId = mimeTree.attachmentMap[node.attachmentId];
-                }
-
-                return this.attachmentStorage.get(attachmentId, (err, attachmentData) => {
-                    if (err) {
-                        return res.emit('error', err);
+            // make sure that mixed body + mime gets rebuilt correctly
+            let emit = async (data, force) => {
+                if (remainder || data || force) {
+                    if (!firstLine) {
+                        if (output.write(NEWLINE) === false) {
+                            await drain();
+                        }
+                    } else {
+                        firstLine = false;
                     }
 
+                    if (remainder && remainder.length) {
+                        if (output.write(remainder) === false) {
+                            await drain();
+                        }
+                    }
+
+                    if (data) {
+                        let buf = Buffer.isBuffer(data) ? data : Buffer.from(data, 'binary');
+                        if (output.write(buf) === false) {
+                            await drain();
+                        }
+                    }
+                }
+
+                remainder = false;
+            };
+
+            let walk = async node => {
+                if (aborted) {
+                    return;
+                }
+
+                if (!textOnly || !isRootNode) {
+                    await emit(formatHeaders(node.header).join('\r\n') + '\r\n');
+                }
+
+                isRootNode = false;
+                if (Buffer.isBuffer(node.body)) {
+                    // node Buffer
+                    remainder = node.body;
+                } else if (node.body && node.body.buffer) {
+                    // mongodb Binary
+                    remainder = node.body.buffer;
+                } else if (typeof node.body === 'string') {
+                    // binary string
+                    remainder = Buffer.from(node.body, 'binary');
+                } else {
+                    // whatever
+                    remainder = node.body;
+                }
+
+                if (node.boundary) {
+                    // this is a multipart node, so start with initial boundary before continuing
+                    await emit(`--${node.boundary}`);
+                } else if (node.attachmentId && !options.skipExternal) {
+                    await emit(false, true); // force newline between header and contents
+
+                    let attachmentId = node.attachmentId;
+                    if (mimeTree.attachmentMap && mimeTree.attachmentMap[node.attachmentId]) {
+                        attachmentId = mimeTree.attachmentMap[node.attachmentId];
+                    }
+
+                    let attachmentData = await this.getAttachment(attachmentId);
                     let attachmentStream = this.attachmentStorage.createReadStream(attachmentId, attachmentData);
 
-                    attachmentStream.once('error', err => {
-                        // res.errored = err;
-                        res.emit('error', err);
+                    await new Promise((resolve, reject) => {
+                        attachmentStream.once('error', reject);
+
+                        attachmentStream.once('end', () => {
+                            resolve();
+                        });
+
+                        attachmentStream.pipe(
+                            output,
+                            {
+                                end: false
+                            }
+                        );
                     });
-
-                    attachmentStream.once('end', () => finalize());
-
-                    attachmentStream.pipe(
-                        res,
-                        {
-                            end: false
-                        }
-                    );
-                });
-            }
-
-            let pos = 0;
-            let processChildNodes = () => {
-                if (pos >= node.childNodes.length) {
-                    return finalize();
                 }
-                let childNode = node.childNodes[pos++];
-                walk(childNode, () => {
-                    if (aborted) {
-                        return next();
-                    }
 
-                    if (pos < node.childNodes.length) {
-                        append('--' + node.boundary);
+                if (Array.isArray(node.childNodes)) {
+                    let pos = 0;
+                    for (let childNode of node.childNodes) {
+                        await walk(childNode);
+
+                        if (aborted) {
+                            return;
+                        }
+
+                        if (pos++ < node.childNodes.length - 1) {
+                            // emit boundary unless last item
+                            await emit(`--${node.boundary}`);
+                        }
                     }
-                    setImmediate(processChildNodes);
-                });
+                }
+
+                if (node.boundary) {
+                    await emit(`--${node.boundary}--\r\n`);
+                }
+
+                await emit();
             };
 
-            if (Array.isArray(node.childNodes)) {
-                processChildNodes();
-            } else {
-                finalize();
-            }
+            await walk(mimeTree);
+
+            output.end();
         };
 
-        setImmediate(
-            walk.bind(null, mimeTree, () => {
-                res.end();
-            })
-        );
+        setImmediate(() => {
+            processStream()
+                .then(() => {
+                    output.end();
+                })
+                .catch(err => {
+                    output.emit('error', err);
+                });
+        });
 
         // if called then stops resolving rest of the message
-        res.abort = () => {
+        output.abort = () => {
             aborted = true;
         };
 
         return {
             type: 'stream',
-            value: res,
+            value: output,
             expectedLength: this.getSize(mimeTree, textOnly)
         };
     }
@@ -368,7 +387,7 @@ class Indexer {
 
             // remove attachments and very large text nodes from the mime tree
             if (!isMultipart && node.body && node.body.length && (!isInlineText || node.size > 300 * 1024)) {
-                let attachmentId = 'ATT' + leftPad(++idcount, '0', 5);
+                let attachmentId = `ATT${leftPad(++idcount, '0', 5)}`;
 
                 let filename =
                     (node.parsedHeader['content-disposition'] &&
@@ -444,7 +463,7 @@ class Indexer {
             str.replace(/\bcid:([^\s"']+)/g, (match, cid) => {
                 if (cidMap.has(cid)) {
                     let attachment = cidMap.get(cid);
-                    return 'attachment:' + attachment.id.toString();
+                    return `attachment:${attachment.id.toString()}`;
                 }
                 return match;
             });
@@ -616,10 +635,13 @@ class Indexer {
      *
      * @param  {Object} mimeTree Parsed mimeTree object
      * @param  {Object} selector What data to return
-     * @param  {Boolean} skipExternal If true, do not include the external nodes
+     * @param  {Object} [options]
+     * @param  {Boolean} options.skipExternal If true, do not include the external nodes
      * @return {String} node contents
      */
-    getContents(mimeTree, selector, skipExternal) {
+    getContents(mimeTree, selector, options) {
+        options = options || {};
+
         let node = mimeTree;
         if (typeof selector === 'string') {
             selector = {
@@ -644,11 +666,11 @@ class Indexer {
                 if (!selector.path) {
                     // BODY[]
                     node.attachmentMap = mimeTree.attachmentMap;
-                    return this.rebuild(node, false, skipExternal);
+                    return this.rebuild(node, false, options);
                 }
                 // BODY[1.2.3]
                 node.attachmentMap = mimeTree.attachmentMap;
-                return this.rebuild(node, true, skipExternal);
+                return this.rebuild(node, true, options);
 
             case 'header':
                 if (!selector.path) {
@@ -705,11 +727,11 @@ class Indexer {
                 if (!selector.path) {
                     // BODY[TEXT] mail body without headers
                     node.attachmentMap = mimeTree.attachmentMap;
-                    return this.rebuild(node, true, skipExternal);
+                    return this.rebuild(node, true, options);
                 } else if (node.message) {
                     // BODY[1.2.3.TEXT] embedded message/rfc822 body without headers
                     node.attachmentMap = mimeTree.attachmentMap;
-                    return this.rebuild(node.message, true, skipExternal);
+                    return this.rebuild(node.message, true, options);
                 }
 
                 return '';
@@ -733,8 +755,7 @@ function textToHtml(str) {
         .encode(str, {
             useNamedReferences: true
         });
-    let text =
-        '<p>' +
+    let text = `<p>${
         encoded
             .replace(/\r?\n/g, '\n')
             .trim() // normalize line endings
@@ -742,8 +763,8 @@ function textToHtml(str) {
             .trim() // trim empty line endings
             .replace(/\n\n+/g, '</p><p>')
             .trim() // insert <p> to multiple linebreaks
-            .replace(/\n/g, '<br/>') + // insert <br> to single linebreaks
-        '</p>';
+            .replace(/\n/g, '<br/>') // insert <br> to single linebreaks
+    }</p>`;
 
     return text;
 }

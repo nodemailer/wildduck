@@ -38,6 +38,13 @@ describe('#parseMimeTree', function() {
 
         indexer.bodyQuery(parsed, '', (err, data) => {
             expect(err).to.not.exist;
+
+            console.log('EXPECTED');
+            console.log(JSON.stringify(fixtures.mimetorture.eml.toString('binary').replace(/\r?\n/g, '\n')));
+
+            console.log('RESULT');
+            console.log(JSON.stringify(data.toString('binary').replace(/\r?\n/g, '\n')));
+
             expect(data.toString('binary').replace(/\r?\n/g, '\n')).to.equal(fixtures.mimetorture.eml.toString('binary').replace(/\r?\n/g, '\n'));
             done();
         });
