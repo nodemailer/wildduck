@@ -12,7 +12,6 @@ const iconv = require('iconv-lite');
 const he = require('he');
 const htmlToText = require('html-to-text');
 const crypto = require('crypto');
-const util = require('util');
 
 const MAX_HTML_PARSE_LENGTH = 2 * 1024 * 1024; // do not parse HTML messages larger than 2MB to plaintext
 
@@ -26,7 +25,7 @@ class Indexer {
         this.attachmentStorage = this.options.attachmentStorage;
 
         if (this.attachmentStorage) {
-            this.getAttachment = util.promisify(this.attachmentStorage.get.bind(this.attachmentStorage));
+            this.getAttachment = async (...args) => await this.attachmentStorage.get(...args);
         } else {
             this.getAttachment = async () => ({});
         }
@@ -128,42 +127,91 @@ class Indexer {
         let output = new PassThrough();
         let aborted = false;
 
+        let startFrom = Math.max(Number(options.startFrom) || 0, 0);
+        let maxLength = Math.max(Number(options.maxLength) || 0, 0);
+
+        output.isLimited = !!(options.startFrom || options.maxLength);
+
+        let curWritePos = 0;
+        let writeLength = 0;
+
+        let canWrite = size => {
+            if (curWritePos + size <= startFrom) {
+                curWritePos += size;
+                return false;
+            }
+
+            if (maxLength && writeLength >= maxLength) {
+                writeLength += size;
+                return false;
+            }
+
+            return true;
+        };
+
+        let write = async chunk => {
+            if (!chunk || !chunk.length) {
+                return;
+            }
+
+            if (curWritePos >= startFrom) {
+                // already allowed to write
+                curWritePos += chunk.length;
+            } else if (curWritePos + chunk.length <= startFrom) {
+                // not yet ready to write, skip
+                curWritePos += chunk.length;
+                return;
+            } else {
+                // chunk is in the middle
+                let useBytes = curWritePos + chunk.length - startFrom;
+                curWritePos += chunk.length;
+                chunk = chunk.slice(-useBytes);
+            }
+
+            if (maxLength) {
+                if (writeLength >= maxLength) {
+                    // can not write anymore
+                    return;
+                } else if (writeLength + chunk.length <= maxLength) {
+                    // can still write chunks, so do nothing
+                    writeLength += chunk.length;
+                } else {
+                    // chunk is in the middle
+                    let allowedBytes = maxLength - writeLength;
+                    writeLength += chunk.length;
+                    chunk = chunk.slice(0, allowedBytes);
+                }
+            }
+
+            if (output.write(chunk) === false) {
+                await new Promise(resolve => {
+                    output.once('drain', resolve());
+                });
+            }
+        };
+
         let processStream = async () => {
             let firstLine = true;
             let isRootNode = true;
             let remainder = false;
 
-            let drain = async () => {
-                return new Promise(resolve => {
-                    output.once('drain', resolve());
-                });
-            };
-
             // make sure that mixed body + mime gets rebuilt correctly
             let emit = async (data, force) => {
                 if (remainder || data || force) {
                     if (!firstLine) {
-                        if (output.write(NEWLINE) === false) {
-                            await drain();
-                        }
+                        await write(NEWLINE);
                     } else {
                         firstLine = false;
                     }
 
                     if (remainder && remainder.length) {
-                        if (output.write(remainder) === false) {
-                            await drain();
-                        }
+                        await write(remainder);
                     }
 
                     if (data) {
-                        let buf = Buffer.isBuffer(data) ? data : Buffer.from(data, 'binary');
-                        if (output.write(buf) === false) {
-                            await drain();
-                        }
+                        await write(Buffer.isBuffer(data) ? data : Buffer.from(data, 'binary'));
                     }
                 }
-
                 remainder = false;
             };
 
@@ -197,28 +245,30 @@ class Indexer {
                 } else if (node.attachmentId && !options.skipExternal) {
                     await emit(false, true); // force newline between header and contents
 
-                    let attachmentId = node.attachmentId;
-                    if (mimeTree.attachmentMap && mimeTree.attachmentMap[node.attachmentId]) {
-                        attachmentId = mimeTree.attachmentMap[node.attachmentId];
-                    }
+                    if (canWrite(node.size)) {
+                        let attachmentId = node.attachmentId;
+                        if (mimeTree.attachmentMap && mimeTree.attachmentMap[node.attachmentId]) {
+                            attachmentId = mimeTree.attachmentMap[node.attachmentId];
+                        }
 
-                    let attachmentData = await this.getAttachment(attachmentId);
-                    let attachmentStream = this.attachmentStorage.createReadStream(attachmentId, attachmentData);
+                        let attachmentData = await this.getAttachment(attachmentId);
+                        let attachmentStream = this.attachmentStorage.createReadStream(attachmentId, attachmentData);
 
-                    await new Promise((resolve, reject) => {
-                        attachmentStream.once('error', reject);
+                        await new Promise((resolve, reject) => {
+                            attachmentStream.once('error', reject);
 
-                        attachmentStream.once('end', () => {
-                            resolve();
+                            attachmentStream.once('end', () => {
+                                resolve();
+                            });
+
+                            attachmentStream.pipe(
+                                output,
+                                {
+                                    end: false
+                                }
+                            );
                         });
-
-                        attachmentStream.pipe(
-                            output,
-                            {
-                                end: false
-                            }
-                        );
-                    });
+                    }
                 }
 
                 if (Array.isArray(node.childNodes)) {

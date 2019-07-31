@@ -43,31 +43,41 @@ module.exports = (response, isLogging) => {
                 return;
             }
 
-            expectedLength = expectedLength || 0;
-            startFrom = startFrom || 0;
-            maxLength = maxLength || 0;
-
             if (stream.errored) {
                 let err = stream.errored;
                 stream.errored = false;
                 throw err;
             }
 
-            expectedLength = maxLength ? Math.min(expectedLength, startFrom + maxLength) : expectedLength;
-
             return new Promise((resolve, reject) => {
-                let limiter = new LengthLimiter(expectedLength, ' ', startFrom);
+                expectedLength = expectedLength || 0;
+                startFrom = startFrom || 0;
+                maxLength = maxLength || 0;
 
-                stream.pipe(limiter).pipe(
-                    output,
-                    {
-                        end: false
-                    }
-                );
+                if (stream.isLimited) {
+                    // stream is already limited
+                    stream.pipe(
+                        output,
+                        {
+                            end: false
+                        }
+                    );
+                    stream.once('end', () => resolve());
+                } else {
+                    // force limites
+                    expectedLength = maxLength ? Math.min(expectedLength, startFrom + maxLength) : expectedLength;
+                    let limiter = new LengthLimiter(expectedLength, ' ', startFrom);
+                    stream.pipe(limiter).pipe(
+                        output,
+                        {
+                            end: false
+                        }
+                    );
+                    limiter.once('end', () => resolve());
+                }
 
                 // pass errors to output
                 stream.once('error', reject);
-                limiter.once('end', () => resolve());
             });
         };
 
