@@ -1,346 +1,252 @@
 /*eslint no-unused-expressions: 0, prefer-arrow-callback: 0, no-console:0 */
+/* globals before: false, after: false */
 
 'use strict';
 
+const supertest = require('supertest');
 const chai = require('chai');
-const frisby = require('icedfrisby');
 
 const expect = chai.expect;
 chai.config.includeStack = true;
 
-const URL = 'http://localhost:8080';
-
-let userId = false;
+const server = supertest.agent('http://localhost:8080');
 
 describe('API tests', function() {
+    let userId, asp, address, inbox;
+
     this.timeout(10000); // eslint-disable-line no-invalid-this
 
-    frisby
-        .create('POST domainaliases')
-        .post(
-            URL + '/domainaliases',
-            {
-                alias: 'jõgeva.öö',
-                domain: 'example.com'
-            },
-            { json: true }
-        )
-        .expectStatus(200)
-        .afterJSON(response => {
-            expect(response).to.exist;
-            expect(response.success).to.be.true;
-        })
-        .toss();
-
-    frisby
-        .create('POST users')
-        .post(
-            URL + '/users',
-            {
+    before(async () => {
+        // ensure that we have an existing user account
+        const response = await server
+            .post('/users')
+            .send({
                 username: 'testuser',
                 password: 'secretpass',
                 address: 'testuser@example.com',
                 name: 'test user'
-            },
-            { json: true }
-        )
-        .expectStatus(200)
-        .afterJSON(response => {
-            expect(response).to.exist;
-            expect(response.success).to.be.true;
-            userId = response.id;
+            })
+            .expect(200);
+        expect(response.body.success).to.be.true;
+        expect(response.body.id).to.exist;
 
-            frisby
-                .create('GET users/{id}')
-                .get(URL + '/users/' + userId)
-                .expectStatus(200)
-                .afterJSON(response => {
-                    expect(response).to.exist;
-                    expect(response.success).to.be.true;
-                    expect(response.id).to.equal(userId);
-                    expect(response.name).to.equal('test user');
-                })
-                .toss();
+        userId = response.body.id;
+    });
 
-            frisby
-                .create('PUT users/{id}')
-                .put(
-                    URL + '/users/' + userId,
-                    {
-                        name: 'user test'
-                    },
-                    { json: true }
-                )
-                .expectStatus(200)
-                .afterJSON(response => {
-                    expect(response).to.exist;
-                    expect(response.success).to.be.true;
-                })
-                .toss();
+    after(async () => {
+        if (!userId) {
+            return;
+        }
 
-            frisby
-                .create('POST authenticate')
-                .post(
-                    URL + '/authenticate',
-                    {
-                        username: 'testuser@example.com',
-                        password: 'secretpass',
-                        scope: 'master'
-                    },
-                    { json: true }
-                )
-                .expectStatus(200)
-                .afterJSON(response => {
-                    expect(response).to.exist;
-                    expect(response.success).to.be.true;
-                })
-                .toss();
+        const response = await server.delete(`/users/${userId}`).expect(200);
+        expect(response.body.success).to.be.true;
 
-            frisby
-                .create('POST authenticate - failure')
-                .post(
-                    URL + '/authenticate',
-                    {
-                        username: 'testuser@example.com',
-                        password: 'invalid',
-                        scope: 'master'
-                    },
-                    { json: true }
-                )
-                .afterJSON(response => {
-                    expect(response).to.exist;
-                    expect(response.error).to.exist;
-                    expect(response.success).to.not.be.true;
-                })
-                .toss();
+        userId = false;
+    });
 
-            frisby
-                .create('POST authenticate - using aliasdomain')
-                .post(
-                    URL + '/authenticate',
-                    {
-                        username: 'testuser@jõgeva.öö',
-                        password: 'secretpass',
-                        scope: 'master'
-                    },
-                    { json: true }
-                )
-                .expectStatus(200)
-                .afterJSON(response => {
-                    expect(response).to.exist;
-                    expect(response.success).to.be.true;
-                })
-                .toss();
+    it('should POST /domainaliases', async () => {
+        const response = await server
+            .post('/domainaliases')
+            .send({
+                alias: 'jõgeva.öö',
+                domain: 'example.com'
+            })
+            .expect(200);
+        expect(response.body.success).to.be.true;
+    });
 
-            frisby
-                .create('POST authenticate - failure using aliasdomain')
-                .post(
-                    URL + '/authenticate',
-                    {
-                        username: 'testuser@jõgeva.öö',
-                        password: 'invalid',
-                        scope: 'master'
-                    },
-                    { json: true }
-                )
-                .afterJSON(response => {
-                    expect(response).to.exist;
-                    expect(response.error).to.exist;
-                    expect(response.success).to.not.be.true;
-                })
-                .toss();
+    it('should GET /users/:user', async () => {
+        const response = await server.get(`/users/${userId}`).expect(200);
+        expect(response.body.success).to.be.true;
+        expect(response.body.id).to.equal(userId);
+        expect(response.body.name).to.equal('test user');
+    });
 
-            frisby
-                .create('POST users/{id}/asps - generate ASP')
-                .post(
-                    URL + '/users/' + userId + '/asps',
-                    {
-                        description: 'test',
-                        scopes: ['imap', 'smtp'],
-                        generateMobileconfig: true
-                    },
-                    { json: true }
-                )
-                .afterJSON(response => {
-                    expect(response).to.exist;
-                    expect(response.error).to.not.exist;
-                    expect(response.success).to.be.true;
-                    expect(response.password).to.exist;
-                    expect(response.mobileconfig).to.exist;
+    it('should PUT /users/:user', async () => {
+        const response = await server
+            .put(`/users/${userId}`)
+            .send({
+                name: 'user test'
+            })
+            .expect(200);
+        expect(response.body.success).to.be.true;
+    });
 
-                    let asp = response.password;
+    it('should GET /users/:user (updated name)', async () => {
+        const response = await server.get(`/users/${userId}`).expect(200);
+        expect(response.body.success).to.be.true;
+        expect(response.body.id).to.equal(userId);
+        expect(response.body.name).to.equal('user test');
+    });
 
-                    frisby
-                        .create('POST authenticate - success on correct scope')
-                        .post(
-                            URL + '/authenticate',
-                            {
-                                username: 'testuser@example.com',
-                                password: asp,
-                                scope: 'imap'
-                            },
-                            { json: true }
-                        )
-                        .expectStatus(200)
-                        .afterJSON(response => {
-                            expect(response).to.exist;
-                            expect(response.success).to.be.true;
-                        })
-                        .toss();
+    it('should POST /authenticate with success', async () => {
+        const response = await server
+            .post(`/authenticate`)
+            .send({
+                username: 'testuser@example.com',
+                password: 'secretpass',
+                scope: 'master'
+            })
+            .expect(200);
+        expect(response.body.success).to.be.true;
+    });
 
-                    frisby
-                        .create('POST authenticate - failure on incorrect scope')
-                        .post(
-                            URL + '/authenticate',
-                            {
-                                username: 'testuser@example.com',
-                                password: asp,
-                                scope: 'master'
-                            },
-                            { json: true }
-                        )
-                        .afterJSON(response => {
-                            expect(response).to.exist;
-                            expect(response.error).to.exist;
-                            expect(response.success).to.not.be.true;
-                        })
-                        .toss();
-                })
-                .toss();
+    it('should POST /authenticate with failure', async () => {
+        const response = await server
+            .post(`/authenticate`)
+            .send({
+                username: 'testuser@example.com',
+                password: 'invalid',
+                scope: 'master'
+            })
+            .expect(403);
+        expect(response.body.error).to.exist;
+        expect(response.body.success).to.not.be.true;
+    });
 
-            frisby
-                .create('GET users/{id} – updated name')
-                .get(URL + '/users/' + userId)
-                .expectStatus(200)
-                .afterJSON(response => {
-                    expect(response).to.exist;
-                    expect(response.success).to.be.true;
-                    expect(response.id).to.equal(userId);
-                    expect(response.name).to.equal('user test');
-                })
-                .toss();
+    it('should POST /authenticate using alias domain', async () => {
+        const response = await server
+            .post(`/authenticate`)
+            .send({
+                username: 'testuser@jõgeva.öö',
+                password: 'secretpass',
+                scope: 'master'
+            })
+            .expect(200);
+        expect(response.body.success).to.be.true;
+    });
 
-            frisby
-                .create('GET users/{id}/addresses')
-                .get(URL + '/users/' + userId + '/addresses')
-                .expectStatus(200)
-                .afterJSON(response => {
-                    expect(response).to.exist;
-                    expect(response.success).to.be.true;
-                    expect(response.results.length).to.equal(1);
-                    expect(response.results[0].address).to.equal('testuser@example.com');
-                    expect(response.results[0].main).to.be.true;
-                })
-                .toss();
+    it('should POST /authenticate with failure using alias domain', async () => {
+        const response = await server
+            .post(`/authenticate`)
+            .send({
+                username: 'testuser@jõgeva.öö',
+                password: 'invalid',
+                scope: 'master'
+            })
+            .expect(403);
+        expect(response.body.error).to.exist;
+        expect(response.body.success).to.not.be.true;
+    });
 
-            frisby
-                .create('POST users/{id}/addresses')
-                .post(
-                    URL + '/users/' + userId + '/addresses',
-                    {
-                        address: 'alias1@example.com',
-                        main: true
-                    },
-                    { json: true }
-                )
-                .expectStatus(200)
-                .afterJSON(response => {
-                    expect(response).to.exist;
-                    expect(response.success).to.be.true;
-                })
-                .toss();
+    it('should POST /users/:user/asps to generate ASP', async () => {
+        const response = await server
+            .post(`/users/${userId}/asps`)
+            .send({
+                description: 'test',
+                scopes: ['imap', 'smtp'],
+                generateMobileconfig: true
+            })
+            .expect(200);
+        expect(response.body.error).to.not.exist;
+        expect(response.body.success).to.be.true;
+        expect(response.body.password).to.exist;
+        expect(response.body.mobileconfig).to.exist;
 
-            frisby
-                .create('POST users/{id}/addresses')
-                .post(
-                    URL + '/users/' + userId + '/addresses',
-                    {
-                        address: 'alias2@example.com'
-                    },
-                    { json: true }
-                )
-                .expectStatus(200)
-                .afterJSON(response => {
-                    expect(response).to.exist;
-                    expect(response.success).to.be.true;
-                })
-                .toss();
+        asp = response.body.password;
+    });
 
-            frisby
-                .create('GET users/{id}/addresses – updated listing')
-                .get(URL + '/users/' + userId + '/addresses')
-                .expectStatus(200)
-                .afterJSON(response => {
-                    expect(response).to.exist;
-                    expect(response.success).to.be.true;
-                    expect(response.results.length).to.equal(3);
-                    response.results.sort((a, b) => a.id.localeCompare(b.id));
+    it('should POST /authenticate using ASP and allowed scope', async () => {
+        const response = await server
+            .post(`/authenticate`)
+            .send({
+                username: 'testuser@jõgeva.öö',
+                password: asp,
+                scope: 'imap'
+            })
+            .expect(200);
+        expect(response.body.success).to.be.true;
+    });
 
-                    expect(response.results[0].address).to.equal('testuser@example.com');
-                    expect(response.results[0].main).to.be.false;
+    it('should POST /authenticate with failure using ASP and master scope', async () => {
+        const response = await server
+            .post(`/authenticate`)
+            .send({
+                username: 'testuser@jõgeva.öö',
+                password: asp,
+                scope: 'master'
+            })
+            .expect(403);
+        expect(response.body.error).to.exist;
+        expect(response.body.success).to.not.be.true;
+    });
 
-                    expect(response.results[1].address).to.equal('alias1@example.com');
-                    expect(response.results[1].main).to.be.true;
+    it('should GET /users/:user/addresses', async () => {
+        const response = await server.get(`/users/${userId}/addresses`).expect(200);
+        expect(response.body.success).to.be.true;
+        expect(response.body.results.length).to.equal(1);
+        expect(response.body.results[0].address).to.equal('testuser@example.com');
+        expect(response.body.results[0].main).to.be.true;
+    });
 
-                    expect(response.results[2].address).to.equal('alias2@example.com');
-                    expect(response.results[2].main).to.be.false;
+    it('should POST users/:user/addresses', async () => {
+        const response1 = await server
+            .post(`/users/${userId}/addresses`)
+            .send({
+                address: 'alias1@example.com',
+                main: true
+            })
+            .expect(200);
+        expect(response1.body.success).to.be.true;
 
-                    frisby
-                        .create('DELETE users/{id}/addresses/{address}')
-                        .delete(URL + '/users/' + userId + '/addresses/' + response.results[2].id)
-                        .expectStatus(200)
-                        .afterJSON(response => {
-                            expect(response).to.exist;
-                            expect(response.success).to.be.true;
+        const response2 = await server
+            .post(`/users/${userId}/addresses`)
+            .send({
+                address: 'alias2@example.com'
+            })
+            .expect(200);
+        expect(response2.body.success).to.be.true;
+    });
 
-                            frisby
-                                .create('GET users/{id}/addresses – after DELETE')
-                                .get(URL + '/users/' + userId + '/addresses')
-                                .expectStatus(200)
-                                .afterJSON(response => {
-                                    expect(response).to.exist;
-                                    expect(response.success).to.be.true;
-                                    expect(response.results.length).to.equal(2);
+    it('should GET /users/:user (after email update', async () => {
+        const response = await server.get(`/users/${userId}`).expect(200);
+        expect(response.body.success).to.be.true;
+        expect(response.body.id).to.equal(userId);
+        expect(response.body.address).to.equal('alias1@example.com');
+    });
 
-                                    frisby
-                                        .create('DELETE users/{id}')
-                                        .delete(URL + '/users/' + userId)
-                                        .expectStatus(200)
-                                        .afterJSON(response => {
-                                            expect(response).to.exist;
-                                            expect(response.success).to.be.true;
-                                        })
-                                        .toss();
-                                })
-                                .toss();
-                        })
-                        .toss();
-                })
-                .toss();
+    it('should GET /users/:user/addresses (updated listing)', async () => {
+        const response = await server.get(`/users/${userId}/addresses`).expect(200);
+        expect(response.body.success).to.be.true;
+        expect(response.body.results.length).to.equal(3);
+        response.body.results.sort((a, b) => a.id.localeCompare(b.id));
 
-            frisby
-                .create('GET users/{id} – updated address')
-                .get(URL + '/users/' + userId)
-                .expectStatus(200)
-                .afterJSON(response => {
-                    expect(response).to.exist;
-                    expect(response.success).to.be.true;
-                    expect(response.id).to.equal(userId);
-                    expect(response.address).to.equal('alias1@example.com');
-                })
-                .toss();
+        expect(response.body.results[0].address).to.equal('testuser@example.com');
+        expect(response.body.results[0].main).to.be.false;
 
-            frisby
-                .create('GET users/{id}/mailboxes')
-                .get(URL + '/users/' + userId + '/mailboxes')
-                .expectStatus(200)
-                .afterJSON(response => {
-                    expect(response).to.exist;
-                    expect(response.success).to.be.true;
-                    expect(response.results.length).to.be.gte(4);
-                    expect(response.results[0].path).to.equal('INBOX');
-                })
-                .toss();
-        })
-        .toss();
+        expect(response.body.results[1].address).to.equal('alias1@example.com');
+        expect(response.body.results[1].main).to.be.true;
+
+        expect(response.body.results[2].address).to.equal('alias2@example.com');
+        expect(response.body.results[2].main).to.be.false;
+
+        address = response.body.results[2];
+    });
+
+    it('should DELETE users/:user/addresses/:address', async () => {
+        const response = await server.delete(`/users/${userId}/addresses/${address.id}`).expect(200);
+        expect(response.body.success).to.be.true;
+    });
+
+    it('should GET /users/:user/addresses (after DELETE)', async () => {
+        const response = await server.get(`/users/${userId}/addresses`).expect(200);
+        expect(response.body.success).to.be.true;
+        expect(response.body.results.length).to.equal(2);
+        response.body.results.sort((a, b) => a.id.localeCompare(b.id));
+
+        expect(response.body.results[0].address).to.equal('testuser@example.com');
+        expect(response.body.results[0].main).to.be.false;
+
+        expect(response.body.results[1].address).to.equal('alias1@example.com');
+        expect(response.body.results[1].main).to.be.true;
+    });
+
+    it('should GET /users/:user/mailboxes', async () => {
+        const response = await server.get(`/users/${userId}/mailboxes`).expect(200);
+        expect(response.body.success).to.be.true;
+        expect(response.body.results.length).to.gte(4);
+
+        inbox = response.body.results.find(result => result.path === 'INBOX');
+        expect(inbox).to.exist;
+    });
 });
