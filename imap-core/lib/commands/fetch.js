@@ -230,7 +230,7 @@ module.exports = {
                 };
 
                 if (item.partial.maxLength && item.partial.maxLength < 1024 * 1024) {
-                    item.partial.maxLength = 1024 * 1024;
+                    //item.partial.maxLength = 1024 * 1024;
                 }
             }
             if (!imapTools.fetchSchema.hasOwnProperty(item.item) || !checkSchema(imapTools.fetchSchema[item.item], item)) {

@@ -656,17 +656,18 @@ module.exports.getQueryResponse = function(query, message, options) {
                         mimeTree = indexer.parseMimeTree(message.raw);
                     }
                     value = indexer.getContents(mimeTree, false, {
-                        //startFrom: item.partial && item.partial.startFrom,
-                        //maxLength: item.partial && item.partial.maxLength
+                        startFrom: item.partial && item.partial.startFrom,
+                        maxLength: item.partial && item.partial.maxLength
                     });
                 } else {
                     // BODY[SELECTOR]
                     if (!mimeTree) {
                         mimeTree = indexer.parseMimeTree(message.raw);
                     }
+                    console.log(item);
                     value = indexer.getContents(mimeTree, item, {
-                        //startFrom: item.partial && item.partial.startFrom,
-                        //maxLength: item.partial && item.partial.maxLength
+                        startFrom: item.partial && item.partial.startFrom,
+                        maxLength: item.partial && item.partial.maxLength
                     });
                 }
 

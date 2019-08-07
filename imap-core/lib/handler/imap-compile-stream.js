@@ -171,7 +171,7 @@ module.exports = (response, isLogging) => {
                     if (isLogging) {
                         resp.push(Buffer.from('"(* ' + len + 'B literal *)"'));
                     } else {
-                        resp.push(Buffer.from('{' + len + '}\r\n'));
+                        resp.push(Buffer.from('{' + Math.max(len, 0) + '}\r\n'));
 
                         if (nodeValue && typeof nodeValue.pipe === 'function') {
                             //value is a stream object

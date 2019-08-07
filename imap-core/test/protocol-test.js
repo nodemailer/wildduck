@@ -1398,7 +1398,7 @@ describe('IMAP Protocol integration tests', function() {
             });
 
             it('should return partial BODY[]', function(done) {
-                let cmds = ['T1 LOGIN testuser pass', 'T2 SELECT INBOX', 'T3 FETCH 4 BODY.PEEK[]<0>', 'T4 FETCH 4 BODY.PEEK[]<4.10000>', 'T5 LOGOUT'];
+                let cmds = ['T1 LOGIN testuser pass', 'T2 SELECT INBOX', 'T3 FETCH 4 BODY.PEEK[]<4.5>', 'T4 FETCH 4 BODY.PEEK[]<4.10000>', 'T5 LOGOUT'];
 
                 testClient(
                     {
@@ -1408,8 +1408,7 @@ describe('IMAP Protocol integration tests', function() {
                     },
                     function(resp) {
                         resp = resp.toString();
-                        // we asked for 5 bytes but will get all bytes due to WildDuck returning minimum chunks of 1MB
-                        //expect(resp.indexOf('\n* 4 FETCH (BODY[]<4> {93}\r\n: sen)\r\n') >= 0).to.be.true;
+                        expect(resp.indexOf('\n* 4 FETCH (BODY[]<4> {5}\r\n: sen)\r\n') >= 0).to.be.true;
                         expect(
                             resp.indexOf(
                                 '\n* 4 FETCH (BODY[]<4> {93}\r\n: sender@example.com\r\nto: to@example.com\r\ncc: cc@example.com\r\nsubject: test\r\n\r\nHello World!\r\n)\r\n'
@@ -1433,7 +1432,6 @@ describe('IMAP Protocol integration tests', function() {
                     },
                     function(resp) {
                         resp = resp.toString();
-
                         expect(
                             resp.indexOf(
                                 '\r\n* 3 FETCH (BODY[1] {107}\r\nMIME-Version: 1.0\r\nFrom: andris@kreata.ee\r\nTo: andris@pangalink.net\r\nIn-Reply-To: <test1>\r\n\r\nHello world 1!)\r\n'

@@ -79,7 +79,7 @@ module.exports = function(response, asArray, isLogging) {
                     if (!node.value) {
                         resp += '{0}\r\n';
                     } else {
-                        resp += '{' + node.value.length + '}\r\n';
+                        resp += '{' + Math.max(node.value.length, 0) + '}\r\n';
                     }
                     respParts.push(resp);
                     resp = (node.value || '').toString('binary');

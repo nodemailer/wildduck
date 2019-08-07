@@ -135,18 +135,29 @@ class Indexer {
         let curWritePos = 0;
         let writeLength = 0;
 
-        let canWrite = size => {
-            if (curWritePos + size <= startFrom) {
+        let getCurrentBounds = size => {
+            if (curWritePos + size < startFrom) {
                 curWritePos += size;
                 return false;
             }
 
             if (maxLength && writeLength >= maxLength) {
                 writeLength += size;
+
                 return false;
             }
 
-            return true;
+            let startFromBounds = curWritePos < startFrom ? startFrom - curWritePos : 0;
+            let maxLengthBounds = maxLength ? maxLength - writeLength : 0;
+            maxLengthBounds = Math.min(size - startFromBounds, maxLengthBounds);
+            if (maxLengthBounds < 0) {
+                maxLengthBounds = 0;
+            }
+
+            return {
+                startFrom: startFromBounds,
+                maxLength: maxLengthBounds
+            };
         };
 
         let write = async chunk => {
@@ -245,29 +256,50 @@ class Indexer {
                 } else if (node.attachmentId && !options.skipExternal) {
                     await emit(false, true); // force newline between header and contents
 
-                    if (canWrite(node.size)) {
+                    let readBounds = getCurrentBounds(node.size);
+                    if (readBounds) {
                         let attachmentId = node.attachmentId;
                         if (mimeTree.attachmentMap && mimeTree.attachmentMap[node.attachmentId]) {
                             attachmentId = mimeTree.attachmentMap[node.attachmentId];
                         }
 
                         let attachmentData = await this.getAttachment(attachmentId);
-                        let attachmentStream = this.attachmentStorage.createReadStream(attachmentId, attachmentData);
 
-                        await new Promise((resolve, reject) => {
-                            attachmentStream.once('error', reject);
+                        // move write pointer ahead by skipped base64 bytes
+                        let bytes = Math.min(readBounds.startFrom, node.size);
+                        curWritePos += bytes;
 
-                            attachmentStream.once('end', () => {
-                                resolve();
+                        // only process attachment if we are reading inside existing bounds
+                        if (attachmentData.length > readBounds.startFrom) {
+                            let attachmentStream = this.attachmentStorage.createReadStream(attachmentId, attachmentData, readBounds);
+
+                            await new Promise((resolve, reject) => {
+                                attachmentStream.once('error', err => {
+                                    reject(err);
+                                });
+
+                                attachmentStream.once('end', () => {
+                                    // update read offset counters
+
+                                    let bytes = 'outputBytes' in attachmentStream ? attachmentStream.outputBytes : readBounds.maxLength;
+
+                                    if (bytes) {
+                                        curWritePos += bytes;
+                                        if (maxLength) {
+                                            writeLength += bytes;
+                                        }
+                                    }
+                                    resolve();
+                                });
+
+                                attachmentStream.pipe(
+                                    output,
+                                    {
+                                        end: false
+                                    }
+                                );
                             });
-
-                            attachmentStream.pipe(
-                                output,
-                                {
-                                    end: false
-                                }
-                            );
-                        });
+                        }
                     }
                 }
 
@@ -295,6 +327,10 @@ class Indexer {
             };
 
             await walk(mimeTree);
+
+            if (mimeTree.lineCount > 1) {
+                await write(NEWLINE);
+            }
 
             output.end();
         };
