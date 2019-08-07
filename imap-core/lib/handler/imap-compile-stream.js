@@ -50,7 +50,7 @@ module.exports = (response, isLogging) => {
             }
 
             return new Promise((resolve, reject) => {
-                expectedLength = expectedLength || 0;
+                expectedLength = maxLength ? Math.min(expectedLength, startFrom + maxLength) : expectedLength;
                 startFrom = startFrom || 0;
                 maxLength = maxLength || 0;
 
@@ -65,7 +65,6 @@ module.exports = (response, isLogging) => {
                     stream.once('end', () => resolve());
                 } else {
                     // force limites
-                    expectedLength = maxLength ? Math.min(expectedLength, startFrom + maxLength) : expectedLength;
                     let limiter = new LengthLimiter(expectedLength, ' ', startFrom);
                     stream.pipe(limiter).pipe(
                         output,

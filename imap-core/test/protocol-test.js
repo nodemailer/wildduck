@@ -1398,7 +1398,7 @@ describe('IMAP Protocol integration tests', function() {
             });
 
             it('should return partial BODY[]', function(done) {
-                let cmds = ['T1 LOGIN testuser pass', 'T2 SELECT INBOX', 'T3 FETCH 4 BODY.PEEK[]<4.5>', 'T4 FETCH 4 BODY.PEEK[]<4.10000>', 'T5 LOGOUT'];
+                let cmds = ['T1 LOGIN testuser pass', 'T2 SELECT INBOX', 'T3 FETCH 4 BODY.PEEK[]<0>', 'T4 FETCH 4 BODY.PEEK[]<4.10000>', 'T5 LOGOUT'];
 
                 testClient(
                     {
