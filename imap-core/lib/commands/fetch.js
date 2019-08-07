@@ -229,8 +229,8 @@ module.exports = {
                     maxLength: Number(param.partial[1]) || 0
                 };
 
-                if (item.partial.maxLength && item.partial.maxLength < 63 * 1024) {
-                    item.partial.maxLength = 63 * 1024;
+                if (item.partial.maxLength && item.partial.maxLength < 1024 * 1024) {
+                    item.partial.maxLength = 1024 * 1024;
                 }
             }
             if (!imapTools.fetchSchema.hasOwnProperty(item.item) || !checkSchema(imapTools.fetchSchema[item.item], item)) {
