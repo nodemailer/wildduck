@@ -56,13 +56,14 @@ module.exports = (response, isLogging) => {
 
                 if (stream.isLimited) {
                     // stream is already limited
-                    stream.pipe(
+                    let limiter = new LengthLimiter(expectedLength - startFrom, ' ', 0);
+                    stream.pipe(limiter).pipe(
                         output,
                         {
                             end: false
                         }
                     );
-                    stream.once('end', () => resolve());
+                    limiter.once('end', () => resolve());
                 } else {
                     // force limites
                     let limiter = new LengthLimiter(expectedLength, ' ', startFrom);

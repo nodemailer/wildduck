@@ -143,11 +143,11 @@ class Indexer {
 
             if (maxLength && writeLength >= maxLength) {
                 writeLength += size;
-
                 return false;
             }
 
             let startFromBounds = curWritePos < startFrom ? startFrom - curWritePos : 0;
+
             let maxLengthBounds = maxLength ? maxLength - writeLength : 0;
             maxLengthBounds = Math.min(size - startFromBounds, maxLengthBounds);
             if (maxLengthBounds < 0) {
@@ -264,13 +264,12 @@ class Indexer {
                         }
 
                         let attachmentData = await this.getAttachment(attachmentId);
-
                         // move write pointer ahead by skipped base64 bytes
                         let bytes = Math.min(readBounds.startFrom, node.size);
                         curWritePos += bytes;
 
                         // only process attachment if we are reading inside existing bounds
-                        if (attachmentData.length > readBounds.startFrom) {
+                        if (node.size > readBounds.startFrom) {
                             let attachmentStream = this.attachmentStorage.createReadStream(attachmentId, attachmentData, readBounds);
 
                             await new Promise((resolve, reject) => {
