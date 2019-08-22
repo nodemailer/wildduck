@@ -1,3 +1,5 @@
+**NB!** If you rely on IMAP then currently do not use version later than v1.21.1. Never versions use an experimental partial FETCH response builder with some unresolved bugs that might mess up attachment contents. This notice is removed once the issue with partial FETCH is resolved.
+
 # WildDuck Mail Server
 
 ![](https://raw.githubusercontent.com/nodemailer/wildduck/master/assets/duck.png)
