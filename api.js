@@ -326,7 +326,7 @@ server.use(
                             { projection: { authVersion: true } }
                         );
                         let userAuthVersion = Number(userData && userData.authVersion) || 0;
-                        if (!userData || tokenAuthVersion < userAuthVersion) {
+                        if (userData && tokenAuthVersion < userAuthVersion) {
                             // unknown user or expired session
                             try {
                                 /*
