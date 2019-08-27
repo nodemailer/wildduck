@@ -255,6 +255,8 @@ server.use(
 
                     if (signature !== tokenData.s) {
                         // rogue token or invalidated secret
+                        /*
+                        // do not delete just in case there is something wrong with the check
                         try {
                             await db.redis
                                 .multi()
@@ -263,6 +265,7 @@ server.use(
                         } catch (err) {
                             // ignore
                         }
+                        */
                     } else if (tokenData.ttl && !isNaN(tokenData.ttl) && Number(tokenData.ttl) > 0) {
                         let tokenTTL = Number(tokenData.ttl);
                         let tokenLifetime = config.api.accessControl.tokenLifetime || consts.ACCESS_TOKEN_MAX_LIFETIME;
@@ -326,10 +329,13 @@ server.use(
                         if (!userData || tokenAuthVersion < userAuthVersion) {
                             // unknown user or expired session
                             try {
+                                /*
+                                // do not delete just in case there is something wrong with the check
                                 await db.redis
                                     .multi()
                                     .del('tn:token:' + tokenHash)
                                     .exec();
+                                */
                             } catch (err) {
                                 // ignore
                             }
