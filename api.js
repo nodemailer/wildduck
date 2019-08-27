@@ -17,6 +17,7 @@ const crypto = require('crypto');
 const Gelf = require('gelf');
 const os = require('os');
 const util = require('util');
+const ObjectID = require('mongodb').ObjectID;
 
 const usersRoutes = require('./lib/api/users');
 const addressesRoutes = require('./lib/api/addresses');
@@ -229,15 +230,27 @@ server.use(
                 }
 
                 if (tokenData && tokenData.user && tokenData.role && config.api.roles[tokenData.role]) {
+                    let signData;
+                    if ('authVersion' in tokenData) {
+                        // cast value to number
+                        tokenData.authVersion = Number(tokenData.authVersion) || 0;
+                        signData = {
+                            token: accessToken,
+                            user: tokenData.user,
+                            authVersion: tokenData.authVersion,
+                            role: tokenData.role
+                        };
+                    } else {
+                        signData = {
+                            token: accessToken,
+                            user: tokenData.user,
+                            role: tokenData.role
+                        };
+                    }
+
                     let signature = crypto
                         .createHmac('sha256', config.api.accessControl.secret)
-                        .update(
-                            JSON.stringify({
-                                token: accessToken,
-                                user: tokenData.user,
-                                role: tokenData.role
-                            })
-                        )
+                        .update(JSON.stringify(signData))
                         .digest('hex');
 
                     if (signature !== tokenData.s) {
@@ -268,9 +281,14 @@ server.use(
                             req.role = tokenData.role;
                             req.user = tokenData.user;
 
+                            // make a reference to original method, otherwise might be overrided
+                            let setAuthToken = userHandler.setAuthToken.bind(userHandler);
+
                             req.accessToken = {
                                 hash: tokenHash,
-                                user: tokenData.user
+                                user: tokenData.user,
+                                // if called then refreshes token data for current hash
+                                update: async () => setAuthToken(tokenData.user, accessToken)
                             };
                         } else {
                             // expired token, clear it
@@ -294,6 +312,29 @@ server.use(
 
                     if (!req.role) {
                         return fail();
+                    }
+
+                    if (/^[0-9a-f]{24}$/i.test(req.user)) {
+                        let tokenAuthVersion = Number(tokenData.authVersion) || 0;
+                        let userData = await db.users.collection('users').findOne(
+                            {
+                                _id: new ObjectID(req.user)
+                            },
+                            { projection: { authVersion: true } }
+                        );
+                        let userAuthVersion = Number(userData && userData.authVersion) || 0;
+                        if (!userData || tokenAuthVersion < userAuthVersion) {
+                            // unknown user or expired session
+                            try {
+                                await db.redis
+                                    .multi()
+                                    .del('tn:token:' + tokenHash)
+                                    .exec();
+                            } catch (err) {
+                                // ignore
+                            }
+                            return fail();
+                        }
                     }
 
                     return next();
