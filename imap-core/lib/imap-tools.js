@@ -664,7 +664,6 @@ module.exports.getQueryResponse = function(query, message, options) {
                     if (!mimeTree) {
                         mimeTree = indexer.parseMimeTree(message.raw);
                     }
-                    console.log(item);
                     value = indexer.getContents(mimeTree, item, {
                         startFrom: item.partial && item.partial.startFrom,
                         maxLength: item.partial && item.partial.maxLength

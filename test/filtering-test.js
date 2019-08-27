@@ -28,7 +28,7 @@ const transporter = nodemailer.createTransport({
 const expect = chai.expect;
 chai.config.includeStack = true;
 
-const URL = 'http://localhost:8080';
+const URL = 'http://127.0.0.1:8080';
 const user2PubKey = fs.readFileSync(__dirname + '/fixtures/user2-public.key', 'utf-8');
 const user3PubKey = fs.readFileSync(__dirname + '/fixtures/user3-public.key', 'utf-8');
 
