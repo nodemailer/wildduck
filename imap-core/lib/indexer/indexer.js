@@ -256,14 +256,31 @@ class Indexer {
                 } else if (node.attachmentId && !options.skipExternal) {
                     await emit(false, true); // force newline between header and contents
 
-                    let readBounds = getCurrentBounds(node.size);
-                    if (readBounds) {
-                        let attachmentId = node.attachmentId;
-                        if (mimeTree.attachmentMap && mimeTree.attachmentMap[node.attachmentId]) {
-                            attachmentId = mimeTree.attachmentMap[node.attachmentId];
+                    let attachmentId = node.attachmentId;
+                    if (mimeTree.attachmentMap && mimeTree.attachmentMap[node.attachmentId]) {
+                        attachmentId = mimeTree.attachmentMap[node.attachmentId];
+                    }
+                    let attachmentData = await this.getAttachment(attachmentId);
+
+                    let attachmentSize = node.size;
+                    // we need to calculate expected length as the original does not apply anymore
+                    // original size matches input data but decoding/encoding is not 100% lossless so we need to
+                    // calculate the actual possible output size
+                    if (attachmentData.metadata && attachmentData.metadata.decoded && attachmentData.metadata.lineLen) {
+                        let b64Size = Math.ceil(attachmentData.length / 3) * 4;
+                        let lineBreaks = Math.floor(b64Size / attachmentData.metadata.lineLen);
+
+                        // extra case where base64 string ends at line end
+                        // in this case we do not need the ending line break
+                        if (lineBreaks && b64Size % attachmentData.metadata.lineLen === 0) {
+                            lineBreaks--;
                         }
 
-                        let attachmentData = await this.getAttachment(attachmentId);
+                        attachmentSize = b64Size + lineBreaks * 2;
+                    }
+
+                    let readBounds = getCurrentBounds(attachmentSize);
+                    if (readBounds) {
                         // move write pointer ahead by skipped base64 bytes
                         let bytes = Math.min(readBounds.startFrom, node.size);
                         curWritePos += bytes;
