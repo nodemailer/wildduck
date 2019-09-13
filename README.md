@@ -7,8 +7,6 @@ including emails.
 
 WildDuck tries to follow Gmail in product design. If there's a decision to be made then usually the answer is to do whatever Gmail has done.
 
-> **NB!** WildDuck is currently in **beta**. Use it on your own responsibility.
-
 ## Requirements
 
 -   _MongoDB_ to store all data
@@ -269,9 +267,12 @@ This is a list of known differences from the IMAP specification. Listed differen
     version of the message. RFC3501 assumes that it should be a string match either against full message (`TEXT`) or body section (`BODY`).
 8.  What happens when FETCH is called for messages that were deleted in another session? _Not sure, need to check_
 9.  **Autoexpunge**, meaning that an EXPUNGE is called on background whenever a messages gets a `\Deleted` flag set. This is not in conflict with IMAP RFCs.
-10. **Partial literal size** (`BODY[]<partial>`) is at least 1MB (or until the end of the literal). Might cause buffer overflows in buggy IMAP clients when client asks less than 1MB. Setting a minimal limit was needed in production as clients that ask small chunks of large messages caused too much load to the server.
 
 Any other differences are most probably real bugs and unintentional.
+
+## Other Differences
+
+1. Messages retrieved from WildDuck might not be exact copies of messages that were initially stored. This mostly affects base64 encoded attachments and content in multipart mime nodes (eg. text like "This is a multi-part message in MIME format.")
 
 ## Testing
 
