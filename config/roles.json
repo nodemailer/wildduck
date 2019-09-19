@@ -40,6 +40,13 @@
             "delete:any": ["*"]
         },
 
+        "attachments": {
+            "create:any": ["*"],
+            "read:any": ["*"],
+            "update:any": ["*"],
+            "delete:any": ["*"]
+        },
+
         "storage": {
             "create:any": ["*"],
             "read:any": ["*"],
@@ -177,6 +184,13 @@
             "delete:any": ["*"]
         },
 
+        "attachments": {
+            "create:any": ["*"],
+            "read:any": ["*"],
+            "update:any": ["*"],
+            "delete:any": ["*"]
+        },
+
         "storage": {
             "create:any": ["*"],
             "read:any": ["*"],
@@ -244,6 +258,13 @@
             "delete:own": ["*"]
         },
 
+        "attachments": {
+            "create:own": ["*"],
+            "read:own": ["*"],
+            "update:own": ["*"],
+            "delete:own": ["*"]
+        },
+
         "storage": {
             "create:own": ["*"],
             "read:own": ["*"],
@@ -276,6 +297,12 @@
     "auth": {
         "authentication": {
             "create:any": ["*", "!token"]
+        }
+    },
+
+    "attachments": {
+        "attachments": {
+            "read:any": ["*"]
         }
     },
 
