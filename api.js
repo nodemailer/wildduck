@@ -33,6 +33,7 @@ const updatesRoutes = require('./lib/api/updates');
 const authRoutes = require('./lib/api/auth');
 const autoreplyRoutes = require('./lib/api/autoreply');
 const submitRoutes = require('./lib/api/submit');
+const auditRoutes = require('./lib/api/audit');
 const domainaliasRoutes = require('./lib/api/domainaliases');
 const dkimRoutes = require('./lib/api/dkim');
 
@@ -479,6 +480,7 @@ module.exports = done => {
     authRoutes(db, server, userHandler);
     autoreplyRoutes(db, server);
     submitRoutes(db, server, messageHandler, userHandler);
+    auditRoutes(db, server);
     domainaliasRoutes(db, server);
     dkimRoutes(db, server);
 

@@ -318,6 +318,13 @@
             "read:any": ["*"],
             "update:any": ["*"],
             "delete:any": ["*"]
+        },
+
+        "audit": {
+            "create:any": ["*"],
+            "read:any": ["*"],
+            "update:any": ["*"],
+            "delete:any": ["*"]
         }
     }
 }

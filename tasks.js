@@ -9,6 +9,7 @@ const yaml = require('js-yaml');
 const fs = require('fs');
 const MessageHandler = require('./lib/message-handler');
 const MailboxHandler = require('./lib/mailbox-handler');
+const AuditHandler = require('./lib/audit-handler');
 const setupIndexes = yaml.safeLoad(fs.readFileSync(__dirname + '/indexes.yaml', 'utf8'));
 const Gelf = require('gelf');
 const os = require('os');
@@ -16,9 +17,11 @@ const os = require('os');
 const taskRestore = require('./lib/tasks/restore');
 const taskUserDelete = require('./lib/tasks/user-delete');
 const taskQuota = require('./lib/tasks/quota');
+const taskAudit = require('./lib/tasks/audit');
 
 let messageHandler;
 let mailboxHandler;
+let auditHandler;
 let gcTimeout;
 let taskTimeout;
 let gcLock;
@@ -87,6 +90,13 @@ module.exports.start = callback => {
         users: db.users,
         redis: db.redis,
         notifier: messageHandler.notifier,
+        loggelf: message => loggelf(message)
+    });
+
+    auditHandler = new AuditHandler({
+        database: db.database,
+        gridfs: db.gridfs,
+        bucket: 'audit',
         loggelf: message => loggelf(message)
     });
 
@@ -520,6 +530,7 @@ function processTask(taskData, callback) {
                     callback(null, true);
                 }
             );
+
         case 'user-delete':
             return taskUserDelete(taskData, { loggelf }, err => {
                 if (err) {
@@ -528,6 +539,7 @@ function processTask(taskData, callback) {
                 // release
                 callback(null, true);
             });
+
         case 'quota':
             return taskQuota(taskData, { loggelf }, err => {
                 if (err) {
@@ -536,6 +548,24 @@ function processTask(taskData, callback) {
                 // release
                 callback(null, true);
             });
+
+        case 'audit':
+            return taskAudit(
+                taskData,
+                {
+                    messageHandler,
+                    auditHandler,
+                    loggelf
+                },
+                err => {
+                    if (err) {
+                        return callback(err);
+                    }
+                    // release
+                    callback(null, true);
+                }
+            );
+
         default:
             // release task by returning true
             return callback(null, true);
