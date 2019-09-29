@@ -8,6 +8,7 @@ const UserHandler = require('./lib/user-handler');
 const MailboxHandler = require('./lib/mailbox-handler');
 const MessageHandler = require('./lib/message-handler');
 const StorageHandler = require('./lib/storage-handler');
+const AuditHandler = require('./lib/audit-handler');
 const ImapNotifier = require('./lib/imap-notifier');
 const db = require('./lib/db');
 const certs = require('./lib/certs');
@@ -41,6 +42,7 @@ let userHandler;
 let mailboxHandler;
 let messageHandler;
 let storageHandler;
+let auditHandler;
 let notifier;
 let loggelf;
 
@@ -464,6 +466,14 @@ module.exports = done => {
         loggelf: message => loggelf(message)
     });
 
+    auditHandler = new AuditHandler({
+        database: db.database,
+        users: db.users,
+        gridfs: db.gridfs,
+        bucket: 'audit',
+        loggelf: message => loggelf(message)
+    });
+
     server.loggelf = message => loggelf(message);
 
     usersRoutes(db, server, userHandler);
@@ -480,7 +490,7 @@ module.exports = done => {
     authRoutes(db, server, userHandler);
     autoreplyRoutes(db, server);
     submitRoutes(db, server, messageHandler, userHandler);
-    auditRoutes(db, server);
+    auditRoutes(db, server, auditHandler);
     domainaliasRoutes(db, server);
     dkimRoutes(db, server);
 

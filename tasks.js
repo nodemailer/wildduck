@@ -95,6 +95,7 @@ module.exports.start = callback => {
 
     auditHandler = new AuditHandler({
         database: db.database,
+        users: db.users,
         gridfs: db.gridfs,
         bucket: 'audit',
         loggelf: message => loggelf(message)
