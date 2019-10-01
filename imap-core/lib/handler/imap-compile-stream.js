@@ -191,7 +191,7 @@ module.exports = (response, isLogging) => {
                         resp.push(Buffer.from('"(* ' + node.value.length + 'B string *)"'));
                     } else {
                         // JSON.stringify conveniently adds enclosing quotes and escapes any "\ occurences
-                        resp.push(Buffer.from(JSON.stringify((node.value || '').toString('binary'), 'binary')));
+                        resp.push(Buffer.from(JSON.stringify((node.value || '').toString('binary')), 'binary'));
                     }
                     break;
 
