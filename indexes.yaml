@@ -560,3 +560,26 @@ indexes:
           key:
               locked: 1
               lockedUntil: 1
+
+    - collection: audit.files
+      type: gridfs # index applies to gridfs database
+      index:
+          name: audit_id_hashed
+          key:
+              _id: hashed
+
+    - collection: audit.chunks
+      type: gridfs # index applies to gridfs database
+      index:
+          # hashed index needed for sharding
+          name: audit_shard
+          key:
+              files_id: hashed
+
+    - collection: audit.files
+      type: gridfs # index applies to gridfs database
+      index:
+          name: audit_files
+          key:
+              metadata.audit: 1
+              metadata.date: 1
