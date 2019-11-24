@@ -763,7 +763,7 @@ module.exports.validateInternalDate = internaldate => {
     if (!internaldate || typeof internaldate !== 'string') {
         return false;
     }
-    return /^([ \d]\d)-(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)-(\d{4}) (\d{2}):(\d{2}):(\d{2}) ([-+])(\d{2})(\d{2})$/i.test(internaldate);
+    return /^([ \d]?\d)-(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)-(\d{4}) (\d{2}):(\d{2}):(\d{2}) ([-+])(\d{2})(\d{2})$/i.test(internaldate);
 };
 
 module.exports.validateSearchDate = internaldate => {
