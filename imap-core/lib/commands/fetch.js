@@ -308,7 +308,7 @@ module.exports = {
                 }
 
                 logdata._response = success;
-                this._server.loggelf(logdata);
+                // this._server.loggelf(logdata);
 
                 callback(null, {
                     response: success === true ? 'OK' : 'NO',
