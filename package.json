@@ -34,6 +34,7 @@
         "supertest": "4.0.2"
     },
     "dependencies": {
+        "@hapi/joi": "^16.1.8",
         "@phc/pbkdf2": "1.1.14",
         "accesscontrol": "2.2.1",
         "base32.js": "0.1.0",
@@ -47,7 +48,6 @@
         "ioredfour": "1.0.2-ioredis-02",
         "ioredis": "4.14.1",
         "isemail": "3.2.0",
-        "joi": "^14.3.1",
         "js-yaml": "3.13.1",
         "key-fingerprint": "1.1.0",
         "libbase64": "1.2.1",
