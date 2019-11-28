@@ -7,6 +7,10 @@ including emails.
 
 WildDuck tries to follow Gmail in product design. If there's a decision to be made then usually the answer is to do whatever Gmail has done.
 
+## Contact
+
+[![Gitter chat](https://badges.gitter.im/gitterHQ/gitter.png)](https://gitter.im/nodemailer/wildduck)
+
 ## Requirements
 
 -   _MongoDB_ to store all data
