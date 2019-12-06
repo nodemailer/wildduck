@@ -38,6 +38,7 @@
         "accesscontrol": "2.2.1",
         "base32.js": "0.1.0",
         "bcryptjs": "2.4.3",
+        "bullmq": "^1.5.0",
         "gelf": "2.0.1",
         "generate-password": "1.4.2",
         "he": "1.2.0",
