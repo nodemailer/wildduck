@@ -18,6 +18,7 @@ const taskRestore = require('./lib/tasks/restore');
 const taskUserDelete = require('./lib/tasks/user-delete');
 const taskQuota = require('./lib/tasks/quota');
 const taskAudit = require('./lib/tasks/audit');
+const taskSnooze = require('./lib/tasks/snooze');
 
 let messageHandler;
 let mailboxHandler;
@@ -38,9 +39,9 @@ module.exports.start = callback => {
         config.log.gelf && config.log.gelf.enabled
             ? new Gelf(config.log.gelf.options)
             : {
-                  // placeholder
-                  emit: () => false
-              };
+                // placeholder
+                emit: () => false
+            };
 
     loggelf = message => {
         if (typeof message === 'string') {
@@ -556,6 +557,22 @@ function processTask(taskData, callback) {
                 {
                     messageHandler,
                     auditHandler,
+                    loggelf
+                },
+                err => {
+                    if (err) {
+                        return callback(err);
+                    }
+                    // release
+                    callback(null, true);
+                }
+            );
+        case 'snooze':
+            return taskSnooze(
+                taskData,
+                {
+                    messageHandler,
+                    mailboxHandler,
                     loggelf
                 },
                 err => {
