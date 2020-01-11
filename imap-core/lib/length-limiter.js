@@ -63,8 +63,10 @@ class LengthLimiter extends Transform {
     _flush(done) {
         if (!this.finished) {
             // add padding if incoming stream stopped too early
-            let buf = Buffer.from(this.padding.repeat(this.expectedLength - this.byteCounter));
-            this.push(buf);
+            if (this.expectedLength > this.byteCounter) {
+                let buf = Buffer.from(this.padding.repeat(this.expectedLength - this.byteCounter));
+                this.push(buf);
+            }
             this.finished = true;
         }
         done();
