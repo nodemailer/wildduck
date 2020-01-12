@@ -1,8 +1,8 @@
 # mongodb connection string for the main database
-mongo="mongodb://127.0.0.1:27017/wildduck"
+mongo="mongodb://mongo:27017/wildduck"
 
 # redis connection string to connect to a single master (see below for Sentinel example)
-redis="redis://127.0.0.1:6379/3"
+redis="redis://redis:6379/3"
 
 # WildDuck allows using different kind of data in different databases
 # If you do not provide a database config value, then main database connection

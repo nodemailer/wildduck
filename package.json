@@ -9,10 +9,14 @@
         "apidoc": "apidoc -i lib/api/ -o docs/",
         "show": "NODE_CONFIG_ONLY=true node server.js"
     },
-    "keywords": ["imap", "mail server"],
+    "keywords": [
+        "imap",
+        "mail server"
+    ],
     "author": "Andris Reinman",
     "license": "EUPL-1.1+",
     "devDependencies": {
+        "@typescript-eslint/eslint-plugin": "^2.13.0",
         "apidoc": "^0.17.6",
         "browserbox": "^0.9.1",
         "chai": "^4.1.2",

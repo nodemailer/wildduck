@@ -1,0 +1,63 @@
+version: '3.7'
+services:
+  node:
+    image: node:12-buster-slim
+#    build: ./node/
+    container_name: wildduck-node
+    user: node
+    working_dir: /home/node/app
+    volumes:
+      - ..:/home/node/app/:rw
+      - ./node/beats/metricbeat/conf/:/etc/metricbeat/:rw
+      - ./node/beats/metricbeat/log/:/var/log/metricbeat/:rw
+      - ./node/beats/metricbeat/data/:/var/lib/metricbeat/:rw
+      - ./ssl/certs/archive/example.com/fullchain1.pem:/etc/tls-keys/pub.pem:ro
+      - ./ssl/certs/archive/example.com/privkey1.pem:/etc/tls-keys/prv.pem:ro
+      - mailconfig:/etc/nodemailer
+    ports:
+      - "8081:8080"
+      - "9229:9229"
+      - "25:25"
+      - "443:443"
+      - "465:465"
+      - "993:993"
+    networks:
+      - backend
+      - frontend
+    depends_on:
+      - redis
+      - mongo
+    environment:
+      - NODE_ENV=production
+      - NPM_CONFIG_LOGLEVEL=info
+      - FQDN=mailserver1.example.com
+      - MAIL_DOMAIN=example.com
+      - TLS_KEY=/etc/tls-keys/prv.pem      # If you want to activate SSL for the mail services
+      - TLS_CERT=/etc/tls-keys/pub.pem    # you will need to provide these two variables.
+      - API_USE_HTTPS=fase
+      - API_URL=http://localhost:5438
+      - API_TOKEN_SECRET=PLEASE_REPLACE_THIS
+    entrypoint: ['npm']
+    command: [ 'start']
+#    command: [ 'install', '--production']
+  redis:
+    image: redis:alpine
+    volumes:
+      - redis_backup:/data
+    networks:
+      - backend
+  mongo:
+    image: mongo
+    volumes:
+      - mongodbs:/data/db
+    ports:
+      - "27017:27017"
+    networks:
+      - backend
+networks:
+    backend:
+    frontend:
+volumes:
+    mailconfig:
+    redis_backup:
+    mongodbs:

@@ -1,14 +1,14 @@
 enabled=true
 port=8080
 # by default bind to localhost only
-host="127.0.0.1"
+host="0.0.0.0"
 
 # Use `true` (HTTPS) for port 443 and `false` (HTTP) for 80
 secure=false
 
 # If set requires all API calls to have accessToken query argument with that value
 # http://localhost:8080/users?accessToken=somesecretvalue
-#accessToken="somesecretvalue"
+accessToken="8CYyxwgFMrKbLHmtzjZm"
 
 [tls]
 # If certificate path is not defined, use global or built-in self-signed certs
