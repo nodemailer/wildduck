@@ -83,6 +83,13 @@ module.exports = {
             }
         }
 
+        let logdata = {
+            short_message: '[STATUS]',
+            _mail_action: 'status',
+            _user: this.session.user.id.toString(),
+            _path: path,
+            _sess: this.id
+        };
         this._server.onStatus(path, this.session, (err, data) => {
             let response;
             let values = {
@@ -90,7 +97,14 @@ module.exports = {
             };
 
             if (err) {
-                return callback(err);
+                logdata._error = err.message;
+                logdata._code = err.code;
+                logdata._response = err.response;
+                this._server.loggelf(logdata);
+                return callback(null, {
+                    response: 'NO',
+                    code: 'TEMPFAIL'
+                });
             }
 
             if (typeof data === 'string') {

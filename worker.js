@@ -6,6 +6,7 @@ const imap = require('./imap');
 const pop3 = require('./pop3');
 const lmtp = require('./lmtp');
 const api = require('./api');
+const tasks = require('./tasks');
 const plugins = require('./lib/plugins');
 const db = require('./lib/db');
 const errors = require('./lib/errors');
@@ -20,67 +21,76 @@ db.connect(err => {
         errors.notify(err);
         return setTimeout(() => process.exit(1), 3000);
     }
-    // Start IMAP server
-    imap(err => {
+
+    tasks.start(err => {
         if (err) {
-            log.error('App', 'Failed to start IMAP server. %s', err.message);
+            log.error('App', 'Failed to start task runner. %s', err.message);
             errors.notify(err);
             return setTimeout(() => process.exit(1), 3000);
         }
-        // Start POP3 server
-        pop3(err => {
+
+        // Start IMAP server
+        imap(err => {
             if (err) {
-                log.error('App', 'Failed to start POP3 server');
+                log.error('App', 'Failed to start IMAP server. %s', err.message);
                 errors.notify(err);
                 return setTimeout(() => process.exit(1), 3000);
             }
-            // Start LMTP maildrop server
-            lmtp(err => {
+            // Start POP3 server
+            pop3(err => {
                 if (err) {
-                    log.error('App', 'Failed to start LMTP server');
+                    log.error('App', 'Failed to start POP3 server');
                     errors.notify(err);
                     return setTimeout(() => process.exit(1), 3000);
                 }
-
-                // Start HTTP API server
-                api(err => {
+                // Start LMTP maildrop server
+                lmtp(err => {
                     if (err) {
-                        log.error('App', 'Failed to start API server');
+                        log.error('App', 'Failed to start LMTP server');
                         errors.notify(err);
                         return setTimeout(() => process.exit(1), 3000);
                     }
 
-                    // downgrade user and group if needed
-                    if (config.group) {
-                        try {
-                            process.setgid(config.group);
-                            log.info('App', 'Changed group to "%s" (%s)', config.group, process.getgid());
-                        } catch (E) {
-                            log.error('App', 'Failed to change group to "%s" (%s)', config.group, E.message);
-                            errors.notify(E);
-                            return setTimeout(() => process.exit(1), 3000);
-                        }
-                    }
-                    if (config.user) {
-                        try {
-                            process.setuid(config.user);
-                            log.info('App', 'Changed user to "%s" (%s)', config.user, process.getuid());
-                        } catch (E) {
-                            log.error('App', 'Failed to change user to "%s" (%s)', config.user, E.message);
-                            errors.notify(E);
-                            return setTimeout(() => process.exit(1), 3000);
-                        }
-                    }
-
-                    plugins.init(err => {
+                    // Start HTTP API server
+                    api(err => {
                         if (err) {
-                            log.error('App', 'Failed to start plugins');
+                            log.error('App', 'Failed to start API server');
                             errors.notify(err);
                             return setTimeout(() => process.exit(1), 3000);
                         }
 
-                        plugins.runHooks('init', () => {
-                            log.info('App', 'All servers started, ready to process some mail');
+                        // downgrade user and group if needed
+                        if (config.group) {
+                            try {
+                                process.setgid(config.group);
+                                log.info('App', 'Changed group to "%s" (%s)', config.group, process.getgid());
+                            } catch (E) {
+                                log.error('App', 'Failed to change group to "%s" (%s)', config.group, E.message);
+                                errors.notify(E);
+                                return setTimeout(() => process.exit(1), 3000);
+                            }
+                        }
+                        if (config.user) {
+                            try {
+                                process.setuid(config.user);
+                                log.info('App', 'Changed user to "%s" (%s)', config.user, process.getuid());
+                            } catch (E) {
+                                log.error('App', 'Failed to change user to "%s" (%s)', config.user, E.message);
+                                errors.notify(E);
+                                return setTimeout(() => process.exit(1), 3000);
+                            }
+                        }
+
+                        plugins.init(err => {
+                            if (err) {
+                                log.error('App', 'Failed to start plugins');
+                                errors.notify(err);
+                                return setTimeout(() => process.exit(1), 3000);
+                            }
+
+                            plugins.runHooks('init', () => {
+                                log.info('App', 'All servers started, ready to process some mail');
+                            });
                         });
                     });
                 });

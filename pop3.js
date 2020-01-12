@@ -10,11 +10,14 @@ const ObjectID = require('mongodb').ObjectID;
 const db = require('./lib/db');
 const certs = require('./lib/certs');
 const LimitedFetch = require('./lib/limited-fetch');
+const Gelf = require('gelf');
+const os = require('os');
 
 const MAX_MESSAGES = 250;
 
 let messageHandler;
 let userHandler;
+let loggelf;
 
 const serverOptions = {
     port: config.pop3.port,
@@ -104,49 +107,68 @@ const serverOptions = {
 
                 session.user.mailbox = mailbox._id;
 
-                db.database
-                    .collection('messages')
-                    .find({
+                db.redis.hget('pop3uid', mailbox._id.toString(), (err, lastIndex) => {
+                    let query = {
                         mailbox: mailbox._id
-                    })
-                    .project({
-                        uid: true,
-                        size: true,
-                        mailbox: true,
-                        // required to decide if we need to update flags after RETR
-                        flags: true,
-                        unseen: true
-                    })
-                    .sort([['uid', -1]])
-                    .limit(config.pop3.maxMessages || MAX_MESSAGES)
-                    .toArray((err, messages) => {
-                        if (err) {
-                            return callback(err);
-                        }
+                    };
+                    if (!err && lastIndex && !isNaN(lastIndex)) {
+                        query.uid = { $gte: Number(lastIndex) };
+                    }
 
-                        return callback(null, {
-                            messages: messages
-                                // showolder first
-                                .reverse()
-                                // compose message objects
-                                .map(message => ({
-                                    id: message._id.toString(),
-                                    uid: message.uid,
-                                    mailbox: message.mailbox,
-                                    size: message.size,
-                                    flags: message.flags,
-                                    seen: !message.unseen
-                                })),
-                            count: messages.length,
-                            size: messages.reduce((acc, message) => acc + message.size, 0)
+                    db.database
+                        .collection('messages')
+                        .find(query)
+                        .project({
+                            uid: true,
+                            size: true,
+                            mailbox: true,
+                            // required to decide if we need to update flags after RETR
+                            flags: true,
+                            unseen: true
+                        })
+                        .sort([['uid', -1]])
+                        .limit(config.pop3.maxMessages || MAX_MESSAGES)
+                        .toArray((err, messages) => {
+                            if (err) {
+                                return callback(err);
+                            }
+
+                            let updateUIDIndex = done => {
+                                // first is the newest, last the oldest
+                                let oldestMessageData = messages && messages.length && messages[messages.length - 1];
+                                if (!oldestMessageData || !oldestMessageData.uid) {
+                                    return done();
+                                }
+                                // try to update index, ignore result
+                                db.redis.hset('pop3uid', mailbox._id.toString(), oldestMessageData.uid, done);
+                            };
+
+                            updateUIDIndex(() => {
+                                return callback(null, {
+                                    messages: messages
+                                        // show older first
+                                        .reverse()
+                                        // compose message objects
+                                        .map(message => ({
+                                            id: message._id.toString(),
+                                            uid: message.uid,
+                                            mailbox: message.mailbox,
+                                            size: message.size,
+                                            flags: message.flags,
+                                            seen: !message.unseen
+                                        })),
+                                    count: messages.length,
+                                    size: messages.reduce((acc, message) => acc + message.size, 0)
+                                });
+                            });
                         });
-                    });
+                });
             }
         );
     },
 
     onFetchMessage(message, session, callback) {
-        userHandler.userCache.get(session.user.id, 'pop3MaxDownload', (config.pop3.maxDownloadMB || 10) * 1024 * 1024, (err, limit) => {
+        userHandler.userCache.get(session.user.id, 'pop3MaxDownload', (config.pop3.maxDownloadMB || 10000) * 1024 * 1024, (err, limit) => {
             if (err) {
                 return callback(err);
             }
@@ -302,7 +324,9 @@ function markAsSeen(session, messages, callback) {
 
             let mailboxData = item && item.value;
             if (!item) {
-                return callback(new Error('Mailbox does not exist'));
+                let err = new Error('Selected mailbox does not exist');
+                err.code = 'NoSuchMailbox';
+                return callback(err);
             }
 
             db.database.collection('messages').updateMany(
@@ -365,18 +389,55 @@ module.exports = done => {
 
     let started = false;
 
+    const component = config.log.gelf.component || 'wildduck';
+    const hostname = config.log.gelf.hostname || os.hostname();
+    const gelf =
+        config.log.gelf && config.log.gelf.enabled
+            ? new Gelf(config.log.gelf.options)
+            : {
+                  // placeholder
+                  emit: () => false
+              };
+
+    loggelf = message => {
+        if (typeof message === 'string') {
+            message = {
+                short_message: message
+            };
+        }
+        message = message || {};
+
+        if (!message.short_message || message.short_message.indexOf(component.toUpperCase()) !== 0) {
+            message.short_message = component.toUpperCase() + ' ' + (message.short_message || '');
+        }
+
+        message.facility = component; // facility is deprecated but set by the driver if not provided
+        message.host = hostname;
+        message.timestamp = Date.now() / 1000;
+        message._component = component;
+        Object.keys(message).forEach(key => {
+            if (!message[key]) {
+                delete message[key];
+            }
+        });
+        gelf.emit('gelf.log', message);
+    };
+
     messageHandler = new MessageHandler({
+        users: db.users,
         database: db.database,
         redis: db.redis,
         gridfs: db.gridfs,
-        attachments: config.attachments
+        attachments: config.attachments,
+        loggelf: message => loggelf(message)
     });
 
     userHandler = new UserHandler({
         database: db.database,
         users: db.users,
         redis: db.redis,
-        authlogExpireDays: config.log.authlogExpireDays
+        authlogExpireDays: config.log.authlogExpireDays,
+        loggelf: message => loggelf(message)
     });
 
     server.on('error', err => {

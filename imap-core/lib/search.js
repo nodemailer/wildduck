@@ -62,7 +62,7 @@ const queryHandlers = {
             {
                 type: 'text'
             },
-            true
+            { skipExternal: true }
         );
 
         let resolveData = next => {
@@ -92,7 +92,13 @@ const queryHandlers = {
             if (err) {
                 return callback(err);
             }
-            callback(null, body.toString().toLowerCase().indexOf((query.value || '').toString().toLowerCase()) >= 0);
+            callback(
+                null,
+                body
+                    .toString()
+                    .toLowerCase()
+                    .indexOf((query.value || '').toString().toLowerCase()) >= 0
+            );
         });
     },
 
@@ -103,7 +109,7 @@ const queryHandlers = {
             {
                 type: 'content'
             },
-            true
+            { skipExternal: true }
         );
 
         let resolveData = next => {
@@ -133,7 +139,13 @@ const queryHandlers = {
             if (err) {
                 return callback(err);
             }
-            callback(null, text.toString().toLowerCase().indexOf((query.value || '').toString().toLowerCase()) >= 0);
+            callback(
+                null,
+                text
+                    .toString()
+                    .toLowerCase()
+                    .indexOf((query.value || '').toString().toLowerCase()) >= 0
+            );
         });
     },
 

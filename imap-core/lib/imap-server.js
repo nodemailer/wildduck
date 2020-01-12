@@ -52,13 +52,19 @@ class IMAPServer extends EventEmitter {
                         // ignore, should not happen
                     }
                     if (this.options.secured) {
-                        return this.connect(socket, socketOptions);
+                        return this.connect(
+                            socket,
+                            socketOptions
+                        );
                     }
                     this._upgrade(socket, (err, tlsSocket) => {
                         if (err) {
                             return this._onError(err);
                         }
-                        this.connect(tlsSocket, socketOptions);
+                        this.connect(
+                            tlsSocket,
+                            socketOptions
+                        );
                     });
                 });
             });
@@ -68,16 +74,24 @@ class IMAPServer extends EventEmitter {
                     if (err) {
                         // ignore, should not happen
                     }
-                    this.connect(socket, socketOptions);
+                    this.connect(
+                        socket,
+                        socketOptions
+                    );
                 })
             );
         }
 
+        this.skipFetchLog = options.skipFetchLog;
+
         this._setListeners();
+
+        this.loggelf = () => false;
     }
 
     connect(socket, socketOptions) {
         let connection = new IMAPConnection(this, socket, socketOptions);
+        connection.loggelf = message => this.loggelf(message);
         this.connections.add(connection);
         connection.on('error', this._onError.bind(this));
         connection.init();
@@ -132,7 +146,7 @@ class IMAPServer extends EventEmitter {
 
                 this.connections.forEach(connection => {
                     connection.send('* BYE System shutdown');
-                    connection.close();
+                    setImmediate(() => connection.close());
                 });
             }
         }, timeout);
@@ -297,6 +311,7 @@ class IMAPServer extends EventEmitter {
             if (err && /SSL[23]*_GET_CLIENT_HELLO|ssl[23]*_read_bytes|ssl_bytes_to_cipher_list/i.test(err.message)) {
                 let message = err.message;
                 err.message = 'Failed to establish TLS session';
+                err.code = err.code || 'TLSError';
                 err.meta = {
                     protocol: 'imap',
                     stage: 'connect',
@@ -306,6 +321,7 @@ class IMAPServer extends EventEmitter {
             }
             if (!err || !err.message) {
                 err = new Error('Socket closed while initiating TLS');
+                err.code = 'SocketError';
                 err.report = false;
                 err.meta = {
                     protocol: 'imap',

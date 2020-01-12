@@ -1,5 +1,7 @@
 'use strict';
 
+const imapTools = require('../imap-tools');
+
 module.exports = {
     state: 'Not Authenticated',
 
@@ -52,7 +54,8 @@ module.exports = {
             {
                 method: 'LOGIN',
                 username,
-                password
+                password,
+                connection: this
             },
             this.session,
             (err, response) => {
@@ -75,7 +78,11 @@ module.exports = {
                         'LOGIN',
                         err.message
                     );
-                    return callback(err);
+
+                    return callback(null, {
+                        response: 'NO',
+                        code: 'TEMPFAIL'
+                    });
                 }
 
                 if (!response || !response.user) {
@@ -116,6 +123,7 @@ module.exports = {
                 this.setUser(response.user);
                 this.state = 'Authenticated';
                 this.setupNotificationListener();
+                imapTools.sendCapabilityResponse(this);
 
                 callback(null, {
                     response: 'OK',

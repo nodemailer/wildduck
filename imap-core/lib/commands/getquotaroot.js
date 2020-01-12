@@ -4,8 +4,7 @@ const imapHandler = require('../handler/imap-handler');
 const imapTools = require('../imap-tools');
 const utf7 = require('utf7').imap;
 
-// tag SELECT "mailbox"
-// tag EXAMINE "mailbox"
+// tag GETQUOTAROOT "mailbox"
 
 module.exports = {
     state: ['Authenticated', 'Selected'],
@@ -36,9 +35,25 @@ module.exports = {
             });
         }
 
+        let logdata = {
+            short_message: '[GETQUOTAROOT]',
+            _mail_action: 'getquotaroot',
+            _path: path,
+            _user: this.session.user.id.toString(),
+            _sess: this.id
+        };
+
         this._server.onGetQuotaRoot(path, this.session, (err, data) => {
             if (err) {
-                return callback(err);
+                logdata._error = err.message;
+                logdata._code = err.code;
+                logdata._response = err.response;
+                this._server.loggelf(logdata);
+
+                return callback(null, {
+                    response: 'NO',
+                    code: 'TEMPFAIL'
+                });
             }
 
             if (typeof data === 'string') {

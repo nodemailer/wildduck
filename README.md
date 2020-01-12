@@ -7,18 +7,20 @@ including emails.
 
 WildDuck tries to follow Gmail in product design. If there's a decision to be made then usually the answer is to do whatever Gmail has done.
 
-> **NB!** WildDuck is currently in **beta**. Use it on your own responsibility.
+## Contact
+
+[![Gitter chat](https://badges.gitter.im/gitterHQ/gitter.png)](https://gitter.im/nodemailer/wildduck)
 
 ## Requirements
 
-*   _MongoDB_ to store all data
-*   _Redis_ for pubsub and counters
-*   _Node.js_ at least version 6.0.0
+-   _MongoDB_ to store all data
+-   _Redis_ for pubsub and counters
+-   _Node.js_ at least version 8.0.0
 
 **Optional requirements**
 
-*   Redis Sentinel for automatic Redis failover
-*   Build tools to install optional dependencies that need compiling
+-   Redis Sentinel for automatic Redis failover
+-   Build tools to install optional dependencies that need compiling
 
 WildDuck can be installed on any Node.js compatible platform.
 
@@ -44,11 +46,11 @@ If you have a blank VPS and a free domain name that you can point to that VPS th
 
 Install script installs and configures all required dependencies and services, including Let's Encrypt based certs, to run WildDuck as a mail server.
 
-Tested on a 10$ DigitalOcean Ubuntu 16.04 instance.
+Tested on a 10\$ DigitalOcean Ubuntu 16.04 instance.
 
 ![](https://cldup.com/TZoTfxPugm.png)
 
-*   Web interface at https://wildduck.email that uses WildDuck API
+-   Web interface at https://wildduck.email that uses WildDuck API
 
 ### Manual install
 
@@ -86,7 +88,7 @@ node server.js --config=/etc/wildduck.toml
 
 > For additional config options, see the _wild-config_ [documentation](https://github.com/nodemailer/wild-config).
 
-### Step 4\. Create an user account
+### Step 4\. Create a user account
 
 See [API Docs](https://api.wildduck.email/#api-Users-PostUser) for details about creating new user accounts
 
@@ -157,9 +159,9 @@ specific, so (at least in theory) it could be replaced with any object store.
 
 Here's a list of alternative email servers that also use a database for storing email messages:
 
-*   [DBMail](http://www.dbmail.org/) (MySQL, IMAP)
-*   [Archiveopteryx](http://archiveopteryx.org/) (PostgreSQL, IMAP)
-*   [ElasticInbox](http://www.elasticinbox.com/) (Cassandra, POP3)
+-   [DBMail](http://www.dbmail.org/) (MySQL, IMAP)
+-   [Archiveopteryx](http://archiveopteryx.org/) (PostgreSQL, IMAP)
+-   [ElasticInbox](http://www.elasticinbox.com/) (Cassandra, POP3)
 
 ### How does it work?
 
@@ -182,25 +184,25 @@ and the user continues to see the old state.
 
 WildDuck IMAP server supports the following IMAP standards:
 
-*   The entire **IMAP4rev1** suite with some minor differences from the spec. See below for [IMAP Protocol Differences](#imap-protocol-differences) for a complete
+-   The entire **IMAP4rev1** suite with some minor differences from the spec. See below for [IMAP Protocol Differences](#imap-protocol-differences) for a complete
     list
-*   **IDLE** ([RFC2177](https://tools.ietf.org/html/rfc2177)) – notfies about new and deleted messages and also about flag updates
-*   **CONDSTORE** ([RFC4551](https://tools.ietf.org/html/rfc4551)) and **ENABLE** ([RFC5161](https://tools.ietf.org/html/rfc5161)) – supports most of the spec,
+-   **IDLE** ([RFC2177](https://tools.ietf.org/html/rfc2177)) – notfies about new and deleted messages and also about flag updates
+-   **CONDSTORE** ([RFC4551](https://tools.ietf.org/html/rfc4551)) and **ENABLE** ([RFC5161](https://tools.ietf.org/html/rfc5161)) – supports most of the spec,
     except metadata stuff which is ignored
-*   **STARTTLS** ([RFC2595](https://tools.ietf.org/html/rfc2595))
-*   **NAMESPACE** ([RFC2342](https://tools.ietf.org/html/rfc2342)) – minimal support, just lists the single user namespace with hierarchy separator
-*   **UNSELECT** ([RFC3691](https://tools.ietf.org/html/rfc3691))
-*   **UIDPLUS** ([RFC4315](https://tools.ietf.org/html/rfc4315))
-*   **SPECIAL-USE** ([RFC6154](https://tools.ietf.org/html/rfc6154))
-*   **ID** ([RFC2971](https://tools.ietf.org/html/rfc2971))
-*   **MOVE** ([RFC6851](https://tools.ietf.org/html/rfc6851))
-*   **AUTHENTICATE PLAIN** ([RFC4959](https://tools.ietf.org/html/rfc4959)) and **SASL-IR**
-*   **APPENDLIMIT** ([RFC7889](https://tools.ietf.org/html/rfc7889)) – maximum global allowed message size is advertised in CAPABILITY listing
-*   **UTF8=ACCEPT** ([RFC6855](https://tools.ietf.org/html/rfc6855)) – this also means that WildDuck natively supports unicode email usernames. For example
+-   **STARTTLS** ([RFC2595](https://tools.ietf.org/html/rfc2595))
+-   **NAMESPACE** ([RFC2342](https://tools.ietf.org/html/rfc2342)) – minimal support, just lists the single user namespace with hierarchy separator
+-   **UNSELECT** ([RFC3691](https://tools.ietf.org/html/rfc3691))
+-   **UIDPLUS** ([RFC4315](https://tools.ietf.org/html/rfc4315))
+-   **SPECIAL-USE** ([RFC6154](https://tools.ietf.org/html/rfc6154))
+-   **ID** ([RFC2971](https://tools.ietf.org/html/rfc2971))
+-   **MOVE** ([RFC6851](https://tools.ietf.org/html/rfc6851))
+-   **AUTHENTICATE PLAIN** ([RFC4959](https://tools.ietf.org/html/rfc4959)) and **SASL-IR**
+-   **APPENDLIMIT** ([RFC7889](https://tools.ietf.org/html/rfc7889)) – maximum global allowed message size is advertised in CAPABILITY listing
+-   **UTF8=ACCEPT** ([RFC6855](https://tools.ietf.org/html/rfc6855)) – this also means that WildDuck natively supports unicode email usernames. For example
     [андрис@уайлддак.орг](mailto:андрис@уайлддак.орг) is a valid email address that is hosted by a test instance of WildDuck
-*   **QUOTA** ([RFC2087](https://tools.ietf.org/html/rfc2087)) – Quota size is global for an account, using a single quota root. Be aware that quota size does not
+-   **QUOTA** ([RFC2087](https://tools.ietf.org/html/rfc2087)) – Quota size is global for an account, using a single quota root. Be aware that quota size does not
     mean actual byte storage in disk, it is calculated as the sum of the [RFC822](https://tools.ietf.org/html/rfc822) sources of stored messages.
-*   **COMPRESS=DEFLATE** ([RFC4978](https://tools.ietf.org/html/rfc4978)) – Compress traffic between the client and the server
+-   **COMPRESS=DEFLATE** ([RFC4978](https://tools.ietf.org/html/rfc4978)) – Compress traffic between the client and the server
 
 WildDuck more or less passes the [ImapTest](https://www.imapwiki.org/ImapTest/TestFeatures) Stress Testing run. Common errors that arise in the test are
 unknown labels (WildDuck doesn't send unsolicited `FLAGS` updates even though it does send unsolicited `FETCH FLAGS` updates) and sometimes NO for `STORE`
@@ -218,12 +220,12 @@ clients.
 
 In addition to the required POP3 commands ([RFC1939](https://tools.ietf.org/html/rfc1939)) WildDuck supports the following extensions:
 
-*   **UIDL**
-*   **USER**
-*   **PASS**
-*   **SASL PLAIN**
-*   **PIPELINING**
-*   **TOP**
+-   **UIDL**
+-   **USER**
+-   **PASS**
+-   **SASL PLAIN**
+-   **PIPELINING**
+-   **TOP**
 
 #### POP3 command behaviors
 
@@ -248,7 +250,7 @@ If a messages is deleted by a client this message gets marked as Seen and moved 
 
 ## Message filtering
 
-WildDuck has built-in message filtering in LMTP server. This is somewhat similar to Sieve even though the filters are not scripts.
+WildDuck has built-in message filtering. This is somewhat similar to Sieve even though the filters are not scripts.
 
 Filters can be managed via the [WildDuck API](https://api.wildduck.email/#api-Filters).
 
@@ -265,12 +267,16 @@ This is a list of known differences from the IMAP specification. Listed differen
 5.  `CHARSET` argument for the `SEARCH` command is ignored (RFC3501 6.4.4.)
 6.  Metadata arguments for `SEARCH MODSEQ` are ignored (RFC7162 3.1.5.). You can define `<entry-name>` and `<entry-type-req>` values but these are not used for
     anything
-7.  `SEARCH TEXT` and `SEARCH BODY` both use MongoDB [$text index](https://docs.mongodb.com/v3.4/reference/operator/query/text/) against decoded plaintext
+7.  `SEARCH TEXT` and `SEARCH BODY` both use MongoDB [\$text index](https://docs.mongodb.com/v3.4/reference/operator/query/text/) against decoded plaintext
     version of the message. RFC3501 assumes that it should be a string match either against full message (`TEXT`) or body section (`BODY`).
 8.  What happens when FETCH is called for messages that were deleted in another session? _Not sure, need to check_
 9.  **Autoexpunge**, meaning that an EXPUNGE is called on background whenever a messages gets a `\Deleted` flag set. This is not in conflict with IMAP RFCs.
 
 Any other differences are most probably real bugs and unintentional.
+
+## Other Differences
+
+1. Messages retrieved from WildDuck might not be exact copies of messages that were initially stored. This mostly affects base64 encoded attachments and content in multipart mime nodes (eg. text like "This is a multi-part message in MIME format.")
 
 ## Testing
 
@@ -289,29 +295,40 @@ Use [WildDuck MTA](https://github.com/nodemailer/wildduck-mta) (which under the 
 [ZoneMTA-WildDuck](https://github.com/nodemailer/zonemta-wildduck) plugin).
 
 This gives you an outbound SMTP server that uses WildDuck accounts for authentication. The plugin authenticates user credentials and also rewrites headers if
-needed (if the header From: address does not match user address or aliases then it is rewritten). Additionally a copy of the sent message is uploaded to the
-Sent Mail folder. Local delivery is done directly to WildDuck LMTP.
+needed (if the header From: address does not match user address or aliases then it is rewritten).
 
 ## Inbound SMTP
 
-Use [Haraka](http://haraka.github.io/) with [queue/lmtp](http://haraka.github.io/manual/plugins/queue/lmtp.html) plugin to deliver messages to WildDuck and
-[haraka-plugins-wildduck](https://github.com/nodemailer/haraka-plugin-wildduck) to validate recipient addresses and quota usage against the WildDuck users
-database.
+Use [Haraka](http://haraka.github.io/) with [haraka-plugins-wildduck](https://github.com/nodemailer/haraka-plugin-wildduck) to validate recipient addresses and quota usage against the WildDuck users database and to store/filter messages.
+
+#### Spam detection
+
+Use [Rspamd plugin for Haraka](https://github.com/haraka/haraka-plugin-rspamd) in order to detect spam. WildDuck plugin detects Rspamd output and uses this information to send the message either to Inbox or Junk.
 
 ## Future considerations
 
-*   Optimize FETCH queries to load only partial data for BODY subparts
-*   Parse incoming message into the mime tree as a stream. Currently the entire message is buffered in memory before being parsed.
-*   Maybe allow some kind of message manipulation through plugins
-*   WildDuck does not plan to be the most feature-rich IMAP client in the world. Most IMAP extensions are useless because there aren't too many clients that are
+-   Optimize FETCH queries to load only partial data for BODY subparts
+-   Parse incoming message into the mime tree as a stream. Currently the entire message is buffered in memory before being parsed.
+-   Maybe allow some kind of message manipulation through plugins
+-   WildDuck does not plan to be the most feature-rich IMAP client in the world. Most IMAP extensions are useless because there aren't too many clients that are
     able to benefit from these extensions. There are a few extensions though that would make sense to be added to WildDuck:
 
-    *   IMAP4 non-synchronizing literals, LITERAL- ([RFC7888](https://tools.ietf.org/html/rfc7888)). Synchronized literals are needed for APPEND to check mailbox
+    -   IMAP4 non-synchronizing literals, LITERAL- ([RFC7888](https://tools.ietf.org/html/rfc7888)). Synchronized literals are needed for APPEND to check mailbox
         quota, small values could go with the non-synchronizing version.
-    *   LIST-STATUS ([RFC5819](https://tools.ietf.org/html/rfc5819))
-    *   _What else?_ (definitely not NOTIFY nor QRESYNC)
+    -   LIST-STATUS ([RFC5819](https://tools.ietf.org/html/rfc5819))
+    -   _What else?_ (definitely not NOTIFY nor QRESYNC)
 
 ## Operating WildDuck
+
+### Logging
+
+WildDuck sends gelf-formatted log messages to a Graylog server. Set `log.gelf.enabled=true` in [config](https://github.com/nodemailer/wildduck/blob/2019fd9db6bce1c3167f08e363ab4225b8c8a296/config/default.toml#L59-L66) to use it. Also make sure that the same Gelf settings are set for _zonemta-wildduck_ and _haraka-plugin-wildduck_ in order to get consistent logs about messages throughout the system.
+
+> Graylog logging replaces previously used 'messagelog' database collection
+
+### Import from maildir
+
+There is a tool to import emails from an existing maildir to WildDuck email database. See the tool [here](https://github.com/nodemailer/import-maildir)
 
 ### Sharding
 
@@ -326,13 +343,16 @@ sh.enableSharding('wildduck');
 sh.shardCollection('wildduck.messages', { mailbox: 1, uid: 1 });
 sh.shardCollection('wildduck.archived', { user: 1, _id: 1 });
 sh.shardCollection('wildduck.threads', { user: 'hashed' });
-sh.shardCollection('wildduck.messagelog', { id: 'hashed' });
 sh.shardCollection('wildduck.authlog', { user: 'hashed' });
 
 sh.enableSharding('attachments');
 // attachment _id is a sha256 hash of attachment contents
 sh.shardCollection('attachments.attachments.files', { _id: 'hashed' });
 sh.shardCollection('attachments.attachments.chunks', { files_id: 'hashed' });
+
+// storage _id is an ObjectID
+sh.shardCollection('attachments.storage.files', { _id: 'hashed' });
+sh.shardCollection('attachments.storage.chunks', { files_id: 'hashed' });
 ```
 
 ### Disk usage

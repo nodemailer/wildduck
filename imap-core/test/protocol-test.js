@@ -18,7 +18,11 @@ describe('IMAP Protocol integration tests', function() {
     let port = 9993;
 
     beforeEach(function(done) {
-        exec(__dirname + '/prepare.sh ' + config.dbs.dbname, { cwd: __dirname }, err => {
+        exec(__dirname + '/prepare.sh ' + config.dbs.dbname, { cwd: __dirname }, (err, stdout, stderr) => {
+            if (process.env.DEBUG_CONSOLE) {
+                console.log(stdout.toString());
+                console.log(stderr.toString());
+            }
             if (err) {
                 return done(err);
             }
@@ -323,6 +327,27 @@ describe('IMAP Protocol integration tests', function() {
             );
         });
 
+        it('should list all mailboxes using XLIST', function(done) {
+            let cmds = ['T1 LOGIN testuser pass', 'T2 XLIST "" "*"', 'T3 LOGOUT'];
+
+            testClient(
+                {
+                    commands: cmds,
+                    secure: true,
+                    port
+                },
+                function(resp) {
+                    resp = resp.toString();
+                    expect(resp.match(/^\* XLIST /gm).length).to.equal(6);
+                    expect(resp.indexOf('\r\n* XLIST (\\HasNoChildren \\Inbox) "/" "Inbox"\r\n') >= 0).to.be.true;
+                    expect(resp.indexOf('\r\n* XLIST (\\Noselect \\HasChildren) "/" "[Gmail]"\r\n') >= 0).to.be.true;
+                    expect(resp.indexOf('\r\n* XLIST (\\HasNoChildren \\Sent) "/" "[Gmail]/Sent Mail"\r\n') >= 0).to.be.true;
+                    expect(/^T2 OK/m.test(resp)).to.be.true;
+                    done();
+                }
+            );
+        });
+
         it('should list first level mailboxes', function(done) {
             let cmds = ['T1 LOGIN testuser pass', 'T2 LIST "" "%"', 'T3 LOGOUT'];
 
@@ -519,6 +544,8 @@ describe('IMAP Protocol integration tests', function() {
     });
 
     describe('APPEND', function() {
+        this.timeout(60000); // eslint-disable-line no-invalid-this
+
         it('should fail appending to nonexistent mailbox', function(done) {
             let message = Buffer.from('From: sender <sender@example.com>\r\nTo: receiver@example.com\r\nSubject: HELLO!\r\n\r\nWORLD!');
             let cmds = ['T1 LOGIN testuser pass', 'T2 APPEND zzz {' + message.length + '}\r\n' + message.toString('binary'), 'T3 LOGOUT'];
@@ -596,7 +623,8 @@ describe('IMAP Protocol integration tests', function() {
                 {
                     commands: cmds,
                     secure: true,
-                    port //debug: true
+                    //debug: true,
+                    port
                 },
                 function(resp) {
                     resp = resp.toString();
@@ -1185,7 +1213,6 @@ describe('IMAP Protocol integration tests', function() {
         describe('Multiple values', function() {
             it('should list mixed data', function(done) {
                 let cmds = ['T1 LOGIN testuser pass', 'T2 SELECT INBOX', 'T3 FETCH 1:* (UID BODYSTRUCTURE ENVELOPE)', 'T4 LOGOUT'];
-
                 testClient(
                     {
                         commands: cmds,
@@ -1297,7 +1324,7 @@ describe('IMAP Protocol integration tests', function() {
                         resp = resp.toString();
                         expect(
                             resp.indexOf(
-                                '\n* 3 FETCH (BODYSTRUCTURE (("MESSAGE" "RFC822" NIL NIL NIL "7BIT" 107 (NIL "" ((NIL NIL "andris" "kreata.ee")) ((NIL NIL "andris" "kreata.ee")) ((NIL NIL "andris" "kreata.ee")) ((NIL NIL "andris" "pangalink.net")) NIL NIL "<test1>" NIL) ("TEXT" "PLAIN" NIL NIL NIL "7BIT" 14 0 NIL NIL NIL NIL) 5 NIL NIL NIL NIL) ("MESSAGE" "RFC822" NIL NIL NIL "7BIT" 85 (NIL "" ((NIL NIL "andris" "kreata.ee")) ((NIL NIL "andris" "kreata.ee")) ((NIL NIL "andris" "kreata.ee")) ((NIL NIL "andris" "pangalink.net")) NIL NIL NIL NIL) ("TEXT" "PLAIN" NIL NIL NIL "7BIT" 14 0 NIL NIL NIL NIL) 4 NIL NIL NIL NIL) ("TEXT" "HTML" ("CHARSET" "utf-8") NIL NIL "QUOTED-PRINTABLE" 21 0 NIL NIL NIL NIL) "MIXED" ("BOUNDARY" "----mailcomposer-?=_1-1328088797399") NIL NIL NIL))\r\n'
+                                '\n* 3 FETCH (BODYSTRUCTURE (("MESSAGE" "RFC822" NIL NIL NIL "7BIT" 107 (NIL "" ((NIL NIL "andris" "kreata.ee")) ((NIL NIL "andris" "kreata.ee")) ((NIL NIL "andris" "kreata.ee")) ((NIL NIL "andris" "pangalink.net")) NIL NIL "<test1>" NIL) ("TEXT" "PLAIN" NIL NIL NIL "7BIT" 14 0 NIL NIL NIL NIL) 5 NIL NIL NIL NIL)("MESSAGE" "RFC822" NIL NIL NIL "7BIT" 85 (NIL "" ((NIL NIL "andris" "kreata.ee")) ((NIL NIL "andris" "kreata.ee")) ((NIL NIL "andris" "kreata.ee")) ((NIL NIL "andris" "pangalink.net")) NIL NIL NIL NIL) ("TEXT" "PLAIN" NIL NIL NIL "7BIT" 14 0 NIL NIL NIL NIL) 4 NIL NIL NIL NIL)("TEXT" "HTML" ("CHARSET" "utf-8") NIL NIL "QUOTED-PRINTABLE" 21 0 NIL NIL NIL NIL) "MIXED" ("BOUNDARY" "----mailcomposer-?=_1-1328088797399") NIL NIL NIL))\r\n'
                             ) >= 0
                         ).to.be.true;
                         expect(/^T3 OK/m.test(resp)).to.be.true;
@@ -1407,7 +1434,6 @@ describe('IMAP Protocol integration tests', function() {
                     },
                     function(resp) {
                         resp = resp.toString();
-
                         expect(
                             resp.indexOf(
                                 '\r\n* 3 FETCH (BODY[1] {107}\r\nMIME-Version: 1.0\r\nFrom: andris@kreata.ee\r\nTo: andris@pangalink.net\r\nIn-Reply-To: <test1>\r\n\r\nHello world 1!)\r\n'

@@ -38,6 +38,7 @@ describe('#parseMimeTree', function() {
 
         indexer.bodyQuery(parsed, '', (err, data) => {
             expect(err).to.not.exist;
+
             expect(data.toString('binary').replace(/\r?\n/g, '\n')).to.equal(fixtures.mimetorture.eml.toString('binary').replace(/\r?\n/g, '\n'));
             done();
         });

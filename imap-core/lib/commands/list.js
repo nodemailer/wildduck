@@ -6,6 +6,16 @@ const utf7 = require('utf7').imap;
 
 // tag LIST (SPECIAL-USE) "" "%" RETURN (SPECIAL-USE)
 
+//"\\Sent", "\\Trash", "\\Junk", "\\Drafts", "\\Archive"
+const XlistTags = new Map([
+    ['INBOX', '\\Inbox'],
+    ['\\Sent', '\\Sent'],
+    ['\\Trash', '\\Trash'],
+    ['\\Junk', '\\Spam'],
+    ['\\Drafts', '\\Drafts'],
+    ['\\Flagged', '\\Starred']
+]);
+
 module.exports = {
     state: ['Authenticated', 'Selected'],
 
@@ -43,6 +53,9 @@ module.exports = {
 
         let arrPos = 0;
 
+        let commandName = (command.command || '').toString().toUpperCase();
+        let isXlist = commandName === 'XLIST' ? true : false;
+
         // (SPECIAL-USE)
         if (Array.isArray(command.attributes[0])) {
             if (command.attributes[0].length) {
@@ -53,7 +66,7 @@ module.exports = {
                 ) {
                     filterSpecialUseFolders = true;
                 } else {
-                    return callback(new Error('Invalid argument provided for LIST'));
+                    return callback(new Error('Invalid argument provided for ' + commandName));
                 }
             }
             arrPos++;
@@ -79,10 +92,10 @@ module.exports = {
                 ) {
                     filterSpecialUseFlags = true;
                 } else {
-                    return callback(new Error('Invalid argument provided for LIST'));
+                    return callback(new Error('Invalid argument provided for ' + commandName));
                 }
             } else {
-                return callback(new Error('Invalid argument provided for LIST'));
+                return callback(new Error('Invalid argument provided for ' + commandName));
             }
         }
 
@@ -90,15 +103,31 @@ module.exports = {
         if (typeof this._server.onList !== 'function') {
             return callback(null, {
                 response: 'NO',
-                message: 'LIST not implemented'
+                message: commandName + ' not implemented'
             });
         }
 
         let query = imapTools.normalizeMailbox(reference + path, !this.acceptUTF8Enabled);
 
+        let logdata = {
+            short_message: '[LIST]',
+            _mail_action: 'list',
+            _query: query,
+            _user: this.session.user.id.toString(),
+            _sess: this.id
+        };
+
         let listResponse = (err, list) => {
             if (err) {
-                return callback(err);
+                logdata._error = err.message;
+                logdata._code = err.code;
+                logdata._response = err.response;
+                this._server.loggelf(logdata);
+
+                return callback(null, {
+                    response: 'NO',
+                    code: 'TEMPFAIL'
+                });
             }
 
             imapTools.filterFolders(imapTools.generateFolderListing(list), query).forEach(folder => {
@@ -112,7 +141,7 @@ module.exports = {
 
                 let response = {
                     tag: '*',
-                    command: 'LIST',
+                    command: commandName,
                     attributes: []
                 };
 
@@ -122,7 +151,26 @@ module.exports = {
                     flags = flags.concat(folder.flags || []);
                 }
 
-                flags = flags.concat(folder.specialUse || []);
+                let specialUseFlag = folder.specialUse;
+                if (specialUseFlag) {
+                    if (isXlist && XlistTags.has(specialUseFlag)) {
+                        // rewite flag to XLIST tag which is a bit different
+                        specialUseFlag = XlistTags.get(specialUseFlag);
+                    }
+                    flags.push(specialUseFlag);
+                }
+
+                let path = folder.path;
+                if (!this.acceptUTF8Enabled) {
+                    path = utf7.encode(path);
+                } else {
+                    path = Buffer.from(path);
+                }
+
+                if (isXlist && path === 'INBOX') {
+                    path = 'Inbox';
+                    flags.push(XlistTags.get('INBOX'));
+                }
 
                 response.attributes.push(
                     flags.map(flag => ({
@@ -132,12 +180,6 @@ module.exports = {
                 );
 
                 response.attributes.push('/');
-                let path = folder.path;
-                if (!this.acceptUTF8Enabled) {
-                    path = utf7.encode(path);
-                } else {
-                    path = Buffer.from(path);
-                }
                 response.attributes.push(path);
 
                 this.send(imapHandler.compiler(response));
@@ -152,7 +194,7 @@ module.exports = {
             // return delimiter only
             let response = {
                 tag: '*',
-                command: 'LIST',
+                command: commandName,
                 attributes: [
                     [
                         {

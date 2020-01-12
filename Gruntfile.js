@@ -1,5 +1,7 @@
 'use strict';
 
+process.env.NODE_ENV = 'test';
+
 module.exports = function(grunt) {
     // Project configuration.
     grunt.initConfig({
@@ -43,4 +45,5 @@ module.exports = function(grunt) {
 
     // Tasks
     grunt.registerTask('default', ['eslint', 'shell:server', 'wait:server', 'mochaTest', 'shell:server:kill']);
+    grunt.registerTask('testonly', ['shell:server', 'wait:server', 'mochaTest', 'shell:server:kill']);
 };

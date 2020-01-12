@@ -378,15 +378,20 @@ class TokenParser {
 
                 case 'LITERAL':
                     if (this.currentNode.started) {
+                        // only relevant if literals are not already parsed out from input
+
                         //if(imapFormalSyntax['CHAR8']().indexOf(chr) < 0){
                         if (chr === '\u0000') {
                             throw new Error('Unexpected \\x00 at position ' + (this.pos + i));
                         }
-                        this.currentNode.value += chr;
 
-                        if (this.currentNode.value.length >= this.currentNode.literalLength) {
+                        this.currentNode.chBuffer[this.currentNode.chPos++] = chr.charCodeAt(0);
+
+                        if (this.currentNode.chPos >= this.currentNode.literalLength) {
                             this.currentNode.endPos = this.pos + i;
                             this.currentNode.closed = true;
+                            this.currentNode.value = this.currentNode.chBuffer.toString('binary');
+                            this.currentNode.chBuffer = Buffer.alloc(0);
                             this.currentNode = this.currentNode.parentNode;
                             this.state = 'NORMAL';
                             checkSP();
@@ -410,8 +415,8 @@ class TokenParser {
                         } else {
                             throw new Error('Unexpected char at position ' + (this.pos + i));
                         }
+
                         this.currentNode.literalLength = Number(this.currentNode.literalLength);
-                        this.currentNode.started = true;
 
                         if (!this.currentNode.literalLength) {
                             // special case where literal content length is 0
@@ -421,6 +426,28 @@ class TokenParser {
                             this.currentNode = this.currentNode.parentNode;
                             this.state = 'NORMAL';
                             checkSP();
+                        } else if (this.options.literals) {
+                            // use the next precached literal values
+                            this.currentNode.value = this.options.literals.shift();
+
+                            // only APPEND arguments are kept as Buffers
+                            if ((this.parent.command || '').toString().toUpperCase() !== 'APPEND') {
+                                this.currentNode.value = this.currentNode.value.toString('binary');
+                            }
+
+                            this.currentNode.endPos = this.pos + i + this.currentNode.value.length;
+
+                            this.currentNode.started = false;
+                            this.currentNode.closed = true;
+                            this.currentNode = this.currentNode.parentNode;
+                            this.state = 'NORMAL';
+                            checkSP();
+                        } else {
+                            this.currentNode.started = true;
+                            // Allocate expected size buffer. Max size check is already performed
+                            // Maybe should use allocUnsafe instead?
+                            this.currentNode.chBuffer = Buffer.alloc(this.currentNode.literalLength);
+                            this.currentNode.chPos = 0;
                         }
                         break;
                     }

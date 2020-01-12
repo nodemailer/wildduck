@@ -1,531 +1,585 @@
 ---
 collections:
+    # create following collections with specific options
 
-# create following collections with specific options
+    - collection: messages
+      options:
+          storageEngine:
+              wiredTiger:
+                  configString: block_compressor=zlib
 
-- collection: messages
-  options:
-    storageEngine:
-      wiredTiger:
-        configString: block_compressor=zlib
+    - collection: attachments.files
+      type: gridfs
+      options:
+          storageEngine:
+              wiredTiger:
+                  configString: block_compressor=zlib
 
-- collection: attachments.files
-  type: gridfs
-  options:
-    storageEngine:
-      wiredTiger:
-        configString: block_compressor=zlib
-
-- collection: attachments.chunks
-  type: gridfs
-  options:
-    storageEngine:
-      wiredTiger:
-        configString: block_compressor=zlib
+    - collection: attachments.chunks
+      type: gridfs
+      options:
+          storageEngine:
+              wiredTiger:
+                  configString: block_compressor=zlib
 
 indexes:
-
-# Indexes for the user collection
-
-- collection: users
-  type: users # index applies to users database
-  index:
-    name: users
-    key:
-      username: 1
-- collection: users
-  type: users # index applies to users database
-  index:
-    name: users_dotless
-    unique: true
-    key:
-      unameview: 1
-
-- collection: users
-  type: users # index applies to users database
-  index:
-    name: show_new
-    key:
-      created: -1
-
-- collection: users
-  type: users # index applies to users database
-  index:
-    name: users_tags
-    key:
-      tagsview: 1
-    sparse: true
-
-# Indexes for the addresses collection
-- collection: addresses
-  type: users # index applies to users database
-  index:
-    name: address_dotless
-    unique: true
-    key:
-      addrview: 1
-
-- collection: addresses
-  type: users # index applies to users database
-  index:
-    name: address_tags
-    key:
-      tagsview: 1
-    sparse: true
-
-- collection: addresses
-  type: users # index applies to users database
-  index:
-    name: address_paging
-    key:
-      addrview: 1
-      _id: 1
-
-- collection: addresses
-  type: users # index applies to users database
-  index:
-    name: user
-    key:
-      user: 1
-
-# Indexes for the domainaliases collection
-- collection: domainaliases
-  type: users # index applies to users database
-  index:
-    name: domainalias
-    unique: true
-    key:
-      alias: 1
-
-- collection: domainaliases
-  type: users # index applies to users database
-  index:
-    name: domainlist
-    key:
-      domain: 1
-
-# Indexes for the application specific passwords collection
-
-- collection: asps
-  type: users # index applies to users database
-  index:
-    name: asps_user
-    key:
-      user: 1
-
-# Indexes for the authentication log collection
-- collection: authlog
-  type: users # index applies to users database
-  index:
-    name: user
-    key:
-      user: 1
-      _id: -1
-
-- collection: authlog
-  type: users # index applies to users database
-  index:
-    name: user_action
-    key:
-      user: 1
-      action: 1
-      _id: -1
-
-- collection: authlog
-  type: users # index applies to users database
-  index:
-    name: by_session
-    key:
-      session: 1
-    sparse: true
-
-- collection: authlog
-  type: users # index applies to users database
-  index:
-    name: by_ip
-    key:
-      ip: 1
-    sparse: true
-
-- collection: authlog
-  type: users # index applies to users database
-  index:
-    name: user_hashed
-    key:
-      user: hashed
-
-- collection: authlog
-  type: users # index applies to users database
-  index:
-    name: entry_autoexpire
-    # autoremove log entries after expire days
-    expireAfterSeconds: 0
-    key:
-      expires: 1
-
-# Indexes for the filters collection
-
-- collection: filters
-  index:
-    name: user
-    key:
-      user: 1
-
-# Indexes for the autoreply collection
-
-- collection: autoreplies
-  index:
-    name: autoreply
-    key:
-      user: 1
-      start: 1
-      end: 1
-
-# Indexes for the mailboxes collection
-# note: should mailboxes collection be sharded? could be by user
-- collection: mailboxes
-  index:
-    name: user_path
-    unique: true
-    key:
-      user: 1
-      path: 1
-
-- collection: mailboxes
-  index:
-    name: user_subscribed
-    key:
-      user: 1
-      subscribed: 1
-
-- collection: mailboxes
-  index:
-    name: find_by_type
-    key:
-      user: 1
-      specialUse: 1
-
-# Indexes for the messages collection
-
-- collection: messages
-  index:
-    # several message related queries include the shard key values
-    name: mailbox_uid_shard
-    key:
-      _id: 1
-      mailbox: 1
-      uid: 1
-
-- collection: messages
-  index:
-    name: user_messages_by_thread
-    key:
-      user: 1
-      thread: 1
-
-- collection: messages
-  index:
-    # use also as sharding key
-    name: mailbox_uid
-    key:
-      mailbox: 1
-      uid: 1
-      _id: 1
-
-- collection: messages
-  index:
-    name: mailbox_uid_reverse
-    key:
-      mailbox: 1
-      uid: -1
-      _id: -1
-
-- collection: messages
-  index:
-    name: mailbox_modseq_uid
-    key:
-      mailbox: 1
-      modseq: 1
-      uid: 1
-
-- collection: messages
-  index:
-    name: mailbox_flags
-    key:
-      mailbox: 1
-      flags: 1
-
-- collection: messages
-  index:
-    name: by_idate
-    key:
-      mailbox: 1
-      idate: 1
-
-- collection: messages
-  index:
-    name: by_idate_reverse
-    key:
-      mailbox: 1
-      idate: -1
-
-- collection: messages
-  index:
-    name: by_hdate
-    key:
-      mailbox: 1
-      hdate: 1
-      msgid: 1
-
-- collection: messages
-  index:
-    name: by_size
-    key:
-      mailbox: 1
-      size: 1
-
-- collection: messages
-  index:
-    name: by_headers
-    key:
-      mailbox: 1
-      headers.key: 1
-      headers.value: 1
-
-- collection: messages
-  index:
-    # there can be only one $text index per collection
-    name: fulltext
-    key:
-      user: 1
-      headers.value: text
-      text: text
-    partialFilterExpression:
-      searchable: true
-
-- collection: messages
-  index:
-    # in most cases we only care about unseen, not seen messages
-    name: mailbox_unseen_flag
-    key:
-      mailbox: 1
-      unseen: 1
-
-- collection: messages
-  index:
-    name: user_unseen_flag
-    key:
-      user: 1
-      unseen: 1
-    partialFilterExpression:
-      searchable: true
-
-- collection: messages
-  index:
-    # some mail agents list messages that do not have the \Deleted flag set
-    name: mailbox_undeleted_flag
-    key:
-      mailbox: 1
-      undeleted: 1
-
-- collection: messages
-  index:
-    name: mailbox_flagged_flag
-    key:
-      mailbox: 1
-      flagged: 1
-
-- collection: messages
-  index:
-    name: user_flagged_flag
-    key:
-      user: 1
-      flagged: 1
-
-- collection: messages
-  index:
-    name: user_searchable_flag
-    key:
-      user: 1
-      searchable: 1
-
-- collection: messages
-  index:
-    name: mailbox_draft_flag
-    key:
-      mailbox: 1
-      draft: 1
-
-- collection: messages
-  index:
-    name: has_attachment
-    key:
-      mailbox: 1
-      ha: 1
-
-- collection: messages
-  index:
-    # This filter finds all messages that are expired and must be deleted.
-    # Not sure about performance though as it is a global query
-    name: retention_time
-    partialFilterExpression:
-      exp: true
-    key:
-      exp: 1
-      rdate: 1
-
-# indexes for deleted messages
-- collection: archived
-  index:
-    name: user_messages
-    key:
-      user: 1
-      _id: 1
-
-# indexes for deleted messages
-- collection: archived
-  index:
-    name: user_messages_desc
-    key:
-      user: 1
-      _id: -1
-
-- collection: archived
-  index:
-    name: retention_time
-    partialFilterExpression:
-      exp: true
-    key:
-      exp: 1
-      rdate: 1
-
-# Indexes for the attachments collection
-# attachments.files collection should be sharded by _id (hash)
-# attachments.chunks collection should be sharded by files_id (hash)
-
-- collection: attachments.files
-  type: gridfs # index applies to gridfs database
-  index:
-    name: attachment_id_hashed
-    key:
-      _id: hashed
-
-- collection: attachments.files
-  type: gridfs # index applies to gridfs database
-  index:
-    name: related_attachments
-    key:
-      metadata.c: 1
-      metadata.m: 1
-
-- collection: attachments.chunks
-  type: gridfs # index applies to gridfs database
-  index:
-    # hashed index needed for sharding
-    name: chunks_shard
-    key:
-      files_id: hashed
-
-- collection: attachments.chunks
-  type: gridfs # index applies to gridfs database
-  index:
-    name: files_id_1_n_1
-    unique: true
-    key:
-      files_id: 1
-      n: 1
-
-# Indexes for the DKIm collection
-
-- collection: dkim
-  index:
-    name: dkim_paging
-    key:
-      domain: 1
-      _id: 1
-
-- collection: dkim
-  index:
-    name: dkim_primary
-    unique: true
-    key:
-      domain: 1
-
-# Indexes for the journal collection
-
-- collection: journal
-  index:
-    # this index is used to apply changes in a mailbox for IMAP session
-    name: mailbox_modseq
-    key:
-      mailbox: 1
-      modseq: 1
-
-- collection: journal
-  index:
-    # this index is used to send updates to a logged in webmail user
-    name: user_limit_id
-    key:
-      user: 1
-      _id: 1
-
-- collection: journal
-  index:
-    # this index is used to find the latest journal entry
-    name: user_limit_id_reverse
-    key:
-      user: 1
-      _id: -1
-
-- collection: journal
-  # delete journal entries after 3 hours
-  index:
-    name: journal_autoexpire
-    expireAfterSeconds: 10800
-    key:
-      created: 1
-
-# Indexes for the threads collection
-
-- collection: threads
-  index:
-    name: thread_shard
-    key:
-      user: hashed
-
-- collection: threads
-  index:
-    name: thread
-    key:
-      user: 1
-      ids: 1
-
-- collection: threads
-  index:
-    name: thread_autoexpire
-    # autoremove thread indexes after 180 days of inactivity
-    expireAfterSeconds: 15552000
-    key:
-      updated: 1
-
-# messagelog
-- collection: messagelog
-  index:
-    name: messagelog_id_hashed
-    key:
-      id: hashed
-
-- collection: messagelog
-  index:
-    name: messagelog_parent
-    key:
-      parentId: 1
-    sparse: true # only messages inserted by mail store have parentId set
-
-- collection: messagelog
-  index:
-    name: messagelog_autoexpire
-    # autoremove messagelog entries after 180 days
-    expireAfterSeconds: 15552000
-    key:
-      created: 1
+    # Indexes for the user collection
+
+    - collection: users
+      type: users # index applies to users database
+      index:
+          name: users
+          key:
+              username: 1
+    - collection: users
+      type: users # index applies to users database
+      index:
+          name: users_dotless
+          unique: true
+          key:
+              unameview: 1
+
+    - collection: users
+      type: users # index applies to users database
+      index:
+          name: show_new
+          key:
+              created: -1
+
+    - collection: users
+      type: users # index applies to users database
+      index:
+          name: users_tags
+          key:
+              tagsview: 1
+          sparse: true
+
+    # Indexes for the addresses collection
+    - collection: addresses
+      type: users # index applies to users database
+      index:
+          name: address_dotless
+          unique: true
+          key:
+              addrview: 1
+
+    - collection: addresses
+      type: users # index applies to users database
+      index:
+          name: address_tags
+          key:
+              tagsview: 1
+          sparse: true
+
+    - collection: addresses
+      type: users # index applies to users database
+      index:
+          name: address_paging
+          key:
+              addrview: 1
+              _id: 1
+
+    - collection: addresses
+      type: users # index applies to users database
+      index:
+          name: user
+          key:
+              user: 1
+
+    # Indexes for the domainaliases collection
+    - collection: domainaliases
+      type: users # index applies to users database
+      index:
+          name: domainalias
+          unique: true
+          key:
+              alias: 1
+
+    - collection: domainaliases
+      type: users # index applies to users database
+      index:
+          name: domainlist
+          key:
+              domain: 1
+
+    # Indexes for the application specific passwords collection
+
+    - collection: asps
+      type: users # index applies to users database
+      index:
+          name: asps_user
+          key:
+              user: 1
+
+    - collection: asps
+      type: users # index applies to users database
+      index:
+          name: entry_autoexpire
+          # autoremove log entries after expire seconds
+          expireAfterSeconds: 0
+          key:
+              expires: 1
+
+    # Indexes for the authentication log collection
+    - collection: authlog
+      type: users # index applies to users database
+      index:
+          name: user
+          key:
+              user: 1
+              _id: -1 # sort newer first
+
+    - collection: authlog
+      type: users # index applies to users database
+      index:
+          name: insert
+          key:
+              user: 1
+              created: 1
+              key: 1
+
+    - collection: authlog
+      type: users # index applies to users database
+      index:
+          name: user_by_ip
+          key:
+              user: 1
+              ip: 1 # List events for user by IP
+              _id: -1
+          partialFilterExpression:
+              ip: true
+
+    - collection: authlog
+      type: users # index applies to users database
+      index:
+          name: by_ip
+          key:
+              ip: 1 # All events from this IP
+          sparse: true
+
+    - collection: authlog
+      type: users # index applies to users database
+      index:
+          name: user_hashed
+          key:
+              user: hashed # sharding
+
+    - collection: authlog
+      type: users # index applies to users database
+      index:
+          name: entry_autoexpire
+          # autoremove log entries after expire days
+          expireAfterSeconds: 0
+          key:
+              expires: 1
+
+    # Indexes for the filters collection
+
+    - collection: filters
+      index:
+          name: user
+          key:
+              user: 1
+
+    # Indexes for the autoreply collection
+
+    - collection: autoreplies
+      index:
+          name: autoreply
+          key:
+              user: 1
+              start: 1
+              end: 1
+
+    # Indexes for the mailboxes collection
+    # note: should mailboxes collection be sharded? could be by user
+    - collection: mailboxes
+      index:
+          name: user_path
+          unique: true
+          key:
+              user: 1
+              path: 1
+
+    - collection: mailboxes
+      index:
+          name: user_subscribed
+          key:
+              user: 1
+              subscribed: 1
+
+    - collection: mailboxes
+      index:
+          name: find_by_type
+          key:
+              user: 1
+              specialUse: 1
+
+    # Indexes for the messages collection
+
+    - collection: messages
+      index:
+          # several message related queries include the shard key values
+          name: mailbox_uid_shard
+          key:
+              _id: 1
+              mailbox: 1
+              uid: 1
+
+    - collection: messages
+      index:
+          name: user_messages_by_thread
+          key:
+              user: 1
+              thread: 1
+
+    - collection: messages
+      index:
+          # use also as sharding key
+          name: mailbox_uid
+          key:
+              mailbox: 1
+              uid: 1
+              _id: 1
+
+    - collection: messages
+      index:
+          name: mailbox_uid_reverse
+          key:
+              mailbox: 1
+              uid: -1
+              _id: -1
+
+    - collection: messages
+      index:
+          name: mailbox_modseq_uid
+          key:
+              mailbox: 1
+              modseq: 1
+              uid: 1
+
+    - collection: messages
+      index:
+          name: mailbox_flags
+          key:
+              mailbox: 1
+              flags: 1
+
+    - collection: messages
+      index:
+          name: by_idate
+          key:
+              mailbox: 1
+              idate: 1
+
+    - collection: messages
+      index:
+          # index used by api pagination
+          name: by_idate_reverse_uid
+          key:
+              mailbox: 1
+              idate: -1
+              _id: -1
+
+    - collection: messages
+      index:
+          name: by_hdate
+          key:
+              mailbox: 1
+              hdate: 1
+              msgid: 1
+
+    - collection: messages
+      index:
+          name: by_size
+          key:
+              mailbox: 1
+              size: 1
+
+    - collection: messages
+      index:
+          name: by_headers
+          key:
+              mailbox: 1
+              headers.key: 1
+              headers.value: 1
+
+    - collection: messages
+      index:
+          # there can be only one $text index per collection
+          name: fulltext
+          key:
+              user: 1
+              headers.value: text
+              text: text
+          partialFilterExpression:
+              searchable: true
+
+    - collection: messages
+      index:
+          # in most cases we only care about unseen, not seen messages
+          name: mailbox_unseen_flag
+          key:
+              mailbox: 1
+              unseen: 1
+
+    - collection: messages
+      index:
+          name: user_unseen_flag
+          key:
+              user: 1
+              unseen: 1
+          partialFilterExpression:
+              searchable: true
+
+    - collection: messages
+      index:
+          # some mail agents list messages that do not have the \Deleted flag set
+          name: mailbox_undeleted_flag
+          key:
+              mailbox: 1
+              undeleted: 1
+
+    - collection: messages
+      index:
+          name: mailbox_flagged_flag
+          key:
+              mailbox: 1
+              flagged: 1
+
+    - collection: messages
+      index:
+          name: user_flagged_flag
+          key:
+              user: 1
+              flagged: 1
+
+    - collection: messages
+      index:
+          name: user_searchable_flag
+          key:
+              user: 1
+              searchable: 1
+
+    - collection: messages
+      index:
+          name: mailbox_draft_flag
+          key:
+              mailbox: 1
+              draft: 1
+
+    - collection: messages
+      index:
+          name: has_attachment
+          key:
+              mailbox: 1
+              ha: 1
+
+    - collection: messages
+      index:
+          # This filter finds all messages that are expired and must be deleted.
+          # Not sure about performance though as it is a global query
+          name: retention_time
+          partialFilterExpression:
+              exp: true
+          key:
+              exp: 1
+              rdate: 1
+
+    # indexes for deleted messages
+    - collection: archived
+      index:
+          name: user_messages
+          key:
+              user: 1
+              _id: 1
+
+    # indexes for deleted messages
+    - collection: archived
+      index:
+          name: user_messages_desc
+          key:
+              user: 1
+              _id: -1
+
+    - collection: archived
+      index:
+          name: user_messages_archived
+          key:
+              user: 1
+              archived: 1
+
+    - collection: archived
+      index:
+          name: retention_time
+          partialFilterExpression:
+              exp: true
+          key:
+              exp: 1
+              rdate: 1
+
+    # Indexes for the storage collection
+    # storage.files collection should be sharded by _id (hash)
+    # storage.chunks collection should be sharded by files_id (hash)
+
+    - collection: storage.files
+      type: gridfs # index applies to gridfs database
+      index:
+          name: storage_id_hashed
+          key:
+              _id: hashed
+
+    - collection: storage.chunks
+      type: gridfs # index applies to gridfs database
+      index:
+          # hashed index needed for sharding
+          name: chunks_shard
+          key:
+              files_id: hashed
+
+    - collection: storage.files
+      type: gridfs # index applies to gridfs database
+      index:
+          name: user_files
+          key:
+              metadata.user: 1
+              filename: 1
+
+    # Indexes for the attachments collection
+    # attachments.files collection should be sharded by _id (hash)
+    # attachments.chunks collection should be sharded by files_id (hash)
+
+    - collection: attachments.files
+      type: gridfs # index applies to gridfs database
+      index:
+          name: attachment_id_hashed
+          key:
+              _id: hashed
+
+    - collection: attachments.files
+      type: gridfs # index applies to gridfs database
+      index:
+          name: related_attachments
+          key:
+              metadata.c: 1
+              metadata.m: 1
+
+    - collection: attachments.chunks
+      type: gridfs # index applies to gridfs database
+      index:
+          # hashed index needed for sharding
+          name: chunks_shard
+          key:
+              files_id: hashed
+
+    - collection: attachments.chunks
+      type: gridfs # index applies to gridfs database
+      index:
+          name: files_id_1_n_1
+          unique: true
+          key:
+              files_id: 1
+              n: 1
+
+    # Indexes for the DKIm collection
+
+    - collection: dkim
+      index:
+          name: dkim_paging
+          key:
+              domain: 1
+              _id: 1
+
+    - collection: dkim
+      index:
+          name: dkim_primary
+          unique: true
+          key:
+              domain: 1
+
+    # Indexes for the journal collection
+
+    - collection: journal
+      index:
+          # this index is used to apply changes in a mailbox for IMAP session
+          name: mailbox_modseq
+          key:
+              mailbox: 1
+              modseq: 1
+
+    - collection: journal
+      index:
+          # this index is used to send updates to a logged in webmail user
+          name: user_limit_id
+          key:
+              user: 1
+              _id: 1
+
+    - collection: journal
+      index:
+          # this index is used to find the latest journal entry
+          name: user_limit_id_reverse
+          key:
+              user: 1
+              _id: -1
+
+    - collection: journal
+      # delete journal entries after 3 hours
+      index:
+          name: journal_autoexpire
+          expireAfterSeconds: 10800
+          key:
+              created: 1
+
+    # Indexes for the threads collection
+
+    - collection: threads
+      index:
+          name: thread_shard
+          key:
+              user: hashed
+
+    - collection: threads
+      index:
+          name: thread
+          key:
+              user: 1
+              ids: 1
+
+    - collection: threads
+      index:
+          name: thread_autoexpire
+          # autoremove thread indexes after 180 days of inactivity
+          expireAfterSeconds: 15552000
+          key:
+              updated: 1
+
+    - collection: tasks
+      index:
+          name: task
+          key:
+              locked: 1
+              lockedUntil: 1
+
+    - collection: audit.files
+      type: gridfs # index applies to gridfs database
+      index:
+          name: audit_id_hashed
+          key:
+              _id: hashed
+
+    - collection: audit.chunks
+      type: gridfs # index applies to gridfs database
+      index:
+          # hashed index needed for sharding
+          name: audit_shard
+          key:
+              files_id: hashed
+
+    - collection: audit.files
+      type: gridfs # index applies to gridfs database
+      index:
+          name: audit_files
+          key:
+              metadata.audit: 1
+              metadata.date: 1

@@ -2,7 +2,6 @@
 
 const stream = require('stream');
 const PassThrough = stream.PassThrough;
-const linkify = require('linkify-it')();
 const BodyStructure = require('./body-structure');
 const createEnvelope = require('./create-envelope');
 const parseMimeTree = require('./parse-mime-tree');
@@ -11,16 +10,12 @@ const libqp = require('libqp');
 const libbase64 = require('libbase64');
 const iconv = require('iconv-lite');
 const he = require('he');
-const tlds = require('tlds');
 const htmlToText = require('html-to-text');
 const crypto = require('crypto');
 
-linkify
-    .tlds(tlds) // Reload with full tlds list
-    .tlds('onion', true) // Add unofficial `.onion` domain
-    .add('git:', 'http:') // Add `git:` ptotocol as "alias"
-    .add('ftp:', null) // Disable `ftp:` ptotocol
-    .set({ fuzzyIP: true });
+const MAX_HTML_PARSE_LENGTH = 2 * 1024 * 1024; // do not parse HTML messages larger than 2MB to plaintext
+
+const NEWLINE = Buffer.from('\r\n');
 
 class Indexer {
     constructor(options) {
@@ -28,6 +23,12 @@ class Indexer {
         this.fetchOptions = this.options.fetchOptions || {};
 
         this.attachmentStorage = this.options.attachmentStorage;
+
+        if (this.attachmentStorage) {
+            this.getAttachment = async (...args) => await this.attachmentStorage.get(...args);
+        } else {
+            this.getAttachment = async () => ({});
+        }
 
         // create logger
         this.logger = this.options.logger || {
@@ -67,7 +68,7 @@ class Indexer {
 
             let finalize = () => {
                 if (node.boundary) {
-                    append('--' + node.boundary + '--\r\n');
+                    append(`--${node.boundary}--\r\n`);
                 }
 
                 append();
@@ -83,7 +84,7 @@ class Indexer {
             }
 
             if (node.boundary) {
-                append('--' + node.boundary);
+                append(`--${node.boundary}`);
             }
 
             if (Array.isArray(node.childNodes)) {
@@ -95,7 +96,7 @@ class Indexer {
                     let childNode = node.childNodes[pos++];
                     walk(childNode, () => {
                         if (pos < node.childNodes.length) {
-                            append('--' + node.boundary);
+                            append(`--${node.boundary}`);
                         }
                         return processChildNodes();
                     });
@@ -116,142 +117,258 @@ class Indexer {
      *
      * @param  {Object} mimeTree Parsed mimeTree object
      * @param  {Boolean} textOnly If true, do not include the message header in the response
+     * @param  {Object} [options]
      * @param  {Boolean} skipExternal If true, do not include the external nodes
      * @return {Stream} Message stream
      */
-    rebuild(mimeTree, textOnly, skipExternal) {
-        let res = new PassThrough();
-        let first = true;
-        let root = true;
-        let remainder = false;
+    rebuild(mimeTree, textOnly, options) {
+        options = options || {};
 
+        let output = new PassThrough();
         let aborted = false;
 
-        // make sure that mixed body + mime gets rebuilt correctly
-        let append = (data, force) => {
-            if (Array.isArray(data)) {
-                data = data.join('\r\n');
+        let startFrom = Math.max(Number(options.startFrom) || 0, 0);
+        let maxLength = Math.max(Number(options.maxLength) || 0, 0);
+
+        output.isLimited = !!(options.startFrom || options.maxLength);
+
+        let curWritePos = 0;
+        let writeLength = 0;
+
+        let getCurrentBounds = size => {
+            if (curWritePos + size < startFrom) {
+                curWritePos += size;
+                return false;
             }
-            if (remainder || data || force) {
-                if (!first) {
-                    res.write('\r\n');
+
+            if (maxLength && writeLength >= maxLength) {
+                writeLength += size;
+                return false;
+            }
+
+            let startFromBounds = curWritePos < startFrom ? startFrom - curWritePos : 0;
+
+            let maxLengthBounds = maxLength ? maxLength - writeLength : 0;
+            maxLengthBounds = Math.min(size - startFromBounds, maxLengthBounds);
+            if (maxLengthBounds < 0) {
+                maxLengthBounds = 0;
+            }
+
+            return {
+                startFrom: startFromBounds,
+                maxLength: maxLengthBounds
+            };
+        };
+
+        let write = async chunk => {
+            if (!chunk || !chunk.length) {
+                return;
+            }
+
+            if (curWritePos >= startFrom) {
+                // already allowed to write
+                curWritePos += chunk.length;
+            } else if (curWritePos + chunk.length <= startFrom) {
+                // not yet ready to write, skip
+                curWritePos += chunk.length;
+                return;
+            } else {
+                // chunk is in the middle
+                let useBytes = curWritePos + chunk.length - startFrom;
+                curWritePos += chunk.length;
+                chunk = chunk.slice(-useBytes);
+            }
+
+            if (maxLength) {
+                if (writeLength >= maxLength) {
+                    // can not write anymore
+                    return;
+                } else if (writeLength + chunk.length <= maxLength) {
+                    // can still write chunks, so do nothing
+                    writeLength += chunk.length;
                 } else {
-                    first = false;
-                }
-
-                if (remainder && remainder.length) {
-                    res.write(remainder);
-                }
-
-                if (data) {
-                    res.write(Buffer.from(data, 'binary'));
+                    // chunk is in the middle
+                    let allowedBytes = maxLength - writeLength;
+                    writeLength += chunk.length;
+                    chunk = chunk.slice(0, allowedBytes);
                 }
             }
-            remainder = false;
+
+            if (output.write(chunk) === false) {
+                await new Promise(resolve => {
+                    output.once('drain', resolve());
+                });
+            }
         };
 
-        let walk = (node, next) => {
-            if (aborted) {
-                return next();
-            }
+        let processStream = async () => {
+            let firstLine = true;
+            let isRootNode = true;
+            let remainder = false;
 
-            if (!textOnly || !root) {
-                append(formatHeaders(node.header).join('\r\n') + '\r\n');
-            }
+            // make sure that mixed body + mime gets rebuilt correctly
+            let emit = async (data, force) => {
+                if (remainder || data || force) {
+                    if (!firstLine) {
+                        await write(NEWLINE);
+                    } else {
+                        firstLine = false;
+                    }
 
-            root = false;
-            if (Buffer.isBuffer(node.body)) {
-                // node Buffer
-                remainder = node.body;
-            } else if (node.body && node.body.buffer) {
-                // mongodb Binary
-                remainder = node.body.buffer;
-            } else if (typeof node.body === 'string') {
-                // binary string
-                remainder = Buffer.from(node.body, 'binary');
-            } else {
-                // whatever
-                remainder = node.body;
-            }
+                    if (remainder && remainder.length) {
+                        await write(remainder);
+                    }
 
-            let finalize = () => {
+                    if (data) {
+                        await write(Buffer.isBuffer(data) ? data : Buffer.from(data, 'binary'));
+                    }
+                }
+                remainder = false;
+            };
+
+            let walk = async node => {
+                if (aborted) {
+                    return;
+                }
+
+                if (!textOnly || !isRootNode) {
+                    await emit(formatHeaders(node.header).join('\r\n') + '\r\n');
+                }
+
+                isRootNode = false;
+                if (Buffer.isBuffer(node.body)) {
+                    // node Buffer
+                    remainder = node.body;
+                } else if (node.body && node.body.buffer) {
+                    // mongodb Binary
+                    remainder = node.body.buffer;
+                } else if (typeof node.body === 'string') {
+                    // binary string
+                    remainder = Buffer.from(node.body, 'binary');
+                } else {
+                    // whatever
+                    remainder = node.body;
+                }
+
                 if (node.boundary) {
-                    append('--' + node.boundary + '--\r\n');
+                    // this is a multipart node, so start with initial boundary before continuing
+                    await emit(`--${node.boundary}`);
+                } else if (node.attachmentId && !options.skipExternal) {
+                    await emit(false, true); // force newline between header and contents
+
+                    let attachmentId = node.attachmentId;
+                    if (mimeTree.attachmentMap && mimeTree.attachmentMap[node.attachmentId]) {
+                        attachmentId = mimeTree.attachmentMap[node.attachmentId];
+                    }
+                    let attachmentData = await this.getAttachment(attachmentId);
+
+                    let attachmentSize = node.size;
+                    // we need to calculate expected length as the original does not apply anymore
+                    // original size matches input data but decoding/encoding is not 100% lossless so we need to
+                    // calculate the actual possible output size
+                    if (attachmentData.metadata && attachmentData.metadata.decoded && attachmentData.metadata.lineLen) {
+                        let b64Size = Math.ceil(attachmentData.length / 3) * 4;
+                        let lineBreaks = Math.floor(b64Size / attachmentData.metadata.lineLen);
+
+                        // extra case where base64 string ends at line end
+                        // in this case we do not need the ending line break
+                        if (lineBreaks && b64Size % attachmentData.metadata.lineLen === 0) {
+                            lineBreaks--;
+                        }
+
+                        attachmentSize = b64Size + lineBreaks * 2;
+                    }
+
+                    let readBounds = getCurrentBounds(attachmentSize);
+                    if (readBounds) {
+                        // move write pointer ahead by skipped base64 bytes
+                        let bytes = Math.min(readBounds.startFrom, node.size);
+                        curWritePos += bytes;
+
+                        // only process attachment if we are reading inside existing bounds
+                        if (node.size > readBounds.startFrom) {
+                            let attachmentStream = this.attachmentStorage.createReadStream(attachmentId, attachmentData, readBounds);
+
+                            await new Promise((resolve, reject) => {
+                                attachmentStream.once('error', err => {
+                                    reject(err);
+                                });
+
+                                attachmentStream.once('end', () => {
+                                    // update read offset counters
+
+                                    let bytes = 'outputBytes' in attachmentStream ? attachmentStream.outputBytes : readBounds.maxLength;
+
+                                    if (bytes) {
+                                        curWritePos += bytes;
+                                        if (maxLength) {
+                                            writeLength += bytes;
+                                        }
+                                    }
+                                    resolve();
+                                });
+
+                                attachmentStream.pipe(
+                                    output,
+                                    {
+                                        end: false
+                                    }
+                                );
+                            });
+                        }
+                    }
                 }
 
-                append();
-                next();
+                if (Array.isArray(node.childNodes)) {
+                    let pos = 0;
+                    for (let childNode of node.childNodes) {
+                        await walk(childNode);
+
+                        if (aborted) {
+                            return;
+                        }
+
+                        if (pos++ < node.childNodes.length - 1) {
+                            // emit boundary unless last item
+                            await emit(`--${node.boundary}`);
+                        }
+                    }
+                }
+
+                if (node.boundary) {
+                    await emit(`--${node.boundary}--\r\n`);
+                }
+
+                await emit();
             };
 
-            if (node.boundary) {
-                append('--' + node.boundary);
-            } else if (node.attachmentId && !skipExternal) {
-                append(false, true); // force newline between header and contents
+            await walk(mimeTree);
 
-                let attachmentId = node.attachmentId;
-                if (mimeTree.attachmentMap && mimeTree.attachmentMap[node.attachmentId]) {
-                    attachmentId = mimeTree.attachmentMap[node.attachmentId];
-                }
-
-                return this.attachmentStorage.get(attachmentId, (err, attachmentData) => {
-                    if (err) {
-                        return res.emit('error', err);
-                    }
-
-                    let attachmentStream = this.attachmentStorage.createReadStream(attachmentId, attachmentData);
-
-                    attachmentStream.once('error', err => {
-                        // res.errored = err;
-                        res.emit('error', err);
-                    });
-
-                    attachmentStream.once('end', () => finalize());
-
-                    attachmentStream.pipe(res, {
-                        end: false
-                    });
-                });
+            if (mimeTree.lineCount > 1) {
+                await write(NEWLINE);
             }
 
-            let pos = 0;
-            let processChildNodes = () => {
-                if (pos >= node.childNodes.length) {
-                    return finalize();
-                }
-                let childNode = node.childNodes[pos++];
-                walk(childNode, () => {
-                    if (aborted) {
-                        return next();
-                    }
-
-                    if (pos < node.childNodes.length) {
-                        append('--' + node.boundary);
-                    }
-                    setImmediate(processChildNodes);
-                });
-            };
-
-            if (Array.isArray(node.childNodes)) {
-                processChildNodes();
-            } else {
-                finalize();
-            }
+            output.end();
         };
 
-        setImmediate(
-            walk.bind(null, mimeTree, () => {
-                res.end();
-            })
-        );
+        setImmediate(() => {
+            processStream()
+                .then(() => {
+                    output.end();
+                })
+                .catch(err => {
+                    output.emit('error', err);
+                });
+        });
 
         // if called then stops resolving rest of the message
-        res.abort = () => {
+        output.abort = () => {
             aborted = true;
         };
 
         return {
             type: 'stream',
-            value: res,
+            value: output,
             expectedLength: this.getSize(mimeTree, textOnly)
         };
     }
@@ -353,8 +470,10 @@ class Indexer {
                         htmlContent.push(content.trim());
                         if (!alternative) {
                             try {
-                                let text = htmlToText.fromString(content);
-                                textContent.push(text.trim());
+                                if (content && content.length < MAX_HTML_PARSE_LENGTH) {
+                                    let text = htmlToText.fromString(content);
+                                    textContent.push(text.trim());
+                                }
                             } catch (E) {
                                 // ignore
                             }
@@ -370,7 +489,7 @@ class Indexer {
 
             // remove attachments and very large text nodes from the mime tree
             if (!isMultipart && node.body && node.body.length && (!isInlineText || node.size > 300 * 1024)) {
-                let attachmentId = 'ATT' + leftPad(++idcount, '0', 5);
+                let attachmentId = `ATT${leftPad(++idcount, '0', 5)}`;
 
                 let filename =
                     (node.parsedHeader['content-disposition'] &&
@@ -409,8 +528,8 @@ class Indexer {
                     body: node.body
                 });
 
-                // do not include text content, multipart elements and embedded messages in the attachment list
-                if (!isInlineText && !(contentType === 'message/rfc822' && (!disposition || disposition === 'inline'))) {
+                // do not include text content and multipart elements in the attachment list
+                if (!isInlineText && !/^(multipart)\//i.test(contentType)) {
                     // list in the attachments array
                     maildata.attachments.push({
                         id: attachmentId,
@@ -446,7 +565,7 @@ class Indexer {
             str.replace(/\bcid:([^\s"']+)/g, (match, cid) => {
                 if (cidMap.has(cid)) {
                     let attachment = cidMap.get(cid);
-                    return 'attachment:' + attachment.id.toString();
+                    return `attachment:${attachment.id.toString()}`;
                 }
                 return match;
             });
@@ -494,7 +613,7 @@ class Indexer {
         }
 
         let newlines = Math.floor(b64size / 78);
-        return Math.ceil((b64size - newlines * 2) / 4 * 3);
+        return Math.ceil(((b64size - newlines * 2) / 4) * 3);
     }
 
     /**
@@ -618,10 +737,13 @@ class Indexer {
      *
      * @param  {Object} mimeTree Parsed mimeTree object
      * @param  {Object} selector What data to return
-     * @param  {Boolean} skipExternal If true, do not include the external nodes
+     * @param  {Object} [options]
+     * @param  {Boolean} options.skipExternal If true, do not include the external nodes
      * @return {String} node contents
      */
-    getContents(mimeTree, selector, skipExternal) {
+    getContents(mimeTree, selector, options) {
+        options = options || {};
+
         let node = mimeTree;
         if (typeof selector === 'string') {
             selector = {
@@ -646,11 +768,11 @@ class Indexer {
                 if (!selector.path) {
                     // BODY[]
                     node.attachmentMap = mimeTree.attachmentMap;
-                    return this.rebuild(node, false, skipExternal);
+                    return this.rebuild(node, false, options);
                 }
                 // BODY[1.2.3]
                 node.attachmentMap = mimeTree.attachmentMap;
-                return this.rebuild(node, true, skipExternal);
+                return this.rebuild(node, true, options);
 
             case 'header':
                 if (!selector.path) {
@@ -707,11 +829,11 @@ class Indexer {
                 if (!selector.path) {
                     // BODY[TEXT] mail body without headers
                     node.attachmentMap = mimeTree.attachmentMap;
-                    return this.rebuild(node, true, skipExternal);
+                    return this.rebuild(node, true, options);
                 } else if (node.message) {
                     // BODY[1.2.3.TEXT] embedded message/rfc822 body without headers
                     node.attachmentMap = mimeTree.attachmentMap;
-                    return this.rebuild(node.message, true, skipExternal);
+                    return this.rebuild(node.message, true, options);
                 }
 
                 return '';
@@ -735,42 +857,7 @@ function textToHtml(str) {
         .encode(str, {
             useNamedReferences: true
         });
-    try {
-        if (linkify.pretest(encoded)) {
-            let links = linkify.match(encoded) || [];
-            let result = [];
-            let last = 0;
-            links.forEach(link => {
-                if (last < link.index) {
-                    result.push(encoded.slice(last, link.index));
-                }
-
-                let url = he
-                    // encode special chars
-                    .encode(link.url, {
-                        useNamedReferences: true
-                    });
-
-                let text = he
-                    // encode special chars
-                    .encode(link.text, {
-                        useNamedReferences: true
-                    });
-
-                result.push(`<a href="${url}">${text}</a>`);
-
-                last = link.lastIndex;
-            });
-
-            result.push(encoded.slice(last));
-
-            encoded = result.join('');
-        }
-    } catch (E) {
-        // failed, don't linkify
-    }
-    let text =
-        '<p>' +
+    let text = `<p>${
         encoded
             .replace(/\r?\n/g, '\n')
             .trim() // normalize line endings
@@ -778,8 +865,8 @@ function textToHtml(str) {
             .trim() // trim empty line endings
             .replace(/\n\n+/g, '</p><p>')
             .trim() // insert <p> to multiple linebreaks
-            .replace(/\n/g, '<br/>') + // insert <br> to single linebreaks
-        '</p>';
+            .replace(/\n/g, '<br/>') // insert <br> to single linebreaks
+    }</p>`;
 
     return text;
 }

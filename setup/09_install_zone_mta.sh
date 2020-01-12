@@ -60,13 +60,7 @@ enabled=\"sender\"
 secret=\"$ZONEMTA_SECRET\"
 algo=\"md5\"" > /etc/zone-mta/plugins/loop-breaker.toml
 
-echo '["modules/zonemta-onion"]
-enabled=["sender"]
-["modules/zonemta-onion".proxy]
-host="127.0.0.1"
-port=9050' > /etc/zone-mta/plugins/onion.toml
-
-echo "[\"wildduck\"]
+echo "[wildduck]
 enabled=[\"receiver\", \"sender\"]
 
 # which interfaces this plugin applies to
@@ -81,7 +75,7 @@ authlogExpireDays=30
 
 # SRS settings for forwarded emails
 
-[srs]
+[wildduck.srs]
     # Handle rewriting of forwarded emails
     enabled=true
     # SRS secret value. Must be the same as in the MX side
@@ -89,7 +83,7 @@ authlogExpireDays=30
     # SRS domain, must resolve back to MX
     rewriteDomain=\"$MAILDOMAIN\"
 
-[dkim]
+[wildduck.dkim]
 # share config with WildDuck installation
 # @include \"/etc/wildduck/dkim.toml\"
 " > /etc/zone-mta/plugins/wildduck.toml
@@ -110,7 +104,6 @@ DKIM_JSON=`DOMAIN="$MAILDOMAIN" SELECTOR="$DKIM_SELECTOR" node -e 'console.log(J
 
 cd /opt/zone-mta
 npm install --unsafe-perm --production
-npm install zonemta-onion --save
 
 cd /opt/zone-mta/plugins/wildduck
 npm install --unsafe-perm --production

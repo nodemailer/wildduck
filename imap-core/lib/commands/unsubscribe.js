@@ -40,9 +40,24 @@ module.exports = {
             });
         }
 
+        let logdata = {
+            short_message: '[UNSUBSCRIBE]',
+            _mail_action: 'unsubscribe',
+            _user: this.session.user.id.toString(),
+            _path: path,
+            _sess: this.id
+        };
+
         this._server.onUnsubscribe(path, this.session, (err, success) => {
             if (err) {
-                return callback(err);
+                logdata._error = err.message;
+                logdata._code = err.code;
+                logdata._response = err.response;
+                this._server.loggelf(logdata);
+                return callback(null, {
+                    response: 'NO',
+                    code: 'TEMPFAIL'
+                });
             }
 
             callback(null, {

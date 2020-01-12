@@ -1,5 +1,7 @@
 'use strict';
 
+const imapTools = require('../imap-tools');
+
 module.exports = {
     state: 'Not Authenticated',
 
@@ -68,7 +70,8 @@ function authenticate(connection, token, requireClientToken, callback) {
             method: 'PLAIN',
             username,
             password,
-            clientToken
+            clientToken,
+            connection
         },
         connection.session,
         (err, response) => {
@@ -131,6 +134,7 @@ function authenticate(connection, token, requireClientToken, callback) {
             connection.setUser(response.user);
             connection.state = 'Authenticated';
             connection.setupNotificationListener();
+            imapTools.sendCapabilityResponse(connection);
 
             callback(null, {
                 response: 'OK',

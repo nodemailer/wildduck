@@ -13,7 +13,7 @@ const EventEmitter = require('events').EventEmitter;
 const packageInfo = require('../../package');
 const errors = require('../../lib/errors.js');
 
-const SOCKET_TIMEOUT = 10 * 60 * 1000;
+const SOCKET_TIMEOUT = 5 * 60 * 1000;
 
 /**
  * Creates a handler for new socket
@@ -40,7 +40,8 @@ class IMAPConnection extends EventEmitter {
         this._socket = socket;
 
         this.writeStream = new IMAPComposer({
-            connection: this
+            connection: this,
+            skipFetchLog: server.skipFetchLog
         });
         this.writeStream.pipe(this._socket);
         this.writeStream.on('error', this._onError.bind(this));
@@ -100,6 +101,8 @@ class IMAPConnection extends EventEmitter {
                 }
             };
         });
+
+        this.loggelf = () => false;
     }
 
     /**
@@ -199,7 +202,40 @@ class IMAPConnection extends EventEmitter {
      */
     send(payload, callback) {
         if (this._socket && this._socket.writable) {
-            this[!this.compression ? '_socket' : '_deflate'].write(payload + '\r\n', 'binary', callback);
+            try {
+                this[!this.compression ? '_socket' : '_deflate'].write(payload + '\r\n', 'binary', (...args) => {
+                    if (args[0]) {
+                        // write error
+                        this.logger.error(
+                            {
+                                tnx: 'send',
+                                cid: this.id,
+                                err: args[0]
+                            },
+                            '[%s] Send error: %s',
+                            this.id,
+                            args[0].message || args[0]
+                        );
+                        return this.close();
+                    }
+                    if (typeof callback === 'function') {
+                        return callback(...args);
+                    }
+                });
+            } catch (err) {
+                // write error
+                this.logger.error(
+                    {
+                        tnx: 'send',
+                        cid: this.id,
+                        err
+                    },
+                    '[%s] Send error: %s',
+                    this.id,
+                    err.message || err
+                );
+                return this.close();
+            }
             if (this.compression) {
                 // make sure we transmit the message immediatelly
                 this._deflate.flush();
@@ -213,6 +249,9 @@ class IMAPConnection extends EventEmitter {
                 this.id,
                 payload
             );
+        } else {
+            // socket is not there anymore
+            this.close();
         }
     }
 
@@ -220,11 +259,32 @@ class IMAPConnection extends EventEmitter {
      * Close socket
      */
     close(force) {
+        if (this._closed || this._closing) {
+            return;
+        }
+
         if (!this._socket.destroyed && this._socket.writable) {
             this._socket[!force ? 'end' : 'destroy']();
         }
 
         this._server.connections.delete(this);
+
+        if (!force) {
+            // allow socket to close in 1500ms or force it to close
+            this._closingTimeout = setTimeout(() => {
+                if (this._closed) {
+                    return;
+                }
+
+                try {
+                    this._socket.destroy();
+                } catch (err) {
+                    // ignore
+                }
+
+                setImmediate(() => this._onClose());
+            }, 1500);
+        }
 
         this._closing = true;
         if (force) {
@@ -260,6 +320,8 @@ class IMAPConnection extends EventEmitter {
      * @event
      */
     _onClose(/* hadError */) {
+        clearTimeout(this._closingTimeout);
+
         if (this._closed) {
             return;
         }
@@ -285,19 +347,27 @@ class IMAPConnection extends EventEmitter {
 
         this._server.connections.delete(this);
 
-        if (typeof this._server.notifier.releaseConnection === 'function') {
-            this._server.notifier.releaseConnection(
-                {
-                    service: 'imap',
-                    session: this.session,
-                    user: this.user
-                },
-                () => false
-            );
-        }
+        if (this.user) {
+            if (typeof this._server.notifier.releaseConnection === 'function') {
+                this._server.notifier.releaseConnection(
+                    {
+                        service: 'imap',
+                        session: this.session,
+                        user: this.user
+                    },
+                    () => false
+                );
+            }
 
-        if (this._closed) {
-            return;
+            this.loggelf({
+                short_message: '[CONNRELEASE] Connection released for ' + this.user.id,
+                _connection: 'release',
+                _service: 'imap',
+                _session: this.session && this.session.id,
+                _user: this.user.id,
+                _cid: this.id,
+                _ip: this.remoteAddress
+            });
         }
 
         this._closed = true;
@@ -326,6 +396,15 @@ class IMAPConnection extends EventEmitter {
         }
 
         if (['ECONNRESET', 'EPIPE', 'ETIMEDOUT', 'EHOSTUNREACH'].includes(err.code)) {
+            this.logger.info(
+                {
+                    tnx: 'connection',
+                    cid: this.id
+                },
+                '[%s] Closing connection due to %s',
+                this.id,
+                err.code
+            );
             this.close(); // mark connection as 'closing'
             return;
         }
@@ -333,6 +412,7 @@ class IMAPConnection extends EventEmitter {
         if (err && /SSL[23]*_GET_CLIENT_HELLO|ssl[23]*_read_bytes|ssl_bytes_to_cipher_list/i.test(err.message)) {
             let message = err.message;
             err.message = 'Failed to establish TLS session';
+            err.code = err.code || 'TLSError';
             err.meta = {
                 protocol: 'imap',
                 stage: 'starttls',
@@ -343,6 +423,7 @@ class IMAPConnection extends EventEmitter {
 
         if (!err || !err.message) {
             err = new Error('Socket closed unexpectedly');
+            err.code = 'SocketError';
             err.meta = {
                 remoteAddress: this.remoteAddress
             };
@@ -379,12 +460,13 @@ class IMAPConnection extends EventEmitter {
 
         if (this.idling) {
             // see if the connection still works
-            this.send('* OK Still here');
+            this.send('* OK Still here (' + Date.now() + ')');
+            this._socket.setTimeout(this._server.options.socketTimeout || SOCKET_TIMEOUT, this._onTimeout.bind(this));
             return;
         }
 
         this.send('* BYE Idle timeout, closing connection');
-        this.close(true); // force connection to close
+        setImmediate(() => this.close(true));
     }
 
     /**
@@ -442,6 +524,12 @@ class IMAPConnection extends EventEmitter {
      */
     setupNotificationListener() {
         let conn = this;
+
+        if (this._closing || this._closed) {
+            // nothing to do here
+            return;
+        }
+
         let isSelected = mailbox => mailbox && conn.selected && conn.selected.mailbox && conn.selected.mailbox.toString() === mailbox.toString();
 
         this._listenerData = {
@@ -449,6 +537,10 @@ class IMAPConnection extends EventEmitter {
             cleared: false,
             callback(message) {
                 let selectedMailbox = conn.selected && conn.selected.mailbox;
+                if (this._closing || this._closed) {
+                    conn.clearNotificationListener();
+                    return;
+                }
 
                 if (message) {
                     // global triggers
@@ -456,14 +548,14 @@ class IMAPConnection extends EventEmitter {
                         case 'LOGOUT':
                             conn.clearNotificationListener();
                             conn.send('* BYE ' + (message.reason || 'Logout requested'));
-                            conn.close();
+                            setImmediate(() => conn.close());
                             break;
 
                         case 'DROP':
                             if (isSelected(message.mailbox)) {
                                 conn.clearNotificationListener();
                                 conn.send('* BYE Selected mailbox was deleted, have to disconnect');
-                                conn.close();
+                                setImmediate(() => conn.close());
                                 break;
                             }
                     }
@@ -769,14 +861,13 @@ class IMAPConnection extends EventEmitter {
 
                     switch (key) {
                         case 'FLAGS':
-                            value = [].concat(value || []).map(
-                                flag =>
-                                    flag && flag.value
-                                        ? flag
-                                        : {
-                                            type: 'ATOM',
-                                            value: flag
-                                        }
+                            value = [].concat(value || []).map(flag =>
+                                flag && flag.value
+                                    ? flag
+                                    : {
+                                          type: 'ATOM',
+                                          value: flag
+                                      }
                             );
                             break;
 
@@ -785,9 +876,9 @@ class IMAPConnection extends EventEmitter {
                                 value && value.value
                                     ? value
                                     : {
-                                        type: 'ATOM',
-                                        value: (value || '0').toString()
-                                    };
+                                          type: 'ATOM',
+                                          value: (value || '0').toString()
+                                      };
                             break;
 
                         case 'MODSEQ':
@@ -795,9 +886,9 @@ class IMAPConnection extends EventEmitter {
                                 value && value.value
                                     ? value
                                     : {
-                                        type: 'ATOM',
-                                        value: (value || '0').toString()
-                                    }
+                                          type: 'ATOM',
+                                          value: (value || '0').toString()
+                                      }
                             );
                             break;
                     }
