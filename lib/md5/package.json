@@ -1,0 +1,12 @@
+{
+  "name": "cryptmd5",
+  "version": "0.1.2",
+  "description": "Create MD5 hashed crypt passwords ($1$salt$hash.value/)",
+  "author": {
+	"name": "Dominik Deobald",
+	"email": "npm@dominik-deobald.de",
+	"url": "http://blog.deobald.org"
+  },
+  "main": "cryptmd5.js",
+  "engine": ">= node 0.10.5"
+}

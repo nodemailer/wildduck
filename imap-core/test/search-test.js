@@ -332,6 +332,9 @@ describe('#parseQueryTerms', function() {
                 value: '1-Feb-1994'
             }
         ]);
+
+        let fn = parseQueryTerms.bind(null, 'SINCE XX-ZZZ-YYY'.split(' '), uidList);
+        expect(fn).to.throw(Error);
     });
 
     it('should handle SMALLER', function() {

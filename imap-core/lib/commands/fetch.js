@@ -50,6 +50,9 @@ module.exports = {
         let flagsExist = false;
         let uidExist = false;
         let modseqExist = false;
+        let bodystructureExist = true;
+        let rfc822sizeExist = true;
+        let envelopeExist = true;
         let markAsSeen = false;
         let metadataOnly = true;
         let changedSince = 0;
@@ -115,6 +118,18 @@ module.exports = {
                 modseqExist = true;
             }
 
+            if (param.value.toUpperCase() === 'BODYSTRUCTURE') {
+                bodystructureExist = true;
+            }
+
+            if (param.value.toUpperCase() === 'RFC822.SIZE') {
+                rfc822sizeExist = true;
+            }
+
+            if (param.value.toUpperCase() === 'ENVELOPE') {
+                envelopeExist = true;
+            }
+
             if (!this.selected.readOnly) {
                 if (param.value.toUpperCase() === 'BODY' && param.section) {
                     // BODY[...]
@@ -129,7 +144,7 @@ module.exports = {
                 param.value = 'BODY';
             }
 
-            if (['BODY', 'RFC822', 'RFC822.SIZE', 'RFC822.HEADER', 'RFC822.TEXT', 'BODYSTRUCTURE'].indexOf(param.value.toUpperCase()) >= 0) {
+            if (['BODY', 'RFC822', 'RFC822.HEADER', 'RFC822.TEXT'].indexOf(param.value.toUpperCase()) >= 0) {
                 metadataOnly = false;
             }
         }
@@ -213,6 +228,10 @@ module.exports = {
                     startFrom: Number(param.partial[0]) || 0,
                     maxLength: Number(param.partial[1]) || 0
                 };
+
+                if (item.partial.maxLength && item.partial.maxLength < 1024 * 1024) {
+                    //item.partial.maxLength = 1024 * 1024;
+                }
             }
             if (!imapTools.fetchSchema.hasOwnProperty(item.item) || !checkSchema(imapTools.fetchSchema[item.item], item)) {
                 return callback(null, {
@@ -241,9 +260,25 @@ module.exports = {
             })
         );
 
+        let logdata = {
+            short_message: '[FETCH]',
+            _mail_action: 'fetch',
+            _user: this.session.user.id.toString(),
+            _mailbox: this.selected.mailbox.toString(),
+            _sess: this.id,
+            _mark_seen: markAsSeen ? 'yes' : 'no',
+            _is_uid: isUid ? 'yes' : 'no',
+            _message_count: messages.length,
+            _modseq: changedSince,
+            _query: imapHandler.compiler(command)
+        };
+
         this._server.onFetch(
             this.selected.mailbox,
             {
+                bodystructureExist,
+                rfc822sizeExist,
+                envelopeExist,
                 metadataOnly: !!metadataOnly,
                 markAsSeen: !!markAsSeen,
                 messages,
@@ -252,10 +287,28 @@ module.exports = {
                 isUid
             },
             this.session,
-            (err, success) => {
+            (err, success, info) => {
+                Object.keys(info || {}).forEach(key => {
+                    let vkey = '_' + key.replace(/[A-Z]+/g, c => '_' + c.toLowerCase());
+                    if (vkey === '_id') {
+                        vkey = '_fetch_id';
+                    }
+                    logdata[vkey] = info[key];
+                });
+
                 if (err) {
-                    return callback(err);
+                    logdata._error = err.message;
+                    logdata._code = err.code;
+                    logdata._response = err.response;
+                    this._server.loggelf(logdata);
+                    return callback(null, {
+                        response: 'NO',
+                        code: 'TEMPFAIL'
+                    });
                 }
+
+                logdata._response = success;
+                // this._server.loggelf(logdata);
 
                 callback(null, {
                     response: success === true ? 'OK' : 'NO',

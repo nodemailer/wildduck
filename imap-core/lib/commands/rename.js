@@ -68,10 +68,30 @@ module.exports = {
             });
         }
 
-        this._server.onRename(path, newname, this.session, (err, success) => {
+        let logdata = {
+            short_message: '[RENAME]',
+            _mail_action: 'create',
+            _path: path,
+            _destination: newname,
+            _user: this.session.user.id.toString(),
+            _sess: this.id
+        };
+
+        this._server.onRename(path, newname, this.session, (err, success, mailbox) => {
             if (err) {
-                return callback(err);
+                logdata._error = err.message;
+                logdata._code = err.code;
+                logdata._response = err.response;
+                this._server.loggelf(logdata);
+                return callback(null, {
+                    response: 'NO',
+                    code: 'TEMPFAIL'
+                });
             }
+
+            logdata._rmailbox = mailbox && mailbox.toString();
+            logdata._response = success;
+            this._server.loggelf(logdata);
 
             callback(null, {
                 response: success === true ? 'OK' : 'NO',

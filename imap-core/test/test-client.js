@@ -140,7 +140,7 @@ function runClientMockup(options, callback) {
                                     console.log('C: ' + command);
                                 }
                             }
-                        }, 10);
+                        }, 100);
                     };
                     processCommand();
                 }

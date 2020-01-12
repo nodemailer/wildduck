@@ -28,7 +28,7 @@ This API is not meant to be used by end users but your application.
     *   [Reset user password](#reset-user-password)
         *   [POST /users/{user}/password/reset](#post-usersuserpasswordreset)
 *   [Authentication](#authentication-1)
-    *   [Authenticate an user](#authenticate-an-user)
+    *   [Authenticate a user](#authenticate-a-user)
         *   [POST /authenticate](#post-authenticate)
     *   [List the authentication log](#list-the-authentication-log)
         *   [GET /users/{user}/authlog](#get-usersuserauthlog)
@@ -199,8 +199,8 @@ Returns data about existing users
 
 *   **query** is an optional string to filter username (partial match), by default all users are listed
 *   **limit** is an optional number to limit listing length, defaults to 20
-*   **tags** is an optional string of comma separated tags. At least a single tag must be set for an user to be listed
-*   **requiredTags** is an optional string of comma separated tags. All tags must be set for an user to be listed
+*   **tags** is an optional string of comma separated tags. At least a single tag must be set for a user to be listed
+*   **requiredTags** is an optional string of comma separated tags. All tags must be set for a user to be listed
 
 **Example**
 
@@ -341,13 +341,13 @@ Response for a successful operation:
 }
 ```
 
-After you have created an user you can use these credentials to log in to the IMAP server.
+After you have created a user you can use these credentials to log in to the IMAP server.
 
 ### Update user details
 
 #### PUT /users/{user}
 
-Updates the properties of an user. Only specify these fields that you want to be updated.
+Updates the properties of a user. Only specify these fields that you want to be updated.
 
 **Parameters**
 
@@ -419,7 +419,7 @@ Response for a successful operation:
 
 #### PUT /users/{user}/logout
 
-Forces closing all active IMAP session of an user
+Forces closing all active IMAP session of a user
 
 **Parameters**
 
@@ -472,11 +472,11 @@ Response for a successful operation:
 
 ## Authentication
 
-### Authenticate an user
+### Authenticate a user
 
 #### POST /authenticate
 
-Authenticates an user
+Authenticates a user
 
 **Parameters**
 
@@ -574,7 +574,7 @@ correct scope for email clients using these protocols.
 
 2FA checks do not happen magically, your application must be 2FA aware:
 
-1.  Authenticate user with the [/authenticate](#authenticate-an-user) call
+1.  Authenticate user with the [/authenticate](#authenticate-a-user) call
 2.  If authentication result includes `requirePasswordChange:true` then force user to change their password
 3.  If authentication result includes `require2fa:false` then do nothing, the user is now authenticated. Otherwise continue with Step 4. or Step 5.
 4.  If `require2fa` array includes 'totp' then:
@@ -663,7 +663,7 @@ Response for a successful operation:
 
 #### POST /users/{user}/2fa/totp/check
 
-Validates a TOTP token against user 2FA settings. This check should be performed when an user authentication response includes `request2fa:['totp']`
+Validates a TOTP token against user 2FA settings. This check should be performed when a user authentication response includes `request2fa:['totp']`
 
 **Parameters**
 
@@ -762,7 +762,7 @@ used to access IMAP, one for SMTP etc.
 
 #### GET /user/{user}/asps
 
-Lists all application specific passwords for an user.
+Lists all application specific passwords for a user.
 
 **Parameters**
 
@@ -938,7 +938,7 @@ Response for a successful operation:
 
 #### GET /users/{user}/addresses
 
-Lists all registered email addresses for an user.
+Lists all registered email addresses for a user.
 
 **Parameters**
 
@@ -1093,7 +1093,7 @@ Manage user mailboxes
 
 #### GET /user/{user}/mailboxes
 
-Lists existing mailboxes for an user
+Lists existing mailboxes for a user
 
 **Parameters**
 
@@ -2019,7 +2019,7 @@ list and restore archived messages. Restoring an archived message resets the UID
 
 #### GET /user/{user}/archived
 
-Lists archived messages for an user. This is similar to listing mailbox messages, major difference being that archived message IDs are not numeric but hex
+Lists archived messages for a user. This is similar to listing mailbox messages, major difference being that archived message IDs are not numeric but hex
 strings
 
 **Parameters**
@@ -2146,7 +2146,7 @@ Response for a successful operation includes the mailbox ID the message was rest
 
 #### POST /users/{user}/quota/reset
 
-Recalculates used storage for an user. Use this when it seems that quota counters for an user do not match with reality.
+Recalculates used storage for a user. Use this when it seems that quota counters for a user do not match with reality.
 
 **Parameters**
 

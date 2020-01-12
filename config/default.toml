@@ -22,14 +22,6 @@ maxForwards=2000
 # If usernames are not email addresses then use this domain as hostname part
 #emailDomain="mydomain.info"
 
-# Bugsnag API key
-# If set then reports errors to Bugsnag
-bugsnagCode=""
-
-# Header rules for routing spam
-# This does not affect WildDuck plugin for Haraka
-# @include "spamheaders.toml"
-
 [dbs]
 # @include "dbs.toml"
 
@@ -50,11 +42,22 @@ bugsnagCode=""
 [log]
     level="silly"
 
+    skipFetchLog=false # if true, then does not output individual * FETCH responses to log
+
     # delete authentication log entries after 30 days
     # changing this value only affects new entries
     # set to false to not log authentication events
     # set to 0 to keep the logs infinitely
     authlogExpireDays=30
+
+    [log.gelf]
+        enabled=false
+        hostname=false # defaults to os.hostname()
+        component="wildduck"
+        [log.gelf.options]
+            graylogPort=12201
+            graylogHostname="127.0.0.1"
+            connection="lan"
 
 [imap]
 # @include "imap.toml"
@@ -79,6 +82,10 @@ bugsnagCode=""
 
 [plugins]
 # @include "plugins/*.toml"
+
+[tasks]
+# if enabled then process jobs like deleting expired messages etc
+enabled=true
 
 [smtp.setup]
 # Public configuration for SMTP MDA, needed for mobileconfig files

@@ -17,7 +17,14 @@ const quotes = config.imap.quotes || [
     'Ahhh... It has the Sleepy Toad-stool, it does!',
     'Make-up! Jewels! Dresses! I want it all! Sigh...',
     'Remember, you... too... are in... ...the dream...',
-    'The Wind Fish is watching...Hoot!'
+    'The Wind Fish is watching...Hoot!',
+    'Bad biscuits make the baker broke, bro.',
+    'Everything small is just a smaller version of something big.',
+    "I'm doing so awesome on my own. Like, right now, I found this can of beans.",
+    'This does compute!',
+    'Oh, my Glob, you guys, drama bomb!',
+    'Melissa, I have to go, they got into my toilet paper! Melissa, I have to go!',
+    'Also, I think the Lemongrabs are getting weirder.'
 ];
 
 module.exports = {
@@ -28,6 +35,6 @@ module.exports = {
         this.clearNotificationListener();
         this.send('* BYE Logout requested');
         this.send(command.tag + ' OK ' + quotes[Math.floor(Math.random() * quotes.length)]);
-        this.close();
+        setImmediate(() => this.close());
     }
 };

@@ -655,13 +655,19 @@ module.exports.getQueryResponse = function(query, message, options) {
                     if (!mimeTree) {
                         mimeTree = indexer.parseMimeTree(message.raw);
                     }
-                    value = indexer.getContents(mimeTree);
+                    value = indexer.getContents(mimeTree, false, {
+                        startFrom: item.partial && item.partial.startFrom,
+                        maxLength: item.partial && item.partial.maxLength
+                    });
                 } else {
                     // BODY[SELECTOR]
                     if (!mimeTree) {
                         mimeTree = indexer.parseMimeTree(message.raw);
                     }
-                    value = indexer.getContents(mimeTree, item);
+                    value = indexer.getContents(mimeTree, item, {
+                        startFrom: item.partial && item.partial.startFrom,
+                        maxLength: item.partial && item.partial.maxLength
+                    });
                 }
 
                 if (item.partial) {
@@ -689,4 +695,80 @@ module.exports.getQueryResponse = function(query, message, options) {
     });
 
     return values;
+};
+
+/**
+ * Builds and emits an untagged CAPABILITY response depending on current state
+ *
+ * @param {Object} connection IMAP connection object
+ */
+module.exports.sendCapabilityResponse = connection => {
+    let capabilities = [];
+
+    if (!connection.secure) {
+        if (!connection._server.options.disableSTARTTLS) {
+            capabilities.push('STARTTLS');
+            if (!connection._server.options.ignoreSTARTTLS) {
+                capabilities.push('LOGINDISABLED');
+            }
+        }
+    }
+
+    if (connection.state === 'Not Authenticated') {
+        capabilities.push('AUTH=PLAIN');
+        capabilities.push('AUTH=PLAIN-CLIENTTOKEN');
+        capabilities.push('SASL-IR');
+        capabilities.push('ENABLE');
+
+        capabilities.push('ID');
+        capabilities.push('UNSELECT');
+        capabilities.push('IDLE');
+        capabilities.push('NAMESPACE');
+        capabilities.push('QUOTA');
+        capabilities.push('XLIST');
+        capabilities.push('CHILDREN');
+    } else {
+        capabilities.push('ID');
+        capabilities.push('UNSELECT');
+        capabilities.push('IDLE');
+        capabilities.push('NAMESPACE');
+        capabilities.push('QUOTA');
+        capabilities.push('XLIST');
+        capabilities.push('CHILDREN');
+
+        capabilities.push('SPECIAL-USE');
+        capabilities.push('UIDPLUS');
+        capabilities.push('UNSELECT');
+        capabilities.push('ENABLE');
+        capabilities.push('CONDSTORE');
+        capabilities.push('UTF8=ACCEPT');
+
+        capabilities.push('MOVE');
+
+        if (connection._server.options.enableCompression) {
+            capabilities.push('COMPRESS=DEFLATE');
+        }
+
+        if (connection._server.options.maxMessage) {
+            capabilities.push('APPENDLIMIT=' + connection._server.options.maxMessage);
+        }
+    }
+
+    capabilities.sort((a, b) => a.localeCompare(b));
+
+    connection.send('* CAPABILITY ' + ['IMAP4rev1'].concat(capabilities).join(' '));
+};
+
+module.exports.validateInternalDate = internaldate => {
+    if (!internaldate || typeof internaldate !== 'string') {
+        return false;
+    }
+    return /^([ \d]?\d)-(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)-(\d{4}) (\d{2}):(\d{2}):(\d{2}) ([-+])(\d{2})(\d{2})$/i.test(internaldate);
+};
+
+module.exports.validateSearchDate = internaldate => {
+    if (!internaldate || typeof internaldate !== 'string') {
+        return false;
+    }
+    return /^\d{1,2}-(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)-\d{4}$/i.test(internaldate);
 };

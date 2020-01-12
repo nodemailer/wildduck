@@ -1,0 +1,327 @@
+{
+    "root": {
+        "addresslisting": {
+            "read:any": ["*"]
+        },
+
+        "addresses": {
+            "create:any": ["*"],
+            "read:any": ["*"],
+            "update:any": ["*"],
+            "delete:any": ["*"]
+        },
+
+        "authentication": {
+            "create:any": ["*"],
+            "read:any": ["*"]
+        },
+
+        "userlisting": {
+            "read:any": ["*"]
+        },
+
+        "users": {
+            "create:any": ["*"],
+            "read:any": ["*"],
+            "update:any": ["*"],
+            "delete:any": ["*"]
+        },
+
+        "asps": {
+            "create:any": ["*"],
+            "read:any": ["*"],
+            "delete:any": ["*"]
+        },
+
+        "messages": {
+            "create:any": ["*"],
+            "read:any": ["*"],
+            "update:any": ["*"],
+            "delete:any": ["*"]
+        },
+
+        "attachments": {
+            "create:any": ["*"],
+            "read:any": ["*"],
+            "update:any": ["*"],
+            "delete:any": ["*"]
+        },
+
+        "storage": {
+            "create:any": ["*"],
+            "read:any": ["*"],
+            "update:any": ["*"],
+            "delete:any": ["*"]
+        },
+
+        "mailboxes": {
+            "create:any": ["*"],
+            "read:any": ["*"],
+            "update:any": ["*"],
+            "delete:any": ["*"]
+        },
+
+        "autoreplies": {
+            "create:any": ["*"],
+            "read:any": ["*"],
+            "update:any": ["*"],
+            "delete:any": ["*"]
+        },
+
+        "filters": {
+            "create:any": ["*"],
+            "read:any": ["*"],
+            "update:any": ["*"],
+            "delete:any": ["*"]
+        },
+
+        "dkim": {
+            "create:any": ["*"],
+            "read:any": ["*"],
+            "update:any": ["*"],
+            "delete:any": ["*"]
+        },
+
+        "domainaliases": {
+            "create:any": ["*"],
+            "read:any": ["*"],
+            "update:any": ["*"],
+            "delete:any": ["*"]
+        }
+    },
+
+    "manager": {
+        "addresslisting": {
+            "read:any": ["*"]
+        },
+
+        "addresses": {
+            "create:any": ["*"],
+            "read:any": ["*"],
+            "update:any": ["*"],
+            "delete:any": ["*"]
+        },
+
+        "authentication": {
+            "create:any": ["*"],
+            "read:any": ["*"]
+        },
+
+        "userlisting": {
+            "read:any": ["*"]
+        },
+
+        "users": {
+            "create:any": ["*"],
+            "read:any": ["*"],
+            "update:any": ["*"],
+            "delete:any": ["*"]
+        },
+
+        "asps": {
+            "create:any": ["*"],
+            "read:any": ["*"],
+            "delete:any": ["*"]
+        },
+
+        "autoreplies": {
+            "create:any": ["*"],
+            "read:any": ["*"],
+            "update:any": ["*"],
+            "delete:any": ["*"]
+        },
+
+        "filters": {
+            "create:any": ["*"],
+            "read:any": ["*"],
+            "update:any": ["*"],
+            "delete:any": ["*"]
+        },
+
+        "dkim": {
+            "create:any": ["*"],
+            "read:any": ["*"],
+            "update:any": ["*"],
+            "delete:any": ["*"]
+        },
+
+        "domainaliases": {
+            "create:any": ["*"],
+            "read:any": ["*"],
+            "update:any": ["*"],
+            "delete:any": ["*"]
+        }
+    },
+
+    "webmail": {
+        "addresses": {
+            "create:any": ["*"],
+            "read:any": ["*"],
+            "update:any": ["*"],
+            "delete:any": ["*"]
+        },
+
+        "authentication": {
+            "create:any": ["*"],
+            "read:any": ["*"]
+        },
+
+        "users": {
+            "read:any": ["*"],
+            "update:any": ["*"]
+        },
+
+        "asps": {
+            "create:any": ["*"],
+            "read:any": ["*"],
+            "delete:any": ["*"]
+        },
+
+        "messages": {
+            "create:any": ["*"],
+            "read:any": ["*"],
+            "update:any": ["*"],
+            "delete:any": ["*"]
+        },
+
+        "attachments": {
+            "create:any": ["*"],
+            "read:any": ["*"],
+            "update:any": ["*"],
+            "delete:any": ["*"]
+        },
+
+        "storage": {
+            "create:any": ["*"],
+            "read:any": ["*"],
+            "update:any": ["*"],
+            "delete:any": ["*"]
+        },
+
+        "mailboxes": {
+            "create:any": ["*"],
+            "read:any": ["*"],
+            "update:any": ["*"],
+            "delete:any": ["*"]
+        },
+
+        "autoreplies": {
+            "create:any": ["*"],
+            "read:any": ["*"],
+            "update:any": ["*"],
+            "delete:any": ["*"]
+        },
+
+        "filters": {
+            "create:any": ["*"],
+            "read:any": ["*"],
+            "update:any": ["*"],
+            "delete:any": ["*"]
+        }
+    },
+
+    "user": {
+        "addresslisting": {
+            "read:own": ["*"]
+        },
+
+        "addresses": {
+            "create:own": ["*"],
+            "read:own": ["*"],
+            "update:own": ["*"],
+            "delete:own": ["*"]
+        },
+
+        "authentication": {
+            "read:own": ["*"]
+        },
+
+        "userlisting": {
+            "read:own": ["*", "!tags", "!metaData", "!disabledScopes"]
+        },
+
+        "users": {
+            "read:own": ["*", "!tags", "!metaData", "!disabledScopes"],
+            "update:own": ["*", "!tags", "!metaData", "!disabledScopes"]
+        },
+
+        "asps": {
+            "create:own": ["*"],
+            "read:own": ["*"],
+            "delete:own": ["*"]
+        },
+
+        "messages": {
+            "create:own": ["*"],
+            "read:own": ["*"],
+            "update:own": ["*"],
+            "delete:own": ["*"]
+        },
+
+        "attachments": {
+            "create:own": ["*"],
+            "read:own": ["*"],
+            "update:own": ["*"],
+            "delete:own": ["*"]
+        },
+
+        "storage": {
+            "create:own": ["*"],
+            "read:own": ["*"],
+            "update:own": ["*"],
+            "delete:own": ["*"]
+        },
+
+        "mailboxes": {
+            "create:own": ["*"],
+            "read:own": ["*"],
+            "update:own": ["*"],
+            "delete:own": ["*"]
+        },
+
+        "autoreplies": {
+            "create:own": ["*"],
+            "read:own": ["*"],
+            "update:own": ["*"],
+            "delete:own": ["*"]
+        },
+
+        "filters": {
+            "create:own": ["*"],
+            "read:own": ["*"],
+            "update:own": ["*"],
+            "delete:own": ["*"]
+        }
+    },
+
+    "auth": {
+        "authentication": {
+            "create:any": ["*", "!token"]
+        }
+    },
+
+    "attachments": {
+        "attachments": {
+            "read:any": ["*"]
+        }
+    },
+
+    "tokenAuth": {
+        "authentication": {
+            "create:any": ["*"]
+        }
+    },
+
+    "audit": {
+        "users": {
+            "read:any": ["*"]
+        },
+
+        "audit": {
+            "create:any": ["*"],
+            "read:any": ["*"],
+            "update:any": ["*"],
+            "delete:any": ["*"]
+        }
+    }
+}

@@ -24,9 +24,24 @@ module.exports = {
             });
         }
 
+        let logdata = {
+            short_message: '[GETQUOTA]',
+            _mail_action: 'getquota',
+            _user: this.session.user.id.toString(),
+            _sess: this.id
+        };
+
         this._server.onGetQuota(quotaRoot, this.session, (err, data) => {
             if (err) {
-                return callback(err);
+                logdata._error = err.message;
+                logdata._code = err.code;
+                logdata._response = err.response;
+                this._server.loggelf(logdata);
+
+                return callback(null, {
+                    response: 'NO',
+                    code: 'TEMPFAIL'
+                });
             }
 
             if (typeof data === 'string') {

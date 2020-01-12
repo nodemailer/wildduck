@@ -7,254 +7,249 @@ const streams = require('stream');
 const PassThrough = streams.PassThrough;
 const LengthLimiter = require('../length-limiter');
 
+const SINGLE_SPACE = Buffer.from(' ');
+const LEFT_PARENTHESIS = Buffer.from('(');
+const RIGHT_PARENTHESIS = Buffer.from(')');
+const NIL = Buffer.from('NIL');
+const LEFT_SQUARE_BRACKET = Buffer.from('[');
+const RIGHT_SQUARE_BRACKET = Buffer.from(']');
+
+let START_CHAR_LIST = [0x28, 0x3c, 0x5b]; // ['(', '<', '[']
+
 /**
  * Compiles an input object into a streamed IMAP response
  */
-module.exports = function(response, isLogging) {
+module.exports = (response, isLogging) => {
     let output = new PassThrough();
 
-    let resp = (response.tag || '') + (response.command ? ' ' + response.command : '');
-    let lr = resp; // this value is going to store last known `resp` state for later usage
+    let processStream = async () => {
+        let start = (response.tag || '') + (response.command ? ' ' + response.command : '');
+        let resp = [].concat(start ? Buffer.from(start) : []);
 
-    let val, lastType;
+        let lr = resp.length && resp[resp.length - 1]; // this value is going to store last known `resp` state for later usage
 
-    let waiting = false;
-    let queue = [];
-    let ended = false;
+        let val, lastType;
 
-    let emit = function(stream, expectedLength, startFrom, maxLength) {
-        expectedLength = expectedLength || 0;
-        startFrom = startFrom || 0;
-        maxLength = maxLength || 0;
+        // emits data to socket or pushes to queue if previous write is still being processed
+        let emit = async (stream, expectedLength, startFrom, maxLength) => {
+            if (resp.length) {
+                // emit queued response
+                output.write(Buffer.concat(resp));
+                lr = resp[resp.length - 1];
+                resp = [];
+            }
 
-        if (resp.length) {
-            queue.push(Buffer.from(resp, 'binary'));
-            lr = resp;
-            resp = '';
-        }
+            if (!stream || !expectedLength) {
+                return;
+            }
 
-        if (stream) {
-            queue.push({
-                type: 'stream',
-                stream,
-                expectedLength,
-                startFrom,
-                maxLength
+            if (stream.errored) {
+                let err = stream.errored;
+                stream.errored = false;
+                throw err;
+            }
+
+            return new Promise((resolve, reject) => {
+                expectedLength = maxLength ? Math.min(expectedLength, startFrom + maxLength) : expectedLength;
+                startFrom = startFrom || 0;
+                maxLength = maxLength || 0;
+
+                if (stream.isLimited) {
+                    // stream is already limited
+                    let limiter = new LengthLimiter(expectedLength - startFrom, ' ', 0);
+                    stream.pipe(limiter).pipe(
+                        output,
+                        {
+                            end: false
+                        }
+                    );
+                    limiter.once('end', () => resolve());
+                } else {
+                    // force limites
+                    let limiter = new LengthLimiter(expectedLength, ' ', startFrom);
+                    stream.pipe(limiter).pipe(
+                        output,
+                        {
+                            end: false
+                        }
+                    );
+                    limiter.once('end', () => resolve());
+                }
+
+                // pass errors to output
+                stream.once('error', reject);
             });
+        };
+
+        let walk = async (node, options) => {
+            options = options || {};
+
+            let last = (resp.length && resp[resp.length - 1]) || lr;
+            let lastCharOrd = last && last.length && last[last.length - 1]; // ord value of last char
+
+            if (lastType === 'LITERAL' || (lastCharOrd && !START_CHAR_LIST.includes(lastCharOrd))) {
+                if (options.isSubArray) {
+                    // ignore separator
+                } else {
+                    resp.push(SINGLE_SPACE);
+                }
+            }
+
+            if (!node && typeof node !== 'string' && typeof node !== 'number') {
+                // null or false or undefined
+                return resp.push(NIL);
+            }
+
+            if (Array.isArray(node)) {
+                lastType = 'LIST';
+
+                // (...)
+                resp.push(LEFT_PARENTHESIS);
+
+                // Check if we need to skip separtor WS between two arrays
+                let isSubArray = node.length > 1 && Array.isArray(node[0]);
+
+                for (let child of node) {
+                    if (isSubArray && !Array.isArray(child)) {
+                        isSubArray = false;
+                    }
+                    await walk(child, { isSubArray });
+                }
+
+                resp.push(RIGHT_PARENTHESIS);
+                return;
+            }
+
+            if (node && node.buffer && !Buffer.isBuffer(node)) {
+                // mongodb binary data
+                node = node.buffer;
+            }
+
+            if (typeof node === 'string' || Buffer.isBuffer(node)) {
+                node = {
+                    type: 'STRING',
+                    value: node
+                };
+            }
+
+            if (typeof node === 'number') {
+                node = {
+                    type: 'NUMBER',
+                    value: node
+                };
+            }
+
+            lastType = node.type;
+
+            if (isLogging && node.sensitive) {
+                resp.push(Buffer.from('"(* value hidden *)"'));
+                return;
+            }
+
+            switch (node.type.toUpperCase()) {
+                case 'LITERAL': {
+                    let nodeValue = node.value;
+
+                    if (typeof nodeValue === 'number') {
+                        nodeValue = nodeValue.toString();
+                    }
+
+                    let len;
+
+                    // Figure out correct byte length
+                    if (nodeValue && typeof nodeValue.pipe === 'function') {
+                        len = node.expectedLength || 0;
+                        if (node.startFrom) {
+                            len -= node.startFrom;
+                        }
+                        if (node.maxLength) {
+                            len = Math.min(len, node.maxLength);
+                        }
+                    } else {
+                        len = (nodeValue || '').toString().length;
+                    }
+
+                    if (isLogging) {
+                        resp.push(Buffer.from('"(* ' + len + 'B literal *)"'));
+                    } else {
+                        resp.push(Buffer.from('{' + Math.max(len, 0) + '}\r\n'));
+
+                        if (nodeValue && typeof nodeValue.pipe === 'function') {
+                            //value is a stream object
+                            // emit existing string before passing the stream
+                            await emit(nodeValue, node.expectedLength, node.startFrom, node.maxLength);
+                        } else if (Buffer.isBuffer(nodeValue)) {
+                            resp.push(nodeValue);
+                        } else {
+                            resp.push(Buffer.from((nodeValue || '').toString('binary'), 'binary'));
+                        }
+                    }
+                    break;
+                }
+                case 'STRING':
+                    if (isLogging && node.value.length > 20) {
+                        resp.push(Buffer.from('"(* ' + node.value.length + 'B string *)"'));
+                    } else {
+                        // JSON.stringify conveniently adds enclosing quotes and escapes any "\ occurences
+                        resp.push(Buffer.from(JSON.stringify((node.value || '').toString('binary')), 'binary'));
+                    }
+                    break;
+
+                case 'TEXT':
+                case 'SEQUENCE':
+                    if (Buffer.isBuffer(node.value)) {
+                        resp.push(node.value);
+                    } else {
+                        resp.push(Buffer.from((node.value || '').toString('binary'), 'binary'));
+                    }
+                    break;
+
+                case 'NUMBER':
+                    resp.push(Buffer.from((node.value || 0).toString()));
+                    break;
+
+                case 'ATOM':
+                case 'SECTION': {
+                    val = (node.value || '').toString();
+
+                    if (imapFormalSyntax.verify(val.charAt(0) === '\\' ? val.substr(1) : val, imapFormalSyntax['ATOM-CHAR']()) >= 0) {
+                        val = JSON.stringify(val);
+                    }
+
+                    resp.push(Buffer.from(val));
+
+                    if (node.section) {
+                        resp.push(LEFT_SQUARE_BRACKET);
+                        for (let child of node.section) {
+                            await walk(child);
+                        }
+                        resp.push(RIGHT_SQUARE_BRACKET);
+                    }
+
+                    if (node.partial) {
+                        resp.push(Buffer.from('<' + node.partial[0] + '>'));
+                    }
+                }
+            }
+        };
+
+        for (let attrib of [].concat(response.attributes || [])) {
+            await walk(attrib);
         }
 
-        if (waiting) {
-            return;
-        }
+        // push whatever we have queued to socket
+        await emit();
+    };
 
-        if (!queue.length) {
-            if (ended) {
+    setImmediate(() => {
+        processStream()
+            .then(() => {
                 output.end();
-            }
-            return;
-        }
-
-        let value = queue.shift();
-        if (value.type === 'stream') {
-            if (!value.expectedLength) {
-                return emit();
-            }
-
-            if (value.stream && value.stream.errored) {
-                let err = value.stream.errored;
-                value.stream.errored = false;
-                return output.emit('error', err);
-            }
-
-            waiting = true;
-            let expectedLength = value.maxLength ? Math.min(value.expectedLength, value.startFrom + value.maxLength) : value.expectedLength;
-            let startFrom = value.startFrom;
-
-            let limiter = new LengthLimiter(expectedLength, ' ', startFrom);
-
-            value.stream.pipe(limiter).pipe(output, {
-                end: false
-            });
-
-            // pass errors to output
-            value.stream.once('error', err => {
+            })
+            .catch(err => {
                 output.emit('error', err);
             });
-
-            limiter.once('end', () => {
-                waiting = false;
-                return emit();
-            });
-        } else if (Buffer.isBuffer(value)) {
-            output.write(value);
-            return emit();
-        } else {
-            if (typeof value === 'number') {
-                value = value.toString();
-            } else if (typeof value !== 'string') {
-                value = (value || '').toString();
-            }
-            output.write(Buffer.from(value, 'binary'));
-            return emit();
-        }
-    };
-
-    let walk = function(node, callback) {
-        if (lastType === 'LITERAL' || (['(', '<', '['].indexOf((resp || lr).substr(-1)) < 0 && (resp || lr).length)) {
-            resp += ' ';
-        }
-
-        if (node && node.buffer && !Buffer.isBuffer(node)) {
-            // mongodb binary
-            node = node.buffer;
-        }
-
-        if (Array.isArray(node)) {
-            lastType = 'LIST';
-            resp += '(';
-
-            let pos = 0;
-            let next = () => {
-                if (pos >= node.length) {
-                    resp += ')';
-                    return setImmediate(callback);
-                }
-                walk(node[pos++], next);
-            };
-
-            return setImmediate(next);
-        }
-
-        if (!node && typeof node !== 'string' && typeof node !== 'number') {
-            resp += 'NIL';
-            return setImmediate(callback);
-        }
-
-        if (typeof node === 'string' || Buffer.isBuffer(node)) {
-            if (isLogging && node.length > 20) {
-                resp += '"(* ' + node.length + 'B string *)"';
-            } else {
-                resp += JSON.stringify(node.toString('binary'));
-            }
-            return setImmediate(callback);
-        }
-
-        if (typeof node === 'number') {
-            resp += Math.round(node) || 0; // Only integers allowed
-            return setImmediate(callback);
-        }
-
-        lastType = node.type;
-
-        if (isLogging && node.sensitive) {
-            resp += '"(* value hidden *)"';
-            return setImmediate(callback);
-        }
-
-        switch (node.type.toUpperCase()) {
-            case 'LITERAL': {
-                let nval = node.value;
-
-                if (typeof nval === 'number') {
-                    nval = nval.toString();
-                }
-
-                let len;
-
-                if (nval && typeof nval.pipe === 'function') {
-                    len = node.expectedLength || 0;
-                    if (node.startFrom) {
-                        len -= node.startFrom;
-                    }
-                    if (node.maxLength) {
-                        len = Math.min(len, node.maxLength);
-                    }
-                } else {
-                    len = (nval || '').toString().length;
-                }
-
-                if (isLogging) {
-                    resp += '"(* ' + len + 'B literal *)"';
-                } else {
-                    resp += '{' + len + '}\r\n';
-                    emit();
-
-                    if (nval && typeof nval.pipe === 'function') {
-                        //value is a stream object
-                        emit(nval, node.expectedLength, node.startFrom, node.maxLength);
-                    } else {
-                        resp = (nval || '').toString('binary');
-                    }
-                }
-                break;
-            }
-            case 'STRING':
-                if (isLogging && node.value.length > 20) {
-                    resp += '"(* ' + node.value.length + 'B string *)"';
-                } else {
-                    resp += JSON.stringify((node.value || '').toString('binary'));
-                }
-                break;
-            case 'TEXT':
-            case 'SEQUENCE':
-                resp += (node.value || '').toString('binary');
-                break;
-
-            case 'NUMBER':
-                resp += node.value || 0;
-                break;
-
-            case 'ATOM':
-            case 'SECTION': {
-                val = (node.value || '').toString('binary');
-
-                if (imapFormalSyntax.verify(val.charAt(0) === '\\' ? val.substr(1) : val, imapFormalSyntax['ATOM-CHAR']()) >= 0) {
-                    val = JSON.stringify(val);
-                }
-
-                resp += val;
-
-                let finalize = () => {
-                    if (node.partial) {
-                        resp += '<' + node.partial[0] + '>';
-                    }
-                    setImmediate(callback);
-                };
-
-                if (node.section) {
-                    resp += '[';
-
-                    let pos = 0;
-                    let next = () => {
-                        if (pos >= node.section.length) {
-                            resp += ']';
-                            return setImmediate(finalize);
-                        }
-                        walk(node.section[pos++], next);
-                    };
-
-                    return setImmediate(next);
-                }
-
-                return finalize();
-            }
-        }
-        setImmediate(callback);
-    };
-
-    let finalize = () => {
-        ended = true;
-        emit();
-    };
-    let pos = 0;
-    let attribs = [].concat(response.attributes || []);
-    let next = () => {
-        if (pos >= attribs.length) {
-            return setImmediate(finalize);
-        }
-        walk(attribs[pos++], next);
-    };
-    setImmediate(next);
+    });
 
     return output;
 };

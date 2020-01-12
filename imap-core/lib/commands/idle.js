@@ -9,7 +9,7 @@ module.exports = {
                 this._server.onIdleEnd(this.selected && this.selected.mailbox, this.session);
             }
             this.send('* BYE IDLE terminated');
-            this.close();
+            setImmediate(() => this.close());
         }, this._server.options.idleTimeout || 30 * 60 * 1000);
 
         this._nextHandler = (token, next) => {

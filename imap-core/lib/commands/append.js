@@ -40,7 +40,13 @@ module.exports = {
             });
         }
 
-        let path = Buffer.from((command.attributes.shift() || {}).value || 'binary').toString();
+        let path = (command.attributes.shift() || {}).value;
+        if (!Buffer.isBuffer(path)) {
+            path = path.toString();
+        } else {
+            path = Buffer.from(path, 'binary').toString();
+        }
+
         path = imapTools.normalizeMailbox(path, !this.acceptUTF8Enabled);
         let message = command.attributes.pop();
         let flags = [];
@@ -69,7 +75,9 @@ module.exports = {
         }
 
         if (internaldate) {
-            if (!validateInternalDate(internaldate)) {
+            internaldate = internaldate.toString(); // might be Buffer
+
+            if (!imapTools.validateInternalDate(internaldate)) {
                 return callback(new Error('Invalid date argument for APPEND'));
             }
 
@@ -98,31 +106,64 @@ module.exports = {
             return true;
         });
 
-        this._server.onAppend(
-            path,
-            flags,
-            internaldate,
-            Buffer.from(typeof message.value === 'string' ? message.value : (message.value || '').toString(), 'binary'),
-            this.session,
-            (err, success, info) => {
-                if (err) {
-                    return callback(err);
+        let raw;
+        if (Buffer.isBuffer(message.value)) {
+            raw = message.value;
+        } else {
+            raw = Buffer.from(typeof message.value === 'string' ? message.value : (message.value || '').toString(), 'binary');
+        }
+
+        let logdata = {
+            short_message: '[APPEND]',
+            _mail_action: 'append',
+            _path: path,
+            _user: this.session.user.id.toString(),
+            _mailbox: this.selected.mailbox,
+            _sess: this.id,
+            _flags: flags.join(', '),
+            _internaldate: internaldate,
+            _size: raw.length
+        };
+
+        this._server.onAppend(path, flags, internaldate, raw, this.session, (err, success, info) => {
+            Object.keys(info || {}).forEach(key => {
+                let vkey = '_' + key.replace(/[A-Z]+/g, c => '_' + c.toLowerCase());
+                if (['_id', '_status'].includes(vkey)) {
+                    vkey = '_append' + vkey;
+                }
+                logdata[vkey] = info[key];
+            });
+
+            if (err) {
+                logdata._error = err.message;
+                logdata._code = err.code;
+                logdata._response = err.response;
+                this._server.loggelf(logdata);
+
+                if (err.code === 10334) {
+                    // 10334 is Mongodb BSONObjectTooLarge
+                    return callback(null, {
+                        response: 'NO',
+                        message: 'Message text too large'
+                    });
                 }
 
-                let code = typeof success === 'string' ? success.toUpperCase() : 'APPENDUID ' + info.uidValidity + ' ' + info.uid;
-
-                callback(null, {
-                    response: success === true ? 'OK' : 'NO',
-                    code
+                // do not return actual error to user
+                return callback(null, {
+                    response: 'NO',
+                    code: 'TEMPFAIL'
                 });
             }
-        );
+
+            let code = typeof success === 'string' ? success.toUpperCase() : 'APPENDUID ' + info.uidValidity + ' ' + info.uid;
+
+            logdata._response = success;
+            this._server.loggelf(logdata);
+
+            callback(null, {
+                response: success === true ? 'OK' : 'NO',
+                code
+            });
+        });
     }
 };
-
-function validateInternalDate(internaldate) {
-    if (!internaldate || typeof internaldate !== 'string') {
-        return false;
-    }
-    return /^([ \d]\d)-(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)-(\d{4}) (\d{2}):(\d{2}):(\d{2}) ([-+])(\d{2})(\d{2})$/i.test(internaldate);
-}
