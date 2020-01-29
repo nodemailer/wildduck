@@ -126,7 +126,7 @@ const serverOptions = {
                             flags: true,
                             unseen: true
                         })
-                        .sort([['uid', -1]])
+                        .sort({ uid: -1 })
                         .limit(config.pop3.maxMessages || MAX_MESSAGES)
                         .toArray((err, messages) => {
                             if (err) {
