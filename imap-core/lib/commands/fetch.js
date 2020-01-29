@@ -50,9 +50,10 @@ module.exports = {
         let flagsExist = false;
         let uidExist = false;
         let modseqExist = false;
-        let bodystructureExist = true;
-        let rfc822sizeExist = true;
-        let envelopeExist = true;
+        let bodystructureExist = false;
+        let rfc822sizeExist = false;
+        let idateExist = false;
+        let envelopeExist = false;
         let markAsSeen = false;
         let metadataOnly = true;
         let changedSince = 0;
@@ -128,6 +129,10 @@ module.exports = {
 
             if (param.value.toUpperCase() === 'ENVELOPE') {
                 envelopeExist = true;
+            }
+
+            if (param.value.toUpperCase() === 'INTERNALDATE') {
+                idateExist = true;
             }
 
             if (!this.selected.readOnly) {
@@ -279,6 +284,8 @@ module.exports = {
                 bodystructureExist,
                 rfc822sizeExist,
                 envelopeExist,
+                flagsExist,
+                idateExist,
                 metadataOnly: !!metadataOnly,
                 markAsSeen: !!markAsSeen,
                 messages,
