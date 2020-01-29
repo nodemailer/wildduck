@@ -53,7 +53,7 @@ module.exports = {
         let internaldate = false;
         let parsedDate;
 
-        if (command.attributes.length === 2) {
+        if (command.attributes.length === 2 && Array.isArray(command.attributes[0])) {
             flags = command.attributes[0] || [];
             internaldate = (command.attributes[1] && command.attributes[1].value) || '';
         } else if (command.attributes.length === 1) {

@@ -284,7 +284,7 @@ module.exports = {
                 bodystructureExist,
                 rfc822sizeExist,
                 envelopeExist,
-                flagsExist,
+                flagsExist: flagsExist || !!markAsSeen,
                 idateExist,
                 metadataOnly: !!metadataOnly,
                 markAsSeen: !!markAsSeen,
