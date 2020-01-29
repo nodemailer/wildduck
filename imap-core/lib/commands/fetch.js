@@ -162,6 +162,7 @@ module.exports = {
                 type: 'ATOM',
                 value: 'FLAGS'
             });
+            flagsExist = true;
         }
 
         // ensure UID is listed if the command is UID FETCH
@@ -284,7 +285,7 @@ module.exports = {
                 bodystructureExist,
                 rfc822sizeExist,
                 envelopeExist,
-                flagsExist: flagsExist || !!markAsSeen,
+                flagsExist,
                 idateExist,
                 metadataOnly: !!metadataOnly,
                 markAsSeen: !!markAsSeen,
