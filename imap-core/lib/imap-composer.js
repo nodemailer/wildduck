@@ -35,12 +35,9 @@ class IMAPComposer extends Transform {
                 );
             }
 
-            obj.pipe(
-                this.connection[!this.connection.compression ? '_socket' : '_deflate'],
-                {
-                    end: false
-                }
-            );
+            obj.pipe(this.connection[!this.connection.compression ? '_socket' : '_deflate'], {
+                end: false
+            });
             obj.once('error', err => this.emit('error', err));
             obj.once('end', () => {
                 this.push('\r\n');
@@ -49,7 +46,7 @@ class IMAPComposer extends Transform {
             return;
         }
 
-        let compiled = imapHandler.compiler(obj);
+        let compiled = obj.compiled ? obj.compiled : imapHandler.compiler(obj);
 
         this.connection.logger.debug(
             {
