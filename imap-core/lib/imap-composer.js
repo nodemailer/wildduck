@@ -48,15 +48,17 @@ class IMAPComposer extends Transform {
 
         let compiled = obj.compiled ? obj.compiled : imapHandler.compiler(obj);
 
-        this.connection.logger.debug(
-            {
-                tnx: 'send',
-                cid: this.connection.id
-            },
-            '[%s] S:',
-            this.connection.id,
-            compiled
-        );
+        if (!this.skipFetchLog || (!obj.compiled && this.skipFetchLog)) {
+            this.connection.logger.debug(
+                {
+                    tnx: 'send',
+                    cid: this.connection.id
+                },
+                '[%s] S:',
+                this.connection.id,
+                compiled
+            );
+        }
 
         this.push(Buffer.from(compiled + '\r\n', 'binary'));
         done();
