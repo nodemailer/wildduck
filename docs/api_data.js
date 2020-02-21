@@ -484,6 +484,13 @@ define({ "api": [
             "optional": true,
             "field": "next",
             "description": "<p>Cursor value for next page, retrieved from <code>nextCursor</code> response value</p>"
+          },
+          {
+            "group": "Parameter",
+            "type": "Number",
+            "optional": true,
+            "field": "previous",
+            "description": "<p>Cursor value for previous page, retrieved from <code>previousCursor</code> response value</p>"
           }
         ]
       }
@@ -7844,10 +7851,10 @@ define({ "api": [
           },
           {
             "group": "Success 200",
-            "type": "String",
+            "type": "Object",
             "optional": false,
             "field": "metaData",
-            "description": "<p>JSON formatted custom metadata object set for this message</p>"
+            "description": "<p>Custom metadata object set for this message</p>"
           },
           {
             "group": "Success 200",
@@ -7896,7 +7903,7 @@ define({ "api": [
       "examples": [
         {
           "title": "Success-Response:",
-          "content": "HTTP/1.1 200 OK\n{\n  \"success\": true,\n  \"id\": 1,\n  \"mailbox\": \"59fc66a03e54454869460e46\",\n  \"thread\": \"59fc66a13e54454869460e50\",\n  \"user\": \"59fc66a03e54454869460e45\",\n  \"from\": {\n    \"address\": \"rfinnie@domain.dom\",\n    \"name\": \"Ryan Finnie\"\n  },\n  \"to\": [\n    {\n      \"address\": \"bob@domain.dom\",\n      \"name\": \"\"\n    }\n  ],\n  \"subject\": \"Ryan Finnie's MIME Torture Test v1.0\",\n  \"messageId\": \"<1066976914.4721.5.camel@localhost>\",\n  \"date\": \"2003-10-24T06:28:34.000Z\",\n  \"seen\": true,\n  \"deleted\": false,\n  \"flagged\": true,\n  \"draft\": false,\n  \"html\": [\n    \"<p>Welcome to Ryan Finnie&apos;s MIME torture test.</p>\",\n    \"<p>While a message/rfc822 part inside another message/rfc822 part in a<br/>message isn&apos;t too strange, 200 iterations of that would be.</p>\"\n  ],\n  \"text\": \"Welcome to Ryan Finnie's MIME torture test. This message was designed\\nto introduce a couple of the newer features of MIME-aware MUA\",\n  \"attachments\": [\n    {\n      \"id\": \"ATT00004\",\n      \"filename\": \"foo.gz\",\n      \"contentType\": \"application/x-gzip\",\n      \"disposition\": \"attachment\",\n      \"transferEncoding\": \"base64\",\n      \"related\": false,\n      \"sizeKb\": 1\n    },\n    {\n      \"id\": \"ATT00007\",\n      \"filename\": \"blah1.gz\",\n      \"contentType\": \"application/x-gzip\",\n      \"disposition\": \"attachment\",\n      \"transferEncoding\": \"base64\",\n      \"related\": false,\n      \"sizeKb\": 1\n    }\n  ],\n  \"contentType\": {\n    \"value\": \"multipart/mixed\",\n    \"params\": {\n      \"boundary\": \"=-qYxqvD9rbH0PNeExagh1\"\n    }\n  },\n  \"metaData\": \"{}\"\n}",
+          "content": "HTTP/1.1 200 OK\n{\n  \"success\": true,\n  \"id\": 1,\n  \"mailbox\": \"59fc66a03e54454869460e46\",\n  \"thread\": \"59fc66a13e54454869460e50\",\n  \"user\": \"59fc66a03e54454869460e45\",\n  \"from\": {\n    \"address\": \"rfinnie@domain.dom\",\n    \"name\": \"Ryan Finnie\"\n  },\n  \"to\": [\n    {\n      \"address\": \"bob@domain.dom\",\n      \"name\": \"\"\n    }\n  ],\n  \"subject\": \"Ryan Finnie's MIME Torture Test v1.0\",\n  \"messageId\": \"<1066976914.4721.5.camel@localhost>\",\n  \"date\": \"2003-10-24T06:28:34.000Z\",\n  \"seen\": true,\n  \"deleted\": false,\n  \"flagged\": true,\n  \"draft\": false,\n  \"html\": [\n    \"<p>Welcome to Ryan Finnie&apos;s MIME torture test.</p>\",\n    \"<p>While a message/rfc822 part inside another message/rfc822 part in a<br/>message isn&apos;t too strange, 200 iterations of that would be.</p>\"\n  ],\n  \"text\": \"Welcome to Ryan Finnie's MIME torture test. This message was designed\\nto introduce a couple of the newer features of MIME-aware MUA\",\n  \"attachments\": [\n    {\n      \"id\": \"ATT00004\",\n      \"filename\": \"foo.gz\",\n      \"contentType\": \"application/x-gzip\",\n      \"disposition\": \"attachment\",\n      \"transferEncoding\": \"base64\",\n      \"related\": false,\n      \"sizeKb\": 1\n    },\n    {\n      \"id\": \"ATT00007\",\n      \"filename\": \"blah1.gz\",\n      \"contentType\": \"application/x-gzip\",\n      \"disposition\": \"attachment\",\n      \"transferEncoding\": \"base64\",\n      \"related\": false,\n      \"sizeKb\": 1\n    }\n  ],\n  \"contentType\": {\n    \"value\": \"multipart/mixed\",\n    \"params\": {\n      \"boundary\": \"=-qYxqvD9rbH0PNeExagh1\"\n    }\n  },\n  \"metaData\": {}\n}",
           "type": "json"
         }
       ]
@@ -9038,10 +9045,10 @@ define({ "api": [
           },
           {
             "group": "Parameter",
-            "type": "String",
+            "type": "Object|String",
             "optional": true,
             "field": "metaData",
-            "description": "<p>Optional metadata, must be JSON formatted object</p>"
+            "description": "<p>Optional metadata, must be an object or JSON formatted string of an object</p>"
           }
         ]
       }
@@ -9499,10 +9506,10 @@ define({ "api": [
           },
           {
             "group": "Parameter",
-            "type": "String",
+            "type": "Object|String",
             "optional": true,
             "field": "metaData",
-            "description": "<p>Optional metadata, must be JSON formatted object</p>"
+            "description": "<p>Optional metadata, must be an object or JSON formatted string of an object</p>"
           },
           {
             "group": "Parameter",
@@ -11665,10 +11672,10 @@ define({ "api": [
           },
           {
             "group": "Success 200",
-            "type": "String",
+            "type": "Object",
             "optional": false,
             "field": "metaData",
-            "description": "<p>JSON formatted custom metadata object set for this user</p>"
+            "description": "<p>Custom metadata object set for this user</p>"
           },
           {
             "group": "Success 200",
@@ -12496,10 +12503,10 @@ define({ "api": [
           },
           {
             "group": "Parameter",
-            "type": "String",
+            "type": "Object|String",
             "optional": true,
             "field": "metaData",
-            "description": "<p>Optional metadata, must be JSON formatted object</p>"
+            "description": "<p>Optional metadata, must be an object or JSON formatted string of an object</p>"
           },
           {
             "group": "Parameter",
@@ -13007,10 +13014,10 @@ define({ "api": [
           },
           {
             "group": "Parameter",
-            "type": "String",
+            "type": "Object|String",
             "optional": true,
             "field": "metaData",
-            "description": "<p>Optional metadata, must be JSON formatted object</p>"
+            "description": "<p>Optional metadata, must be an object or JSON formatted string of an object</p>"
           },
           {
             "group": "Parameter",
