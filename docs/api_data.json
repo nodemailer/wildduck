@@ -8184,6 +8184,13 @@
           },
           {
             "group": "Parameter",
+            "type": "Boolean",
+            "optional": true,
+            "field": "metaData",
+            "description": "<p>If true, then includes <code>metaData</code> in the response</p>"
+          },
+          {
+            "group": "Parameter",
             "type": "Number",
             "optional": true,
             "field": "limit",
@@ -8456,6 +8463,13 @@
             "optional": false,
             "field": "results.contentType.params",
             "description": "<p>An object with Content-Type params as key-value pairs</p>"
+          },
+          {
+            "group": "Success 200",
+            "type": "Object",
+            "optional": true,
+            "field": "results.metaData",
+            "description": "<p>Custom metadata value. Included if <code>metaData</code> query argument was true</p>"
           }
         ]
       },
@@ -12131,6 +12145,13 @@
           },
           {
             "group": "Parameter",
+            "type": "Boolean",
+            "optional": true,
+            "field": "metaData",
+            "description": "<p>If true, then includes <code>metaData</code> in the response</p>"
+          },
+          {
+            "group": "Parameter",
             "type": "Number",
             "optional": true,
             "field": "limit",
@@ -12283,6 +12304,13 @@
             "optional": false,
             "field": "results.quota",
             "description": "<p>Quota usage limits</p>"
+          },
+          {
+            "group": "Success 200",
+            "type": "Object",
+            "optional": true,
+            "field": "results.metaData",
+            "description": "<p>Custom metadata value. Included if <code>metaData</code> query argument was true</p>"
           },
           {
             "group": "Success 200",
