@@ -1,6 +1,6 @@
 #! /bin/bash
 
-OURNAME=08_install_zone_mta.sh
+OURNAME=09_install_zone_mta.sh
 
 echo -e "\n-- Executing ${ORANGE}${OURNAME}${NC} subscript --"
 
