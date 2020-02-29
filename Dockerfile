@@ -8,7 +8,8 @@ COPY . .
 RUN npm install --production
 
 ENV WILDDUCK_APPDIR=/wildduck \
-    WILDDUCK_CONFIG=/wildduck/config/default.toml
+    WILDDUCK_CONFIG=/wildduck/config/default.toml \
+    CMD_ARGS=""
 
 ENTRYPOINT ["/usr/bin/dumb-init", "--"]
-CMD node ${WILDDUCK_APPDIR}/server.js --config=${WILDDUCK_CONFIG}
+CMD node ${WILDDUCK_APPDIR}/server.js --config=${WILDDUCK_CONFIG} ${CMD_ARGS}
