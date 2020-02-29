@@ -96,6 +96,30 @@ See [API Docs](https://api.wildduck.email/#api-Users-PostUser) for details about
 
 Any IMAP or POP3 client will do. Use the credentials from step 4\. to log in.
 
+### Docker Install
+The easiest way to setup wildduck with a docker image is given below, for more documentation about configuration options in the docker image, refer to
+the [wiki page on the Docker](https://github.com/nodemailer/wildduck/wiki/Docker).
+
+
+A docker hub image built using the [Dockerfile](./Dockerfile) in the repo is also available
+
+To pull the latest pre-built image of wildduck:
+
+```
+docker pull nodemailer/wildduck
+```
+
+It is also possible to pull a specific version of wildduck by specifying the version as the image tag.
+(example, for version 1.20):
+```
+docker pull nodemailer/wildduck:1.20
+```
+To run the docker image using the [default config](./config/default.toml), and `mongodb` and `redis` from the host machine, use:
+```
+docker run --network=host nodemailer/wildduck
+```
+
+
 ## Goals of the Project
 
 1.  Build a scalable and distributed IMAP/POP3 server that uses clustered database instead of single machine file system as mail store
