@@ -101,7 +101,7 @@ The easiest way to setup wildduck with a docker image is given below, for more d
 the [wiki page on the Docker](https://github.com/nodemailer/wildduck/wiki/Docker).
 
 
-A docker image built using the [Dockerfile](./Dockerfile) in the repo is also available
+A docker hub image built using the [Dockerfile](./Dockerfile) in the repo is also available
 
 To pull the latest pre-built image of wildduck:
 
@@ -113,9 +113,8 @@ It is also possible to pull a specific version of wildduck by specifying the ver
 (example, for version 1.20):
 ```
 docker pull nodemailer/wildduck:1.20
-
 ```
-To run the docker image using the default config (already inside the image), and `mongodb` and `redis` from the host machine, use:
+To run the docker image using the [default config](./config/default.toml), and `mongodb` and `redis` from the host machine, use:
 ```
 docker run --network=host nodemailer/wildduck
 ```
