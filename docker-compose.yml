@@ -1,0 +1,30 @@
+version: "3.7"
+services:
+    wildduck:
+        network_mode: host
+        build: .
+        ports:
+            - "8080:8080"
+            - "143:143"
+            - "110:110"
+            - "993:993"
+            - "995:995"
+        depends_on:
+            - redis
+            - mongo
+
+    redis:
+        network_mode: host
+        image: redis:alpine
+        volumes:
+            - /data
+        expose:
+            - 6379
+    mongo:
+        network_mode: host
+        image: mongo
+        restart: always
+        volumes:
+            - /data/db
+        ports:
+            - 27017

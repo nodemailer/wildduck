@@ -7,6 +7,10 @@ including emails.
 
 WildDuck tries to follow Gmail in product design. If there's a decision to be made then usually the answer is to do whatever Gmail has done.
 
+## Contact
+
+[![Gitter chat](https://badges.gitter.im/gitterHQ/gitter.png)](https://gitter.im/nodemailer/wildduck)
+
 ## Requirements
 
 -   _MongoDB_ to store all data
@@ -91,6 +95,30 @@ See [API Docs](https://api.wildduck.email/#api-Users-PostUser) for details about
 ### Step 5\. Use an IMAP/POP3 client to log in
 
 Any IMAP or POP3 client will do. Use the credentials from step 4\. to log in.
+
+### Docker Install
+The easiest way to setup wildduck with a docker image is given below, for more documentation about configuration options in the docker image, refer to
+the [wiki page on the Docker](https://github.com/nodemailer/wildduck/wiki/Docker).
+
+
+A docker hub image built using the [Dockerfile](./Dockerfile) in the repo is also available
+
+To pull the latest pre-built image of wildduck:
+
+```
+docker pull nodemailer/wildduck
+```
+
+It is also possible to pull a specific version of wildduck by specifying the version as the image tag.
+(example, for version 1.20):
+```
+docker pull nodemailer/wildduck:1.20
+```
+To run the docker image using the [default config](./config/default.toml), and `mongodb` and `redis` from the host machine, use:
+```
+docker run --network=host nodemailer/wildduck
+```
+
 
 ## Goals of the Project
 
