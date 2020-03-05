@@ -95,7 +95,7 @@ class MIMEParser {
      * @return {String|Boolean} A line from the message
      */
     readLine() {
-        let match = this.rfc822.substr(this._pos).match(/(.*?)(\r?\n|$)/);
+        let match = this.rfc822.substr(this._pos).match(/(.*?)(\r*\n|$)/);
         if (match) {
             this._br = match[2] || false;
             this._pos += match[0].length;
