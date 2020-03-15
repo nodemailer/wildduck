@@ -39,7 +39,7 @@ module.exports.start = callback => {
             ? new Gelf(config.log.gelf.options)
             : {
                   // placeholder
-                  emit: () => false
+                  emit: (key, message) => log.info('Gelf', JSON.stringify(message))
               };
 
     loggelf = message => {
@@ -338,11 +338,36 @@ function clearExpiredMessages() {
                     db.database.collection('archived').deleteOne({ _id: messageData._id }, err => {
                         if (err) {
                             //failed to delete
-                            log.error('GC', 'Failed to delete archived message id=%s. %s', messageData._id, err.message);
+                            log.error(
+                                'GC',
+                                'Failed to delete archived message user=%s mailbox=% uid=%s id=%s. %s',
+                                messageData.user,
+                                messageData.mailbox,
+                                messageData.uid,
+                                messageData._id,
+                                err.message
+                            );
                             return cursor.close(() => done(err));
                         }
 
-                        log.verbose('GC', 'Deleted archived message id=%s', messageData._id);
+                        log.verbose(
+                            'GC',
+                            'Deleted archived message user=%s mailbox=% uid=%s id=%s',
+                            messageData.user,
+                            messageData.mailbox,
+                            messageData.uid,
+                            messageData._id
+                        );
+
+                        loggelf({
+                            short_message: '[DELARCH] Deleted archived message',
+                            _mail_action: 'delete_archived',
+                            _service: 'wd_tasks',
+                            _user: messageData.user,
+                            _mailbox: messageData.mailbox,
+                            _uid: messageData.uid,
+                            _archived_id: messageData._id
+                        });
 
                         let attachmentIds = Object.keys(messageData.mimeTree.attachmentMap || {}).map(key => messageData.mimeTree.attachmentMap[key]);
 
