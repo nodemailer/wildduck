@@ -129,7 +129,10 @@ const serverOptions = {
 
             let storeNext = () => {
                 if (stored >= users.length) {
-                    return callback(null, responses.map(r => r.response));
+                    return callback(
+                        null,
+                        responses.map(r => r.response)
+                    );
                 }
 
                 let rcptData = users[stored++];
@@ -204,7 +207,7 @@ module.exports = done => {
             ? new Gelf(config.log.gelf.options)
             : {
                   // placeholder
-                  emit: () => false
+                  emit: (key, message) => log.info('Gelf', JSON.stringify(message))
               };
 
     loggelf = message => {

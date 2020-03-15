@@ -157,7 +157,7 @@ module.exports = done => {
             ? new Gelf(config.log.gelf.options)
             : {
                   // placeholder
-                  emit: () => false
+                  emit: (key, message) => log.info('Gelf', JSON.stringify(message))
               };
 
     loggelf = message => {
