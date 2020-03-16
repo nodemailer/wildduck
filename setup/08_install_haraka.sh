@@ -101,6 +101,10 @@ error=false' > config/clamd.ini
 cp plugins/wildduck/config/wildduck.yaml config/wildduck.yaml
 sed -i -e "s/secret value/$SRS_SECRET/g" config/wildduck.yaml
 
+# Ensure required files and permissions
+echo "d /opt/haraka 0755 deploy deploy" > /etc/tmpfiles.d/haraka.conf
+log_script "haraka"
+
 echo '[Unit]
 Description=Haraka MX Server
 After=mongod.service redis.service
