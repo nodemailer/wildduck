@@ -53,6 +53,10 @@ Configuration files are installed to the following locations:
 3.  WildDuck Webmail: /etc/wildduck/wildduck-webmail.toml
 4.  Haraka: /opt/haraka/config
 
+## Log files
+
+All `stdout` and `stderr` is written to service specific log files. For example WildDuck server logs can be found from `/var/log/wildduc-server/wildduck-server.log`.
+
 ## Code changes
 
 Install script sets up applications as remote git repositories. You can clone these to your own machine using a special deploy user. If you push changes back to the remote repo, related services are restarted automatically.
