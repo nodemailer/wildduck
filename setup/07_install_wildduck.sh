@@ -60,6 +60,10 @@ npm install --unsafe-perm --production
 chown -R deploy:deploy /var/opt/wildduck.git
 chown -R deploy:deploy /opt/wildduck
 
+echo "d /opt/wildduck 0755 deploy deploy
+d /etc/wildduck 0755 wildduck wildduck" > /etc/tmpfiles.d/zone-mta.conf
+log_script "wildduck-server"
+
 echo "[Unit]
 Description=WildDuck Mail Server
 Conflicts=cyrus.service dovecot.service

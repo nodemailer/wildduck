@@ -111,6 +111,12 @@ npm install --unsafe-perm --production
 chown -R deploy:deploy /var/opt/zone-mta.git
 chown -R deploy:deploy /var/opt/zonemta-wildduck.git
 chown -R deploy:deploy /opt/zone-mta
+chown -R wildduck:wildduck /etc/zone-mta
+
+# Ensure required files and permissions
+echo "d /opt/zone-mta 0755 deploy deploy
+d /etc/zone-mta 0755 wildduck wildduck" > /etc/tmpfiles.d/zone-mta.conf
+log_script "zone-mta"
 
 echo '[Unit]
 Description=Zone Mail Transport Agent

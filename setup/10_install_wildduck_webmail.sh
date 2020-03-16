@@ -43,6 +43,10 @@ chown -R deploy:deploy /opt/wildduck-webmail
 HOME=/home/deploy sudo -u deploy npm install
 HOME=/home/deploy sudo -u deploy npm run bowerdeps
 
+
+echo "d /opt/wildduck-webmail 0755 deploy deploy" > /etc/tmpfiles.d/zone-mta.conf
+log_script "wildduck-www"
+
 echo '[Unit]
 Description=Wildduck Webmail
 After=wildduck.service
