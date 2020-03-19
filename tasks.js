@@ -318,7 +318,18 @@ function clearExpiredMessages() {
                     if (deleted) {
                         log.verbose('GC', 'Purged %s messages', deleted);
                     }
-                    return deleteOrphaned(next);
+                    return deleteOrphaned(() => {
+                        auditHandler
+                            .cleanExpired()
+                            .then(() => {
+                                try {
+                                    next();
+                                } catch (err) {
+                                    // ignore, only needed to prevent calling next() twice
+                                }
+                            })
+                            .catch(next);
+                    });
                 });
 
             let processNext = () => {

@@ -313,7 +313,7 @@ indexes:
               headers.value: text
               text: text
           partialFilterExpression:
-              searchable: true
+              searchable: true # ignore messages marked with \Deleted flag
 
     - collection: messages
       index:
@@ -583,3 +583,17 @@ indexes:
           key:
               metadata.audit: 1
               metadata.date: 1
+
+    - collection: audit.files
+      type: gridfs # index applies to gridfs database
+      index:
+          name: audit_files_queue
+          key:
+              metadata.info.queueId: 1
+
+    - collection: audit.files
+      type: gridfs # index applies to gridfs database
+      index:
+          name: audit_files_expire
+          key:
+              metadata.info.expires: 1
