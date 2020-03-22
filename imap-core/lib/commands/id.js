@@ -55,9 +55,17 @@ module.exports = {
                 this.id
             );
 
+            let logdata = {
+                short_message: '[CLIENT ID]',
+                _mail_action: 'client_id',
+                _user: this.session && this.session.user && this.session.user.id && this.session.user.id.toString(),
+                _sess: this.id
+            };
+
             Object.keys(clientId)
                 .sort((a, b) => allowedKeys.indexOf(a) - allowedKeys.indexOf(b))
                 .forEach(key => {
+                    logdata[`_client_id_${key}`] = clientId[key];
                     this._server.logger.info(
                         {
                             tnx: 'id',
@@ -70,6 +78,8 @@ module.exports = {
                         clientId[key]
                     );
                 });
+
+            this._server.loggelf(logdata);
         }
 
         // Create response ID serverIdList
@@ -93,9 +103,9 @@ module.exports = {
                 attributes: serverIdList.length
                     ? [serverIdList]
                     : {
-                        type: 'atom',
-                        value: 'NIL'
-                    }
+                          type: 'atom',
+                          value: 'NIL'
+                      }
             })
         );
 
