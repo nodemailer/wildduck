@@ -77,9 +77,9 @@ secure=true
 #secureOptions=100663296
 
 
-[[interface]]
-enabled=true
-port=9143
-host="0.0.0.0"
-secure=false
-ignoreSTARTTLS=false
+#[[interface]]
+#enabled=true
+#port=9143
+#host="0.0.0.0"
+#secure=false
+#ignoreSTARTTLS=false
