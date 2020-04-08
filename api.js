@@ -64,8 +64,10 @@ const serverOptions = {
             let message = {
                 short_message: 'HTTP [' + req.method + ' ' + path + '] ' + (body.success ? 'OK' : 'FAILED'),
 
-                _ip: req.headers['x-forwarded-for'] || req.connection.remoteAddress,
-                _client_ip: ((req.body && req.body.ip) || (req.query && req.query.ip) || '').toString().substr(0, 40) || '',
+                _remote_ip: req.headers['x-forwarded-for'] || req.connection.remoteAddress,
+
+                _ip: ((req.body && req.body.ip) || (req.query && req.query.ip) || '').toString().substr(0, 40) || '',
+                _sess: ((req.body && req.body.sess) || (req.query && req.query.sess) || '').toString().substr(0, 40) || '',
 
                 _http_route: path,
                 _http_method: req.method,
@@ -81,13 +83,7 @@ const serverOptions = {
             };
 
             Object.keys(req.params || {}).forEach(key => {
-                let value =
-                    typeof req.params[key] === 'string'
-                        ? req.params[key]
-                        : util
-                              .inspect(req.params[key], false, 3)
-                              .toString()
-                              .trim();
+                let value = typeof req.params[key] === 'string' ? req.params[key] : util.inspect(req.params[key], false, 3).toString().trim();
 
                 if (!value) {
                     return;
@@ -111,13 +107,7 @@ const serverOptions = {
                 if (!body || !['id'].includes(key)) {
                     return;
                 }
-                value =
-                    typeof value === 'string'
-                        ? value
-                        : util
-                              .inspect(value, false, 3)
-                              .toString()
-                              .trim();
+                value = typeof value === 'string' ? value : util.inspect(value, false, 3).toString().trim();
 
                 if (value.length > 128) {
                     value = value.substr(0, 128) + '…';
@@ -218,10 +208,7 @@ server.use(
             tokenRequired = true;
             if (accessToken && accessToken.length === 40 && /^[a-fA-F0-9]{40}$/.test(accessToken)) {
                 let tokenData;
-                let tokenHash = crypto
-                    .createHash('sha256')
-                    .update(accessToken)
-                    .digest('hex');
+                let tokenHash = crypto.createHash('sha256').update(accessToken).digest('hex');
 
                 try {
                     let key = 'tn:token:' + tokenHash;
@@ -251,10 +238,7 @@ server.use(
                         };
                     }
 
-                    let signature = crypto
-                        .createHmac('sha256', config.api.accessControl.secret)
-                        .update(JSON.stringify(signData))
-                        .digest('hex');
+                    let signature = crypto.createHmac('sha256', config.api.accessControl.secret).update(JSON.stringify(signData)).digest('hex');
 
                     if (signature !== tokenData.s) {
                         // rogue token or invalidated secret
