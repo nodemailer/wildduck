@@ -27,7 +27,7 @@ echo "deb https://deb.nodesource.com/$NODEREPO $CODENAME main" > /etc/apt/source
 echo "deb-src https://deb.nodesource.com/$NODEREPO $CODENAME main" >> /etc/apt/sources.list.d/nodesource.list
 
 # mongo keys
-wget -qO- https://www.mongodb.org/static/pgp/server-${MONGODB}.asc | sudo apt-key add
+wget -qO- https://www.mongodb.org/static/pgp/server-${MONGODB}.asc | apt-key add
 echo "deb [ arch=amd64 ] http://repo.mongodb.org/apt/ubuntu $CODENAME/mongodb-org/$MONGODB multiverse" > /etc/apt/sources.list.d/mongodb-org.list
 
 # rspamd
