@@ -11925,6 +11925,13 @@
           {
             "group": "Success 200",
             "type": "String[]",
+            "optional": true,
+            "field": "fromWhitelist",
+            "description": "<p>A list of additional email addresses this user can send mail from. Wildcard is allowed.</p>"
+          },
+          {
+            "group": "Success 200",
+            "type": "String[]",
             "optional": false,
             "field": "disabledScopes",
             "description": "<p>Disabled scopes for this user</p>"
@@ -11962,7 +11969,7 @@
       "examples": [
         {
           "title": "Success-Response:",
-          "content": "HTTP/1.1 200 OK\n{\n  \"success\": true,\n  \"id\": \"59fc66a03e54454869460e45\",\n  \"username\": \"testuser01\",\n  \"name\": null,\n  \"address\": \"testuser01@example.com\",\n  \"retention\": false,\n  \"enabled2fa\": [],\n  \"autoreply\": false,\n  \"encryptMessages\": false,\n  \"encryptForwarded\": false,\n  \"pubKey\": \"\",\n  \"keyInfo\": false,\n  \"targets\": [\n      \"my.old.address@example.com\",\n      \"smtp://mx2.zone.eu:25\"\n  ],\n  \"limits\": {\n    \"quota\": {\n      \"allowed\": 107374182400,\n      \"used\": 289838\n    },\n    \"recipients\": {\n      \"allowed\": 2000,\n      \"used\": 0,\n      \"ttl\": false\n    },\n    \"forwards\": {\n      \"allowed\": 2000,\n      \"used\": 0,\n      \"ttl\": false\n    }\n  },\n  \"tags\": [\"green\", \"blue\"],\n  \"disabledScopes\": [\"pop3\"],\n  \"hasPasswordSet\": true,\n  \"activated\": true,\n  \"disabled\": false,\n  \"suspended\": false\n}",
+          "content": "HTTP/1.1 200 OK\n{\n  \"success\": true,\n  \"id\": \"59fc66a03e54454869460e45\",\n  \"username\": \"testuser01\",\n  \"name\": null,\n  \"address\": \"testuser01@example.com\",\n  \"retention\": false,\n  \"enabled2fa\": [],\n  \"autoreply\": false,\n  \"encryptMessages\": false,\n  \"encryptForwarded\": false,\n  \"pubKey\": \"\",\n  \"keyInfo\": false,\n  \"targets\": [\n      \"my.old.address@example.com\",\n      \"smtp://mx2.zone.eu:25\"\n  ],\n  \"limits\": {\n    \"quota\": {\n      \"allowed\": 107374182400,\n      \"used\": 289838\n    },\n    \"recipients\": {\n      \"allowed\": 2000,\n      \"used\": 0,\n      \"ttl\": false\n    },\n    \"forwards\": {\n      \"allowed\": 2000,\n      \"used\": 0,\n      \"ttl\": false\n    }\n  },\n  \"tags\": [\"green\", \"blue\"],\n  \"fromWhitelist\": [],\n  \"disabledScopes\": [\"pop3\"],\n  \"hasPasswordSet\": true,\n  \"activated\": true,\n  \"disabled\": false,\n  \"suspended\": false\n}",
           "type": "json"
         }
       ]
@@ -12662,6 +12669,13 @@
           },
           {
             "group": "Parameter",
+            "type": "String[]",
+            "optional": true,
+            "field": "fromWhitelist",
+            "description": "<p>A list of additional email addresses this user can send mail from. Wildcard is allowed.</p>"
+          },
+          {
+            "group": "Parameter",
             "type": "String",
             "optional": true,
             "field": "sess",
@@ -13144,6 +13158,13 @@
             "optional": true,
             "field": "disabled",
             "description": "<p>If true then disables user account (can not login, can not receive messages)</p>"
+          },
+          {
+            "group": "Parameter",
+            "type": "String[]",
+            "optional": true,
+            "field": "fromWhitelist",
+            "description": "<p>A list of additional email addresses this user can send mail from. Wildcard is allowed.</p>"
           },
           {
             "group": "Parameter",
