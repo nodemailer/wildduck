@@ -73,7 +73,7 @@
         "u2f": "0.1.3",
         "utf7": "1.0.2",
         "uuid": "7.0.3",
-        "wild-config": "1.5.0",
+        "wild-config": "1.5.1",
         "yargs": "15.3.1"
     },
     "repository": {
