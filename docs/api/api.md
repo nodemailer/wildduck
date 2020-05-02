@@ -1,6 +1,6 @@
 # HTTP API
 
-**DEPRECATED DOCS**, see https://api.wildduck.email
+**DEPRECATED DOCS**, see https://docs.wildduck.email/api
 
 WildDuck Mail Server is a scalable IMAP / POP3 server that natively exposes internal data through an HTTP API.
 
