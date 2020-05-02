@@ -55,7 +55,7 @@ Configuration files are installed to the following locations:
 
 ## Log files
 
-All `stdout` and `stderr` is written to service specific log files. For example WildDuck server logs can be found from `/var/log/wildduc-server/wildduck-server.log`.
+All `stdout` and `stderr` is written to service specific log files. For example WildDuck server logs can be found from `/var/log/wildduck-server/wildduck-server.log`.
 
 ## Code changes
 
