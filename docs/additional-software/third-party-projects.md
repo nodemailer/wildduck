@@ -1,6 +1,6 @@
 # Third party projects
 
-This is an overview of any third party projects that integrate with or relate to with WildDuck. This list is sorted by first commit date.
+This is an overview of any third party projects that integrate with or relate to WildDuck. This list is sorted by first commit date.
 
 ## Astzweig Docker Wildduck
 https://github.com/astzweig/docker-wildduck
