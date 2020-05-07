@@ -577,6 +577,13 @@ define({ "api": [
           },
           {
             "group": "Success 200",
+            "type": "Boolean",
+            "optional": false,
+            "field": "results.forwardedDisabled",
+            "description": "<p>If true then the forwarded address is disabled</p>"
+          },
+          {
+            "group": "Success 200",
             "type": "String[]",
             "optional": true,
             "field": "results.target",
@@ -787,8 +794,15 @@ define({ "api": [
             "group": "Success 200",
             "type": "String[]",
             "optional": false,
-            "field": "results.tags",
+            "field": "tags",
             "description": "<p>List of tags associated with the Address</p>"
+          },
+          {
+            "group": "Success 200",
+            "type": "Boolean",
+            "optional": false,
+            "field": "forwardedDisabled",
+            "description": "<p>If true then the forwarded address is disabled</p>"
           }
         ]
       },
@@ -1492,6 +1506,13 @@ define({ "api": [
             "optional": true,
             "field": "tags",
             "description": "<p>A list of tags associated with this address</p>"
+          },
+          {
+            "group": "Parameter",
+            "type": "Boolean",
+            "optional": true,
+            "field": "forwardedDisabled",
+            "description": "<p>If true then disables forwarded address (stops forwarding messages)</p>"
           },
           {
             "group": "Parameter",
