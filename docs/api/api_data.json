@@ -8396,6 +8396,13 @@
           },
           {
             "group": "Success 200",
+            "type": "Number",
+            "optional": false,
+            "field": "results.size",
+            "description": "<p>Message size in bytes</p>"
+          },
+          {
+            "group": "Success 200",
             "type": "String",
             "optional": false,
             "field": "results.intro",
@@ -8476,7 +8483,7 @@
       "examples": [
         {
           "title": "Success-Response:",
-          "content": "HTTP/1.1 200 OK\n{\n  \"success\": true,\n  \"total\": 1,\n  \"page\": 1,\n  \"previousCursor\": false,\n  \"nextCursor\": false,\n  \"specialUse\": null,\n  \"results\": [\n    {\n      \"id\": 1,\n      \"mailbox\": \"59fc66a03e54454869460e46\",\n      \"thread\": \"59fc66a13e54454869460e50\",\n      \"from\": {\n        \"address\": \"rfinnie@domain.dom\",\n        \"name\": \"Ryan Finnie\"\n      },\n      \"subject\": \"Ryan Finnie's MIME Torture Test v1.0\",\n      \"date\": \"2003-10-24T06:28:34.000Z\",\n      \"intro\": \"Welcome to Ryan Finnie's MIME torture test. This message was designed to introduce a couple of the newer features of MIME-aware…\",\n      \"attachments\": true,\n      \"seen\": true,\n      \"deleted\": false,\n      \"flagged\": true,\n      \"draft\": false,\n      \"answered\": false,\n      \"forwarded\": false,\n      \"url\": \"/users/59fc66a03e54454869460e45/mailboxes/59fc66a03e54454869460e46/messages/1\",\n      \"contentType\": {\n        \"value\": \"multipart/mixed\",\n        \"params\": {\n          \"boundary\": \"=-qYxqvD9rbH0PNeExagh1\"\n        }\n      }\n    }\n  ]\n}",
+          "content": "HTTP/1.1 200 OK\n{\n  \"success\": true,\n  \"total\": 1,\n  \"page\": 1,\n  \"previousCursor\": false,\n  \"nextCursor\": false,\n  \"specialUse\": null,\n  \"results\": [\n    {\n      \"id\": 1,\n      \"mailbox\": \"59fc66a03e54454869460e46\",\n      \"thread\": \"59fc66a13e54454869460e50\",\n      \"from\": {\n        \"address\": \"rfinnie@domain.dom\",\n        \"name\": \"Ryan Finnie\"\n      },\n      \"subject\": \"Ryan Finnie's MIME Torture Test v1.0\",\n      \"date\": \"2003-10-24T06:28:34.000Z\",\n      \"intro\": \"Welcome to Ryan Finnie's MIME torture test. This message was designed to introduce a couple of the newer features of MIME-aware…\",\n      \"attachments\": true,\n      \"size\": 1234,\n      \"seen\": true,\n      \"deleted\": false,\n      \"flagged\": true,\n      \"draft\": false,\n      \"answered\": false,\n      \"forwarded\": false,\n      \"url\": \"/users/59fc66a03e54454869460e45/mailboxes/59fc66a03e54454869460e46/messages/1\",\n      \"contentType\": {\n        \"value\": \"multipart/mixed\",\n        \"params\": {\n          \"boundary\": \"=-qYxqvD9rbH0PNeExagh1\"\n        }\n      }\n    }\n  ]\n}",
           "type": "json"
         }
       ]

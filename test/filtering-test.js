@@ -32,7 +32,7 @@ const URL = 'http://127.0.0.1:8080';
 const user2PubKey = fs.readFileSync(__dirname + '/fixtures/user2-public.key', 'utf-8');
 const user3PubKey = fs.readFileSync(__dirname + '/fixtures/user3-public.key', 'utf-8');
 
-describe('Send multiple messages', function() {
+describe('Send multiple messages', function () {
     this.timeout(100 * 1000); // eslint-disable-line
 
     let userIds = [];
@@ -268,14 +268,8 @@ describe('Send multiple messages', function() {
                             expect(message.attachments.length).to.equal(3);
                             expect(message.parsed.attachments.length).to.equal(3);
                             for (let i = 0; i < message.attachments.length; i++) {
-                                let hashA = crypto
-                                    .createHash('md5')
-                                    .update(message.attachments[i].raw)
-                                    .digest('hex');
-                                let hashB = crypto
-                                    .createHash('md5')
-                                    .update(message.parsed.attachments[i].content)
-                                    .digest('hex');
+                                let hashA = crypto.createHash('md5').update(message.attachments[i].raw).digest('hex');
+                                let hashB = crypto.createHash('md5').update(message.parsed.attachments[i].content).digest('hex');
                                 expect(hashA).equal(hashB);
                             }
                             expect(message.parsed.to.value).deep.equal([
@@ -341,18 +335,9 @@ describe('Send multiple messages', function() {
         let swanJpg = fs.readFileSync(__dirname + '/../examples/swan.jpg');
 
         let checksums = [
-            crypto
-                .createHash('md5')
-                .update(imagePng)
-                .digest('hex'),
-            crypto
-                .createHash('md5')
-                .update(Buffer.from(textTxt))
-                .digest('hex'),
-            crypto
-                .createHash('md5')
-                .update(swanJpg)
-                .digest('hex')
+            crypto.createHash('md5').update(imagePng).digest('hex'),
+            crypto.createHash('md5').update(Buffer.from(textTxt)).digest('hex'),
+            crypto.createHash('md5').update(swanJpg).digest('hex')
         ];
 
         const client = new BrowserBox('localhost', 9993, {
