@@ -440,6 +440,8 @@ module.exports = done => {
         loggelf: message => loggelf(message)
     });
 
+    server.loggelf = loggelf;
+
     server.on('error', err => {
         if (!started) {
             started = true;
