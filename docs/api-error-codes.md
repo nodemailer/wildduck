@@ -1,0 +1,42 @@
+# API Error Codes
+
+- `InvalidToken`
+- `MissingPrivileges`: Not enough privileges
+- `InputValidationError` (various descriptions about invalid input validation)
+- `InternalDatabaseError`
+- `InternalError`
+- `UserNotFound`: This user does not exist
+- `UserExistsError`: This username already exists
+- `AddressExistsError`: Address already exists
+- `AddressNotFound`: Invalid or unknown email address identifier
+- `ChangeNotAllowed`: Can not change special address
+- `WildcardNotPermitted`: Can not set wildcard address as default
+- `AspNotFound`: Invalid or unknown ASP key
+- `InvalidAuthScope`: Profile file requires either imap or pop3 and smtp scopes
+- `AuthFailed`: Authentication failed
+- `DkimNotFound`: This domain does not exist
+- `AliasExists`: This domain alias already exists
+- `AliasNotFound`: This alias does not exist
+- `FilterNotFound`: This filter does not exist
+- `NoSuchMailbox`: This mailbox does not exist
+- `MessageNotFound`: Invalid message identifier
+- `OVERQUOTA`: User is over quota
+- `EmptyMessage`: Empty message provided
+- `FileNotFound`: This file does not exist
+- `InsecurePasswordError`: Provided password was found from breached passwords list
+- `ERRREDIS`
+- `ERRSENDINGLIMIT`: You reached a daily sending limit for your account
+- `ERRCOMPOSE`: Could not queue message for delivery
+- `SUBMITFAIL`
+- `KeyGenereateError`: Failed to generate private or public key
+- `InternalConfigError`: Invalid encryption settings
+- `HashError`
+- `UserUpdateFail`: Could not update user
+- `TotpEnabled`: TOTP 2FA is already enabled for this user
+- `QRError`: Failed to generate QR code
+- `TotpDisabled`: TOTP 2FA is not initialized for this user
+- `RateLimitedError`: Authentication was rate limited.
+- `U2fEnabled`: U2F 2FA is already enabled for this user
+- `U2fDisabled`: U2F 2FA is not initialized for this user
+- `InvalidU2fRequest`: Failed to validate U2F response
+- `NoUpdates`: Nothing was updated

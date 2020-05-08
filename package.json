@@ -5,7 +5,7 @@
     "main": "server.js",
     "scripts": {
         "test": "mongo --eval 'db.dropDatabase()' wildduck-test && redis-cli -n 13 flushdb && NODE_ENV=test grunt",
-        "apidoc": "apidoc -i lib/api/ -o docs/",
+        "apidoc": "apidoc -i lib/api/ -o docs/api/",
         "show": "NODE_CONFIG_ONLY=true node server.js"
     },
     "keywords": [
@@ -19,6 +19,7 @@
         "apidoc": "0.22.1",
         "browserbox": "0.9.1",
         "chai": "4.2.0",
+        "docsify-cli": "4.4.0",
         "eslint": "6.8.0",
         "eslint-config-nodemailer": "1.2.0",
         "eslint-config-prettier": "6.11.0",
