@@ -1,8 +1,7 @@
 'use strict';
 
 const imapHandler = require('../handler/imap-handler');
-const imapTools = require('../imap-tools');
-const utf7 = require('utf7').imap;
+const { normalizeMailbox, utf7encode, filterFolders, generateFolderListing } = require('../imap-tools');
 
 // tag LSUB "" "%"
 
@@ -32,7 +31,7 @@ module.exports = {
             });
         }
 
-        let query = imapTools.normalizeMailbox(reference + path, !this.acceptUTF8Enabled);
+        let query = normalizeMailbox(reference + path, !this.acceptUTF8Enabled);
 
         let logdata = {
             short_message: '[LSUB]',
@@ -55,14 +54,14 @@ module.exports = {
                 });
             }
 
-            imapTools.filterFolders(imapTools.generateFolderListing(list, true), query).forEach(folder => {
+            filterFolders(generateFolderListing(list, true), query).forEach(folder => {
                 if (!folder) {
                     return;
                 }
 
                 let path = folder.path;
                 if (!this.acceptUTF8Enabled) {
-                    path = utf7.encode(path);
+                    path = utf7encode(path);
                 } else {
                     path = Buffer.from(path);
                 }
@@ -98,6 +97,6 @@ module.exports = {
 
         // Do folder listing
         // Concat reference and mailbox. No special reference handling whatsoever
-        this._server.onLsub(imapTools.normalizeMailbox(reference + path), this.session, lsubResponse);
+        this._server.onLsub(normalizeMailbox(reference + path), this.session, lsubResponse);
     }
 };

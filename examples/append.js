@@ -1,59 +1,47 @@
 /* eslint no-console:0 */
 
 'use strict';
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
-const rawpath = process.argv[2];
 
+const rawpath = process.argv[2];
 const config = require('wild-config');
-const BrowserBox = require('browserbox');
+const { ImapFlow } = require('imapflow');
 
 const raw = require('fs').readFileSync(rawpath);
 console.log('Processing %s of %s bytes', rawpath, raw.length);
 
-const client = new BrowserBox('localhost', config.imap.port, {
-    useSecureTransport: config.imap.secure,
+const client = new ImapFlow({
+    host: '127.0.0.1',
+    port: config.imap.port,
+    secure: config.imap.secure,
     auth: {
         user: 'myuser',
         pass: 'verysecret'
     },
-    id: {
-        name: 'My Client',
-        version: '0.1'
-    },
     tls: {
         rejectUnauthorized: false
+    },
+    clientInfo: {
+        name: 'My Client',
+        version: '0.1'
     }
 });
 
-client.onerror = function(err) {
+client.on('error', err => {
     console.log(err);
     process.exit(1);
-};
+});
 
-client.onauth = function() {
-    client.upload('INBOX', raw, false, err => {
-        if (err) {
-            console.log(err);
-            return process.exit(1);
-        }
-
-        client.selectMailbox('INBOX', (err, mailbox) => {
-            if (err) {
-                console.log(err);
-                return process.exit(1);
-            }
-            console.log(mailbox);
-
-            client.listMessages(mailbox.exists, ['BODY.PEEK[]', 'BODYSTRUCTURE'], (err, data) => {
-                if (err) {
-                    console.log(err);
-                    return process.exit(1);
-                }
-                console.log('<<<%s>>>', data[0]['body[]']);
-                return process.exit(0);
-            });
-        });
+client
+    .connect()
+    .then(() => client.append('INBOX', raw))
+    .then(() => client.mailboxOpen('INBOX'))
+    .then(mailbox => client.fetchOne(mailbox.exists, { bodyStructure: true, source: true }))
+    .then(data => {
+        console.log(data);
+        console.log('<<<%s>>>', data.source.toString());
+        return process.exit(0);
+    })
+    .catch(err => {
+        console.log(err);
+        process.exit(1);
     });
-};
-
-client.connect();

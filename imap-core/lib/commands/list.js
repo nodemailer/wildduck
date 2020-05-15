@@ -1,8 +1,7 @@
 'use strict';
 
 const imapHandler = require('../handler/imap-handler');
-const imapTools = require('../imap-tools');
-const utf7 = require('utf7').imap;
+const { normalizeMailbox, utf7encode, filterFolders, generateFolderListing } = require('../imap-tools');
 
 // tag LIST (SPECIAL-USE) "" "%" RETURN (SPECIAL-USE)
 
@@ -107,7 +106,7 @@ module.exports = {
             });
         }
 
-        let query = imapTools.normalizeMailbox(reference + path, !this.acceptUTF8Enabled);
+        let query = normalizeMailbox(reference + path, !this.acceptUTF8Enabled);
 
         let logdata = {
             short_message: '[LIST]',
@@ -130,7 +129,7 @@ module.exports = {
                 });
             }
 
-            imapTools.filterFolders(imapTools.generateFolderListing(list), query).forEach(folder => {
+            filterFolders(generateFolderListing(list), query).forEach(folder => {
                 if (!folder) {
                     return;
                 }
@@ -162,7 +161,7 @@ module.exports = {
 
                 let path = folder.path;
                 if (!this.acceptUTF8Enabled) {
-                    path = utf7.encode(path);
+                    path = utf7encode(path);
                 } else {
                     path = Buffer.from(path);
                 }

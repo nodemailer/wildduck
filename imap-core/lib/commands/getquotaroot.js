@@ -1,8 +1,7 @@
 'use strict';
 
 const imapHandler = require('../handler/imap-handler');
-const imapTools = require('../imap-tools');
-const utf7 = require('utf7').imap;
+const { normalizeMailbox, utf7encode } = require('../imap-tools');
 
 // tag GETQUOTAROOT "mailbox"
 
@@ -18,7 +17,7 @@ module.exports = {
 
     handler(command, callback) {
         let path = Buffer.from((command.attributes[0] && command.attributes[0].value) || '', 'binary').toString();
-        path = imapTools.normalizeMailbox(path, !this.acceptUTF8Enabled);
+        path = normalizeMailbox(path, !this.acceptUTF8Enabled);
 
         if (typeof this._server.onGetQuota !== 'function') {
             return callback(null, {
@@ -64,7 +63,7 @@ module.exports = {
             }
 
             if (!this.acceptUTF8Enabled) {
-                path = utf7.encode(path);
+                path = utf7encode(path);
             } else {
                 path = Buffer.from(path);
             }

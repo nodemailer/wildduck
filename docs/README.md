@@ -13,7 +13,7 @@ WildDuck tries to follow Gmail in product design. If there's a decision to be ma
 
 -   _MongoDB_ to store all data
 -   _Redis_ for pubsub and counters
--   _Node.js_ at least version 8.0.0
+-   _Node.js_ at least version 10.0.0
 
 **Optional requirements**
 
@@ -33,7 +33,6 @@ Every component of the WildDuck mail server can be replicated which eliminates p
 Attachment de-duplication and compression gives up to 56% of storage size reduction.
 
 ![](https://raw.githubusercontent.com/nodemailer/wildduck/master/assets/storage.png)
-
 
 ## Goals of the Project
 
@@ -60,4 +59,3 @@ Attachment de-duplication and compression gives up to 56% of storage size reduct
 ## License
 
 WildDuck Mail Agent is licensed under the [European Union Public License 1.1](http://ec.europa.eu/idabc/eupl.html) or later.
-
