@@ -515,6 +515,8 @@ class IMAPConnection extends EventEmitter {
             getQueryResponse: imapTools.getQueryResponse,
             matchSearchQuery: search.matchSearchQuery,
 
+            commandCounters: {},
+
             isUTF8Enabled: () => this.acceptUTF8Enabled
         };
     }
