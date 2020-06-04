@@ -20,5 +20,4 @@
     then change the code, restart the app and you're ready to go. If it works on one machine then most probably it works in every other machine as well.
 13. **Better disk usage**. Attachment deduplication and MongoDB compression yield in about 40% smaller disk usage as the sum of all stored email sizes.
 14. **Extra security features** like automatic GPG encryption of all stored messages or authenticating with U2F
-15. **Exposed logs.** Users have access to logs concerning their account. This includes security logs (authentication attempts, changes on account) and also
-    message logs
+15. **Exposed logs.** Users have access to logs concerning their account such as authentication attempts and other changes.
