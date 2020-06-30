@@ -107,6 +107,7 @@ let createInterface = (ifaceOptions, callback) => {
         );
     });
 
+    // TODO: is this even used anywhere?
     server.indexer = indexer;
     server.notifier = notifier;
 

@@ -36,6 +36,8 @@ class Indexer {
             debug: () => false,
             error: () => false
         };
+
+        this.loggelf = this.options.loggelf || (() => false);
     }
 
     /**
@@ -260,7 +262,32 @@ class Indexer {
                     if (mimeTree.attachmentMap && mimeTree.attachmentMap[node.attachmentId]) {
                         attachmentId = mimeTree.attachmentMap[node.attachmentId];
                     }
-                    let attachmentData = await this.getAttachment(attachmentId);
+                    let attachmentData;
+                    try {
+                        attachmentData = await this.getAttachment(attachmentId);
+                    } catch (err) {
+                        if (err.code === 'FileNotFound') {
+                            this.loggelf({
+                                short_message: 'Attachment missing',
+                                _mail_action: 'attachment_missing',
+                                _attachment_id: attachmentId
+                            });
+
+                            // attachment was not found from storage, use empty placeholder instead
+                            attachmentData = {
+                                contentType: 'application/octet-stream',
+                                transferEncoding: '8bit',
+                                length: 0,
+                                count: 0,
+                                hash: attachmentId,
+                                metadata: {
+                                    lineLen: 0
+                                }
+                            };
+                        } else {
+                            throw err;
+                        }
+                    }
 
                     let attachmentSize = node.size;
                     // we need to calculate expected length as the original does not apply anymore
@@ -288,9 +315,16 @@ class Indexer {
                         // only process attachment if we are reading inside existing bounds
                         if (node.size > readBounds.startFrom) {
                             let attachmentStream = this.attachmentStorage.createReadStream(attachmentId, attachmentData, readBounds);
-
                             await new Promise((resolve, reject) => {
                                 attachmentStream.once('error', err => {
+                                    if (err.code === 'ENOENT') {
+                                        this.loggelf({
+                                            short_message: 'Attachment missing',
+                                            _mail_action: 'attachment_missing',
+                                            _attachment_id: attachmentId
+                                        });
+                                        return resolve();
+                                    }
                                     reject(err);
                                 });
 
@@ -308,12 +342,9 @@ class Indexer {
                                     resolve();
                                 });
 
-                                attachmentStream.pipe(
-                                    output,
-                                    {
-                                        end: false
-                                    }
-                                );
+                                attachmentStream.pipe(output, {
+                                    end: false
+                                });
                             });
                         }
                     }
@@ -498,10 +529,7 @@ class Indexer {
                     (node.parsedHeader['content-type'] && node.parsedHeader['content-type'].params && node.parsedHeader['content-type'].params.name) ||
                     false;
 
-                let contentId = (node.parsedHeader['content-id'] || '')
-                    .toString()
-                    .replace(/<|>/g, '')
-                    .trim();
+                let contentId = (node.parsedHeader['content-id'] || '').toString().replace(/<|>/g, '').trim();
 
                 if (filename) {
                     try {
@@ -792,11 +820,7 @@ class Indexer {
                 let headers =
                     formatHeaders(node.header)
                         .filter(line => {
-                            let key = line
-                                .split(':')
-                                .shift()
-                                .toLowerCase()
-                                .trim();
+                            let key = line.split(':').shift().toLowerCase().trim();
                             return selector.headers.indexOf(key) >= 0;
                         })
                         .join('\r\n') + '\r\n\r\n';
@@ -810,11 +834,7 @@ class Indexer {
                 let headers =
                     formatHeaders(node.header)
                         .filter(line => {
-                            let key = line
-                                .split(':')
-                                .shift()
-                                .toLowerCase()
-                                .trim();
+                            let key = line.split(':').shift().toLowerCase().trim();
                             return selector.headers.indexOf(key) < 0;
                         })
                         .join('\r\n') + '\r\n\r\n';
