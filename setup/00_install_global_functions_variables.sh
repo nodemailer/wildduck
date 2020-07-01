@@ -261,7 +261,7 @@ SERVICE_NAME=$1
 # Ensure required files and permissions
 echo "d /var/log/${SERVICE_NAME} 0750 syslog adm" > /etc/tmpfiles.d/${SERVICE_NAME}-log.conf
 
-# Redirect MongoDB log output from syslog to mongodb log file
+# Redirect MongoDB log output from syslog to service specific log file
 echo "if ( \$programname startswith \"$SERVICE_NAME\" ) then {
     action(type=\"omfile\" file=\"/var/log/${SERVICE_NAME}/${SERVICE_NAME}.log\")
     stop
