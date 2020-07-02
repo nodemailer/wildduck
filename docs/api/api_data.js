@@ -6622,6 +6622,13 @@ define({ "api": [
           },
           {
             "group": "Success 200",
+            "type": "Boolean",
+            "optional": false,
+            "field": "hidden",
+            "description": "<p>Is the folder hidden or not</p>"
+          },
+          {
+            "group": "Success 200",
             "type": "Number",
             "optional": false,
             "field": "total",
@@ -6722,6 +6729,14 @@ define({ "api": [
             "group": "Parameter",
             "type": "Boolean",
             "optional": true,
+            "field": "showHidden",
+            "defaultValue": "false",
+            "description": "<p>Hidden folders are not included in the listing by default.</p>"
+          },
+          {
+            "group": "Parameter",
+            "type": "Boolean",
+            "optional": true,
             "field": "counters",
             "defaultValue": "false",
             "description": "<p>Should the response include counters (total + unseen). Counters come with some overhead.</p>"
@@ -6798,6 +6813,13 @@ define({ "api": [
           },
           {
             "group": "Success 200",
+            "type": "Boolean",
+            "optional": false,
+            "field": "results.hidden",
+            "description": "<p>Is the folder hidden or not</p>"
+          },
+          {
+            "group": "Success 200",
             "type": "Number",
             "optional": false,
             "field": "results.total",
@@ -6815,7 +6837,7 @@ define({ "api": [
       "examples": [
         {
           "title": "Success-Response:",
-          "content": "HTTP/1.1 200 OK\n{\n  \"success\": true,\n  \"results\": [\n    {\n      \"id\": \"59fc66a03e54454869460e46\",\n      \"name\": \"INBOX\",\n      \"path\": \"INBOX\",\n      \"specialUse\": null,\n      \"modifyIndex\": 1808,\n      \"subscribed\": true,\n      \"total\": 20,\n      \"unseen\": 2\n    },\n    {\n      \"id\": \"59fc66a03e54454869460e47\",\n      \"name\": \"Sent Mail\",\n      \"path\": \"Sent Mail\",\n      \"specialUse\": \"\\\\Sent\",\n      \"modifyIndex\": 145,\n      \"subscribed\": true,\n      \"total\": 15,\n      \"unseen\": 0\n    }\n  ]\n}",
+          "content": "HTTP/1.1 200 OK\n{\n  \"success\": true,\n  \"results\": [\n    {\n      \"id\": \"59fc66a03e54454869460e46\",\n      \"name\": \"INBOX\",\n      \"path\": \"INBOX\",\n      \"specialUse\": null,\n      \"modifyIndex\": 1808,\n      \"subscribed\": true,\n      \"hidden\": false,\n      \"total\": 20,\n      \"unseen\": 2\n    },\n    {\n      \"id\": \"59fc66a03e54454869460e47\",\n      \"name\": \"Sent Mail\",\n      \"path\": \"Sent Mail\",\n      \"specialUse\": \"\\\\Sent\",\n      \"modifyIndex\": 145,\n      \"subscribed\": true,\n      \"hidden\": false,\n      \"total\": 15,\n      \"unseen\": 0\n    }\n  ]\n}",
           "type": "json"
         }
       ]
@@ -6897,6 +6919,14 @@ define({ "api": [
             "optional": false,
             "field": "path",
             "description": "<p>Full path of the mailbox, folders are separated by slashes, ends with the mailbox name (unicode string)</p>"
+          },
+          {
+            "group": "Parameter",
+            "type": "Boolean",
+            "optional": true,
+            "field": "hidden",
+            "defaultValue": "false",
+            "description": "<p>Is the folder hidden or not. Hidden folders can not be opened in IMAP.</p>"
           },
           {
             "group": "Parameter",
@@ -7015,6 +7045,13 @@ define({ "api": [
             "optional": true,
             "field": "path",
             "description": "<p>Full path of the mailbox, use this to rename an existing Mailbox</p>"
+          },
+          {
+            "group": "Parameter",
+            "type": "Boolean",
+            "optional": true,
+            "field": "hidden",
+            "description": "<p>Is the folder hidden or not. Hidden folders can not be opened in IMAP.</p>"
           },
           {
             "group": "Parameter",
