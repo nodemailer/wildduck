@@ -21,6 +21,7 @@ const util = require('util');
 const ObjectID = require('mongodb').ObjectID;
 
 const usersRoutes = require('./lib/api/users');
+const teamsRoutes = require('./lib/api/teams');
 const addressesRoutes = require('./lib/api/addresses');
 const mailboxesRoutes = require('./lib/api/mailboxes');
 const messagesRoutes = require('./lib/api/messages');
@@ -384,9 +385,9 @@ module.exports = done => {
         config.log.gelf && config.log.gelf.enabled
             ? new Gelf(config.log.gelf.options)
             : {
-                  // placeholder
-                  emit: (key, message) => log.info('Gelf', JSON.stringify(message))
-              };
+                // placeholder
+                emit: (key, message) => log.info('Gelf', JSON.stringify(message))
+            };
 
     loggelf = message => {
         if (typeof message === 'string') {
@@ -461,6 +462,7 @@ module.exports = done => {
     server.loggelf = message => loggelf(message);
 
     usersRoutes(db, server, userHandler);
+    teamsRoutes(db, server, userHandler);
     addressesRoutes(db, server, userHandler);
     mailboxesRoutes(db, server, mailboxHandler);
     messagesRoutes(db, server, messageHandler, userHandler, storageHandler);
