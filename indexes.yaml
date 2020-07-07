@@ -575,20 +575,6 @@ indexes:
               expires: 1
               deleted: 1
 
-    - collection: auditusers
-      index:
-          name: list_audit
-          key:
-              audit: 1
-              deleted: 1
-
-    - collection: auditusers
-      index:
-          name: audit_users
-          unique: true
-          key:
-              username: 1
-
     - collection: audit.files
       type: gridfs # index applies to gridfs database
       index:

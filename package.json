@@ -15,7 +15,7 @@
     "author": "Andris Reinman",
     "license": "EUPL-1.1+",
     "devDependencies": {
-        "ajv": "6.12.2",
+        "ajv": "6.12.3",
         "apidoc": "0.23.0",
         "chai": "4.2.0",
         "docsify-cli": "4.4.1",
