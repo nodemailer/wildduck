@@ -32,4 +32,4 @@ Authentication related events (this also includes modifications in authenticatio
 
 ## Role based tokens
 
-By default a root token is used for validating API calls. You can use role based and user bound tokens instead to limit damage in case tokens are leaked. Read about tokens [here](roles.md).
+By default a root token is used for validating API calls. You can use role based and user bound tokens instead to limit damage in case tokens are leaked. Read about tokens [here](in-depth/roles.md).
