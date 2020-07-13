@@ -73,6 +73,7 @@
         "smtp-server": "3.7.0",
         "speakeasy": "2.0.0",
         "u2f": "0.1.3",
+        "unixcrypt": "^1.0.11",
         "uuid": "8.2.0",
         "wild-config": "1.5.1",
         "yargs": "15.3.1"
