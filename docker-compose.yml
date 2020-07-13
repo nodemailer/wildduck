@@ -1,7 +1,8 @@
 version: "3.7"
 services:
     wildduck:
-        network_mode: host
+        container_name: wildduck
+        restart: always
         build: .
         ports:
             - "8080:8080"
@@ -12,19 +13,15 @@ services:
         depends_on:
             - redis
             - mongo
-
+        environment:
+            CMD_ARGS: "--dbs.mongo=mongodb://mongo:27017/ --dbs.redis=redis://redis:6379/3 --api.host=0.0.0.0"
     redis:
-        network_mode: host
         image: redis:alpine
+        restart: always
         volumes:
             - /data
-        expose:
-            - 6379
     mongo:
-        network_mode: host
         image: mongo
         restart: always
         volumes:
             - /data/db
-        ports:
-            - 27017
