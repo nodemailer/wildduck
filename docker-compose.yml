@@ -1,7 +1,8 @@
 version: "3.7"
 services:
     wildduck:
-        network_mode: host
+        container_name: wildduck
+        restart: always
         build: .
         ports:
             - "8080:8080"
@@ -10,21 +11,23 @@ services:
             - "993:993"
             - "995:995"
         depends_on:
-            - redis
+            - cache
             - mongo
-
-    redis:
-        network_mode: host
+        volumes:
+            - ./data/dbs.toml:/wildduck/config/dbs.toml
+            - ./data/api.toml:/wildduck/config/api.toml
+    cache:
         image: redis:alpine
+        container_name: cache
         volumes:
             - /data
         expose:
             - 6379
     mongo:
-        network_mode: host
         image: mongo
+        container_name: mongo
         restart: always
         volumes:
             - /data/db
-        ports:
+        expose:
             - 27017

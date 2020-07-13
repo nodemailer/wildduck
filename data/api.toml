@@ -1,0 +1,56 @@
+enabled=true
+port=8080
+host="0.0.0.0"
+secure=false
+
+# If set requires all API calls to have accessToken query argument with that value
+# http://localhost:8080/users?accessToken=somesecretvalue
+#accessToken="somesecretvalue"
+
+[accessControl]
+# If true then require a valid access token to perform API calls
+# If a client provides a token then it is validated even if using a token is not required
+enabled=false
+
+# Secret for HMAC
+# Changing this value invalidates all tokens
+secret="a secret cat"
+
+# Generated access token TTL in seconds. Token TTL gets extended by this value every time the token is used. Defaults to 14 days
+#tokenTTL=1209600
+
+# Generated access token max lifetime in seconds. Defaults to 180 days
+#tokenLifetime=15552000
+
+[roles]
+# @include "roles.json"
+
+[tls]
+# If certificate path is not defined, use global or built-in self-signed certs
+#key="/path/to/server/key.pem"
+#cert="/path/to/server/cert.pem"
+
+[mobileconfig]
+# plist configuration for OSX/iOS profile files that are generated with Application Specific Passwords
+# Use {email} in the description strings to replace it with account email address
+
+# A reverse-DNS style identifier (com.example.myprofile, for example) that identifies the profile.
+# This string is used to determine whether a new profile should replace an existing one or should be added. Username is prepended to this value.
+identifier="com.email.wildduck"
+
+# A human-readable name for the profile. This value is displayed on the Detail screen. It does not have to be unique.
+displayName="WildDuck Mail"
+
+# A human-readable string containing the name of the organization that provided the profile.
+organization="WildDuck Mail Services"
+
+# A description of the profile, shown on the Detail screen for the profile. This should be descriptive enough to help the user decide whether to install the profile.
+displayDescription="Install this profile to setup {email}"
+
+# A user-visible description of the email account, shown in the Mail and Settings applications.
+accountDescription="WildDuck ({email})"
+
+[mobileconfig.tls]
+# If certificate path is not defined, use global or built-in self-signed certs
+#key="/path/to/server/key.pem"
+#cert="/path/to/server/cert.pem"

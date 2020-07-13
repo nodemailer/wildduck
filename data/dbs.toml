@@ -1,0 +1,47 @@
+# mongodb connection string for the main database
+mongo="mongodb://mongo:27017/wildduck"
+
+# redis connection string to connect to a single master (see below for Sentinel example)
+#redis="redis://127.0.0.1:6379/3"
+
+# WildDuck allows using different kind of data in different databases
+# If you do not provide a database config value, then main database connection
+# is used for everything
+# You can either use a database name (uses shared connection) or a configutaion
+# url (creates a separate connection) for each databases
+
+# Optional database name or connection url for GridFS if you do not want to
+# use the main db for storing attachments. Useful if you want
+# to use a different mount folder or storage engine
+#gridfs="wildduck"
+
+# Optional database name or connection url for users collection if you do not want to
+# use the main db for storing user/address data. Useful if you want
+# to use a different mount folder or storage engine
+#users="wildduck"
+
+# Optional database name or connection url for ZoneMTA queue database. This is
+# used to push outbound emails to the sending queue
+sender="zone-mta"
+
+#queued="mail"
+
+[redis]
+host="cache"
+port=6379
+db=3
+
+## Connect to Redis Sentinel instead of single master
+# [redis]
+# name="mymaster"
+# password=""
+# db=3
+# [[redis.sentinels]]
+#   host="54.36.85.113"
+#   port=26379
+# [[redis.sentinels]]
+#   host="54.36.85.114"
+#   port=26379
+# [[redis.sentinels]]
+#   host="54.36.85.115"
+#   port=26379
