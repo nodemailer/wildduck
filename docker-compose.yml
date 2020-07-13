@@ -16,18 +16,12 @@ services:
         volumes:
             - ./data/dbs.toml:/wildduck/config/dbs.toml
             - ./data/api.toml:/wildduck/config/api.toml
-    cache:
+    redis:
         image: redis:alpine
-        container_name: cache
         volumes:
             - /data
-        expose:
-            - 6379
     mongo:
         image: mongo
-        container_name: mongo
         restart: always
         volumes:
             - /data/db
-        expose:
-            - 27017
