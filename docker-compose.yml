@@ -11,13 +11,16 @@ services:
             - "993:993"
             - "995:995"
         depends_on:
-            - cache
+            - redis
             - mongo
         volumes:
             - ./data/dbs.toml:/wildduck/config/dbs.toml
             - ./data/api.toml:/wildduck/config/api.toml
+        environment:
+            CMD_ARGS: "--dbs.mongo=mongodb://mongo:27017/ --dbs.redis=redis://redis:6379/3 --api.host=0.0.0.0"
     redis:
         image: redis:alpine
+        restart: always
         volumes:
             - /data
     mongo:
