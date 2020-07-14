@@ -107,62 +107,82 @@ const serverOptions = {
 
                 session.user.mailbox = mailbox._id;
 
-                db.redis.hget('pop3uid', mailbox._id.toString(), (err, lastIndex) => {
-                    let query = {
-                        mailbox: mailbox._id
-                    };
-                    if (!err && lastIndex && !isNaN(lastIndex)) {
-                        query.uid = { $gte: Number(lastIndex) };
-                    }
+                db.redis
+                    .multi()
+                    // "new" limit store
+                    .hget(`pxm:${session.user.id}`, mailbox._id.toString())
+                    // fallback store
+                    .hget(`pop3uid`, mailbox._id.toString())
+                    .exec((err, res) => {
+                        let lastIndex = res && ((res[0] && res[0][1]) || (res[1] && res[1][1]));
 
-                    db.database
-                        .collection('messages')
-                        .find(query)
-                        .project({
-                            uid: true,
-                            size: true,
-                            mailbox: true,
-                            // required to decide if we need to update flags after RETR
-                            flags: true,
-                            unseen: true
-                        })
-                        .sort({ uid: -1 })
-                        .limit(config.pop3.maxMessages || MAX_MESSAGES)
-                        .toArray((err, messages) => {
+                        let query = {
+                            mailbox: mailbox._id
+                        };
+                        if (!err && lastIndex && !isNaN(lastIndex)) {
+                            query.uid = { $gte: Number(lastIndex) };
+                        }
+
+                        userHandler.userCache.get(session.user.id, 'pop3MaxMessages', config.pop3.maxMessages, (err, maxMessages) => {
                             if (err) {
                                 return callback(err);
                             }
 
-                            let updateUIDIndex = done => {
-                                // first is the newest, last the oldest
-                                let oldestMessageData = messages && messages.length && messages[messages.length - 1];
-                                if (!oldestMessageData || !oldestMessageData.uid) {
-                                    return done();
-                                }
-                                // try to update index, ignore result
-                                db.redis.hset('pop3uid', mailbox._id.toString(), oldestMessageData.uid, done);
-                            };
+                            db.database
+                                .collection('messages')
+                                .find(query)
+                                .project({
+                                    uid: true,
+                                    size: true,
+                                    mailbox: true,
+                                    // required to decide if we need to update flags after RETR
+                                    flags: true,
+                                    unseen: true
+                                })
+                                .sort({ uid: -1 })
+                                .limit(maxMessages || MAX_MESSAGES)
+                                .toArray((err, messages) => {
+                                    if (err) {
+                                        return callback(err);
+                                    }
 
-                            updateUIDIndex(() => {
-                                return callback(null, {
-                                    messages: messages
-                                        // show older first
-                                        .reverse()
-                                        // compose message objects
-                                        .map(message => ({
-                                            id: message._id.toString(),
-                                            uid: message.uid,
-                                            mailbox: message.mailbox,
-                                            size: message.size,
-                                            flags: message.flags,
-                                            seen: !message.unseen
-                                        })),
-                                    count: messages.length,
-                                    size: messages.reduce((acc, message) => acc + message.size, 0)
+                                    let updateUIDIndex = done => {
+                                        // first is the newest, last the oldest
+                                        let oldestMessageData = messages && messages.length && messages[messages.length - 1];
+                                        if (!oldestMessageData || !oldestMessageData.uid) {
+                                            return done();
+                                        }
+                                        // try to update index, ignore result
+                                        db.redis
+                                            .multi()
+                                            // update limit store
+                                            .hset(`pxm:${session.user.id}`, mailbox._id.toString(), oldestMessageData.uid)
+                                            // delete fallback store as it is no longer needed
+                                            .hdel(`pop3uid`, mailbox._id.toString())
+                                            .exec(done);
+                                    };
+
+                                    updateUIDIndex(() => {
+                                        return callback(null, {
+                                            messages: messages
+                                                // show older first
+                                                .reverse()
+                                                // compose message objects
+                                                .map(message => ({
+                                                    id: message._id.toString(),
+                                                    uid: message.uid,
+                                                    mailbox: message.mailbox,
+                                                    size: message.size,
+                                                    flags: message.flags,
+                                                    seen: !message.unseen
+                                                })),
+                                            count: messages.length,
+                                            size: messages.reduce((acc, message) => acc + message.size, 0)
+                                        });
+                                    });
                                 });
-                            });
                         });
-                });
+                    });
             }
         );
     },

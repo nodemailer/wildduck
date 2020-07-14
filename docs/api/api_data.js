@@ -12676,6 +12676,13 @@ define({ "api": [
             "group": "Parameter",
             "type": "Number",
             "optional": true,
+            "field": "pop3MaxMessages",
+            "description": "<p>How many latest messages to list in POP3 session</p>"
+          },
+          {
+            "group": "Parameter",
+            "type": "Number",
+            "optional": true,
             "field": "imapMaxConnections",
             "description": "<p>How many parallel IMAP connections are alowed</p>"
           },
@@ -13188,6 +13195,13 @@ define({ "api": [
             "optional": true,
             "field": "pop3MaxDownload",
             "description": "<p>How many bytes can be downloaded via POP3 during 24 hour</p>"
+          },
+          {
+            "group": "Parameter",
+            "type": "Number",
+            "optional": true,
+            "field": "pop3MaxMessages",
+            "description": "<p>How many latest messages to list in POP3 session</p>"
           },
           {
             "group": "Parameter",

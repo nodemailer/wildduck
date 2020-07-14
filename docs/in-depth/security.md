@@ -12,7 +12,7 @@ If 2FA is enabled then account password can only be used for the "master" scope 
 
 ## Application Specific Passwords
 
-Application Specific Passwords are 16 byte strings, consisting of lowercase random latin characters. ASPs can include additional whitespace symbols as all whitespace symbols are removed from the password before doing any validations with it (this behavior does not extend to the account password where whitespace symbols matter). ASPs are stored as separate *asp* entries in the users database.
+Application Specific Passwords are 16 byte strings, consisting of lowercase random latin characters. ASPs can include additional whitespace symbols as all whitespace symbols are removed from the password before doing any validations with it (this behavior does not extend to the account password where whitespace symbols matter). ASPs are stored as separate _asp_ entries in the users database.
 
 ASPs are hashed with bcrypt, using 12 rounds. Additionally the 4 first symbols of the ASP are hashed with md5. This is needed to detect potential ASPs when authenticating (user password is compared against only these ASPs that have a matching md5 hash of the 4 first characters).
 
@@ -29,3 +29,7 @@ Wild Duck is able to encrypt all added messages with users public PGP key, this 
 ## Auditing
 
 Authentication related events (this also includes modifications in authentication information) are logged and logs are kept for 30 days. Authentication event includes action (eg. "authentication"), result (eg. "success"), IP address and a few other values.
+
+## Role based tokens
+
+By default a root token is used for validating API calls. You can use role based and user bound tokens instead to limit damage in case tokens are leaked. Read about tokens [here](in-depth/roles.md).
