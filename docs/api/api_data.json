@@ -7265,6 +7265,14 @@
             "optional": false,
             "field": "mailbox",
             "description": "<p>ID of the Mailbox</p>"
+          },
+          {
+            "group": "Parameter",
+            "type": "Boolean",
+            "optional": true,
+            "field": "async",
+            "defaultValue": "false",
+            "description": "<p>Schedule deletion task</p>"
           }
         ]
       }
@@ -9705,13 +9713,13 @@
     },
     "examples": [
       {
-        "title": "Upload a Message:",
-        "content": "curl -i -XPOST \"http://localhost:8080/users/5a2f9ca57308fc3a6f5f811d/mailboxes/5a2f9ca57308fc3a6f5f811e/messages\" \\\n-H 'Content-type: message/rfc822' \\\n-d 'From: sender@example.com\nTo: recipient@example.com\nSubject: hello world!\n\nExample message'",
+        "title": "Upload a Message Structure:",
+        "content": "curl -i -XPOST \"http://localhost:8080/users/5a2f9ca57308fc3a6f5f811d/mailboxes/5a2f9ca57308fc3a6f5f811e/messages\" \\\n-H 'Content-type: application/json' \\\n-d '{\n  \"from\": {\n    \"name\": \"sender name\",\n    \"address\": \"sender@example.com\"\n  },\n  \"to\": [{\n    \"address\": \"andris@ethereal.email\"\n  }],\n  \"subject\": \"Hello world!\",\n  \"text\": \"Test message\"\n}'",
         "type": "curl"
       },
       {
-        "title": "Upload a Message Structure:",
-        "content": "curl -i -XPOST \"http://localhost:8080/users/5a2f9ca57308fc3a6f5f811d/mailboxes/5a2f9ca57308fc3a6f5f811e/messages\" \\\n-H 'Content-type: application/json' \\\n-d '{\n  \"from\": {\n    \"name\": \"sender name\",\n    \"address\": \"sender@example.com\"\n  },\n  \"to\": [{\n    \"address\": \"andris@ethereal.email\"\n  }],\n  \"subject\": \"Hello world!\",\n  \"text\": \"Test message\"\n}'",
+        "title": "Upload Raw Message:",
+        "content": "curl -i -XPOST \"http://localhost:8080/users/5a2f9ca57308fc3a6f5f811d/mailboxes/5a2f9ca57308fc3a6f5f811e/messages\" \\\n-H 'Content-type: message/rfc822' \\\n-d 'From: sender@example.com\nTo: recipient@example.com\nSubject: Hello world!\nMIME-Version: 1.0\n\nExample message'",
         "type": "curl"
       }
     ],

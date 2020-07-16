@@ -66,8 +66,8 @@ const serverOptions = {
 
                 _remote_ip: req.headers['x-forwarded-for'] || req.connection.remoteAddress,
 
-                _ip: ((req.body && req.body.ip) || (req.query && req.query.ip) || '').toString().substr(0, 40) || '',
-                _sess: ((req.body && req.body.sess) || (req.query && req.query.sess) || '').toString().substr(0, 40) || '',
+                _ip: ((req.params && req.params.ip) || '').toString().substr(0, 40) || '',
+                _sess: ((req.params && req.params.sess) || '').toString().substr(0, 40) || '',
 
                 _http_route: path,
                 _http_method: req.method,
@@ -151,7 +151,12 @@ server.use((req, res, next) => {
 
 server.use(restify.plugins.gzipResponse());
 
-server.use(restify.plugins.queryParser({ allowDots: true }));
+server.use(
+    restify.plugins.queryParser({
+        allowDots: true,
+        mapParams: true
+    })
+);
 server.use(
     restify.plugins.bodyParser({
         maxBodySize: 0,
@@ -347,8 +352,8 @@ server.use(
     })
 );
 
-logger.token('user-ip', req => ((req.body && req.body.ip) || (req.query && req.query.ip) || '').toString().substr(0, 40) || '-');
-logger.token('user-sess', req => (req.body && req.body.sess) || (req.query && req.query.sess) || '-');
+logger.token('user-ip', req => ((req.params && req.params.ip) || '').toString().substr(0, 40) || '-');
+logger.token('user-sess', req => (req.params && req.params.sess) || '-');
 
 logger.token('user', req => (req.user && req.user.toString()) || '-');
 logger.token('url', req => {
