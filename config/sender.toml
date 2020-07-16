@@ -12,4 +12,4 @@ collection="zone-queue"
 # Hashing secret for loop detection
 # Must be shared with haraka-plugin-wildduck
 # If not set then looping is not tracked
-loopSecret=""
+#loopSecret="secret value"

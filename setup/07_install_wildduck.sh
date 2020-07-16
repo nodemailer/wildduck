@@ -53,6 +53,7 @@ group=\"wildduck\"
 emailDomain=\"$MAILDOMAIN\"" | cat - /etc/wildduck/wildduck.toml > temp && mv temp /etc/wildduck/wildduck.toml
 
 sed -i -e "s/localhost:3000/$HOSTNAME/g;s/localhost/$HOSTNAME/g;s/2587/587/g" /etc/wildduck/wildduck.toml
+sed -i -e "s/secret value/$SRS_SECRET/g;s/#loopSecret/loopSecret/g" /etc/wildduck/sender.toml
 
 cd /opt/wildduck
 npm install --production --unsafe-perm --no-optional --no-package-lock --no-audit --ignore-scripts --no-shrinkwrap
