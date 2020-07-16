@@ -30,7 +30,7 @@ echo "#!/bin/bash
 git --git-dir=/var/opt/zonemta-wildduck.git --work-tree=/opt/zone-mta/plugins/wildduck checkout "\$3" -f
 cd /opt/zone-mta/plugins/wildduck
 rm -rf package-lock.json
-npm install --production --progress=false
+npm install --production --no-optional --no-package-lock --no-audit --ignore-scripts --no-shrinkwrap --progress=false
 sudo $SYSTEMCTL_PATH restart zone-mta || echo \"Failed restarting service\"" > "/var/opt/zonemta-wildduck.git/hooks/update"
 chmod +x "/var/opt/zonemta-wildduck.git/hooks/update"
 
@@ -103,10 +103,10 @@ DKIM_JSON=`DOMAIN="$MAILDOMAIN" SELECTOR="$DKIM_SELECTOR" node -e 'console.log(J
 }))'`
 
 cd /opt/zone-mta
-npm install --unsafe-perm --production
+npm install --production --no-optional --no-package-lock --no-audit --ignore-scripts --no-shrinkwrap --unsafe-perm
 
 cd /opt/zone-mta/plugins/wildduck
-npm install --unsafe-perm --production
+npm install --production --no-optional --no-package-lock --no-audit --ignore-scripts --no-shrinkwrap --unsafe-perm
 
 chown -R deploy:deploy /var/opt/zone-mta.git
 chown -R deploy:deploy /var/opt/zonemta-wildduck.git
