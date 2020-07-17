@@ -175,6 +175,11 @@ server.use(
             delete req.query.accessToken;
         }
 
+        if (req.params.accessToken) {
+            // delete or it will conflict with Joi schemes
+            delete req.params.accessToken;
+        }
+
         if (req.headers['x-access-token']) {
             req.headers['x-access-token'] = '';
         }
