@@ -1,6 +1,6 @@
 {
     "name": "wildduck",
-    "version": "1.28.0",
+    "version": "1.28.1",
     "description": "IMAP/POP3 server built with Node.js and MongoDB",
     "main": "server.js",
     "scripts": {
@@ -62,7 +62,7 @@
         "node-forge": "0.9.1",
         "nodemailer": "6.4.10",
         "npmlog": "4.1.2",
-        "openpgp": "4.10.6",
+        "openpgp": "4.10.7",
         "pem": "1.14.4",
         "pwnedpasswords": "1.0.5",
         "qrcode": "1.4.4",
