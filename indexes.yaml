@@ -611,3 +611,20 @@ indexes:
           name: audit_files_expire
           key:
               metadata.info.expires: 1
+
+    - collection: audit.files
+      type: gridfs # index applies to gridfs database
+      index:
+          name: audit_files_addresses
+          key:
+              metadata.audit: 1
+              metadata.addresses.type: 1
+              metadata.addresses.name: 1
+              metadata.addresses.address: 1
+
+    - collection: audit.files
+      type: gridfs # index applies to gridfs database
+      index:
+          name: audit_files_subject
+          key:
+              metadata.subject: 1
