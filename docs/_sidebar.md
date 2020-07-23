@@ -13,6 +13,7 @@
     -   [Rspamd (Spam detection)](additional-software/rspamd.md)
     -   [WildDuck webmail](additional-software/webmail.md)
     -   [Import Maildir](additional-software/import-maildir.md)
+    -   [Auditing](additional-software/auditing.md)
     -   [Third party projects](additional-software/third-party-projects.md)
 -   In Depth
     -   [Operating WildDuck](in-depth/operating-wildduck.md)

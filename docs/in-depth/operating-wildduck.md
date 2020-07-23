@@ -46,6 +46,13 @@ sh.shardCollection('attachments.storage.files', { _id: 'hashed' });
 sh.shardCollection('attachments.storage.chunks', { files_id: 'hashed' });
 ```
 
+If using [auditing](additional-software/auditing.md) then shard audit collections as well
+
+```
+sh.shardCollection('attachments.audit.files', { _id: 'hashed' });
+sh.shardCollection('attachments.audit.chunks', { files_id: 'hashed' });
+```
+
 ## Disk usage
 
 Tests show that the ratio of attachment contents vs other stuff is around 1:10. This means that you can split your database between multiple disks by using
