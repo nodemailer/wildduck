@@ -11,7 +11,7 @@ chai.config.includeStack = true;
 
 const server = supertest.agent('http://localhost:8080');
 
-describe('API tests', function() {
+describe('API tests', function () {
     let userId, asp, address, inbox;
 
     this.timeout(10000); // eslint-disable-line no-invalid-this
@@ -248,5 +248,81 @@ describe('API tests', function() {
 
         inbox = response.body.results.find(result => result.path === 'INBOX');
         expect(inbox).to.exist;
+    });
+
+    it.only('should PUT /users/:user/autoreply', async () => {
+        let r;
+
+        r = await server.get(`/users/${userId}/autoreply`).expect(200);
+        expect(r.body).to.deep.equal({
+            success: true,
+            status: false,
+            name: '',
+            subject: '',
+            text: '',
+            html: '',
+            start: false,
+            end: false
+        });
+
+        r = await server
+            .put(`/users/${userId}/autoreply`)
+            .send({
+                status: true,
+                name: 'AR name',
+                subject: 'AR subject',
+                text: 'Away from office until Dec.19',
+                start: '2017-11-15T00:00:00.000Z',
+                end: '2017-12-19T00:00:00.000Z'
+            })
+            .expect(200);
+        expect(r.body.success).to.be.true;
+
+        r = await server.get(`/users/${userId}/autoreply`).expect(200);
+        expect(r.body).to.deep.equal({
+            success: true,
+            status: true,
+            name: 'AR name',
+            subject: 'AR subject',
+            text: 'Away from office until Dec.19',
+            html: '',
+            start: '2017-11-15T00:00:00.000Z',
+            end: '2017-12-19T00:00:00.000Z'
+        });
+
+        r = await server
+            .put(`/users/${userId}/autoreply`)
+            .send({
+                name: 'AR name v2',
+                subject: '',
+                start: false
+            })
+            .expect(200);
+        expect(r.body.success).to.be.true;
+
+        r = await server.get(`/users/${userId}/autoreply`).expect(200);
+        expect(r.body).to.deep.equal({
+            success: true,
+            status: true,
+            name: 'AR name v2',
+            subject: '',
+            text: 'Away from office until Dec.19',
+            html: '',
+            start: false,
+            end: '2017-12-19T00:00:00.000Z'
+        });
+
+        await server.delete(`/users/${userId}/autoreply`).expect(200);
+        r = await server.get(`/users/${userId}/autoreply`).expect(200);
+        expect(r.body).to.deep.equal({
+            success: true,
+            status: false,
+            name: '',
+            subject: '',
+            text: '',
+            html: '',
+            start: false,
+            end: false
+        });
     });
 });
