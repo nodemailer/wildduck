@@ -250,7 +250,7 @@ describe('API tests', function () {
         expect(inbox).to.exist;
     });
 
-    it.only('should PUT /users/:user/autoreply', async () => {
+    it('should PUT /users/:user/autoreply', async () => {
         let r;
 
         r = await server.get(`/users/${userId}/autoreply`).expect(200);
