@@ -1,9 +1,8 @@
 version: "3.7"
 services:
     wildduck:
-        container_name: wildduck
         restart: always
-        build: .
+        image: nodemailer/wildduck
         ports:
             - "8080:8080"
             - "143:143"
@@ -14,7 +13,11 @@ services:
             - redis
             - mongo
         environment:
-            CMD_ARGS: "--dbs.mongo=mongodb://mongo:27017/ --dbs.redis=redis://redis:6379/3 --api.host=0.0.0.0"
+            CMD_ARGS: 
+                --dbs.mongo=mongodb://mongo:27017/wildduck
+                --dbs.redis=redis://redis:6379/3
+                --api.host=0.0.0.0
+                --api.accessToken=PLEASE_CHANGE_ME
     redis:
         image: redis:alpine
         restart: always
