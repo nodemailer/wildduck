@@ -2,7 +2,7 @@
 
 Here you can find an example install script to install WildDuck with Haraka and ZoneMTA. The install script is self contained, you can upload to your server and start it as root. It fetches all required files from Github. After installation you should see exactly the same web interface as in https://webmail.wildduck.email/
 
-The install script is tested on Ubuntu 16.04 and the server must be blank. Blank meaning that there should be no existing software installed (eg. Apache, MySQL or Postfix). If the server already has something installed, then remove the extra applications before running this script. This also means that you should not run the install script in a VPS that you already use for other stuff.
+The install script should work with Ubuntu versions from 16.04 to 20.04 and the server must be blank. Blank meaning that there should be no existing software installed (eg. Apache, MySQL or Postfix). If the server already has something installed, then remove the extra applications before running this script. This also means that you should not run the install script in a VPS that you already use for other stuff.
 
 ## What does it do?
 
