@@ -52,6 +52,7 @@ module.exports = {
         };
 
         this._server.onCopy(
+            this,
             this.selected.mailbox,
             {
                 destination: path,

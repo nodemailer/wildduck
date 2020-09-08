@@ -468,7 +468,7 @@ module.exports = function (options) {
     };
 
     // COPY / UID COPY sequence mailbox
-    server.onCopy = function (mailbox, update, session, callback) {
+    server.onCopy = function (connection, mailbox, update, session, callback) {
         this.logger.debug('[%s] Copying messages from "%s" to "%s"', session.id, mailbox, update.destination);
 
         if (!folders.has(mailbox)) {
