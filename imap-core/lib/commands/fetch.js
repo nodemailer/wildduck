@@ -266,6 +266,7 @@ module.exports = {
             })
         );
 
+        let startTime = Date.now();
         let logdata = {
             short_message: '[FETCH]',
             _mail_action: 'fetch',
@@ -296,6 +297,8 @@ module.exports = {
             },
             this.session,
             (err, success, info) => {
+                logdata._query_time = Date.now() - startTime;
+
                 Object.keys(info || {}).forEach(key => {
                     let vkey = '_' + key.replace(/[A-Z]+/g, c => '_' + c.toLowerCase());
                     if (vkey === '_id') {

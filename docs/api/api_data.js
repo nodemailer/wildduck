@@ -9266,6 +9266,13 @@ define({ "api": [
             "optional": false,
             "field": "deleteFiles",
             "description": "<p>If true then deletes attachment files listed in metaData.files array</p>"
+          },
+          {
+            "group": "Parameter",
+            "type": "String",
+            "optional": true,
+            "field": "sendTime",
+            "description": "<p>Datestring for delivery if message should be sent some later time</p>"
           }
         ]
       }
