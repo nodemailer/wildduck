@@ -237,12 +237,12 @@
         },
 
         "userlisting": {
-            "read:own": ["*", "!tags", "!metaData", "!disabledScopes"]
+            "read:own": ["*", "!tags", "!disabledScopes", "!internalData"]
         },
 
         "users": {
-            "read:own": ["*", "!tags", "!metaData", "!disabledScopes"],
-            "update:own": ["*", "!tags", "!metaData", "!disabledScopes"]
+            "read:own": ["*", "!tags", "!disabledScopes", "!internalData"],
+            "update:own": ["*", "!tags", "!disabledScopes", "!internalData"]
         },
 
         "asps": {
