@@ -11773,6 +11773,13 @@
           },
           {
             "group": "Success 200",
+            "type": "Object",
+            "optional": false,
+            "field": "internalData",
+            "description": "<p>Custom interna metadata object set for this user. Not available for user-role tokens</p>"
+          },
+          {
+            "group": "Success 200",
             "type": "String[]",
             "optional": false,
             "field": "targets",
@@ -12239,6 +12246,13 @@
           },
           {
             "group": "Parameter",
+            "type": "Boolean",
+            "optional": true,
+            "field": "internalData",
+            "description": "<p>If true, then includes <code>internalData</code> in the response. Not shown for user-role tokens.</p>"
+          },
+          {
+            "group": "Parameter",
             "type": "Number",
             "optional": true,
             "field": "limit",
@@ -12398,6 +12412,13 @@
             "optional": true,
             "field": "results.metaData",
             "description": "<p>Custom metadata value. Included if <code>metaData</code> query argument was true</p>"
+          },
+          {
+            "group": "Success 200",
+            "type": "Object",
+            "optional": true,
+            "field": "results.internalData",
+            "description": "<p>Custom metadata value for internal use. Included if <code>internalData</code> query argument was true and request was not made using user-role token</p>"
           },
           {
             "group": "Success 200",
@@ -12622,6 +12643,13 @@
             "optional": true,
             "field": "metaData",
             "description": "<p>Optional metadata, must be an object or JSON formatted string of an object</p>"
+          },
+          {
+            "group": "Parameter",
+            "type": "Object|String",
+            "optional": true,
+            "field": "internalData",
+            "description": "<p>Optional metadata for internal use, must be an object or JSON formatted string of an object. Not available for user-role tokens</p>"
           },
           {
             "group": "Parameter",
@@ -13147,6 +13175,13 @@
             "optional": true,
             "field": "metaData",
             "description": "<p>Optional metadata, must be an object or JSON formatted string of an object</p>"
+          },
+          {
+            "group": "Parameter",
+            "type": "Object|String",
+            "optional": true,
+            "field": "internalData",
+            "description": "<p>Optional internal metadata, must be an object or JSON formatted string of an object. Not available for user-role tokens</p>"
           },
           {
             "group": "Parameter",
