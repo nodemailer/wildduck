@@ -627,6 +627,12 @@ class Indexer {
                     return callback(err);
                 }
                 mimeTree.attachmentMap[node.attachmentId] = id;
+
+                let attachmentInfo = mimeTree.attachments.find(a => a.id === node.attachmentId);
+                if (attachmentInfo && node.body) {
+                    attachmentInfo.size = node.body.length;
+                }
+
                 return storeNode();
             });
         };
