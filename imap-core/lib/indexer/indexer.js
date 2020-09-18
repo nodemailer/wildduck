@@ -628,7 +628,7 @@ class Indexer {
                 }
                 mimeTree.attachmentMap[node.attachmentId] = id;
 
-                let attachmentInfo = mimeTree.attachments.find(a => a.id === node.attachmentId);
+                let attachmentInfo = mimeTree.attachments && mimeTree.attachments.find(a => a.id === node.attachmentId);
                 if (attachmentInfo && node.body) {
                     attachmentInfo.size = node.body.length;
                 }
