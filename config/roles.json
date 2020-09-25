@@ -243,13 +243,13 @@
 
     "user": {
         "addresslisting": {
-            "read:own": ["*"]
+            "read:own": ["*", "!internalData"]
         },
 
         "addresses": {
-            "create:own": ["*"],
-            "read:own": ["*"],
-            "update:own": ["*"],
+            "create:own": ["*", "!internalData"],
+            "read:own": ["*", "!internalData"],
+            "update:own": ["*", "!internalData"],
             "delete:own": ["*"]
         },
 

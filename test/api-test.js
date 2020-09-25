@@ -191,7 +191,10 @@ describe('API tests', function () {
                 .post(`/users/${userId}/addresses`)
                 .send({
                     address: 'alias1@example.com',
-                    main: true
+                    main: true,
+                    metaData: {
+                        tere: 123
+                    }
                 })
                 .expect(200);
             expect(response1.body.success).to.be.true;
@@ -214,8 +217,10 @@ describe('API tests', function () {
 
         it('should GET /users/:user/addresses (updated listing)', async () => {
             const response = await server.get(`/users/${userId}/addresses`).expect(200);
+
             expect(response.body.success).to.be.true;
             expect(response.body.results.length).to.equal(3);
+
             response.body.results.sort((a, b) => a.id.localeCompare(b.id));
 
             expect(response.body.results[0].address).to.equal('testuser@example.com');
@@ -223,7 +228,9 @@ describe('API tests', function () {
 
             expect(response.body.results[1].address).to.equal('alias1@example.com');
             expect(response.body.results[1].main).to.be.true;
+            expect(response.body.results[1].metaData).to.not.exist;
 
+            // no metaData present
             expect(response.body.results[2].address).to.equal('alias2@example.com');
             expect(response.body.results[2].main).to.be.false;
 
@@ -233,6 +240,25 @@ describe('API tests', function () {
         it('should DELETE users/:user/addresses/:address', async () => {
             const response = await server.delete(`/users/${userId}/addresses/${address.id}`).expect(200);
             expect(response.body.success).to.be.true;
+        });
+
+        it('should GET /users/:user/addresses (with metaData)', async () => {
+            const response = await server.get(`/users/${userId}/addresses?metaData=true`).expect(200);
+            expect(response.body.success).to.be.true;
+            expect(response.body.results.length).to.equal(2);
+            response.body.results.sort((a, b) => a.id.localeCompare(b.id));
+
+            expect(response.body.results[1].address).to.equal('alias1@example.com');
+            expect(response.body.results[1].main).to.be.true;
+            expect(response.body.results[1].metaData.tere).to.equal(123);
+
+            address = response.body.results[1];
+        });
+
+        it('should GET /users/:user/address/:address', async () => {
+            const response = await server.get(`/users/${userId}/addresses/${address.id}`).expect(200);
+            expect(response.body.success).to.be.true;
+            expect(response.body.metaData.tere).to.equal(123);
         });
 
         it('should GET /users/:user/addresses (after DELETE)', async () => {
