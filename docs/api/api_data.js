@@ -4953,6 +4953,521 @@ define({ "api": [
   },
   {
     "type": "delete",
+    "url": "/domainaccess/:domain",
+    "title": "Delete a Domain from listing",
+    "name": "DeleteDomainAccess",
+    "group": "DomainAccess",
+    "header": {
+      "fields": {
+        "Header": [
+          {
+            "group": "Header",
+            "type": "String",
+            "optional": false,
+            "field": "X-Access-Token",
+            "description": "<p>Optional access token if authentication is enabled</p>"
+          }
+        ]
+      },
+      "examples": [
+        {
+          "title": "Header-Example:",
+          "content": "{\n  \"X-Access-Token\": \"59fc66a03e54454869460e45\"\n}",
+          "type": "json"
+        }
+      ]
+    },
+    "parameter": {
+      "fields": {
+        "Parameter": [
+          {
+            "group": "Parameter",
+            "type": "String",
+            "optional": false,
+            "field": "domain",
+            "description": "<p>Listed domains unique ID</p>"
+          }
+        ]
+      }
+    },
+    "success": {
+      "fields": {
+        "Success 200": [
+          {
+            "group": "Success 200",
+            "type": "Boolean",
+            "optional": false,
+            "field": "success",
+            "description": "<p>Indicates successful response</p>"
+          }
+        ]
+      },
+      "examples": [
+        {
+          "title": "Success-Response:",
+          "content": "HTTP/1.1 200 OK\n{\n  \"success\": true\n}",
+          "type": "json"
+        }
+      ]
+    },
+    "error": {
+      "fields": {
+        "Error 4xx": [
+          {
+            "group": "Error 4xx",
+            "optional": false,
+            "field": "error",
+            "description": "<p>Description of the error</p>"
+          }
+        ]
+      },
+      "examples": [
+        {
+          "title": "Error-Response:",
+          "content": "HTTP/1.1 200 OK\n{\n  \"error\": \"This domain does not exist\"\n}",
+          "type": "json"
+        }
+      ]
+    },
+    "examples": [
+      {
+        "title": "Example usage:",
+        "content": "curl -i -XDELETE http://localhost:8080/domainaccess/59fc66a03e54454869460e45",
+        "type": "curl"
+      }
+    ],
+    "version": "0.0.0",
+    "filename": "lib/api/filters.js",
+    "groupTitle": "DomainAccess"
+  },
+  {
+    "type": "get",
+    "url": "/domainaccess/:tag/allow",
+    "title": "List whitelisted domains",
+    "name": "GetDomainAccessAllow",
+    "group": "DomainAccess",
+    "header": {
+      "fields": {
+        "Header": [
+          {
+            "group": "Header",
+            "type": "String",
+            "optional": false,
+            "field": "X-Access-Token",
+            "description": "<p>Optional access token if authentication is enabled</p>"
+          }
+        ]
+      },
+      "examples": [
+        {
+          "title": "Header-Example:",
+          "content": "{\n  \"X-Access-Token\": \"59fc66a03e54454869460e45\"\n}",
+          "type": "json"
+        }
+      ]
+    },
+    "parameter": {
+      "fields": {
+        "Parameter": [
+          {
+            "group": "Parameter",
+            "type": "String",
+            "optional": false,
+            "field": "tag",
+            "description": "<p>Tag to look for</p>"
+          }
+        ]
+      }
+    },
+    "success": {
+      "fields": {
+        "Success 200": [
+          {
+            "group": "Success 200",
+            "type": "Boolean",
+            "optional": false,
+            "field": "success",
+            "description": "<p>Indicates successful response</p>"
+          },
+          {
+            "group": "Success 200",
+            "type": "Object[]",
+            "optional": false,
+            "field": "results",
+            "description": "<p>Domain list</p>"
+          },
+          {
+            "group": "Success 200",
+            "type": "String",
+            "optional": false,
+            "field": "results.id",
+            "description": "<p>Entry ID</p>"
+          },
+          {
+            "group": "Success 200",
+            "type": "String",
+            "optional": false,
+            "field": "results.domain",
+            "description": "<p>Whitelisted domain name</p>"
+          }
+        ]
+      },
+      "examples": [
+        {
+          "title": "Success-Response:",
+          "content": "HTTP/1.1 200 OK\n{\n  \"success\": true,\n  \"results\": [\n    {\n      \"id\": \"5a1c0ee490a34c67e266931c\",\n      \"domain\": \"example.com\",\n      \"action\": \"allow\"\n    }\n  ]\n}",
+          "type": "json"
+        }
+      ]
+    },
+    "error": {
+      "fields": {
+        "Error 4xx": [
+          {
+            "group": "Error 4xx",
+            "optional": false,
+            "field": "error",
+            "description": "<p>Description of the error</p>"
+          }
+        ]
+      },
+      "examples": [
+        {
+          "title": "Error-Response:",
+          "content": "HTTP/1.1 200 OK\n{\n  \"error\": \"Invalid ID\"\n}",
+          "type": "json"
+        }
+      ]
+    },
+    "examples": [
+      {
+        "title": "Example usage:",
+        "content": "curl -i http://localhost:8080/domainaccess/account_12345/allow",
+        "type": "curl"
+      }
+    ],
+    "version": "0.0.0",
+    "filename": "lib/api/filters.js",
+    "groupTitle": "DomainAccess"
+  },
+  {
+    "type": "get",
+    "url": "/domainaccess/:tag/block",
+    "title": "List blacklisted domains",
+    "name": "GetDomainAccessBlock",
+    "group": "DomainAccess",
+    "header": {
+      "fields": {
+        "Header": [
+          {
+            "group": "Header",
+            "type": "String",
+            "optional": false,
+            "field": "X-Access-Token",
+            "description": "<p>Optional access token if authentication is enabled</p>"
+          }
+        ]
+      },
+      "examples": [
+        {
+          "title": "Header-Example:",
+          "content": "{\n  \"X-Access-Token\": \"59fc66a03e54454869460e45\"\n}",
+          "type": "json"
+        }
+      ]
+    },
+    "parameter": {
+      "fields": {
+        "Parameter": [
+          {
+            "group": "Parameter",
+            "type": "String",
+            "optional": false,
+            "field": "tag",
+            "description": "<p>Tag to look for</p>"
+          }
+        ]
+      }
+    },
+    "success": {
+      "fields": {
+        "Success 200": [
+          {
+            "group": "Success 200",
+            "type": "Boolean",
+            "optional": false,
+            "field": "success",
+            "description": "<p>Indicates successful response</p>"
+          },
+          {
+            "group": "Success 200",
+            "type": "Object[]",
+            "optional": false,
+            "field": "results",
+            "description": "<p>Domain list</p>"
+          },
+          {
+            "group": "Success 200",
+            "type": "String",
+            "optional": false,
+            "field": "results.id",
+            "description": "<p>Entry ID</p>"
+          },
+          {
+            "group": "Success 200",
+            "type": "String",
+            "optional": false,
+            "field": "results.domain",
+            "description": "<p>Blacklisted domain name</p>"
+          }
+        ]
+      },
+      "examples": [
+        {
+          "title": "Success-Response:",
+          "content": "HTTP/1.1 200 OK\n{\n  \"success\": true,\n  \"results\": [\n    {\n      \"id\": \"5a1c0ee490a34c67e266931c\",\n      \"domain\": \"example.com\",\n      \"action\": \"block\"\n    }\n  ]\n}",
+          "type": "json"
+        }
+      ]
+    },
+    "error": {
+      "fields": {
+        "Error 4xx": [
+          {
+            "group": "Error 4xx",
+            "optional": false,
+            "field": "error",
+            "description": "<p>Description of the error</p>"
+          }
+        ]
+      },
+      "examples": [
+        {
+          "title": "Error-Response:",
+          "content": "HTTP/1.1 200 OK\n{\n  \"error\": \"Invalid ID\"\n}",
+          "type": "json"
+        }
+      ]
+    },
+    "examples": [
+      {
+        "title": "Example usage:",
+        "content": "curl -i http://localhost:8080/domainaccess/account_12345/block",
+        "type": "curl"
+      }
+    ],
+    "version": "0.0.0",
+    "filename": "lib/api/filters.js",
+    "groupTitle": "DomainAccess"
+  },
+  {
+    "type": "post",
+    "url": "/domainaccess/:tag/allow",
+    "title": "Add domain to whitelist",
+    "name": "PostDomainAccessAllow",
+    "group": "DomainAccess",
+    "header": {
+      "fields": {
+        "Header": [
+          {
+            "group": "Header",
+            "type": "String",
+            "optional": false,
+            "field": "X-Access-Token",
+            "description": "<p>Optional access token if authentication is enabled</p>"
+          }
+        ]
+      },
+      "examples": [
+        {
+          "title": "Header-Example:",
+          "content": "{\n  \"X-Access-Token\": \"59fc66a03e54454869460e45\"\n}",
+          "type": "json"
+        }
+      ]
+    },
+    "parameter": {
+      "fields": {
+        "Parameter": [
+          {
+            "group": "Parameter",
+            "type": "String",
+            "optional": false,
+            "field": "tag",
+            "description": "<p>Tag to match (tags are applied to users and addresses)</p>"
+          },
+          {
+            "group": "Parameter",
+            "type": "String",
+            "optional": false,
+            "field": "domain",
+            "description": "<p>Domain name to whitelist for users/addresses that include this tag</p>"
+          }
+        ]
+      }
+    },
+    "success": {
+      "fields": {
+        "Success 200": [
+          {
+            "group": "Success 200",
+            "type": "Boolean",
+            "optional": false,
+            "field": "success",
+            "description": "<p>Indicates successful response</p>"
+          },
+          {
+            "group": "Success 200",
+            "type": "String",
+            "optional": false,
+            "field": "id",
+            "description": "<p>ID for the created record</p>"
+          }
+        ]
+      },
+      "examples": [
+        {
+          "title": "Success-Response:",
+          "content": "HTTP/1.1 200 OK\n{\n  \"success\": true,\n  \"id\": \"5a1c0ee490a34c67e266931c\"\n}",
+          "type": "json"
+        }
+      ]
+    },
+    "error": {
+      "fields": {
+        "Error 4xx": [
+          {
+            "group": "Error 4xx",
+            "optional": false,
+            "field": "error",
+            "description": "<p>Description of the error</p>"
+          }
+        ]
+      },
+      "examples": [
+        {
+          "title": "Error-Response:",
+          "content": "HTTP/1.1 200 OK\n{\n  \"error\": \"Invalid domain\"\n}",
+          "type": "json"
+        }
+      ]
+    },
+    "examples": [
+      {
+        "title": "Example usage:",
+        "content": "curl -i -XPOST http://localhost:8080/domainaccess/account_12345/allow \\\n-H 'Content-type: application/json' \\\n-d '{\n  \"domain\": \"example.com\"\n}'",
+        "type": "curl"
+      }
+    ],
+    "version": "0.0.0",
+    "filename": "lib/api/filters.js",
+    "groupTitle": "DomainAccess"
+  },
+  {
+    "type": "post",
+    "url": "/domainaccess/:tag/block",
+    "title": "Add domain to blacklist",
+    "name": "PostDomainAccessBlock",
+    "group": "DomainAccess",
+    "header": {
+      "fields": {
+        "Header": [
+          {
+            "group": "Header",
+            "type": "String",
+            "optional": false,
+            "field": "X-Access-Token",
+            "description": "<p>Optional access token if authentication is enabled</p>"
+          }
+        ]
+      },
+      "examples": [
+        {
+          "title": "Header-Example:",
+          "content": "{\n  \"X-Access-Token\": \"59fc66a03e54454869460e45\"\n}",
+          "type": "json"
+        }
+      ]
+    },
+    "parameter": {
+      "fields": {
+        "Parameter": [
+          {
+            "group": "Parameter",
+            "type": "String",
+            "optional": false,
+            "field": "tag",
+            "description": "<p>Tag to match (tags are applied to users and addresses)</p>"
+          },
+          {
+            "group": "Parameter",
+            "type": "String",
+            "optional": false,
+            "field": "domain",
+            "description": "<p>Domain name to blocklist for users/addresses that include this tag</p>"
+          }
+        ]
+      }
+    },
+    "success": {
+      "fields": {
+        "Success 200": [
+          {
+            "group": "Success 200",
+            "type": "Boolean",
+            "optional": false,
+            "field": "success",
+            "description": "<p>Indicates successful response</p>"
+          },
+          {
+            "group": "Success 200",
+            "type": "String",
+            "optional": false,
+            "field": "id",
+            "description": "<p>ID for the created record</p>"
+          }
+        ]
+      },
+      "examples": [
+        {
+          "title": "Success-Response:",
+          "content": "HTTP/1.1 200 OK\n{\n  \"success\": true,\n  \"id\": \"5a1c0ee490a34c67e266931c\"\n}",
+          "type": "json"
+        }
+      ]
+    },
+    "error": {
+      "fields": {
+        "Error 4xx": [
+          {
+            "group": "Error 4xx",
+            "optional": false,
+            "field": "error",
+            "description": "<p>Description of the error</p>"
+          }
+        ]
+      },
+      "examples": [
+        {
+          "title": "Error-Response:",
+          "content": "HTTP/1.1 200 OK\n{\n  \"error\": \"Invalid domain\"\n}",
+          "type": "json"
+        }
+      ]
+    },
+    "examples": [
+      {
+        "title": "Example usage:",
+        "content": "curl -i -XPOST http://localhost:8080/domainaccess/account_12345/block \\\n-H 'Content-type: application/json' \\\n-d '{\n  \"domain\": \"example.com\"\n}'",
+        "type": "curl"
+      }
+    ],
+    "version": "0.0.0",
+    "filename": "lib/api/filters.js",
+    "groupTitle": "DomainAccess"
+  },
+  {
+    "type": "delete",
     "url": "/domainaliases/:alias",
     "title": "Delete an Alias",
     "name": "DeleteDomainAlias",

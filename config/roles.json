@@ -82,6 +82,13 @@
             "delete:any": ["*"]
         },
 
+        "domainaccess": {
+            "create:any": ["*"],
+            "read:any": ["*"],
+            "update:any": ["*"],
+            "delete:any": ["*"]
+        },
+
         "domainaliases": {
             "create:any": ["*"],
             "read:any": ["*"],
@@ -139,6 +146,13 @@
         },
 
         "dkim": {
+            "create:any": ["*"],
+            "read:any": ["*"],
+            "update:any": ["*"],
+            "delete:any": ["*"]
+        },
+
+        "domainaccess": {
             "create:any": ["*"],
             "read:any": ["*"],
             "update:any": ["*"],
@@ -213,6 +227,13 @@
         },
 
         "filters": {
+            "create:any": ["*"],
+            "read:any": ["*"],
+            "update:any": ["*"],
+            "delete:any": ["*"]
+        },
+
+        "domainaccess": {
             "create:any": ["*"],
             "read:any": ["*"],
             "update:any": ["*"],

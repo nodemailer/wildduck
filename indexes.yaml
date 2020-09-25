@@ -181,6 +181,16 @@ indexes:
           key:
               user: 1
 
+    # Indexes for the allow/block list collection
+
+    - collection: domainaccess
+      index:
+          name: by_tag
+          key:
+              tagview: 1
+              action: 1
+              domain: 1
+
     # Indexes for the autoreply collection
 
     - collection: autoreplies
