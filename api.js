@@ -26,6 +26,7 @@ const mailboxesRoutes = require('./lib/api/mailboxes');
 const messagesRoutes = require('./lib/api/messages');
 const storageRoutes = require('./lib/api/storage');
 const filtersRoutes = require('./lib/api/filters');
+const domainaccessRoutes = require('./lib/api/domainaccess');
 const aspsRoutes = require('./lib/api/asps');
 const totpRoutes = require('./lib/api/2fa/totp');
 const custom2faRoutes = require('./lib/api/2fa/custom');
@@ -476,6 +477,7 @@ module.exports = done => {
     messagesRoutes(db, server, messageHandler, userHandler, storageHandler);
     storageRoutes(db, server, storageHandler);
     filtersRoutes(db, server);
+    domainaccessRoutes(db, server);
     aspsRoutes(db, server, userHandler);
     totpRoutes(db, server, userHandler);
     custom2faRoutes(db, server, userHandler);

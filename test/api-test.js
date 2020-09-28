@@ -273,6 +273,57 @@ describe('API tests', function () {
             expect(response.body.results[1].address).to.equal('alias1@example.com');
             expect(response.body.results[1].main).to.be.true;
         });
+
+        describe('forwarded', () => {
+            let address = false;
+
+            it('should POST /addresses/forwarded', async () => {
+                const response = await server
+                    .post(`/addresses/forwarded`)
+                    .send({
+                        address: 'my.new.address@example.com',
+                        targets: ['my.old.address@example.com', 'smtp://mx2.zone.eu:25'],
+                        forwards: 500,
+                        metaData: {
+                            tere: 123
+                        },
+                        tags: ['tere', 'vana']
+                    })
+                    .expect(200);
+                expect(response.body.success).to.be.true;
+                address = response.body.id;
+            });
+
+            it('should GET /addresses/forwarded/:address', async () => {
+                const response = await server.get(`/addresses/forwarded/${address}`).expect(200);
+                expect(response.body.success).to.be.true;
+                expect(response.body.metaData.tere).to.equal(123);
+                expect(response.body.tags).to.deep.equal(['tere', 'vana']);
+            });
+
+            it('should PUT /addresses/forwarded/:address', async () => {
+                const response = await server
+                    .put(`/addresses/forwarded/${address}`)
+                    .send({
+                        metaData: {
+                            tere: 124
+                        }
+                    })
+                    .expect(200);
+
+                expect(response.body.success).to.be.true;
+
+                // check updated data
+                const updatedResponse = await server.get(`/addresses/forwarded/${address}`).expect(200);
+                expect(updatedResponse.body.success).to.be.true;
+                expect(updatedResponse.body.metaData.tere).to.equal(124);
+            });
+
+            it('should DELETE /addresses/forwarded/:address', async () => {
+                const response = await server.delete(`/addresses/forwarded/${address}`).expect(200);
+                expect(response.body.success).to.be.true;
+            });
+        });
     });
 
     describe('mailboxes', () => {

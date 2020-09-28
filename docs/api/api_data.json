@@ -464,6 +464,20 @@
           },
           {
             "group": "Parameter",
+            "type": "Boolean",
+            "optional": true,
+            "field": "metaData",
+            "description": "<p>If true, then includes <code>metaData</code> in the response</p>"
+          },
+          {
+            "group": "Parameter",
+            "type": "Boolean",
+            "optional": true,
+            "field": "internalData",
+            "description": "<p>If true, then includes <code>internalData</code> in the response. Not shown for user-role tokens.</p>"
+          },
+          {
+            "group": "Parameter",
             "type": "Number",
             "optional": true,
             "field": "limit",
@@ -923,6 +937,27 @@
           },
           {
             "group": "Success 200",
+            "type": "String[]",
+            "optional": false,
+            "field": "tags",
+            "description": "<p>List of tags associated with the Address</p>"
+          },
+          {
+            "group": "Success 200",
+            "type": "Object",
+            "optional": true,
+            "field": "metaData",
+            "description": "<p>Metadata object (if available)</p>"
+          },
+          {
+            "group": "Success 200",
+            "type": "Object",
+            "optional": true,
+            "field": "internalData",
+            "description": "<p>Internal metadata object (if available), not included for user-role requests</p>"
+          },
+          {
+            "group": "Success 200",
             "type": "Boolean",
             "optional": false,
             "field": "main",
@@ -1010,6 +1045,20 @@
             "optional": false,
             "field": "user",
             "description": "<p>ID of the User</p>"
+          },
+          {
+            "group": "Parameter",
+            "type": "Boolean",
+            "optional": true,
+            "field": "metaData",
+            "description": "<p>If true, then includes <code>metaData</code> in the response</p>"
+          },
+          {
+            "group": "Parameter",
+            "type": "Boolean",
+            "optional": true,
+            "field": "internalData",
+            "description": "<p>If true, then includes <code>internalData</code> in the response. Not shown for user-role tokens.</p>"
           }
         ]
       }
@@ -1072,6 +1121,20 @@
             "optional": false,
             "field": "results.tags",
             "description": "<p>List of tags associated with the Address</p>"
+          },
+          {
+            "group": "Success 200",
+            "type": "Object",
+            "optional": true,
+            "field": "results.metaData",
+            "description": "<p>Metadata object (if available)</p>"
+          },
+          {
+            "group": "Success 200",
+            "type": "Object",
+            "optional": true,
+            "field": "results.internalData",
+            "description": "<p>Internal metadata object (if available), not included for user-role requests</p>"
           }
         ]
       },
@@ -1185,6 +1248,20 @@
             "optional": true,
             "field": "tags",
             "description": "<p>A list of tags associated with this address</p>"
+          },
+          {
+            "group": "Parameter",
+            "type": "Object|String",
+            "optional": true,
+            "field": "metaData",
+            "description": "<p>Optional metadata, must be an object or JSON formatted string of an object</p>"
+          },
+          {
+            "group": "Parameter",
+            "type": "Object|String",
+            "optional": true,
+            "field": "internalData",
+            "description": "<p>Optional metadata for internal use, must be an object or JSON formatted string of an object. Not available for user-role tokens</p>"
           },
           {
             "group": "Parameter",
@@ -1375,6 +1452,20 @@
             "field": "allowWildcard",
             "defaultValue": "false",
             "description": "<p>If <code>true</code> then address value can be in the form of <code>*@example.com</code>, <code>*suffix@example.com</code> and <code>username@*</code>, otherwise using * is not allowed. Static suffix can be up to 32 characters long.</p>"
+          },
+          {
+            "group": "Parameter",
+            "type": "Object|String",
+            "optional": true,
+            "field": "metaData",
+            "description": "<p>Optional metadata, must be an object or JSON formatted string of an object</p>"
+          },
+          {
+            "group": "Parameter",
+            "type": "Object|String",
+            "optional": true,
+            "field": "internalData",
+            "description": "<p>Optional metadata for internal use, must be an object or JSON formatted string of an object. Not available for user-role tokens</p>"
           }
         ]
       }
@@ -1506,6 +1597,20 @@
             "optional": true,
             "field": "tags",
             "description": "<p>A list of tags associated with this address</p>"
+          },
+          {
+            "group": "Parameter",
+            "type": "Object|String",
+            "optional": true,
+            "field": "metaData",
+            "description": "<p>Optional metadata, must be an object or JSON formatted string of an object</p>"
+          },
+          {
+            "group": "Parameter",
+            "type": "Object|String",
+            "optional": true,
+            "field": "internalData",
+            "description": "<p>Optional metadata for internal use, must be an object or JSON formatted string of an object. Not available for user-role tokens</p>"
           },
           {
             "group": "Parameter",
@@ -1783,6 +1888,20 @@
             "optional": false,
             "field": "main",
             "description": "<p>Indicates if this is the default address for the User</p>"
+          },
+          {
+            "group": "Parameter",
+            "type": "Object|String",
+            "optional": true,
+            "field": "metaData",
+            "description": "<p>Optional metadata, must be an object or JSON formatted string of an object</p>"
+          },
+          {
+            "group": "Parameter",
+            "type": "Object|String",
+            "optional": true,
+            "field": "internalData",
+            "description": "<p>Optional metadata for internal use, must be an object or JSON formatted string of an object. Not available for user-role tokens</p>"
           },
           {
             "group": "Parameter",
@@ -5037,13 +5156,13 @@
       }
     ],
     "version": "0.0.0",
-    "filename": "lib/api/filters.js",
+    "filename": "lib/api/domainaccess.js",
     "groupTitle": "DomainAccess"
   },
   {
     "type": "get",
     "url": "/domainaccess/:tag/allow",
-    "title": "List whitelisted domains",
+    "title": "List allowlisted domains",
     "name": "GetDomainAccessAllow",
     "group": "DomainAccess",
     "header": {
@@ -5108,7 +5227,7 @@
             "type": "String",
             "optional": false,
             "field": "results.domain",
-            "description": "<p>Whitelisted domain name</p>"
+            "description": "<p>allowlisted domain name</p>"
           }
         ]
       },
@@ -5147,13 +5266,13 @@
       }
     ],
     "version": "0.0.0",
-    "filename": "lib/api/filters.js",
+    "filename": "lib/api/domainaccess.js",
     "groupTitle": "DomainAccess"
   },
   {
     "type": "get",
     "url": "/domainaccess/:tag/block",
-    "title": "List blacklisted domains",
+    "title": "List blocklisted domains",
     "name": "GetDomainAccessBlock",
     "group": "DomainAccess",
     "header": {
@@ -5218,7 +5337,7 @@
             "type": "String",
             "optional": false,
             "field": "results.domain",
-            "description": "<p>Blacklisted domain name</p>"
+            "description": "<p>blocklisted domain name</p>"
           }
         ]
       },
@@ -5257,13 +5376,13 @@
       }
     ],
     "version": "0.0.0",
-    "filename": "lib/api/filters.js",
+    "filename": "lib/api/domainaccess.js",
     "groupTitle": "DomainAccess"
   },
   {
     "type": "post",
     "url": "/domainaccess/:tag/allow",
-    "title": "Add domain to whitelist",
+    "title": "Add domain to allowlist",
     "name": "PostDomainAccessAllow",
     "group": "DomainAccess",
     "header": {
@@ -5301,7 +5420,7 @@
             "type": "String",
             "optional": false,
             "field": "domain",
-            "description": "<p>Domain name to whitelist for users/addresses that include this tag</p>"
+            "description": "<p>Domain name to allowlist for users/addresses that include this tag</p>"
           }
         ]
       }
@@ -5360,13 +5479,13 @@
       }
     ],
     "version": "0.0.0",
-    "filename": "lib/api/filters.js",
+    "filename": "lib/api/domainaccess.js",
     "groupTitle": "DomainAccess"
   },
   {
     "type": "post",
     "url": "/domainaccess/:tag/block",
-    "title": "Add domain to blacklist",
+    "title": "Add domain to blocklist",
     "name": "PostDomainAccessBlock",
     "group": "DomainAccess",
     "header": {
@@ -5463,7 +5582,7 @@
       }
     ],
     "version": "0.0.0",
-    "filename": "lib/api/filters.js",
+    "filename": "lib/api/domainaccess.js",
     "groupTitle": "DomainAccess"
   },
   {
