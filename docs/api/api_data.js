@@ -5383,6 +5383,7 @@ define({ "api": [
     "type": "post",
     "url": "/domainaccess/:tag/allow",
     "title": "Add domain to allowlist",
+    "description": "<p>If an email is sent from a domain that is listed in the allowlist then it is never marked as spam. Lists apply for tagged users.</p>",
     "name": "PostDomainAccessAllow",
     "group": "DomainAccess",
     "header": {
@@ -5413,7 +5414,7 @@ define({ "api": [
             "type": "String",
             "optional": false,
             "field": "tag",
-            "description": "<p>Tag to match (tags are applied to users and addresses)</p>"
+            "description": "<p>Tag to match</p>"
           },
           {
             "group": "Parameter",
@@ -5486,6 +5487,7 @@ define({ "api": [
     "type": "post",
     "url": "/domainaccess/:tag/block",
     "title": "Add domain to blocklist",
+    "description": "<p>If an email is sent from a domain that is listed in the blocklist then it is always marked as spam. Lists apply for tagged users.</p>",
     "name": "PostDomainAccessBlock",
     "group": "DomainAccess",
     "header": {
@@ -5516,7 +5518,7 @@ define({ "api": [
             "type": "String",
             "optional": false,
             "field": "tag",
-            "description": "<p>Tag to match (tags are applied to users and addresses)</p>"
+            "description": "<p>Tag to match</p>"
           },
           {
             "group": "Parameter",
