@@ -1254,14 +1254,14 @@
             "type": "Object|String",
             "optional": true,
             "field": "metaData",
-            "description": "<p>Optional metadata, must be an object or JSON formatted string of an object</p>"
+            "description": "<p>Optional metadata, must be an object or JSON formatted string</p>"
           },
           {
             "group": "Parameter",
             "type": "Object|String",
             "optional": true,
             "field": "internalData",
-            "description": "<p>Optional metadata for internal use, must be an object or JSON formatted string of an object. Not available for user-role tokens</p>"
+            "description": "<p>Optional metadata for internal use, must be an object or JSON formatted string. Not available for user-role tokens</p>"
           },
           {
             "group": "Parameter",
@@ -1458,14 +1458,14 @@
             "type": "Object|String",
             "optional": true,
             "field": "metaData",
-            "description": "<p>Optional metadata, must be an object or JSON formatted string of an object</p>"
+            "description": "<p>Optional metadata, must be an object or JSON formatted string</p>"
           },
           {
             "group": "Parameter",
             "type": "Object|String",
             "optional": true,
             "field": "internalData",
-            "description": "<p>Optional metadata for internal use, must be an object or JSON formatted string of an object. Not available for user-role tokens</p>"
+            "description": "<p>Optional metadata for internal use, must be an object or JSON formatted string. Not available for user-role tokens</p>"
           }
         ]
       }
@@ -1603,14 +1603,14 @@
             "type": "Object|String",
             "optional": true,
             "field": "metaData",
-            "description": "<p>Optional metadata, must be an object or JSON formatted string of an object</p>"
+            "description": "<p>Optional metadata, must be an object or JSON formatted string</p>"
           },
           {
             "group": "Parameter",
             "type": "Object|String",
             "optional": true,
             "field": "internalData",
-            "description": "<p>Optional metadata for internal use, must be an object or JSON formatted string of an object. Not available for user-role tokens</p>"
+            "description": "<p>Optional metadata for internal use, must be an object or JSON formatted string. Not available for user-role tokens</p>"
           },
           {
             "group": "Parameter",
@@ -1894,14 +1894,14 @@
             "type": "Object|String",
             "optional": true,
             "field": "metaData",
-            "description": "<p>Optional metadata, must be an object or JSON formatted string of an object</p>"
+            "description": "<p>Optional metadata, must be an object or JSON formatted string</p>"
           },
           {
             "group": "Parameter",
             "type": "Object|String",
             "optional": true,
             "field": "internalData",
-            "description": "<p>Optional metadata for internal use, must be an object or JSON formatted string of an object. Not available for user-role tokens</p>"
+            "description": "<p>Optional metadata for internal use, must be an object or JSON formatted string. Not available for user-role tokens</p>"
           },
           {
             "group": "Parameter",
