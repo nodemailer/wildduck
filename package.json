@@ -37,6 +37,7 @@
     "dependencies": {
         "@phc/pbkdf2": "1.1.14",
         "accesscontrol": "2.2.1",
+        "argon2-browser": "^1.15.1",
         "base32.js": "0.1.0",
         "bcryptjs": "2.4.3",
         "gelf": "2.0.1",
