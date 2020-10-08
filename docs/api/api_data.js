@@ -13193,7 +13193,7 @@ define({ "api": [
             "type": "Boolean",
             "optional": true,
             "field": "hashedPassword",
-            "description": "<p>If <code>true</code> then password is already hashed, so store as. Supported hashes: pbkdf2, bcrypt ($2a, $2y, $2b), md5 ($1), sha256 ($6), sha512 ($6), argon2 ($argon2, $argon2d, $argon2id). Stored hashes are rehashed to pbkdf2 on first successful password check.</p>"
+            "description": "<p>If <code>true</code> then password is already hashed, so store as. Supported hashes: pbkdf2, bcrypt ($2a, $2y, $2b), md5 ($1), sha512 ($6), sha256 ($5), argon2 ($argon2d, $argon2i, $argon2id). Stored hashes are rehashed to pbkdf2 on first successful password check.</p>"
           },
           {
             "group": "Parameter",
@@ -13753,7 +13753,7 @@ define({ "api": [
             "type": "Boolean",
             "optional": true,
             "field": "hashedPassword",
-            "description": "<p>If <code>true</code> then password is already hashed, so store as. Supported hashes: pbkdf2, bcrypt ($2a, $2y, $2b), md5 ($1), sha256 ($6), sha512 ($6), argon2 ($argon2, $argon2d, $argon2id). Stored hashes are rehashed to pbkdf2 on first successful password check.</p>"
+            "description": "<p>If <code>true</code> then password is already hashed, so store as. Supported hashes: pbkdf2, bcrypt ($2a, $2y, $2b), md5 ($1), sha512 ($6), sha256 ($5), argon2 ($argon2d, $argon2i, $argon2id). Stored hashes are rehashed to pbkdf2 on first successful password check.</p>"
           },
           {
             "group": "Parameter",
