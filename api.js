@@ -38,6 +38,7 @@ const submitRoutes = require('./lib/api/submit');
 const auditRoutes = require('./lib/api/audit');
 const domainaliasRoutes = require('./lib/api/domainaliases');
 const dkimRoutes = require('./lib/api/dkim');
+const webhooksRoutes = require('./lib/api/webhooks');
 
 let userHandler;
 let mailboxHandler;
@@ -489,6 +490,7 @@ module.exports = done => {
     auditRoutes(db, server, auditHandler);
     domainaliasRoutes(db, server);
     dkimRoutes(db, server);
+    webhooksRoutes(db, server);
 
     server.on('error', err => {
         if (!started) {

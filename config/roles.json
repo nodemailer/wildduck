@@ -94,6 +94,13 @@
             "read:any": ["*"],
             "update:any": ["*"],
             "delete:any": ["*"]
+        },
+
+        "webhooks": {
+            "create:any": ["*"],
+            "read:any": ["*"],
+            "update:any": ["*"],
+            "delete:any": ["*"]
         }
     },
 
@@ -160,6 +167,13 @@
         },
 
         "domainaliases": {
+            "create:any": ["*"],
+            "read:any": ["*"],
+            "update:any": ["*"],
+            "delete:any": ["*"]
+        },
+
+        "webhooks": {
             "create:any": ["*"],
             "read:any": ["*"],
             "update:any": ["*"],
@@ -238,6 +252,13 @@
             "read:any": ["*"],
             "update:any": ["*"],
             "delete:any": ["*"]
+        },
+
+        "webhooks": {
+            "create:any": ["*"],
+            "read:any": ["*"],
+            "update:any": ["*"],
+            "delete:any": ["*"]
         }
     },
 
@@ -312,6 +333,10 @@
             "read:own": ["*"],
             "update:own": ["*"],
             "delete:own": ["*"]
+        },
+
+        "webhooks": {
+            "read:own": ["*"]
         }
     },
 

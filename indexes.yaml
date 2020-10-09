@@ -638,3 +638,17 @@ indexes:
           name: audit_files_subject
           key:
               metadata.subject: 1
+
+    - collection: webhooks
+      index:
+          name: by_type
+          key:
+              type: 1
+              user: 1
+
+    - collection: webhooks
+      index:
+          name: by_user_type
+          key:
+              user: 1
+              type: 1
