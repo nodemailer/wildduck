@@ -13,14 +13,42 @@ const packageData = require('./package.json');
 let loggelf;
 
 async function postWebhook(webhook, data) {
-    let res = await axios.post(webhook.url, data, {
-        headers: {
-            'User-Agent': `wildduck/${packageData.version}`
-        }
-    });
+    let res;
+
+    try {
+        res = await axios.post(webhook.url, data, {
+            headers: {
+                'User-Agent': `wildduck/${packageData.version}`
+            }
+        });
+    } catch (err) {
+        loggelf({
+            short_message: '[WH] ' + data.ev,
+            _mail_action: 'webhook',
+            _wh_id: data.id,
+            _wh_type: data.ev,
+            _wh_user: data.user,
+            _wh_url: webhook.url,
+            _wh_success: 'no',
+            _error: err.message
+        });
+        throw err;
+    }
+
     if (!res) {
         throw new Error(`Failed to POST request to ${webhook.url}`);
     }
+
+    loggelf({
+        short_message: '[WH] ' + data.ev,
+        _mail_action: 'webhook',
+        _wh_id: data.id,
+        _wh_type: data.ev,
+        _wh_user: data.user,
+        _wh_url: webhook.url,
+        _wh_res: res.status,
+        _wh_success: res.status >= 200 && res.status < 300 ? 'yes' : 'no'
+    });
 
     log.verbose('Webhooks', 'Posted %s to %s with status %s', data.ev, webhook.url, res.status);
 
@@ -33,7 +61,7 @@ async function postWebhook(webhook, data) {
         } catch (err) {
             // ignore
         }
-        return;
+        return false;
     }
 
     if (!res.status || res.status < 200 || res.status >= 300) {
@@ -111,11 +139,15 @@ module.exports.start = callback => {
                 query.user = { $in: [new ObjectID(data.user), null] };
             }
 
+            let whid = new ObjectID();
+            let count = 0;
+
             let webhooks = await db.database.collection('webhooks').find(query).toArray();
             for (let webhook of webhooks) {
+                count++;
                 try {
                     let job = await webhooksPostQueue.add(
-                        { data, webhook },
+                        { data: Object.assign({ id: `${whid.toHexString()}:${count}` }, data), webhook },
                         {
                             removeOnComplete: true,
                             removeOnFail: 500,
