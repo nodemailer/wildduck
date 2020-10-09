@@ -8,11 +8,16 @@ const Queue = require('bull');
 const db = require('./lib/db');
 const { ObjectID } = require('mongodb');
 const axios = require('axios');
+const packageData = require('./package.json');
 
 let loggelf;
 
 async function postWebhook(webhook, data) {
-    let res = await axios.post(webhook.url, data);
+    let res = await axios.post(webhook.url, data, {
+        headers: {
+            'User-Agent': `wildduck/${packageData.version}`
+        }
+    });
     if (!res) {
         throw new Error(`Failed to POST request to ${webhook.url}`);
     }
