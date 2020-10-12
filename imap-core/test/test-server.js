@@ -7,7 +7,7 @@ const fs = require('fs');
 const parseMimeTree = require('../lib/indexer/parse-mime-tree');
 const imapHandler = require('../lib/handler/imap-handler');
 
-module.exports = function(options) {
+module.exports = function (options) {
     // This example uses global folders and subscriptions
     let folders = new Map();
     let subscriptions = new WeakSet();
@@ -25,7 +25,9 @@ module.exports = function(options) {
                     flags: [],
                     modseq: 100,
                     idate: new Date('14-Sep-2013 21:22:28 -0300'),
-                    mimeTree: parseMimeTree(Buffer.from('from: sender@example.com\r\nto: to@example.com\r\ncc: cc@example.com\r\nsubject: test\r\n\r\nzzzz\r\n'))
+                    mimeTree: parseMimeTree(
+                        Buffer.from('from: sender@example.com\r\nto: to@example.com\r\ncc: cc@example.com\r\nsubject: test\r\n\r\nzzzz\r\n')
+                    )
                 },
                 {
                     uid: 49,
@@ -44,7 +46,7 @@ module.exports = function(options) {
                             'From: andris@kreata.ee\r\n' +
                             'To: andris@tr.ee\r\n' +
                             'Content-Type: multipart/mixed;\r\n' +
-                            ' boundary=\'----mailcomposer-?=_1-1328088797399\'\r\n' +
+                            " boundary='----mailcomposer-?=_1-1328088797399'\r\n" +
                             'Message-Id: <testmessage-for-bug>;\r\n' +
                             '\r\n' +
                             '------mailcomposer-?=_1-1328088797399\r\n' +
@@ -126,7 +128,7 @@ module.exports = function(options) {
         console.log('SERVER ERR\n%s', err.stack); // eslint-disable-line no-console
     });
 
-    server.onAuth = function(login, session, callback) {
+    server.onAuth = function (login, session, callback) {
         if (login.username !== 'testuser' || login.password !== 'pass') {
             return callback();
         }
@@ -142,7 +144,7 @@ module.exports = function(options) {
     // LIST "" "*"
     // Returns all folders, query is informational
     // folders is either an Array or a Map
-    server.onList = function(query, session, callback) {
+    server.onList = function (query, session, callback) {
         this.logger.debug('[%s] LIST for "%s"', session.id, query);
 
         callback(null, folders);
@@ -151,7 +153,7 @@ module.exports = function(options) {
     // LSUB "" "*"
     // Returns all subscribed folders, query is informational
     // folders is either an Array or a Map
-    server.onLsub = function(query, session, callback) {
+    server.onLsub = function (query, session, callback) {
         this.logger.debug('[%s] LSUB for "%s"', session.id, query);
 
         let subscribed = [];
@@ -165,7 +167,7 @@ module.exports = function(options) {
     };
 
     // SUBSCRIBE "path/to/mailbox"
-    server.onSubscribe = function(mailbox, session, callback) {
+    server.onSubscribe = function (mailbox, session, callback) {
         this.logger.debug('[%s] SUBSCRIBE to "%s"', session.id, mailbox);
 
         if (!folders.has(mailbox)) {
@@ -177,7 +179,7 @@ module.exports = function(options) {
     };
 
     // UNSUBSCRIBE "path/to/mailbox"
-    server.onUnsubscribe = function(mailbox, session, callback) {
+    server.onUnsubscribe = function (mailbox, session, callback) {
         this.logger.debug('[%s] UNSUBSCRIBE from "%s"', session.id, mailbox);
 
         if (!folders.has(mailbox)) {
@@ -189,7 +191,7 @@ module.exports = function(options) {
     };
 
     // CREATE "path/to/mailbox"
-    server.onCreate = function(mailbox, session, callback) {
+    server.onCreate = function (mailbox, session, callback) {
         this.logger.debug('[%s] CREATE "%s"', session.id, mailbox);
 
         if (folders.has(mailbox)) {
@@ -211,7 +213,7 @@ module.exports = function(options) {
 
     // RENAME "path/to/mailbox" "new/path"
     // NB! RENAME affects child and hierarchy mailboxes as well, this example does not do this
-    server.onRename = function(mailbox, newname, session, callback) {
+    server.onRename = function (mailbox, newname, session, callback) {
         this.logger.debug('[%s] RENAME "%s" to "%s"', session.id, mailbox, newname);
 
         if (!folders.has(mailbox)) {
@@ -232,7 +234,7 @@ module.exports = function(options) {
     };
 
     // DELETE "path/to/mailbox"
-    server.onDelete = function(mailbox, session, callback) {
+    server.onDelete = function (mailbox, session, callback) {
         this.logger.debug('[%s] DELETE "%s"', session.id, mailbox);
 
         if (!folders.has(mailbox)) {
@@ -249,7 +251,7 @@ module.exports = function(options) {
     };
 
     // SELECT/EXAMINE
-    server.onOpen = function(mailbox, session, callback) {
+    server.onOpen = function (mailbox, session, callback) {
         this.logger.debug('[%s] Opening "%s"', session.id, mailbox);
 
         if (!folders.has(mailbox)) {
@@ -268,7 +270,7 @@ module.exports = function(options) {
     };
 
     // STATUS (X Y X)
-    server.onStatus = function(mailbox, session, callback) {
+    server.onStatus = function (mailbox, session, callback) {
         this.logger.debug('[%s] Requested status for "%s"', session.id, mailbox);
 
         if (!folders.has(mailbox)) {
@@ -287,7 +289,7 @@ module.exports = function(options) {
     };
 
     // APPEND mailbox (flags) date message
-    server.onAppend = function(mailbox, flags, date, raw, session, callback) {
+    server.onAppend = function (mailbox, flags, date, raw, session, callback) {
         this.logger.debug('[%s] Appending message to "%s"', session.id, mailbox);
 
         if (!folders.has(mailbox)) {
@@ -327,7 +329,7 @@ module.exports = function(options) {
     };
 
     // STORE / UID STORE, updates flags for selected UIDs
-    server.onStore = function(mailbox, update, session, callback) {
+    server.onStore = function (mailbox, update, session, callback) {
         this.logger.debug('[%s] Updating messages in "%s"', session.id, mailbox);
 
         if (!folders.has(mailbox)) {
@@ -426,7 +428,7 @@ module.exports = function(options) {
     };
 
     // EXPUNGE deletes all messages in selected mailbox marked with \Delete
-    server.onExpunge = function(mailbox, update, session, callback) {
+    server.onExpunge = function (mailbox, update, session, callback) {
         this.logger.debug('[%s] Deleting messages from "%s"', session.id, mailbox);
 
         if (!folders.has(mailbox)) {
@@ -466,7 +468,7 @@ module.exports = function(options) {
     };
 
     // COPY / UID COPY sequence mailbox
-    server.onCopy = function(mailbox, update, session, callback) {
+    server.onCopy = function (connection, mailbox, update, session, callback) {
         this.logger.debug('[%s] Copying messages from "%s" to "%s"', session.id, mailbox, update.destination);
 
         if (!folders.has(mailbox)) {
@@ -517,7 +519,7 @@ module.exports = function(options) {
     };
 
     // sends results to socket
-    server.onFetch = function(mailbox, options, session, callback) {
+    server.onFetch = function (mailbox, options, session, callback) {
         this.logger.debug('[%s] Requested FETCH for "%s"', session.id, mailbox);
         this.logger.debug('[%s] FETCH: %s', session.id, JSON.stringify(options.query));
         if (!folders.has(mailbox)) {
@@ -583,7 +585,7 @@ module.exports = function(options) {
     };
 
     // returns an array of matching UID values and the highest modseq of matching messages
-    server.onSearch = function(mailbox, options, session, callback) {
+    server.onSearch = function (mailbox, options, session, callback) {
         if (!folders.has(mailbox)) {
             return callback(null, 'NONEXISTENT');
         }

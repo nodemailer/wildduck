@@ -236,7 +236,7 @@ function hook_script {
 git --git-dir=/var/opt/$1.git --work-tree=\"/opt/$1\" checkout "\$3" -f
 cd \"/opt/$1\"
 rm -rf package-lock.json
-npm install --production --progress=false
+npm install --production --no-optional --no-package-lock --no-audit --ignore-scripts --no-shrinkwrap --progress=false
 sudo $SYSTEMCTL_PATH restart $1 || echo \"Failed restarting service\"" > "/var/opt/$1.git/hooks/update"
     chmod +x "/var/opt/$1.git/hooks/update"
 }
@@ -253,3 +253,35 @@ sudo $SYSTEMCTL_PATH restart $1 || echo \"Failed restarting service\"" > "/var/o
     chmod +x "/var/opt/$1.git/hooks/update"
 }
 export -f hook_script_bower
+
+function log_script {
+
+SERVICE_NAME=$1
+
+# Ensure required files and permissions
+echo "d /var/log/${SERVICE_NAME} 0750 syslog adm" > /etc/tmpfiles.d/${SERVICE_NAME}-log.conf
+
+# Redirect MongoDB log output from syslog to service specific log file
+echo "if ( \$programname startswith \"$SERVICE_NAME\" ) then {
+    action(type=\"omfile\" file=\"/var/log/${SERVICE_NAME}/${SERVICE_NAME}.log\")
+    stop
+}" > /etc/rsyslog.d/25-${SERVICE_NAME}.conf
+
+# Setup log rotate
+echo "/var/log/${SERVICE_NAME}/${SERVICE_NAME}.log {
+    daily
+    ifempty
+    missingok
+    rotate 7
+    compress
+    create 640 syslog adm
+    su root root
+    sharedscripts
+    postrotate
+        systemctl kill --signal=SIGHUP --kill-who=main rsyslog.service 2>/dev/null || true
+    endscript
+}" > /etc/logrotate.d/${SERVICE_NAME}
+
+}
+
+export -f log_script

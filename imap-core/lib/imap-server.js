@@ -47,24 +47,19 @@ class IMAPServer extends EventEmitter {
         // setup server listener and connection handler
         if (this.options.secure && !this.options.needsUpgrade) {
             this.server = net.createServer(this.options, socket => {
+                socket.setKeepAlive(true, 5 * 1000);
                 this._handleProxy(socket, (err, socketOptions) => {
                     if (err) {
                         // ignore, should not happen
                     }
                     if (this.options.secured) {
-                        return this.connect(
-                            socket,
-                            socketOptions
-                        );
+                        return this.connect(socket, socketOptions);
                     }
                     this._upgrade(socket, (err, tlsSocket) => {
                         if (err) {
                             return this._onError(err);
                         }
-                        this.connect(
-                            tlsSocket,
-                            socketOptions
-                        );
+                        this.connect(tlsSocket, socketOptions);
                     });
                 });
             });
@@ -74,10 +69,8 @@ class IMAPServer extends EventEmitter {
                     if (err) {
                         // ignore, should not happen
                     }
-                    this.connect(
-                        socket,
-                        socketOptions
-                    );
+                    socket.setKeepAlive(true, 5 * 1000);
+                    this.connect(socket, socketOptions);
                 })
             );
         }

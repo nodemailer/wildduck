@@ -10,9 +10,9 @@ const crypto = require('crypto');
 const chai = require('chai');
 const request = require('request');
 const fs = require('fs');
-const BrowserBox = require('browserbox');
 const simpleParser = require('mailparser').simpleParser;
 const nodemailer = require('nodemailer');
+const { ImapFlow } = require('imapflow');
 
 const transporter = nodemailer.createTransport({
     lmtp: true,
@@ -32,7 +32,7 @@ const URL = 'http://127.0.0.1:8080';
 const user2PubKey = fs.readFileSync(__dirname + '/fixtures/user2-public.key', 'utf-8');
 const user3PubKey = fs.readFileSync(__dirname + '/fixtures/user3-public.key', 'utf-8');
 
-describe('Send multiple messages', function() {
+describe('Send multiple messages', function () {
     this.timeout(100 * 1000); // eslint-disable-line
 
     let userIds = [];
@@ -268,14 +268,8 @@ describe('Send multiple messages', function() {
                             expect(message.attachments.length).to.equal(3);
                             expect(message.parsed.attachments.length).to.equal(3);
                             for (let i = 0; i < message.attachments.length; i++) {
-                                let hashA = crypto
-                                    .createHash('md5')
-                                    .update(message.attachments[i].raw)
-                                    .digest('hex');
-                                let hashB = crypto
-                                    .createHash('md5')
-                                    .update(message.parsed.attachments[i].content)
-                                    .digest('hex');
+                                let hashA = crypto.createHash('md5').update(message.attachments[i].raw).digest('hex');
+                                let hashB = crypto.createHash('md5').update(message.parsed.attachments[i].content).digest('hex');
                                 expect(hashA).equal(hashB);
                             }
                             expect(message.parsed.to.value).deep.equal([
@@ -341,73 +335,66 @@ describe('Send multiple messages', function() {
         let swanJpg = fs.readFileSync(__dirname + '/../examples/swan.jpg');
 
         let checksums = [
-            crypto
-                .createHash('md5')
-                .update(imagePng)
-                .digest('hex'),
-            crypto
-                .createHash('md5')
-                .update(Buffer.from(textTxt))
-                .digest('hex'),
-            crypto
-                .createHash('md5')
-                .update(swanJpg)
-                .digest('hex')
+            crypto.createHash('md5').update(imagePng).digest('hex'),
+            crypto.createHash('md5').update(Buffer.from(textTxt)).digest('hex'),
+            crypto.createHash('md5').update(swanJpg).digest('hex')
         ];
 
-        const client = new BrowserBox('localhost', 9993, {
-            useSecureTransport: true,
+        const client = new ImapFlow({
+            host: '127.0.0.1',
+            port: 9993,
+            secure: true,
             auth: {
                 user: 'user4',
                 pass: 'secretpass'
             },
-            id: {
-                name: 'My Client',
-                version: '0.1'
-            },
             tls: {
                 rejectUnauthorized: false
+            },
+            clientInfo: {
+                name: 'My Client',
+                version: '0.1'
             }
         });
 
-        client.onerror = err => {
+        client.on('error', err => {
             expect(err).to.not.exist;
-        };
+            done();
+        });
+        client.on('close', () => done());
 
-        client.onclose = done;
-
-        client.onauth = () => {
-            client.listMailboxes((err, result) => {
-                expect(err).to.not.exist;
-                let folders = result.children.map(mbox => ({ name: mbox.name, specialUse: mbox.specialUse || false }));
+        client
+            .connect()
+            .then(async () => {
+                const result = await client.list();
+                const folders = result.map(mbox => ({ name: mbox.name, specialUse: mbox.specialUse || false })).sort((a, b) => a.name.localeCompare(b.name));
                 expect(folders).to.deep.equal([
-                    { name: 'INBOX', specialUse: false },
                     { name: 'Drafts', specialUse: '\\Drafts' },
+                    { name: 'INBOX', specialUse: '\\Inbox' },
                     { name: 'Junk', specialUse: '\\Junk' },
                     { name: 'Sent Mail', specialUse: '\\Sent' },
                     { name: 'Trash', specialUse: '\\Trash' }
                 ]);
-                client.selectMailbox('INBOX', { condstore: true }, (err, result) => {
-                    expect(err).to.not.exist;
-                    expect(result.exists).gte(1);
 
-                    client.listMessages(result.exists, ['uid', 'flags', 'body.peek[]'], (err, messages) => {
-                        expect(err).to.not.exist;
-                        expect(messages.length).equal(1);
+                const mailbox = await client.mailboxOpen('INBOX');
+                expect(mailbox.exists).gte(1);
 
-                        let messageInfo = messages[0];
-                        simpleParser(messageInfo['body[]'], (err, parsed) => {
-                            expect(err).to.not.exist;
-                            checksums.forEach((checksum, i) => {
-                                expect(checksum).to.equal(parsed.attachments[i].checksum);
-                            });
-                            client.close();
-                        });
-                    });
+                let messages = [];
+                for await (let msg of client.fetch(mailbox.exists, { uid: true, source: true })) {
+                    messages.push(msg);
+                }
+                expect(messages.length).equal(1);
+
+                let messageInfo = messages[0];
+                let parsed = await simpleParser(messageInfo.source);
+                checksums.forEach((checksum, i) => {
+                    expect(checksum).to.equal(parsed.attachments[i].checksum);
                 });
+                client.close();
+            })
+            .catch(err => {
+                expect(err).to.not.exist;
+                client.close();
             });
-        };
-
-        client.connect();
     });
 });

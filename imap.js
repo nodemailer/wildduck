@@ -107,6 +107,7 @@ let createInterface = (ifaceOptions, callback) => {
         );
     });
 
+    // TODO: is this even used anywhere?
     server.indexer = indexer;
     server.notifier = notifier;
 
@@ -157,7 +158,7 @@ module.exports = done => {
             ? new Gelf(config.log.gelf.options)
             : {
                   // placeholder
-                  emit: () => false
+                  emit: (key, message) => log.info('Gelf', JSON.stringify(message))
               };
 
     loggelf = message => {

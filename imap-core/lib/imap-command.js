@@ -249,6 +249,12 @@ class IMAPCommand {
                 });
             }
 
+            if (!this.connection.session.commandCounters[this.command]) {
+                this.connection.session.commandCounters[this.command] = 1;
+            } else {
+                this.connection.session.commandCounters[this.command]++;
+            }
+
             this.connection.logger.debug(
                 {
                     tnx: 'client',
@@ -380,6 +386,7 @@ class IMAPCommand {
     countBadResponses() {
         this.connection._badCount++;
         if (this.connection._badCount > MAX_BAD_COMMANDS) {
+            this.clearNotificationListener();
             this.connection.send('* BYE Too many protocol errors');
             setImmediate(() => this.connection.close(true));
             return false;

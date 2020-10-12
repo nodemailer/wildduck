@@ -92,3 +92,8 @@ enabled=true
 hostname="localhost"
 secure=false
 port=2587
+
+[webhooks]
+# At least one server must have webhook processing enabled,
+# otherwise events would pile up in the Redis queue.
+enabled = true

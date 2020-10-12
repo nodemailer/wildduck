@@ -363,7 +363,7 @@ class IMAPConnection extends EventEmitter {
                 short_message: '[CONNRELEASE] Connection released for ' + this.user.id,
                 _connection: 'release',
                 _service: 'imap',
-                _session: this.session && this.session.id,
+                _sess: this.session && this.session.id,
                 _user: this.user.id,
                 _cid: this.id,
                 _ip: this.remoteAddress
@@ -514,6 +514,8 @@ class IMAPConnection extends EventEmitter {
             formatResponse: this.formatResponse.bind(this),
             getQueryResponse: imapTools.getQueryResponse,
             matchSearchQuery: search.matchSearchQuery,
+
+            commandCounters: {},
 
             isUTF8Enabled: () => this.acceptUTF8Enabled
         };

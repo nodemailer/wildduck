@@ -26,6 +26,7 @@ const mailboxesRoutes = require('./lib/api/mailboxes');
 const messagesRoutes = require('./lib/api/messages');
 const storageRoutes = require('./lib/api/storage');
 const filtersRoutes = require('./lib/api/filters');
+const domainaccessRoutes = require('./lib/api/domainaccess');
 const aspsRoutes = require('./lib/api/asps');
 const totpRoutes = require('./lib/api/2fa/totp');
 const custom2faRoutes = require('./lib/api/2fa/custom');
@@ -37,6 +38,7 @@ const submitRoutes = require('./lib/api/submit');
 const auditRoutes = require('./lib/api/audit');
 const domainaliasRoutes = require('./lib/api/domainaliases');
 const dkimRoutes = require('./lib/api/dkim');
+const webhooksRoutes = require('./lib/api/webhooks');
 
 let userHandler;
 let mailboxHandler;
@@ -64,8 +66,10 @@ const serverOptions = {
             let message = {
                 short_message: 'HTTP [' + req.method + ' ' + path + '] ' + (body.success ? 'OK' : 'FAILED'),
 
-                _ip: req.headers['x-forwarded-for'] || req.connection.remoteAddress,
-                _client_ip: ((req.body && req.body.ip) || (req.query && req.query.ip) || '').toString().substr(0, 40) || '',
+                _remote_ip: req.headers['x-forwarded-for'] || req.connection.remoteAddress,
+
+                _ip: ((req.params && req.params.ip) || '').toString().substr(0, 40) || '',
+                _sess: ((req.params && req.params.sess) || '').toString().substr(0, 40) || '',
 
                 _http_route: path,
                 _http_method: req.method,
@@ -81,13 +85,7 @@ const serverOptions = {
             };
 
             Object.keys(req.params || {}).forEach(key => {
-                let value =
-                    typeof req.params[key] === 'string'
-                        ? req.params[key]
-                        : util
-                              .inspect(req.params[key], false, 3)
-                              .toString()
-                              .trim();
+                let value = typeof req.params[key] === 'string' ? req.params[key] : util.inspect(req.params[key], false, 3).toString().trim();
 
                 if (!value) {
                     return;
@@ -111,13 +109,7 @@ const serverOptions = {
                 if (!body || !['id'].includes(key)) {
                     return;
                 }
-                value =
-                    typeof value === 'string'
-                        ? value
-                        : util
-                              .inspect(value, false, 3)
-                              .toString()
-                              .trim();
+                value = typeof value === 'string' ? value : util.inspect(value, false, 3).toString().trim();
 
                 if (value.length > 128) {
                     value = value.substr(0, 128) + '…';
@@ -161,7 +153,12 @@ server.use((req, res, next) => {
 
 server.use(restify.plugins.gzipResponse());
 
-server.use(restify.plugins.queryParser({ allowDots: true }));
+server.use(
+    restify.plugins.queryParser({
+        allowDots: true,
+        mapParams: true
+    })
+);
 server.use(
     restify.plugins.bodyParser({
         maxBodySize: 0,
@@ -178,6 +175,11 @@ server.use(
         if (req.query.accessToken) {
             // delete or it will conflict with Joi schemes
             delete req.query.accessToken;
+        }
+
+        if (req.params.accessToken) {
+            // delete or it will conflict with Joi schemes
+            delete req.params.accessToken;
         }
 
         if (req.headers['x-access-token']) {
@@ -218,10 +220,7 @@ server.use(
             tokenRequired = true;
             if (accessToken && accessToken.length === 40 && /^[a-fA-F0-9]{40}$/.test(accessToken)) {
                 let tokenData;
-                let tokenHash = crypto
-                    .createHash('sha256')
-                    .update(accessToken)
-                    .digest('hex');
+                let tokenHash = crypto.createHash('sha256').update(accessToken).digest('hex');
 
                 try {
                     let key = 'tn:token:' + tokenHash;
@@ -251,10 +250,7 @@ server.use(
                         };
                     }
 
-                    let signature = crypto
-                        .createHmac('sha256', config.api.accessControl.secret)
-                        .update(JSON.stringify(signData))
-                        .digest('hex');
+                    let signature = crypto.createHmac('sha256', config.api.accessControl.secret).update(JSON.stringify(signData)).digest('hex');
 
                     if (signature !== tokenData.s) {
                         // rogue token or invalidated secret
@@ -363,8 +359,8 @@ server.use(
     })
 );
 
-logger.token('user-ip', req => ((req.body && req.body.ip) || (req.query && req.query.ip) || '').toString().substr(0, 40) || '-');
-logger.token('user-sess', req => (req.body && req.body.sess) || (req.query && req.query.sess) || '-');
+logger.token('user-ip', req => ((req.params && req.params.ip) || '').toString().substr(0, 40) || '-');
+logger.token('user-sess', req => (req.params && req.params.sess) || '-');
 
 logger.token('user', req => (req.user && req.user.toString()) || '-');
 logger.token('url', req => {
@@ -401,7 +397,7 @@ module.exports = done => {
             ? new Gelf(config.log.gelf.options)
             : {
                   // placeholder
-                  emit: () => false
+                  emit: (key, message) => log.info('Gelf', JSON.stringify(message))
               };
 
     loggelf = message => {
@@ -482,6 +478,7 @@ module.exports = done => {
     messagesRoutes(db, server, messageHandler, userHandler, storageHandler);
     storageRoutes(db, server, storageHandler);
     filtersRoutes(db, server);
+    domainaccessRoutes(db, server);
     aspsRoutes(db, server, userHandler);
     totpRoutes(db, server, userHandler);
     custom2faRoutes(db, server, userHandler);
@@ -493,6 +490,7 @@ module.exports = done => {
     auditRoutes(db, server, auditHandler);
     domainaliasRoutes(db, server);
     dkimRoutes(db, server);
+    webhooksRoutes(db, server);
 
     server.on('error', err => {
         if (!started) {

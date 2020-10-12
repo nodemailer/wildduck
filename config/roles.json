@@ -82,7 +82,21 @@
             "delete:any": ["*"]
         },
 
+        "domainaccess": {
+            "create:any": ["*"],
+            "read:any": ["*"],
+            "update:any": ["*"],
+            "delete:any": ["*"]
+        },
+
         "domainaliases": {
+            "create:any": ["*"],
+            "read:any": ["*"],
+            "update:any": ["*"],
+            "delete:any": ["*"]
+        },
+
+        "webhooks": {
             "create:any": ["*"],
             "read:any": ["*"],
             "update:any": ["*"],
@@ -145,7 +159,21 @@
             "delete:any": ["*"]
         },
 
+        "domainaccess": {
+            "create:any": ["*"],
+            "read:any": ["*"],
+            "update:any": ["*"],
+            "delete:any": ["*"]
+        },
+
         "domainaliases": {
+            "create:any": ["*"],
+            "read:any": ["*"],
+            "update:any": ["*"],
+            "delete:any": ["*"]
+        },
+
+        "webhooks": {
             "create:any": ["*"],
             "read:any": ["*"],
             "update:any": ["*"],
@@ -217,18 +245,32 @@
             "read:any": ["*"],
             "update:any": ["*"],
             "delete:any": ["*"]
+        },
+
+        "domainaccess": {
+            "create:any": ["*"],
+            "read:any": ["*"],
+            "update:any": ["*"],
+            "delete:any": ["*"]
+        },
+
+        "webhooks": {
+            "create:any": ["*"],
+            "read:any": ["*"],
+            "update:any": ["*"],
+            "delete:any": ["*"]
         }
     },
 
     "user": {
         "addresslisting": {
-            "read:own": ["*"]
+            "read:own": ["*", "!internalData"]
         },
 
         "addresses": {
-            "create:own": ["*"],
-            "read:own": ["*"],
-            "update:own": ["*"],
+            "create:own": ["*", "!internalData"],
+            "read:own": ["*", "!internalData"],
+            "update:own": ["*", "!internalData"],
             "delete:own": ["*"]
         },
 
@@ -237,12 +279,12 @@
         },
 
         "userlisting": {
-            "read:own": ["*", "!tags", "!metaData", "!disabledScopes"]
+            "read:own": ["*", "!tags", "!disabledScopes", "!internalData"]
         },
 
         "users": {
-            "read:own": ["*", "!tags", "!metaData", "!disabledScopes"],
-            "update:own": ["*", "!tags", "!metaData", "!disabledScopes"]
+            "read:own": ["*", "!tags", "!disabledScopes", "!internalData"],
+            "update:own": ["*", "!tags", "!disabledScopes", "!internalData"]
         },
 
         "asps": {
@@ -291,6 +333,10 @@
             "read:own": ["*"],
             "update:own": ["*"],
             "delete:own": ["*"]
+        },
+
+        "webhooks": {
+            "read:own": ["*"]
         }
     },
 

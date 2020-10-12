@@ -181,6 +181,16 @@ indexes:
           key:
               user: 1
 
+    # Indexes for the allow/block list collection
+
+    - collection: domainaccess
+      index:
+          name: by_tag
+          key:
+              tagview: 1
+              action: 1
+              domain: 1
+
     # Indexes for the autoreply collection
 
     - collection: autoreplies
@@ -313,7 +323,7 @@ indexes:
               headers.value: text
               text: text
           partialFilterExpression:
-              searchable: true
+              searchable: true # ignore messages marked with \Deleted flag
 
     - collection: messages
       index:
@@ -561,6 +571,20 @@ indexes:
               locked: 1
               lockedUntil: 1
 
+    - collection: audits
+      index:
+          name: user_expire_time
+          key:
+              user: 1
+              expires: 1
+
+    - collection: audits
+      index:
+          name: expire_time
+          key:
+              expires: 1
+              deleted: 1
+
     - collection: audit.files
       type: gridfs # index applies to gridfs database
       index:
@@ -583,3 +607,48 @@ indexes:
           key:
               metadata.audit: 1
               metadata.date: 1
+
+    - collection: audit.files
+      type: gridfs # index applies to gridfs database
+      index:
+          name: audit_files_queue
+          key:
+              metadata.info.queueId: 1
+
+    - collection: audit.files
+      type: gridfs # index applies to gridfs database
+      index:
+          name: audit_files_expire
+          key:
+              metadata.info.expires: 1
+
+    - collection: audit.files
+      type: gridfs # index applies to gridfs database
+      index:
+          name: audit_files_addresses
+          key:
+              metadata.audit: 1
+              metadata.addresses.type: 1
+              metadata.addresses.name: 1
+              metadata.addresses.address: 1
+
+    - collection: audit.files
+      type: gridfs # index applies to gridfs database
+      index:
+          name: audit_files_subject
+          key:
+              metadata.subject: 1
+
+    - collection: webhooks
+      index:
+          name: by_type
+          key:
+              type: 1
+              user: 1
+
+    - collection: webhooks
+      index:
+          name: by_user_type
+          key:
+              user: 1
+              type: 1

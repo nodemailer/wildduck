@@ -25,7 +25,7 @@ echo "#!/bin/bash
 git --git-dir=/var/opt/haraka-plugin-wildduck.git --work-tree=/opt/haraka/plugins/wildduck checkout "\$3" -f
 cd /opt/haraka/plugins/wildduck
 rm -rf package-lock.json
-npm install --production --progress=false
+npm install --production --no-optional --no-package-lock --no-audit --ignore-scripts --no-shrinkwrap --progress=false
 sudo $SYSTEMCTL_PATH restart haraka || echo \"Failed restarting service\"" > "/var/opt/haraka-plugin-wildduck.git/hooks/update"
 chmod +x "/var/opt/haraka-plugin-wildduck.git/hooks/update"
 
@@ -33,17 +33,17 @@ chmod +x "/var/opt/haraka-plugin-wildduck.git/hooks/update"
 echo "deploy ALL = (root) NOPASSWD: $SYSTEMCTL_PATH restart haraka" >> /etc/sudoers.d/wildduck
 
 cd
-npm install --unsafe-perm -g Haraka@$HARAKA_VERSION
+npm install --production --no-optional --no-package-lock --no-audit --ignore-scripts --no-shrinkwrap --unsafe-perm -g Haraka@$HARAKA_VERSION
 haraka -i /opt/haraka
 cd /opt/haraka
-npm install --unsafe-perm --save haraka-plugin-rspamd Haraka@$HARAKA_VERSION
+npm install --production --no-optional --no-package-lock --no-audit --ignore-scripts --no-shrinkwrap --unsafe-perm --save haraka-plugin-rspamd haraka-plugin-redis Haraka@$HARAKA_VERSION
 
-# Haraka WIldDuck plugin. Install as separate repo as it can be edited more easily later
+# Haraka WildDuck plugin. Install as separate repo as it can be edited more easily later
 mkdir -p plugins/wildduck
 git --git-dir=/var/opt/haraka-plugin-wildduck.git --work-tree=/opt/haraka/plugins/wildduck checkout "$WILDDUCK_HARAKA_COMMIT"
 
 cd plugins/wildduck
-npm install --unsafe-perm --production --progress=false
+npm install --production --no-optional --no-package-lock --no-audit --ignore-scripts --no-shrinkwrap --unsafe-perm --progress=false
 
 cd /opt/haraka
 mv config/plugins config/plugins.bak
@@ -99,7 +99,11 @@ virus=true
 error=false' > config/clamd.ini
 
 cp plugins/wildduck/config/wildduck.yaml config/wildduck.yaml
-sed -i -e "s/secret value/$SRS_SECRET/g" config/wildduck.yaml
+sed -i -e "s/secret value/$SRS_SECRET/g;s/#loopSecret/loopSecret/g" config/wildduck.yaml
+
+# Ensure required files and permissions
+echo "d /opt/haraka 0755 deploy deploy" > /etc/tmpfiles.d/haraka.conf
+log_script "haraka"
 
 echo '[Unit]
 Description=Haraka MX Server

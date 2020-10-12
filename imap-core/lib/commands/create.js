@@ -1,7 +1,6 @@
 'use strict';
 
-const imapTools = require('../imap-tools');
-const utf7 = require('utf7').imap;
+const { normalizeMailbox, utf7decode } = require('../imap-tools');
 
 // tag CREATE "mailbox"
 
@@ -20,7 +19,7 @@ module.exports = {
 
         if (!this.acceptUTF8Enabled) {
             // decode before normalizing to uncover stuff like ending / etc.
-            path = utf7.decode(path);
+            path = utf7decode(path);
         }
 
         // Check if CREATE method is set
@@ -58,7 +57,7 @@ module.exports = {
             });
         }
 
-        path = imapTools.normalizeMailbox(path);
+        path = normalizeMailbox(path);
 
         let logdata = {
             short_message: '[CREATE]',

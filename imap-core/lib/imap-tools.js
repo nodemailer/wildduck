@@ -1,12 +1,18 @@
 'use strict';
 
 const Indexer = require('./indexer/indexer');
-const utf7 = require('utf7').imap;
 const libmime = require('libmime');
 const punycode = require('punycode');
+const iconv = require('iconv-lite');
 
 module.exports.systemFlagsFormatted = ['\\Answered', '\\Flagged', '\\Draft', '\\Deleted', '\\Seen'];
 module.exports.systemFlags = ['\\answered', '\\flagged', '\\draft', '\\deleted', '\\seen'];
+
+const utf7encode = str => iconv.encode(str, 'utf-7-imap').toString();
+const utf7decode = str => iconv.decode(Buffer.from(str), 'utf-7-imap').toString();
+
+module.exports.utf7encode = utf7encode;
+module.exports.utf7decode = utf7decode;
 
 module.exports.fetchSchema = {
     body: [
@@ -195,11 +201,11 @@ module.exports.searchMapping = {
  * @param {range} range Sequence range, eg "1,2,3:7"
  * @returns {Boolean} True if the string looks like a sequence range
  */
-module.exports.validateSequnce = function(range) {
+module.exports.validateSequnce = function (range) {
     return !!(range.length && /^(\d+|\*)(:\d+|:\*)?(,(\d+|\*)(:\d+|:\*)?)*$/.test(range));
 };
 
-module.exports.normalizeMailbox = function(mailbox, utf7Encoded) {
+module.exports.normalizeMailbox = function (mailbox, utf7Encoded) {
     if (!mailbox) {
         return '';
     }
@@ -214,7 +220,7 @@ module.exports.normalizeMailbox = function(mailbox, utf7Encoded) {
     }
 
     if (utf7Encoded) {
-        parts = parts.map(value => utf7.decode(value));
+        parts = parts.map(value => utf7decode(value));
     }
 
     mailbox = parts.join('/');
@@ -222,7 +228,7 @@ module.exports.normalizeMailbox = function(mailbox, utf7Encoded) {
     return mailbox;
 };
 
-module.exports.generateFolderListing = function(folders, skipHierarchy) {
+module.exports.generateFolderListing = function (folders, skipHierarchy) {
     let items = new Map();
     let parents = [];
 
@@ -328,7 +334,7 @@ module.exports.generateFolderListing = function(folders, skipHierarchy) {
     return result;
 };
 
-module.exports.filterFolders = function(folders, query) {
+module.exports.filterFolders = function (folders, query) {
     query = query
         // remove excess * and %
         .replace(/\*\*+/g, '*')
@@ -345,7 +351,7 @@ module.exports.filterFolders = function(folders, query) {
     return folders.filter(folder => !!regex.test(folder.path));
 };
 
-module.exports.getMessageRange = function(uidList, range, isUid) {
+module.exports.getMessageRange = function (uidList, range, isUid) {
     range = (range || '').toString();
 
     let result = [];
@@ -390,7 +396,7 @@ module.exports.getMessageRange = function(uidList, range, isUid) {
     return result;
 };
 
-module.exports.packMessageRange = function(uidList) {
+module.exports.packMessageRange = function (uidList) {
     if (!Array.isArray(uidList)) {
         uidList = [].concat(uidList || []);
     }
@@ -427,7 +433,7 @@ module.exports.packMessageRange = function(uidList) {
  * @param {Date} date Date object to parse
  * @returns {String} Internaldate formatted date
  */
-module.exports.formatInternalDate = function(date) {
+module.exports.formatInternalDate = function (date) {
     let day = date.getUTCDate(),
         month = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][date.getUTCMonth()],
         year = date.getUTCFullYear(),
@@ -485,7 +491,7 @@ module.exports.formatInternalDate = function(date) {
  * @param {Object} options Options for the indexer
  * @returns {Array} Resolved responses
  */
-module.exports.getQueryResponse = function(query, message, options) {
+module.exports.getQueryResponse = function (query, message, options) {
     options = options || {};
 
     // for optimization purposes try to use cached mimeTree etc. if available

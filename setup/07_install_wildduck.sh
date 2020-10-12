@@ -53,12 +53,17 @@ group=\"wildduck\"
 emailDomain=\"$MAILDOMAIN\"" | cat - /etc/wildduck/wildduck.toml > temp && mv temp /etc/wildduck/wildduck.toml
 
 sed -i -e "s/localhost:3000/$HOSTNAME/g;s/localhost/$HOSTNAME/g;s/2587/587/g" /etc/wildduck/wildduck.toml
+sed -i -e "s/secret value/$SRS_SECRET/g;s/#loopSecret/loopSecret/g" /etc/wildduck/sender.toml
 
 cd /opt/wildduck
-npm install --unsafe-perm --production
+npm install --production --unsafe-perm --no-optional --no-package-lock --no-audit --ignore-scripts --no-shrinkwrap
 
 chown -R deploy:deploy /var/opt/wildduck.git
 chown -R deploy:deploy /opt/wildduck
+
+echo "d /opt/wildduck 0755 deploy deploy
+d /etc/wildduck 0755 wildduck wildduck" > /etc/tmpfiles.d/zone-mta.conf
+log_script "wildduck-server"
 
 echo "[Unit]
 Description=WildDuck Mail Server

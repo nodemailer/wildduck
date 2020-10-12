@@ -19,6 +19,15 @@ module.exports = {
             });
         }
 
+        if (this.session.commandCounters[command.command.toUpperCase().trim()] > 1000) {
+            this.session.selected = this.selected = false;
+            this.state = 'Logout';
+
+            this.clearNotificationListener();
+            this.send(`* BYE Too many ${command.command.toUpperCase().trim()} commands issued, please reconnect`);
+            return setImmediate(() => this.close());
+        }
+
         let logdata = {
             short_message: '[EXPUNGE]',
             _mail_action: 'expunge',

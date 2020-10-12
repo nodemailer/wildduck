@@ -18,6 +18,7 @@ const taskRestore = require('./lib/tasks/restore');
 const taskUserDelete = require('./lib/tasks/user-delete');
 const taskQuota = require('./lib/tasks/quota');
 const taskAudit = require('./lib/tasks/audit');
+const taskClearFolder = require('./lib/tasks/clear-folder');
 
 let messageHandler;
 let mailboxHandler;
@@ -39,7 +40,7 @@ module.exports.start = callback => {
             ? new Gelf(config.log.gelf.options)
             : {
                   // placeholder
-                  emit: () => false
+                  emit: (key, message) => log.info('Gelf', JSON.stringify(message))
               };
 
     loggelf = message => {
@@ -303,6 +304,7 @@ function clearExpiredMessages() {
                 })
                 .project({
                     _id: true,
+                    user: true,
                     mailbox: true,
                     uid: true,
                     size: true,
@@ -318,7 +320,18 @@ function clearExpiredMessages() {
                     if (deleted) {
                         log.verbose('GC', 'Purged %s messages', deleted);
                     }
-                    return deleteOrphaned(next);
+                    return deleteOrphaned(() => {
+                        auditHandler
+                            .cleanExpired()
+                            .then(() => {
+                                try {
+                                    next();
+                                } catch (err) {
+                                    // ignore, only needed to prevent calling next() twice
+                                }
+                            })
+                            .catch(next);
+                    });
                 });
 
             let processNext = () => {
@@ -338,11 +351,36 @@ function clearExpiredMessages() {
                     db.database.collection('archived').deleteOne({ _id: messageData._id }, err => {
                         if (err) {
                             //failed to delete
-                            log.error('GC', 'Failed to delete archived message id=%s. %s', messageData._id, err.message);
+                            log.error(
+                                'GC',
+                                'Failed to delete archived message user=%s mailbox=%s uid=%ss id=%s. %s',
+                                messageData.user,
+                                messageData.mailbox,
+                                messageData.uid,
+                                messageData._id,
+                                err.message
+                            );
                             return cursor.close(() => done(err));
                         }
 
-                        log.verbose('GC', 'Deleted archived message id=%s', messageData._id);
+                        log.verbose(
+                            'GC',
+                            'Deleted archived message user=%s mailbox=%s uid=%s id=%s',
+                            messageData.user,
+                            messageData.mailbox,
+                            messageData.uid,
+                            messageData._id
+                        );
+
+                        loggelf({
+                            short_message: '[DELARCH] Deleted archived message',
+                            _mail_action: 'delete_archived',
+                            _service: 'wd_tasks',
+                            _user: messageData.user,
+                            _mailbox: messageData.mailbox,
+                            _uid: messageData.uid,
+                            _archived_id: messageData._id
+                        });
 
                         let attachmentIds = Object.keys(messageData.mimeTree.attachmentMap || {}).map(key => messageData.mimeTree.attachmentMap[key]);
 
@@ -556,6 +594,22 @@ function processTask(taskData, callback) {
                 {
                     messageHandler,
                     auditHandler,
+                    loggelf
+                },
+                err => {
+                    if (err) {
+                        return callback(err);
+                    }
+                    // release
+                    callback(null, true);
+                }
+            );
+
+        case 'clear-folder':
+            return taskClearFolder(
+                taskData,
+                {
+                    messageHandler,
                     loggelf
                 },
                 err => {
