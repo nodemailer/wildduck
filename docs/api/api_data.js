@@ -6893,7 +6893,7 @@ define({ "api": [
           {
             "group": "Parameter",
             "type": "Object",
-            "optional": false,
+            "optional": true,
             "field": "query",
             "description": "<p>Rules that a message must match</p>"
           },
@@ -6949,7 +6949,7 @@ define({ "api": [
           {
             "group": "Parameter",
             "type": "Object",
-            "optional": false,
+            "optional": true,
             "field": "action",
             "description": "<p>Action to take with a matching message</p>"
           },
