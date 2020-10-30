@@ -26,6 +26,11 @@ module.exports = {
             optional: true
         },
         {
+            name: 'utf8',
+            type: 'atom',
+            optional: true
+        },
+        {
             name: 'message',
             type: 'literal'
         }
@@ -49,6 +54,16 @@ module.exports = {
 
         path = imapTools.normalizeMailbox(path, !this.acceptUTF8Enabled);
         let message = command.attributes.pop();
+
+        if (Array.isArray(message) && message.length === 1 && command.attributes.length) {
+            let lastOpt = command.attributes[command.attributes.length - 1];
+            if (lastOpt.type === 'ATOM' && /^UTF8$/i.test(lastOpt.value)) {
+                message = message.shift();
+                // remove the UTF8 marker
+                command.attributes.pop();
+            }
+        }
+
         let flags = [];
         let internaldate = false;
         let parsedDate;

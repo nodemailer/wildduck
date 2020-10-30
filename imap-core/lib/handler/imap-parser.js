@@ -24,7 +24,7 @@ class TokenParser {
         let attributes = [],
             branch = attributes;
 
-        let walk = function(node) {
+        let walk = function (node) {
             let curBranch = branch;
             let elm;
             let partial;
@@ -116,7 +116,7 @@ class TokenParser {
         let chr,
             i,
             len,
-            checkSP = function() {
+            checkSP = function () {
                 // jump to the next non whitespace pos
                 while (this.str.charAt(i + 1) === ' ') {
                     i++;
@@ -136,12 +136,14 @@ class TokenParser {
                             this.state = 'STRING';
                             this.currentNode.closed = false;
                             break;
+
                         // ( starts a new list
                         case '(':
                             this.currentNode = this.createNode(this.currentNode, this.pos + i);
                             this.currentNode.type = 'LIST';
                             this.currentNode.closed = false;
                             break;
+
                         // ) closes a list
                         case ')':
                             if (this.currentNode.type !== 'LIST') {
@@ -154,6 +156,7 @@ class TokenParser {
 
                             checkSP();
                             break;
+
                         // ] closes section group
                         case ']':
                             if (this.currentNode.type !== 'SECTION') {
@@ -164,6 +167,7 @@ class TokenParser {
                             this.currentNode = this.currentNode.parentNode;
                             checkSP();
                             break;
+
                         // < starts a new partial
                         case '<':
                             if (this.str.charAt(i - 1) !== ']') {
@@ -178,6 +182,12 @@ class TokenParser {
                                 this.currentNode.closed = false;
                             }
                             break;
+
+                        // ~{ starts a new literal8
+                        //case '~':
+                        // ignore
+                        //  break;
+
                         // { starts a new literal
                         case '{':
                             this.currentNode = this.createNode(this.currentNode, this.pos + i);
@@ -185,6 +195,7 @@ class TokenParser {
                             this.state = 'LITERAL';
                             this.currentNode.closed = false;
                             break;
+
                         // ( starts a new sequence
                         case '*':
                             this.currentNode = this.createNode(this.currentNode, this.pos + i);
@@ -193,10 +204,12 @@ class TokenParser {
                             this.currentNode.closed = false;
                             this.state = 'SEQUENCE';
                             break;
+
                         // normally a space should never occur
                         case ' ':
                             // just ignore
                             break;
+
                         // [ starts section
                         case '[':
                             // If it is the *first* element after response command, then process as a response argument list
@@ -265,6 +278,30 @@ class TokenParser {
                         this.currentNode = this.currentNode.parentNode;
                         this.state = 'NORMAL';
                         break;
+                    }
+
+                    // UTF8 (~{bytes}<CR><LF><literal8>)
+                    // Seems like literal8
+                    if (
+                        chr === '{' &&
+                        this.currentNode.value === '~' &&
+                        this.currentNode.parentNode &&
+                        this.currentNode.parentNode.type === 'LIST' &&
+                        this.currentNode.parentNode.parentNode &&
+                        this.currentNode.parentNode.parentNode.childNodes.length > 1
+                    ) {
+                        let nbrs = this.currentNode.parentNode.parentNode.childNodes;
+                        let leftNbr = nbrs[nbrs.length - 2];
+                        if (leftNbr.type === 'ATOM' && /^UTF8$/i.test(leftNbr.value)) {
+                            // remove unneeded ATOM that was issued for "~"
+                            this.currentNode.parentNode.childNodes.pop();
+                            // start over as a literal
+                            this.currentNode = this.createNode(this.currentNode.parentNode, this.pos + i);
+                            this.currentNode.type = 'LITERAL';
+                            this.state = 'LITERAL';
+                            this.currentNode.closed = false;
+                            break;
+                        }
                     }
 
                     //
@@ -399,7 +436,7 @@ class TokenParser {
                         break;
                     }
 
-                    if (chr === '+' && this.options.literalPlus) {
+                    if (chr === '+' && !this.currentNode.literalLength && this.options.literalPlus) {
                         this.currentNode.literalPlus = true;
                         break;
                     }
@@ -608,7 +645,7 @@ class ParserInstance {
     }
 }
 
-module.exports = function(command, options) {
+module.exports = function (command, options) {
     let parser,
         response = {};
 

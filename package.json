@@ -6,7 +6,8 @@
     "scripts": {
         "test": "mongo --eval 'db.dropDatabase()' wildduck-test && redis-cli -n 13 flushdb && NODE_ENV=test grunt",
         "apidoc": "apidoc -i lib/api/ -o docs/api/",
-        "show": "NODE_CONFIG_ONLY=true node server.js"
+        "show": "NODE_CONFIG_ONLY=true node server.js",
+        "start": "node server.js"
     },
     "keywords": [
         "imap",
