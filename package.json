@@ -46,7 +46,7 @@
         "gelf": "2.0.1",
         "generate-password": "1.5.1",
         "he": "1.2.0",
-        "html-to-text": "5.1.1",
+        "html-to-text": "6.0.0",
         "humanname": "0.2.2",
         "iconv-lite": "0.6.2",
         "ioredfour": "1.0.2-ioredis-03",
