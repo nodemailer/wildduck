@@ -17,7 +17,6 @@
     "license": "EUPL-1.1+",
     "devDependencies": {
         "ajv": "6.12.5",
-        "apidoc": "0.25.0",
         "chai": "4.2.0",
         "docsify-cli": "4.4.1",
         "eslint": "7.10.0",
@@ -53,7 +52,7 @@
         "ioredis": "4.17.3",
         "isemail": "3.2.0",
         "joi": "17.2.1",
-        "js-yaml": "3.14.0",
+        "js-yaml": "^3.14.0",
         "key-fingerprint": "1.1.0",
         "libbase64": "1.2.1",
         "libmime": "5.0.0",
