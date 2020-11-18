@@ -396,6 +396,23 @@ indexes:
               exp: 1
               rdate: 1
 
+    # indexes for address register
+    - collection: addressregister
+      index:
+          name: by_address
+          key:
+              user: 1
+              addrview: 1
+              updated: -1
+
+    - collection: addressregister
+      index:
+          name: by_name
+          key:
+              user: 1
+              name: 1
+              updated: -1
+
     # indexes for deleted messages
     - collection: archived
       index:
