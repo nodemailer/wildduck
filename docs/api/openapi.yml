@@ -281,17 +281,20 @@ paths:
                   required: true
                   schema:
                       type: string
+                      example: 507f1f77bcf86cd799439011
                 - name: query
                   in: query
                   description: Prefix of an address or a name
                   required: true
                   schema:
                       type: string
+                      example: john
                 - name: limit
                   in: query
                   description: How many records to return
                   schema:
                       type: number
+                      example: 25
             responses:
                 '200':
                     description: Success
@@ -5407,12 +5410,15 @@ components:
                 id:
                     type: string
                     description: ID of the Address
+                    example: 507f1f77bcf86cd799439011
                 name:
                     type: string
                     description: Name from address header
+                    example: John Doe
                 address:
                     type: string
                     description: E-mail address string
+                    example: john@example.com
         GetASPsResult:
             required:
                 - id
