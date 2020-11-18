@@ -284,6 +284,7 @@ paths:
                 - name: query
                   in: query
                   description: Prefix of an address or a name
+                  required: true
                   schema:
                       type: string
                 - name: limit
