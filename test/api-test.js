@@ -453,4 +453,74 @@ describe('API tests', function () {
             expect(response.body.success).to.be.true;
         });
     });
+
+    describe('message', () => {
+        before(async () => {
+            const response = await server.get(`/users/${userId}/mailboxes`).expect(200);
+            expect(response.body.success).to.be.true;
+            inbox = response.body.results.find(result => result.path === 'INBOX');
+            expect(inbox).to.exist;
+            inbox = inbox.id;
+        });
+
+        it('should POST /users/:user/mailboxes/:mailbox/messages with text and html', async () => {
+            const message = {
+                from: {
+                    name: 'test tester',
+                    address: 'testuser@example.com'
+                },
+                subject: 'hello world',
+                text: 'Hello hello world!',
+                html: '<p>Hello hello world!</p>'
+            };
+            const response = await server.post(`/users/${userId}/mailboxes/${inbox}/messages`).send(message).expect(200);
+
+            expect(response.body.success).to.be.true;
+            expect(response.body.message.id).to.be.gt(0);
+
+            const messageDataResponse = await server.get(`/users/${userId}/mailboxes/${inbox}/messages/${response.body.message.id}`);
+            expect(response.body.success).to.be.true;
+
+            const messageData = messageDataResponse.body;
+            expect(messageData.subject).to.equal(message.subject);
+            expect(messageData.html[0]).to.equal(message.html);
+            expect(messageData.attachments).to.deep.equal([]);
+        });
+
+        it('should POST /users/:user/mailboxes/:mailbox/messages with embedded attachment', async () => {
+            const message = {
+                from: {
+                    name: 'test tester',
+                    address: 'testuser@example.com'
+                },
+                subject: 'hello world',
+                text: 'Hello hello world!',
+                html:
+                    '<p>Hello hello world! <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAHElEQVQI12P4//8/w38GIAXDIBKE0DHxgljNBAAO9TXL0Y4OHwAAAABJRU5ErkJggg==" alt="Red dot" /></p>'
+            };
+            const response = await server.post(`/users/${userId}/mailboxes/${inbox}/messages`).send(message);
+
+            expect(response.body.success).to.be.true;
+            expect(response.body.message.id).to.be.gt(0);
+
+            const messageDataResponse = await server.get(`/users/${userId}/mailboxes/${inbox}/messages/${response.body.message.id}`);
+            expect(response.body.success).to.be.true;
+
+            const messageData = messageDataResponse.body;
+            expect(messageData.subject).to.equal(message.subject);
+            expect(messageData.html[0]).to.equal('<p>Hello hello world! <img src="attachment:ATT00001" alt="Red dot" /></p>');
+            expect(messageData.attachments).to.deep.equal([
+                {
+                    contentType: 'image/png',
+                    disposition: 'attachment',
+                    filename: 'attachment-1.png',
+                    id: 'ATT00001',
+                    related: true,
+                    size: 118,
+                    sizeKb: 1,
+                    transferEncoding: 'base64'
+                }
+            ]);
+        });
+    });
 });

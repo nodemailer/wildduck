@@ -2,7 +2,7 @@
 
 process.env.NODE_ENV = 'test';
 
-module.exports = function(grunt) {
+module.exports = function (grunt) {
     // Project configuration.
     grunt.initConfig({
         eslint: {
@@ -22,7 +22,7 @@ module.exports = function(grunt) {
         wait: {
             server: {
                 options: {
-                    delay: 7 * 1000
+                    delay: 12 * 1000
                 }
             }
         },
