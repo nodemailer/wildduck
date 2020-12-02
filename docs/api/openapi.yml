@@ -5078,10 +5078,10 @@ components:
                     description: If provided then validates against account password before applying any changes
                 password:
                     type: string
-                    description: New password for the account. Set to boolean false to disable password usage
+                    description: New password for the account. Set to boolean false to disable password usage for the master scope, Application Specific Passwords would still be allowed
                 hashedPassword:
                     type: boolean
-                    description: 'If true then password is already hashed, so store as. Supported hashes: pbkdf2, bcrypt ($2a, $2y, $2b), md5 ($1), sha512 ($6), sha256 ($5), argon2 ($argon2d, $argon2i, $argon2id). Stored hashes are rehashed to pbkdf2 on first successful password check.'
+                    description: 'If true then password is already hashed, so store as is. Supported hashes: pbkdf2, bcrypt ($2a, $2y, $2b), md5 ($1), sha512 ($6), sha256 ($5), argon2 ($argon2d, $argon2i, $argon2id). Stored hashes are rehashed to pbkdf2 on first successful password check.'
                 allowUnsafe:
                     type: boolean
                     description: 'If false then validates provided passwords against Have I Been Pwned API. Experimental, so validation is disabled by default but will be enabled automatically in some future version of WildDuck.'
@@ -5194,7 +5194,7 @@ components:
                     description: Password for the account. Set to boolean false to disable password usage for the master scope, Application Specific Passwords would still be allowed
                 hashedPassword:
                     type: boolean
-                    description: 'If true then password is already hashed, so store as. Supported hashes: pbkdf2, bcrypt ($2a, $2y, $2b), md5 ($1), sha512 ($6), sha256 ($5), argon2 ($argon2d, $argon2i, $argon2id). Stored hashes are rehashed to pbkdf2 on first successful password check.'
+                    description: 'If true then password is already hashed, so store as is. Supported hashes: pbkdf2, bcrypt ($2a, $2y, $2b), md5 ($1), sha512 ($6), sha256 ($5), argon2 ($argon2d, $argon2i, $argon2id). Stored hashes are rehashed to pbkdf2 on first successful password check.'
                 allowUnsafe:
                     type: boolean
                     description: 'If false then validates provided passwords against Have I Been Pwned API. Experimental, so validation is disabled by default but will be enabled automatically in some future version of WildDuck.'
