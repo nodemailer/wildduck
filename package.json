@@ -1,6 +1,6 @@
 {
     "name": "wildduck",
-    "version": "1.31.3",
+    "version": "1.31.4",
     "description": "IMAP/POP3 server built with Node.js and MongoDB",
     "main": "server.js",
     "scripts": {
@@ -29,7 +29,7 @@
         "grunt-shell-spawn": "0.4.0",
         "grunt-wait": "0.3.0",
         "imapflow": "1.0.51",
-        "mailparser": "3.0.0",
+        "mailparser": "3.0.1",
         "mocha": "8.2.1",
         "request": "2.88.2",
         "supertest": "6.0.1"
