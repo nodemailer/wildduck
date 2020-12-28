@@ -72,7 +72,7 @@ async function postWebhook(webhook, data) {
 }
 
 module.exports.start = callback => {
-    if (!config.webhooks.enabled) {
+    if (!(config.webhooks && config.webhooks.enabled)) {
         return setImmediate(() => callback(null, false));
     }
 
