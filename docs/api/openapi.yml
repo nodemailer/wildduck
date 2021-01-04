@@ -4996,8 +4996,6 @@ components:
                         - type: object
                         - type: string
         SubmitStoredMessageRequest:
-            required:
-                - deleteFiles
             type: object
             properties:
                 deleteFiles:
