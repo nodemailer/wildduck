@@ -5,8 +5,10 @@ info:
     version: 1.0.0
     contact:
         url: 'https://github.com/nodemailer/wildduck'
+
 servers:
     - url: 'https://api.wildduck.email'
+
 tags:
     - name: Addresses
     - name: ApplicationPasswords
@@ -1562,6 +1564,34 @@ paths:
               required: true
               schema:
                   type: number
+    '/users/{user}/outbound/{queueId}':
+        delete:
+            tags:
+                - Messages
+            summary: Delete an Outbound Message
+            description: You can delete outbound emails that are still in queue. Queue ID can be found from the `outbound` property of a stored email.
+            operationId: deleteOutboundMessage
+            responses:
+                '200':
+                    description: Success
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/SuccessResponse'
+        parameters:
+            - name: user
+              in: path
+              description: ID of the User
+              required: true
+              schema:
+                  type: string
+            - name: queueId
+              in: path
+              description: Outbound queue ID of the message
+              required: true
+              schema:
+                  type: string
+
     '/users/{user}/search':
         get:
             tags:
@@ -2637,6 +2667,39 @@ components:
                     type: string
                     description: Value from List-Unsubscribe header
             description: If set then this message is from a mailing list
+
+        Outbound:
+            required:
+                - queueId
+                - entries
+            type: object
+            properties:
+                queueId:
+                    type: string
+                    description: Queue ID
+                entries:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/OutboundQueueEntry'
+                    description: Queued recipients
+        OutboundQueueEntry:
+            required:
+                - seq
+                - recipient
+            type: object
+            properties:
+                seq:
+                    type: string
+                    description: Queue target ID
+                recipient:
+                    type: string
+                    description: Target recipient
+                sendingZone:
+                    type: string
+                    description: Zone ID in ZoneMTA
+                queued:
+                    type: string
+                    description: ISO Date of the expected delivery time
         Attachments:
             required:
                 - id
@@ -4040,23 +4103,15 @@ components:
                 - envelope
                 - thread
                 - from
-                - to
-                - cc
-                - bcc
                 - subject
                 - messageId
                 - date
-                - list
-                - expires
                 - seen
                 - deleted
                 - flagged
                 - draft
-                - html
-                - text
                 - contentType
                 - metaData
-                - reference
             type: object
             properties:
                 success:
@@ -4120,7 +4175,10 @@ components:
                     type: string
                     description: Plaintext content of the message
                 attachments:
-                    $ref: '#/components/schemas/Attachments'
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/Attachments'
+                    description: Attachments for the message
                 verificationResults:
                     $ref: '#/components/schemas/VerificationResults'
                 contentType:
@@ -4133,6 +4191,11 @@ components:
                     description: Referenced message info
                 files:
                     $ref: '#/components/schemas/Files'
+                outbound:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/Outbound'
+                    description: Outbound queue entries
         DeleteMessagesInMailboxResponse:
             required:
                 - success
@@ -5961,6 +6024,7 @@ components:
                 url:
                     type: string
                     description: Webhook URL
+
     securitySchemes:
         AccessTokenAuth:
             name: X-Access-Token
