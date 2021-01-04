@@ -10,7 +10,7 @@ const fs = require('fs');
 const MessageHandler = require('./lib/message-handler');
 const MailboxHandler = require('./lib/mailbox-handler');
 const AuditHandler = require('./lib/audit-handler');
-const setupIndexes = yaml.safeLoad(fs.readFileSync(__dirname + '/indexes.yaml', 'utf8'));
+const setupIndexes = yaml.load(fs.readFileSync(__dirname + '/indexes.yaml', 'utf8'));
 const Gelf = require('gelf');
 const os = require('os');
 
