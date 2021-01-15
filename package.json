@@ -43,7 +43,7 @@
         "bcryptjs": "2.4.3",
         "bull": "3.20.0",
         "gelf": "2.0.1",
-        "generate-password": "1.5.1",
+        "generate-password": "1.6.0",
         "he": "1.2.0",
         "html-to-text": "6.0.0",
         "humanname": "0.2.2",
