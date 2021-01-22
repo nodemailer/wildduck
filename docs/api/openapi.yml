@@ -2100,6 +2100,12 @@ paths:
             description: 'This method deletes user and address entries from DB and schedules a background task to delete messages. You can call this method several times even if the user has already been deleted, in case there are still some pending messages.'
             operationId: deleteUser
             parameters:
+                - name: deleteAfter
+                  description: Delete user entry from registry but keep all user data until provided date. User account is fully recoverable up to that date.
+                  in: query
+                  schema:
+                      type: string
+                      format: date-time
                 - name: sess
                   in: query
                   description: Session identifier for the logs
@@ -2193,6 +2199,36 @@ paths:
             - name: username
               in: path
               description: 'Username of the User. Alphanumeric value. Must start with a letter, dots are allowed but informational only ("user.name" is the same as "username")'
+              required: true
+              schema:
+                  type: string
+
+    '/users/{id}/recover':
+        post:
+            tags:
+                - Users
+            summary: Cancel user deletion task
+            description: 'Use this endpoint to cancel a timed deletion task scheduled by `DELETE /user/{id}`. If user data is not yet deleted then the account is fully recovered, except any email addresses that might have been already recycled'
+            operationId: recoverUser
+
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/UserRecoverRequest'
+                required: true
+
+            responses:
+                '200':
+                    description: Success
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/SuccessResponse'
+        parameters:
+            - name: id
+              in: path
+              description: Users unique ID.
               required: true
               schema:
                   type: string
@@ -5357,17 +5393,30 @@ components:
                 ip:
                     type: string
                     description: IP address for the logs
+
         LogoutUserRequest:
             type: object
             properties:
                 reason:
                     type: string
                     description: Message to be shown to connected IMAP client
+
+        UserRecoverRequest:
+            type: object
+            properties:
+                sess:
+                    type: string
+                    description: Session identifier for the logs
+                ip:
+                    type: string
+                    description: IP address for the logs
+
         ResetUserPasswordRequest:
             type: object
             properties:
                 validAfter:
                     type: string
+                    format: date-time
                     description: Allow using the generated password not earlier than provided time
                 sess:
                     type: string

@@ -588,6 +588,13 @@ indexes:
               locked: 1
               lockedUntil: 1
 
+    - collection: tasks
+      index:
+          name: task_user
+          key:
+              task: 1
+              user: 1
+
     - collection: audits
       index:
           name: user_expire_time
