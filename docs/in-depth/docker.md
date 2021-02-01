@@ -1,4 +1,4 @@
-# Docker
+# Wildduck docker image
 
 ## Obtaining the Docker image
 To pull the latest pre-built image of wildduck from docker hub:
