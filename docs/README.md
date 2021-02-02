@@ -7,7 +7,7 @@ WildDuck tries to follow Gmail in product design. If there's a decision to be ma
 
 ## Contact
 
-[![Gitter chat](https://badges.gitter.im/gitterHQ/gitter.png)](https://gitter.im/nodemailer/wildduck)
+[![Gitter chat](https://img.shields.io/gitter/room/nodemailer/wildduck?color=orange)](https://gitter.im/nodemailer/wildduck)
 
 ## Requirements
 
