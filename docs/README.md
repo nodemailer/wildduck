@@ -7,7 +7,7 @@ WildDuck tries to follow Gmail in product design. If there's a decision to be ma
 
 ## Contact
 
-[![Gitter chat](https://badges.gitter.im/gitterHQ/gitter.png)](https://gitter.im/nodemailer/wildduck)
+[![Gitter chat](https://img.shields.io/gitter/room/nodemailer/wildduck?color=orange)](https://gitter.im/nodemailer/wildduck)
 
 ## Requirements
 
@@ -58,4 +58,4 @@ Attachment de-duplication and compression gives up to 56% of storage size reduct
 
 ## License
 
-WildDuck Mail Agent is licensed under the [European Union Public License 1.1](http://ec.europa.eu/idabc/eupl.html) or later.
+WildDuck Mail Agent is licensed under the [European Union Public License 1.2](https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12) or later.

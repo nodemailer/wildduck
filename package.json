@@ -14,7 +14,7 @@
         "mail server"
     ],
     "author": "Andris Reinman",
-    "license": "EUPL-1.1+",
+    "license": "EUPL-1.2",
     "devDependencies": {
         "ajv": "7.0.3",
         "chai": "4.2.0",
