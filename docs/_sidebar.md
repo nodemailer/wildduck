@@ -8,6 +8,7 @@
     -   [API Documentation :link:](//docs.wildduck.email/api)
     -   [Error codes](api-error-codes.md)
 -   Additional software
+    -   [WildDuck: dockerized](additional-software/wildduck-dockerized.md)
     -   [WildDuck MTA (Outbound SMTP)](additional-software/wildduck-mta.md)
     -   [Haraka plugin (Inbound SMTP)](additional-software/haraka-plugin.md)
     -   [Rspamd (Spam detection)](additional-software/rspamd.md)
@@ -22,5 +23,5 @@
     -   [Administrating WildDuck via command line](in-depth/command-line.md)
     -   [Attachment deduplication](in-depth/attachment-deduplication.md)
     -   [Retention policies](in-depth/retention-policies.md)
-    -   [Docker](in-depth/docker.md)
+    -   [Wildduck docker image](in-depth/docker.md)
     -   [API roles](in-depth/roles.md)
