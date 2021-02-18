@@ -1681,6 +1681,16 @@ paths:
                   description: 'Partial match for the Subject: header line'
                   schema:
                       type: string
+                - name: minSize
+                  in: query
+                  description: Minimal message size in bytes
+                  schema:
+                      type: number
+                - name: maxSize
+                  in: query
+                  description: Maximal message size in bytes
+                  schema:
+                      type: number
                 - name: limit
                   in: query
                   description: How many records to return

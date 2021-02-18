@@ -10,7 +10,7 @@ const libqp = require('libqp');
 const libbase64 = require('libbase64');
 const iconv = require('iconv-lite');
 const he = require('he');
-const htmlToText = require('html-to-text');
+const { htmlToText } = require('html-to-text');
 const crypto = require('crypto');
 
 const MAX_HTML_PARSE_LENGTH = 2 * 1024 * 1024; // do not parse HTML messages larger than 2MB to plaintext
@@ -502,7 +502,7 @@ class Indexer {
                         if (!alternative) {
                             try {
                                 if (content && content.length < MAX_HTML_PARSE_LENGTH) {
-                                    let text = htmlToText.fromString(content);
+                                    let text = htmlToText(content);
                                     textContent.push(text.trim());
                                 }
                             } catch (E) {
