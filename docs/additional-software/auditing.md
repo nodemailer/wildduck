@@ -4,4 +4,6 @@ WildDuck email server has built in auditing capabilities. Special auditing inter
 
 Admins can also create designated access credentials (encrypted with PGP keys) but can not access any email content directly. Once auditor receives the encrypted credentials they can decrypt these into a CSV file. Auditor can then access message listing, message metadata. They can also download single emails or ZIP bundles with multiple or all emails. Emails are also searchable by addresses, date and subject.
 
-[Demo](https://www.youtube.com/watch?v=pF4JqbNLfSo)
+-   [Demo](https://www.youtube.com/watch?v=pF4JqbNLfSo)
+-   [Audit Manager](https://github.com/nodemailer/wildduck-audit-manager)
+-   [Audit Client](https://github.com/nodemailer/wildduck-audit-client)
