@@ -162,8 +162,8 @@ const serverOptions = {
                                             .exec(done);
                                     };
 
-                                    updateUIDIndex(() => {
-                                        return callback(null, {
+                                    updateUIDIndex(() =>
+                                        callback(null, {
                                             messages: messages
                                                 // show older first
                                                 .reverse()
@@ -178,8 +178,8 @@ const serverOptions = {
                                                 })),
                                             count: messages.length,
                                             size: messages.reduce((acc, message) => acc + message.size, 0)
-                                        });
-                                    });
+                                        })
+                                    );
                                 });
                         });
                     });
