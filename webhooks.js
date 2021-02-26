@@ -11,6 +11,7 @@ const { ObjectID } = require('mongodb');
 const axios = require('axios');
 const packageData = require('./package.json');
 const { MARKED_SPAM, MARKED_HAM } = require('./lib/events');
+const parseReceived = require('./lib/parse-received');
 
 let loggelf;
 
@@ -204,6 +205,10 @@ module.exports.start = callback => {
                     if (addresses[addrType] && addresses[addrType].length) {
                         data[addrType] = addresses[addrType];
                     }
+                }
+
+                if (parsedHeader.received) {
+                    data.received = [].concat(parsedHeader.received || []).map(parseReceived);
                 }
 
                 data.messageId = messageData.msgid;
