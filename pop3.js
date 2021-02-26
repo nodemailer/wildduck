@@ -371,7 +371,7 @@ function markAsSeen(session, messages, callback) {
                 },
                 {
                     multi: true,
-                    w: 1
+                    writeConcern: 1
                 },
                 err => {
                     if (err) {
