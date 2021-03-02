@@ -8,7 +8,6 @@
     -   [API Documentation :link:](//docs.wildduck.email/api)
     -   [Error codes](api-error-codes.md)
 -   Additional software
-    -   [WildDuck: dockerized](additional-software/wildduck-dockerized.md)
     -   [WildDuck MTA (Outbound SMTP)](additional-software/wildduck-mta.md)
     -   [Haraka plugin (Inbound SMTP)](additional-software/haraka-plugin.md)
     -   [Rspamd (Spam detection)](additional-software/rspamd.md)
