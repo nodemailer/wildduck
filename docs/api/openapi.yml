@@ -2760,6 +2760,9 @@ components:
                 id:
                     type: string
                     description: Attachment ID
+                hash:
+                    type: string
+                    description: SHA-256 hash of the contents of the attachment
                 filename:
                     type: string
                     description: Filename of the attachment
