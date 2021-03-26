@@ -5801,6 +5801,9 @@ components:
                 subscribed:
                     type: boolean
                     description: Mailbox subscription status. IMAP clients may unsubscribe from a folder.
+                retention:
+                    type: number
+                    description: Default retention policy for this mailbox (in ms). If set then messages added to this maibox will be automatically deleted after retention time.
                 hidden:
                     type: boolean
                     description: Is the folder hidden or not
