@@ -70,6 +70,7 @@
         "pwnedpasswords": "1.0.5",
         "qrcode": "1.4.4",
         "restify": "8.5.1",
+        "restify-cors-middleware2": "^2.1.2",
         "restify-logger": "2.0.1",
         "saslprep": "1.0.3",
         "seq-index": "1.1.0",

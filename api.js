@@ -4,6 +4,7 @@ const config = require('wild-config');
 const restify = require('restify');
 const log = require('npmlog');
 const logger = require('restify-logger');
+const corsMiddleware = require('restify-cors-middleware2');
 const UserHandler = require('./lib/user-handler');
 const MailboxHandler = require('./lib/mailbox-handler');
 const MessageHandler = require('./lib/message-handler');
@@ -141,6 +142,15 @@ if (config.api.secure && certOptions.key) {
 }
 
 const server = restify.createServer(serverOptions);
+
+const cors = corsMiddleware({
+    origins: ['*'],
+    allowHeaders: ['X-Access-Token'],
+    allowCredentialsAllOrigins: true
+});
+
+server.pre(cors.preflight);
+server.use(cors.actual);
 
 // disable compression for EventSource response
 // this needs to be called before gzipResponse
