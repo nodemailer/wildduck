@@ -1,6 +1,6 @@
 # Third party projects
 
-This is an overview of any third party projects that integrate with or relate to WildDuck. This list is sorted by first commit date.
+This is an overview of any third party projects that integrate with or relate to WildDuck.
 
 ## Astzweig Docker Wildduck
 
@@ -32,3 +32,11 @@ https://projectpending.com/
 Domain parking service that uses WildDuck for email storage and access.
 
 ![Project Pending Screenshot](img/projectpending-screenshot.png)
+
+## WildDuck UI
+
+https://github.com/softwareartistry/wildduck-ui
+
+Administrative UI for WildDuck IMAP server
+
+![WildDuck UI](img/wildduck-ui-screenshot.png)
