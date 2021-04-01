@@ -144,7 +144,7 @@ if (config.api.secure && certOptions.key) {
 const server = restify.createServer(serverOptions);
 
 const cors = corsMiddleware({
-    origins: ['*'],
+    origins: [].concat(config.api.cors.origins || ['*']),
     allowHeaders: ['X-Access-Token'],
     allowCredentialsAllOrigins: true
 });

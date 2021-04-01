@@ -57,3 +57,6 @@ accountDescription="WildDuck ({email})"
 # If certificate path is not defined, use global or built-in self-signed certs
 #key="/path/to/server/key.pem"
 #cert="/path/to/server/cert.pem"
+
+[cors]
+origins = ["*"]
