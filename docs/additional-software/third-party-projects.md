@@ -32,3 +32,11 @@ https://projectpending.com/
 Domain parking service that uses WildDuck for email storage and access.
 
 ![Project Pending Screenshot](img/projectpending-screenshot.png)
+
+## WildDuck UI
+
+https://github.com/softwareartistry/wildduck-ui
+
+Administrative UI for WildDuck IMAP server
+
+![WildDuck UI](img/wildduck-ui-screenshot.png)
