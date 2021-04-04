@@ -3674,7 +3674,7 @@ components:
                 scopes:
                     type: array
                     items:
-                        type: string
+                        $ref: '#/components/schemas/AspScopes'
                     description: Allowed scopes for the Application Password
                 lastUse:
                     $ref: '#/components/schemas/LastUse'
@@ -4778,7 +4778,7 @@ components:
                 disabledScopes:
                     type: array
                     items:
-                        type: string
+                        $ref: '#/components/schemas/DisabledScopes'
                     description: Disabled scopes for this user
                 hasPasswordSet:
                     type: boolean
@@ -5063,7 +5063,7 @@ components:
                 scopes:
                     type: array
                     items:
-                        type: string
+                        $ref: '#/components/schemas/AspScopes'
                     description: List of scopes this Password applies to. Special scope "*" indicates that this password can be used for any scope except "master"
                     example: ['imap', 'smtp']
                 generateMobileconfig:
@@ -5577,7 +5577,7 @@ components:
                 disabledScopes:
                     type: array
                     items:
-                        type: string
+                        $ref: '#/components/schemas/DisabledScopes'
                     description: 'List of scopes that are disabled for this user ("imap", "pop3", "smtp")'
                 disabled:
                     type: boolean
@@ -5702,7 +5702,7 @@ components:
                 disabledScopes:
                     type: array
                     items:
-                        type: string
+                        $ref: '#/components/schemas/DisabledScopes'
                     description: 'List of scopes that are disabled for this user ("imap", "pop3", "smtp")'
                 fromWhitelist:
                     type: array
@@ -5869,7 +5869,7 @@ components:
                 scopes:
                     type: array
                     items:
-                        type: string
+                        $ref: '#/components/schemas/AspScopes'
                     description: Allowed scopes for the Application Password
                 lastUse:
                     $ref: '#/components/schemas/LastUse'
@@ -6453,6 +6453,19 @@ components:
                 url:
                     type: string
                     description: Webhook URL
+        AspScopes:
+            type: string
+            enum:
+                - imap
+                - pop3
+                - smtp
+                - '*'
+        DisabledScopes:
+            type: string
+            enum:
+                - imap
+                - pop3
+                - smtp
 
     securitySchemes:
         AccessTokenAuth:
