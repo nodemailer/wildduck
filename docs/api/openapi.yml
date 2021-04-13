@@ -446,7 +446,7 @@ paths:
                   in: query
                   description: Ordering of the records by insert date
                   schema:
-                      type: number
+                      $ref: '#/components/schemas/Order'
                 - name: next
                   in: query
                   description: 'Cursor value for next page, retrieved from nextCursor response value'
@@ -1486,7 +1486,7 @@ paths:
                   in: query
                   description: Ordering of the records by insert date
                   schema:
-                      type: number
+                      $ref: '#/components/schemas/Order'
                 - name: next
                   in: query
                   description: 'Cursor value for next page, retrieved from nextCursor response value'
@@ -6416,6 +6416,11 @@ components:
                 - imap
                 - pop3
                 - smtp
+        Order:
+            type: string
+            enum:
+                - asc
+                - desc
 
     securitySchemes:
         AccessTokenAuth:
