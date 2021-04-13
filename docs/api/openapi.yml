@@ -1496,7 +1496,7 @@ paths:
                   in: query
                   description: 'If true, then returns only unseen messages'
                   schema:
-                      type: number
+                      type: boolean
                 - name: metaData
                   in: query
                   description: 'If true, then includes metaData in the response'
