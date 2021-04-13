@@ -209,12 +209,12 @@ paths:
                   in: query
                   description: 'Cursor value for next page, retrieved from nextCursor response value'
                   schema:
-                      type: number
+                      type: string
                 - name: previous
                   in: query
                   description: 'Cursor value for previous page, retrieved from previousCursor response value'
                   schema:
-                      type: number
+                      type: string
             responses:
                 '200':
                     description: Success
@@ -451,12 +451,12 @@ paths:
                   in: query
                   description: 'Cursor value for next page, retrieved from nextCursor response value'
                   schema:
-                      type: number
+                      type: string
                 - name: previous
                   in: query
                   description: 'Cursor value for previous page, retrieved from previousCursor response value'
                   schema:
-                      type: number
+                      type: string
             responses:
                 '200':
                     description: Success
@@ -648,12 +648,12 @@ paths:
                   in: query
                   description: 'Cursor value for next page, retrieved from nextCursor response value'
                   schema:
-                      type: number
+                      type: string
                 - name: previous
                   in: query
                   description: 'Cursor value for previous page, retrieved from previousCursor response value'
                   schema:
-                      type: number
+                      type: string
             responses:
                 '200':
                     description: Success
@@ -798,12 +798,12 @@ paths:
                   in: query
                   description: 'Cursor value for next page, retrieved from nextCursor response value'
                   schema:
-                      type: number
+                      type: string
                 - name: previous
                   in: query
                   description: 'Cursor value for previous page, retrieved from previousCursor response value'
                   schema:
-                      type: number
+                      type: string
             responses:
                 '200':
                     description: Success
@@ -1129,12 +1129,12 @@ paths:
                   in: query
                   description: 'Cursor value for next page, retrieved from nextCursor response value'
                   schema:
-                      type: number
+                      type: string
                 - name: previous
                   in: query
                   description: 'Cursor value for previous page, retrieved from previousCursor response value'
                   schema:
-                      type: number
+                      type: string
             responses:
                 '200':
                     description: Success
@@ -1491,12 +1491,12 @@ paths:
                   in: query
                   description: 'Cursor value for next page, retrieved from nextCursor response value'
                   schema:
-                      type: number
+                      type: string
                 - name: previous
                   in: query
                   description: 'Cursor value for previous page, retrieved from previousCursor response value'
                   schema:
-                      type: number
+                      type: string
             responses:
                 '200':
                     description: Success
@@ -1806,12 +1806,12 @@ paths:
                   in: query
                   description: 'Cursor value for next page, retrieved from nextCursor response value'
                   schema:
-                      type: number
+                      type: string
                 - name: previous
                   in: query
                   description: 'Cursor value for previous page, retrieved from previousCursor response value'
                   schema:
-                      type: number
+                      type: string
             responses:
                 '200':
                     description: Success
@@ -1928,12 +1928,12 @@ paths:
                   in: query
                   description: 'Cursor value for next page, retrieved from nextCursor response value'
                   schema:
-                      type: number
+                      type: string
                 - name: previous
                   in: query
                   description: 'Cursor value for previous page, retrieved from previousCursor response value'
                   schema:
-                      type: number
+                      type: string
             responses:
                 '200':
                     description: Success
@@ -2402,12 +2402,12 @@ paths:
                   in: query
                   description: 'Cursor value for next page, retrieved from nextCursor response value'
                   schema:
-                      type: number
+                      type: string
                 - name: previous
                   in: query
                   description: 'Cursor value for previous page, retrieved from previousCursor response value'
                   schema:
-                      type: number
+                      type: string
             responses:
                 '200':
                     description: Success
@@ -2569,12 +2569,12 @@ paths:
                   in: query
                   description: 'Cursor value for next page, retrieved from nextCursor response value'
                   schema:
-                      type: number
+                      type: string
                 - name: previous
                   in: query
                   description: 'Cursor value for previous page, retrieved from previousCursor response value'
                   schema:
-                      type: number
+                      type: string
             responses:
                 '200':
                     description: Success
