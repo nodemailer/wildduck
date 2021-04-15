@@ -466,9 +466,15 @@ describe('API tests', function () {
         it('should POST /users/:user/mailboxes/:mailbox/messages with text and html', async () => {
             const message = {
                 from: {
-                    name: 'test tester',
-                    address: 'testuser@example.com'
+                    name: 'test töster',
+                    address: 'bestöser@öxample.com'
                 },
+                to: [
+                    {
+                        name: 'best böster',
+                        address: 'bestöser2@öxample.com'
+                    }
+                ],
                 subject: 'hello world',
                 text: 'Hello hello world!',
                 html: '<p>Hello hello world!</p>'
@@ -558,6 +564,11 @@ describe('API tests', function () {
 
             const deleteResponse = await server.delete(`/users/${userId}/outbound/${submitResponse.body.queueId}`).expect(200);
             expect(deleteResponse.body.deleted).to.equal(2);
+        });
+
+        it('should GET /users/:user/addressregister', async () => {
+            const response = await server.get(`/users/${userId}/addressregister?query=best`);
+            expect(response.body.results[0].name).to.equal('test töster');
         });
     });
 });

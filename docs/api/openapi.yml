@@ -1421,7 +1421,7 @@ paths:
             tags:
                 - Messages
             summary: Upload Message
-            description: 'This method allows to upload either an RFC822 formatted message or a message structure to a mailbox. Raw message is stored unmodified, no headers are added or removed. If you want to generate the uploaded message from strucutred data fields, then do not use the raw property.'
+            description: 'This method allows to upload either an RFC822 formatted message or a message structure to a mailbox. Raw message is stored unmodified, no headers are added or removed. If you want to generate the uploaded message from structured data fields, then do not use the raw property.'
             operationId: uploadMessage
             requestBody:
                 content:
