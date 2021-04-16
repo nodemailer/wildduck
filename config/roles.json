@@ -369,5 +369,11 @@
             "update:any": ["*"],
             "delete:any": ["*"]
         }
+    },
+
+    "auditclient": {
+        "audit": {
+            "read:any": ["*"]
+        }
     }
 }
