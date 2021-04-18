@@ -32,4 +32,3 @@ do
 done
 
 chmod +x install.sh
-./install.sh
