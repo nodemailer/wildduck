@@ -99,3 +99,45 @@ only affects only some settings, for example all TLS certificates are loaded and
 updated certs.
 
 Beware though that if configuration loading fails, then it ends with an exception. Make sure that TLS certificate files are readable for the WildDuck user.
+
+## fail2ban setup 
+
+NB: setup tested on Ubuntu 20.04 LTS using the scripted install. Should not be too different for those using the docker install.
+
+Create a /etc/fail2ban/jail.d/custom.conf
+In the default section, add the IPs that should never be blocked then your standard settings for findtime, bantime & maxretry.
+For example:
+```toml
+[DEFAULT]
+ignoreip = 127.0.0.0/8 <your public IP> <any IP you need here>
+findtime = 1h
+bantime = 7d
+maxretry = 3
+```
+
+Then add this section for wildduck
+```toml
+[wildduck]
+enabled  = true
+port     = 993,995
+filter   = wildduck
+logpath  = /var/log/wildduck-server/wildduck-server.log
+```
+
+Then create /etc/fail2ban/filter.d/wildduck.conf
+```toml
+[INCLUDES]
+before = common.conf
+
+[Definition]
+failregex = \[AUTHFAIL\] .*"_ip":"<HOST>"
+ignoreregex =
+```
+
+And restart fail2ban.
+
+Test this by failing the connection a number of times equal to 'maxretry'. You can use an online connection test tool.
+
+Run 'fail2ban-client status wildduck' : in the output, you should see your attempts with the IP being banned.
+
+Run 'fail2ban-client set wildduck unbanip a.b.c.d' to unban the IP used by the tool you made the test with.
