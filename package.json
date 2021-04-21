@@ -41,7 +41,7 @@
         "axios": "0.21.1",
         "base32.js": "0.1.0",
         "bcryptjs": "2.4.3",
-        "bull": "3.22.0",
+        "bull": "3.22.1",
         "gelf": "2.0.1",
         "generate-password": "1.6.0",
         "he": "1.2.0",
