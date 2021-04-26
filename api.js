@@ -397,7 +397,6 @@ module.exports = done => {
     if (!config.api.enabled) {
         return setImmediate(() => done(null, false));
     }
-
     let started = false;
 
     const component = config.log.gelf.component || 'wildduck';
@@ -447,11 +446,12 @@ module.exports = done => {
         attachments: config.attachments,
         loggelf: message => loggelf(message)
     });
-
+    
     storageHandler = new StorageHandler({
         database: db.database,
         users: db.users,
         gridfs: db.gridfs,
+        config: config.storage,
         loggelf: message => loggelf(message)
     });
 

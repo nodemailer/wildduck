@@ -1,0 +1,22 @@
+# default="gridfs"
+default="s3"
+
+[s3]
+    # s3 access key
+    accessKeyId=""
+
+    # s3 secret
+    secretAccessKey=""
+
+    # s3 bucket
+    bucket="XXXXXX"
+
+    # s3 region
+    region="us-east-1"
+
+    # s3 endpoint, required for other s3 compatible cloud providers
+    endpoint=""
+    
+    # s3 region
+    debug="true"
+

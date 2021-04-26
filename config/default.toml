@@ -83,6 +83,9 @@ maxForwards=2000
 [plugins]
 # @include "plugins/*.toml"
 
+[storage]
+# @include "storage.toml"
+
 [tasks]
 # if enabled then process jobs like deleting expired messages etc
 enabled=true
