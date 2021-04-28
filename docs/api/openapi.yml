@@ -2213,19 +2213,19 @@ paths:
               schema:
                   type: string
 
-    '/users/{id}/recover':
+    '/users/{id}/restore':
         post:
             tags:
                 - Users
             summary: Cancel user deletion task
             description: 'Use this endpoint to cancel a timed deletion task scheduled by `DELETE /user/{id}`. If user data is not yet deleted then the account is fully recovered, except any email addresses that might have been already recycled'
-            operationId: recoverUser
+            operationId: restoreUser
 
             requestBody:
                 content:
                     application/json:
                         schema:
-                            $ref: '#/components/schemas/UserRecoverRequest'
+                            $ref: '#/components/schemas/UserRestoreRequest'
                 required: true
 
             responses:
@@ -5414,7 +5414,7 @@ components:
                     type: string
                     description: Message to be shown to connected IMAP client
 
-        UserRecoverRequest:
+        UserRestoreRequest:
             type: object
             properties:
                 sess:
