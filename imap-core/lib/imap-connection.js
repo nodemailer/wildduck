@@ -127,12 +127,14 @@ class IMAPConnection extends EventEmitter {
             this.logger.info(
                 {
                     tnx: 'connect',
-                    cid: this.id
+                    cid: this.id,
+                    servername: this._socket && this._socket.servername
                 },
-                '[%s] %s from %s to %s:%s',
+                '[%s] %s from %s to %s %s:%s',
                 this.id,
                 this.secure ? 'Secure connection' : 'Connection',
                 this.session.clientHostname,
+                (this._socket && this._socket.servername) || os.hostname(),
                 this._socket && this._socket.localAddress,
                 this._socket && this._socket.localPort
             );

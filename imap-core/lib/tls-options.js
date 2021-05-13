@@ -54,11 +54,7 @@ const tlsDefaults = {
         '-----END CERTIFICATE-----',
     honorCipherOrder: true,
     requestOCSP: false,
-    sessionIdContext: crypto
-        .createHash('sha1')
-        .update(process.argv.join(' '))
-        .digest('hex')
-        .slice(0, 32)
+    sessionIdContext: crypto.createHash('sha1').update(process.argv.join(' ')).digest('hex').slice(0, 32)
 };
 
 /**
@@ -68,19 +64,5 @@ const tlsDefaults = {
  * @returns {Object} Object with mixed TLS values
  */
 function getTLSOptions(opts) {
-    let result = {};
-
-    opts = opts || {};
-
-    Object.keys(opts).forEach(key => {
-        result[key] = opts[key];
-    });
-
-    Object.keys(tlsDefaults).forEach(key => {
-        if (!(key in result)) {
-            result[key] = tlsDefaults[key];
-        }
-    });
-
-    return result;
+    return Object.assign({}, tlsDefaults, opts || {});
 }

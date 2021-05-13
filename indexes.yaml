@@ -595,6 +595,20 @@ indexes:
               task: 1
               user: 1
 
+    - collection: certs
+      index:
+          name: servername
+          unique: true
+          key:
+              servername: 1
+
+    - collection: certs
+      index:
+          name: servername_version
+          key:
+              servername: 1
+              v: 1
+
     - collection: audits
       index:
           name: user_expire_time

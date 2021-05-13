@@ -39,6 +39,13 @@ const serverOptions = {
         version: config.pop3.version || packageData.version
     },
 
+    SNICallback(servername, cb) {
+        certs
+            .getContextForServername(servername, serverOptions)
+            .then(context => cb(null, context))
+            .catch(err => cb(err));
+    },
+
     // log to console
     logger: {
         info(...args) {

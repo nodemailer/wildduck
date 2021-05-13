@@ -233,9 +233,7 @@ class IMAPServer extends EventEmitter {
                             socket.unshift(remainder);
                         }
 
-                        let header = Buffer.concat(chunks, chunklen)
-                            .toString()
-                            .trim();
+                        let header = Buffer.concat(chunks, chunklen).toString().trim();
 
                         let params = (header || '').toString().split(' ');
                         let commandName = params.shift().toUpperCase();
@@ -288,7 +286,23 @@ class IMAPServer extends EventEmitter {
             secureContext: this.secureContext.get('*'),
             isServer: true,
             server: this.server,
-            SNICallback: this.options.SNICallback
+            SNICallback: (servername, cb) => {
+                // eslint-disable-next-line new-cap
+                this.options.SNICallback(this._normalizeHostname(servername), (err, context) => {
+                    if (err) {
+                        this.logger.error(
+                            {
+                                tnx: 'sni',
+                                servername,
+                                err
+                            },
+                            'Failed to fetch SNI context for servername %s',
+                            servername
+                        );
+                    }
+                    return cb(null, context || this.secureContext.get('*'));
+                });
+            }
         };
 
         let remoteAddress = socket.remoteAddress;
@@ -336,6 +350,7 @@ class IMAPServer extends EventEmitter {
                 return onError();
             }
         };
+
         tlsSocket.once('close', onCloseError);
         tlsSocket.once('error', onError);
         tlsSocket.once('_tlsError', onError);
@@ -397,7 +412,7 @@ class IMAPServer extends EventEmitter {
             if (typeof this.options.SNICallback !== 'function') {
                 // create default SNI handler
                 this.options.SNICallback = (servername, cb) => {
-                    cb(null, this.secureContext.get(this._normalizeHostname(servername)) || this.secureContext.get('*'));
+                    cb(null, this.secureContext.get(servername));
                 };
             }
         }

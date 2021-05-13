@@ -75,6 +75,13 @@
             "delete:any": ["*"]
         },
 
+        "certs": {
+            "create:any": ["*"],
+            "read:any": ["*"],
+            "update:any": ["*"],
+            "delete:any": ["*"]
+        },
+
         "dkim": {
             "create:any": ["*"],
             "read:any": ["*"],
@@ -146,6 +153,13 @@
         },
 
         "filters": {
+            "create:any": ["*"],
+            "read:any": ["*"],
+            "update:any": ["*"],
+            "delete:any": ["*"]
+        },
+
+        "certs": {
             "create:any": ["*"],
             "read:any": ["*"],
             "update:any": ["*"],

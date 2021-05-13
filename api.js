@@ -39,6 +39,7 @@ const submitRoutes = require('./lib/api/submit');
 const auditRoutes = require('./lib/api/audit');
 const domainaliasRoutes = require('./lib/api/domainaliases');
 const dkimRoutes = require('./lib/api/dkim');
+const certsRoutes = require('./lib/api/certs');
 const webhooksRoutes = require('./lib/api/webhooks');
 
 let userHandler;
@@ -500,6 +501,7 @@ module.exports = done => {
     auditRoutes(db, server, auditHandler);
     domainaliasRoutes(db, server);
     dkimRoutes(db, server);
+    certsRoutes(db, server);
     webhooksRoutes(db, server);
 
     server.on('error', err => {

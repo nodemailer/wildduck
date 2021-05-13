@@ -37,9 +37,22 @@ function upgrade(connection) {
         secureContext,
         isServer: true,
         server: connection._server.server,
-
         SNICallback: (servername, cb) => {
-            cb(null, connection._server.secureContext.get(connection._server._normalizeHostname(servername)) || connection._server.secureContext.get('*'));
+            // eslint-disable-next-line new-cap
+            connection._server.options.SNICallback(servername, (err, context) => {
+                if (err) {
+                    connection._server.logger.error(
+                        {
+                            tnx: 'sni',
+                            servername,
+                            err
+                        },
+                        'Failed to fetch SNI context for servername %s',
+                        servername
+                    );
+                }
+                return cb(null, context || connection._server.secureContext.get('*'));
+            });
         }
     };
 

@@ -13,20 +13,28 @@ tags:
     - name: Addresses
     - name: ApplicationPasswords
     - name: Archive
+      description: Archive includes all deleted messages. Once messages are old enough then these are permanenetly deleted from the archive as well. Until then you can restore the deleted messages.
     - name: Audit
+      description: 'Auditing allows to monitor an email account. All existing, deleted and new emails are copied to the auditing system. See also https://github.com/nodemailer/wildduck-audit-manager'
     - name: Authentication
     - name: Autoreplies
+    - name: Certs
+      description: WildDuck allows to register TLS certificates to be used with SNI connections. These certificates are used by IMAP and POP3 servers when a SNI capable client establishes a TLS connection.
     - name: DKIM
+      description: Whenever an email is sent WildDuck checks if there is a DKIM key registered for the domain name of the sender address and uses it to sign the message.
     - name: DomainAccess
+      description: Add sender domain names to allowlist (messages are all accepted) or blocklist (messages are sent to Spam folder)
     - name: DomainAliases
     - name: Filters
     - name: Mailboxes
     - name: Messages
     - name: Storage
+      description: Storage allows easier attachment handling when composing Draft messages. Instead of uploading the attachmnent with every draft update, you store the attachment to the Storage and then link stored file for the Draft.
     - name: Submission
     - name: TwoFactorAuth
     - name: Users
     - name: Webhooks
+
 paths:
     '/addresses/forwarded/{address}':
         delete:
@@ -751,6 +759,7 @@ paths:
               required: true
               schema:
                   type: string
+
     '/dkim/{dkim}':
         delete:
             tags:
@@ -854,7 +863,7 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/ResolveDkimResponse'
+                                $ref: '#/components/schemas/ResolveIdResponse'
         parameters:
             - name: domain
               in: path
@@ -862,6 +871,120 @@ paths:
               required: true
               schema:
                   type: string
+
+    '/certs/{cert}':
+        delete:
+            tags:
+                - Certs
+            summary: Delete a TLS certificate
+            operationId: deleteTlsCert
+            responses:
+                '200':
+                    description: Success
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/SuccessResponse'
+        get:
+            tags:
+                - Certs
+            summary: Request TLS certificate information
+            operationId: getTLSCerticate
+            responses:
+                '200':
+                    description: Success
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetTLSCertResult'
+        parameters:
+            - name: cert
+              in: path
+              description: ID of the TLS certificate
+              required: true
+              schema:
+                  type: string
+    /certs:
+        get:
+            tags:
+                - Certs
+            summary: List registered TLS certificates
+            operationId: getTLSCerticates
+            parameters:
+                - name: query
+                  in: query
+                  description: Partial match of a servername
+                  schema:
+                      type: string
+                - name: limit
+                  in: query
+                  description: How many records to return
+                  schema:
+                      type: number
+                - name: page
+                  in: query
+                  description: 'Current page number. Informational only, page numbers start from 1'
+                  schema:
+                      type: number
+                - name: next
+                  in: query
+                  description: 'Cursor value for next page, retrieved from nextCursor response value'
+                  schema:
+                      type: number
+                - name: previous
+                  in: query
+                  description: 'Cursor value for previous page, retrieved from previousCursor response value'
+                  schema:
+                      type: number
+            responses:
+                '200':
+                    description: Success
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetTLSCertsResponse'
+        post:
+            tags:
+                - Certs
+            summary: Create or update TLS certificate for server name
+            description: Add a new TLS certificate for a server name or update existing one. There can be single certificate key registered for each server name.
+            operationId: updateTLSCertificate
+            requestBody:
+                description: Add a new TLS certificate for a server name or update existing one. There can be single certificate key registered for each server name.
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/UpdateTLSCertRequest'
+                required: true
+            responses:
+                '200':
+                    description: Success
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/UpdateTLSCertResponse'
+
+    '/certs/resolve/{servername}':
+        get:
+            tags:
+                - Certs
+            summary: Resolve ID for a server name
+            operationId: resolveTLSCertificate
+            responses:
+                '200':
+                    description: Success
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ResolveIdResponse'
+        parameters:
+            - name: servername
+              in: path
+              description: Server name
+              required: true
+              schema:
+                  type: string
+
     '/domainaccess/{domain}':
         delete:
             tags:
@@ -1062,7 +1185,7 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/ResolveDomainAliasResponse'
+                                $ref: '#/components/schemas/ResolveIdResponse'
         parameters:
             - name: alias
               in: path
@@ -2204,7 +2327,7 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/ResolveUserResponse'
+                                $ref: '#/components/schemas/ResolveIdResponse'
         parameters:
             - name: username
               in: path
@@ -3736,6 +3859,7 @@ components:
                     type: string
                     description: Datestring of the Event time
                     format: date-time
+
         GetAutoreplyResponse:
             type: object
             properties:
@@ -3774,6 +3898,7 @@ components:
                 - text
                 - start
                 - end
+
         GetDkimKeyResponse:
             required:
                 - success
@@ -3814,6 +3939,7 @@ components:
                     type: string
                     description: Datestring
                     format: date-time
+
         GetDkimKeysResponse:
             required:
                 - success
@@ -3843,7 +3969,39 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/GetDkimKeysResult'
-                    description: Aliases listing
+                    description: DKIM listing
+
+        GetTLSCertsResponse:
+            required:
+                - success
+                - total
+                - page
+                - previousCursor
+                - nextCursor
+                - results
+            type: object
+            properties:
+                success:
+                    type: boolean
+                    description: Indicates successful response
+                total:
+                    type: number
+                    description: How many results were found
+                page:
+                    type: number
+                    description: Current page number. Derived from page query argument
+                previousCursor:
+                    type: string
+                    description: Either a cursor string or false if there are not any previous results
+                nextCursor:
+                    type: string
+                    description: Either a cursor string or false if there are not any next results
+                results:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/GetTLSCertResult'
+                    description: Certificate listing
+
         UpdateDkimKeyResponse:
             required:
                 - success
@@ -3879,7 +4037,32 @@ components:
                     description: 'Public key in DNS format (no prefix/suffix, single line)'
                 dnsTxt:
                     $ref: '#/components/schemas/DnsTxt'
-        ResolveDkimResponse:
+
+        UpdateTLSCertResponse:
+            required:
+                - success
+                - id
+                - servername
+                - fingerprint
+            type: object
+            properties:
+                success:
+                    type: boolean
+                    description: Indicates successful response
+                id:
+                    type: string
+                    description: ID of the certificate
+                domain:
+                    type: string
+                    description: The server name this certificate applies to
+                description:
+                    type: string
+                    description: Key description
+                fingerprint:
+                    type: string
+                    description: Key fingerprint (SHA1)
+
+        ResolveIdResponse:
             required:
                 - success
                 - id
@@ -3890,7 +4073,8 @@ components:
                     description: Indicates successful response
                 id:
                     type: string
-                    description: DKIM unique ID (24 byte hex)
+                    description: Unique ID (24 byte hex)
+
         GetAllowedDomainResponse:
             required:
                 - success
@@ -3998,6 +4182,7 @@ components:
                     items:
                         $ref: '#/components/schemas/GetDomainAliasesResult'
                     description: Aliases listing
+
         CreateDomainAliasResponse:
             required:
                 - success
@@ -4010,18 +4195,7 @@ components:
                 id:
                     type: string
                     description: ID of the Domain Alias
-        ResolveDomainAliasResponse:
-            required:
-                - success
-                - id
-            type: object
-            properties:
-                success:
-                    type: boolean
-                    description: Indicates successful response
-                id:
-                    type: string
-                    description: Alias unique ID (24 byte hex)
+
         GetFilterResponse:
             required:
                 - success
@@ -4513,18 +4687,7 @@ components:
                 suspended:
                     type: boolean
                     description: If true then the user can not authenticate
-        ResolveUserResponse:
-            required:
-                - success
-                - id
-            type: object
-            properties:
-                success:
-                    type: boolean
-                    description: Indicates successful response
-                id:
-                    type: string
-                    description: Users unique ID (24 byte hex)
+
         GetUsersResponse:
             required:
                 - success
@@ -4907,6 +5070,7 @@ components:
                     type: string
                     description: Datestring of the end of the autoreply or boolean false to disable end checks
                     format: date-time
+
         UpdateDkimKeyRequest:
             required:
                 - domain
@@ -4925,6 +5089,27 @@ components:
                 privateKey:
                     type: string
                     description: 'Pem formatted DKIM private key. If not set then a new 2048 bit RSA key is generated, beware though that it can take several seconds to complete.'
+
+        UpdateTLSCertRequest:
+            required:
+                - servername
+                - privateKey
+                - cert
+            type: object
+            properties:
+                servername:
+                    type: string
+                    description: Server name this TLS certificate applies to.
+                cert:
+                    type: string
+                    description: PEM formatted TLS certificate or a certificate bundle
+                privateKey:
+                    type: string
+                    description: PEM formatted TLS private key
+                description:
+                    type: string
+                    description: Certificate description
+
         CreateAllowedDomainRequest:
             required:
                 - domain
@@ -5666,6 +5851,7 @@ components:
                     type: string
                     description: Datestring of the Event time
                     format: date-time
+
         GetDkimKeysResult:
             required:
                 - id
@@ -5695,6 +5881,33 @@ components:
                     type: string
                     description: Datestring
                     format: date-time
+
+        GetTLSCertResult:
+            required:
+                - id
+                - servername
+                - description
+                - fingerprint
+                - created
+            type: object
+            properties:
+                id:
+                    type: string
+                    description: ID of the certificate
+                domain:
+                    type: string
+                    description: The server name this certificate applies to
+                description:
+                    type: string
+                    description: Key description
+                fingerprint:
+                    type: string
+                    description: Key fingerprint (SHA1)
+                created:
+                    type: string
+                    description: Datestring
+                    format: date-time
+
         GetAllowedDomainResult:
             required:
                 - id

@@ -82,7 +82,14 @@ let createInterface = (ifaceOptions, callback) => {
 
         enableCompression: !!config.imap.enableCompression,
 
-        skipFetchLog: config.log.skipFetchLog
+        skipFetchLog: config.log.skipFetchLog,
+
+        SNICallback(servername, cb) {
+            certs
+                .getContextForServername(servername, serverOptions)
+                .then(context => cb(null, context))
+                .catch(err => cb(err));
+        }
     };
 
     certs.loadTLSOptions(serverOptions, 'imap');
