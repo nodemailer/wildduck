@@ -913,9 +913,10 @@ paths:
             parameters:
                 - name: query
                   in: query
-                  description: Partial match of a servername
+                  description: Partial match of a server name
                   schema:
                       type: string
+                      example: example.com
                 - name: limit
                   in: query
                   description: How many records to return
@@ -930,12 +931,13 @@ paths:
                   in: query
                   description: 'Cursor value for next page, retrieved from nextCursor response value'
                   schema:
-                      type: number
+                      type: string
+                      example: 'eyIkb2lkIjoiNWRmMWZkMmQ3NzkyNTExOGI2MDdjNjg0In0'
                 - name: previous
                   in: query
                   description: 'Cursor value for previous page, retrieved from previousCursor response value'
                   schema:
-                      type: number
+                      type: string
             responses:
                 '200':
                     description: Success
@@ -3987,15 +3989,19 @@ components:
                 total:
                     type: number
                     description: How many results were found
+                    example: 541
                 page:
                     type: number
                     description: Current page number. Derived from page query argument
+                    example: 1
                 previousCursor:
                     type: string
                     description: Either a cursor string or false if there are not any previous results
+                    example: false
                 nextCursor:
                     type: string
                     description: Either a cursor string or false if there are not any next results
+                    example: 'eyIkb2lkIjoiNWRmMWZkMmQ3NzkyNTExOGI2MDdjNjg0In0'
                 results:
                     type: array
                     items:
@@ -4052,15 +4058,19 @@ components:
                 id:
                     type: string
                     description: ID of the certificate
+                    example: '609d201236d1d936948f23b1'
                 domain:
                     type: string
                     description: The server name this certificate applies to
+                    example: 'imap.example.com'
                 description:
                     type: string
                     description: Key description
+                    example: 'Some notes about this certificate'
                 fingerprint:
                     type: string
                     description: Key fingerprint (SHA1)
+                    example: '59:8b:ed:11:5b:4f:ce:b4:e5:1a:2f:35:b1:6f:7d:93:40:c8:2f:9c:38:3b:cd:f4:04:92:a1:0e:17:2c:3f:f3'
 
         ResolveIdResponse:
             required:
@@ -4071,9 +4081,11 @@ components:
                 success:
                     type: boolean
                     description: Indicates successful response
+                    example: true
                 id:
                     type: string
                     description: Unique ID (24 byte hex)
+                    example: '609d201236d1d936948f23b1'
 
         GetAllowedDomainResponse:
             required:
@@ -5099,16 +5111,20 @@ components:
             properties:
                 servername:
                     type: string
-                    description: Server name this TLS certificate applies to.
-                cert:
-                    type: string
-                    description: PEM formatted TLS certificate or a certificate bundle
+                    description: Server name this TLS certificate applies to
+                    example: imap.example.com
                 privateKey:
                     type: string
                     description: PEM formatted TLS private key
+                    example: "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADA..."
+                cert:
+                    type: string
+                    description: 'PEM formatted TLS certificate or a certificate bundle with concatenated certificate and CA chain'
+                    example: "-----BEGIN CERTIFICATE-----\nMIIDEDCCAfg..."
                 description:
                     type: string
                     description: Certificate description
+                    example: 'Some notes about this certificate'
 
         CreateAllowedDomainRequest:
             required:
@@ -5894,19 +5910,24 @@ components:
                 id:
                     type: string
                     description: ID of the certificate
+                    example: '609d201236d1d936948f23b1'
                 domain:
                     type: string
                     description: The server name this certificate applies to
+                    example: 'imap.example.com'
                 description:
                     type: string
                     description: Key description
+                    example: 'Some notes about this certificate'
                 fingerprint:
                     type: string
                     description: Key fingerprint (SHA1)
+                    example: '59:8b:ed:11:5b:4f:ce:b4:e5:1a:2f:35:b1:6f:7d:93:40:c8:2f:9c:38:3b:cd:f4:04:92:a1:0e:17:2c:3f:f3'
                 created:
                     type: string
                     description: Datestring
                     format: date-time
+                    example: '2021-05-13T20:06:46.179Z'
 
         GetAllowedDomainResult:
             required:
