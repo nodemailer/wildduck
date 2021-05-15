@@ -135,11 +135,22 @@ let certOptions = {};
 certs.loadTLSOptions(certOptions, 'api');
 
 if (config.api.secure && certOptions.key) {
-    serverOptions.key = certOptions.key;
-    if (certOptions.ca) {
-        serverOptions.ca = certOptions.ca;
+    let httpsServerOptions = {};
+
+    httpsServerOptions.key = certOptions.key;
+    if (httpsServerOptions.ca) {
+        httpsServerOptions.ca = certOptions.ca;
     }
-    serverOptions.certificate = certOptions.cert;
+    httpsServerOptions.certificate = certOptions.cert;
+    httpsServerOptions.SNICallback = (servername, cb) => {
+        console.log('SNI', servername);
+        certs
+            .getContextForServername(servername, httpsServerOptions)
+            .then(context => cb(null, context))
+            .catch(err => cb(err));
+    };
+
+    serverOptions.httpsServerOptions = httpsServerOptions;
 }
 
 const server = restify.createServer(serverOptions);

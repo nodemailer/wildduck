@@ -609,6 +609,13 @@ indexes:
               servername: 1
               v: 1
 
+    - collection: certs
+      index:
+          name: servername_alt
+          key:
+              altNames: 1
+              v: 1
+
     - collection: audits
       index:
           name: user_expire_time

@@ -1,7 +1,7 @@
 'use strict';
 
 const libmime = require('libmime');
-const punycode = require('punycode');
+const punycode = require('punycode/');
 
 // This module converts message structure into an ENVELOPE object
 
@@ -11,7 +11,7 @@ const punycode = require('punycode');
  * @param {Object} message A parsed mime tree node
  * @return {Object} ENVELOPE compatible object
  */
-module.exports = function(header) {
+module.exports = function (header) {
     let subject = Array.isArray(header.subject) ? header.subject.reverse().filter(line => line.trim()) : header.subject;
     subject = Buffer.from(subject || '', 'binary').toString();
 

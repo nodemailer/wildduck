@@ -16,7 +16,7 @@
     "author": "Andris Reinman",
     "license": "EUPL-1.2",
     "devDependencies": {
-        "ajv": "8.3.0",
+        "ajv": "8.4.0",
         "chai": "4.3.4",
         "docsify-cli": "4.4.3",
         "eslint": "7.26.0",
@@ -67,6 +67,7 @@
         "npmlog": "4.1.2",
         "openpgp": "4.10.10",
         "pem": "1.14.4",
+        "punycode": "^2.1.1",
         "pwnedpasswords": "1.0.5",
         "qrcode": "1.4.4",
         "restify": "8.5.1",
