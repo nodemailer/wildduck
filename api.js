@@ -20,6 +20,8 @@ const Gelf = require('gelf');
 const os = require('os');
 const util = require('util');
 const ObjectID = require('mongodb').ObjectID;
+const tlsOptions = require('./imap-core/lib/tls-options');
+const tls = require('tls');
 
 const usersRoutes = require('./lib/api/users');
 const addressesRoutes = require('./lib/api/addresses');
@@ -142,11 +144,13 @@ if (config.api.secure && certOptions.key) {
         httpsServerOptions.ca = certOptions.ca;
     }
     httpsServerOptions.certificate = certOptions.cert;
+
+    let defaultSecureContext = tls.createSecureContext(httpsServerOptions);
+
     httpsServerOptions.SNICallback = (servername, cb) => {
-        console.log('SNI', servername);
         certs
             .getContextForServername(servername, httpsServerOptions)
-            .then(context => cb(null, context))
+            .then(context => cb(null, context || defaultSecureContext))
             .catch(err => cb(err));
     };
 
