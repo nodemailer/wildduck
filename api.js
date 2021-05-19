@@ -139,11 +139,11 @@ certs.loadTLSOptions(certOptions, 'api');
 if (config.api.secure && certOptions.key) {
     let httpsServerOptions = {};
 
-    serverOptions.key = httpsServerOptions.key = certOptions.key;
+    httpsServerOptions.key = certOptions.key;
     if (httpsServerOptions.ca) {
-        serverOptions.ca = httpsServerOptions.ca = certOptions.ca;
+        httpsServerOptions.ca = certOptions.ca;
     }
-    serverOptions.certificate = httpsServerOptions.certificate = certOptions.cert;
+    httpsServerOptions.cert = certOptions.cert;
 
     let defaultSecureContext = tls.createSecureContext(httpsServerOptions);
 
