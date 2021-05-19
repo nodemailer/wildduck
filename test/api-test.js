@@ -501,8 +501,7 @@ describe('API tests', function () {
                 },
                 subject: 'hello world',
                 text: 'Hello hello world!',
-                html:
-                    '<p>Hello hello world! <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAHElEQVQI12P4//8/w38GIAXDIBKE0DHxgljNBAAO9TXL0Y4OHwAAAABJRU5ErkJggg==" alt="Red dot" /></p>'
+                html: '<p>Hello hello world! <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAHElEQVQI12P4//8/w38GIAXDIBKE0DHxgljNBAAO9TXL0Y4OHwAAAABJRU5ErkJggg==" alt="Red dot" /></p>'
             };
             const response = await server.post(`/users/${userId}/mailboxes/${inbox}/messages`).send(message);
 
@@ -569,6 +568,23 @@ describe('API tests', function () {
         it('should GET /users/:user/addressregister', async () => {
             const response = await server.get(`/users/${userId}/addressregister?query=best`);
             expect(response.body.results[0].name).to.equal('test töster');
+        });
+    });
+
+    describe('certs', () => {
+        it('should POST certs', async () => {
+            const response1 = await server
+                .post(`/certs`)
+                .send({
+                    privateKey:
+                        '-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDKC9G9BJlpJdKI\nMNsjLTgCthKBrtQy3TI4AC5FooqyMIxcpNllI5Mu63IPHRaBGE9+O07oHtYhPq/E\nq3SVBk0+lK346nHofZqVDWeWuiHFL2ilfhP1bFKbr5GtTWr3ctg5K1VVn/CTTPvv\nhvDlIEEaqa125jRVGabdQ53Wu6scY4IgrgFC6qnMZLuYTrmjnVCAehWxtQhPXH+R\n3nszHhUMcgKnDSv331p4AnPDZinv5SixbhizdOoFPFBDAdX4CXmwi3MiBz9FwMgA\nz6fGboW0DDxmm3AxjpMtVu7I8BcsGIe4sYbHtacNt0y7IKMEdlH38ME1vnHfcVad\nwSRQCuOHAgMBAAECggEBALNCnUnY5Mu3tP0Ea8jf+8vcArtwg/DE9CNfda5usiO6\nky43THJBh/qfBsmGA0tyaEUVFcM4aL+CQKx7eqolty8I9vnb+EhP+HC6PegrKH8s\nuunp3IdpHjnnIZbjEz6MdG70lXesuePW78fqr5x6a4jednsBb/j5E2VI8qdsRjqe\nM2H3SHzvPIO8zIWtAin6jmZjp3bBqR+UQfPW0pN6qXpis4mCqG+0mcGuGe5n/koZ\nDXZeFPPtyEd1Ty/2wXnszzPyRdOlWWlhUSgdFqhUQ9pKiGlJ3PkS5QGK3UFmzQqA\niCwA35RcBm+G59ETJiFTy6eu63xVrrP5ALfEZ3MbmAECgYEA5nVi1WNn0aon0T4C\niI58JiLcK9fuSJxKVggyc2d+pkQTiMVc+/MyLi+80k74aKqsYOigQU9Ju/Wx1n+U\nPuU2CAbHWTt9IxjdhXj5zIrvjUQgRkhy5oaSqQGo/Inb0iab/88beLHsYrhcBmmC\nsesrNHTpfrwG6uJ907/eRlK+wgECgYEA4HBP3xkAvyGAVmAjP0pGoYH3I7NTsp40\nb11FitYaxl2X/lKv9XgsL0rjSN66ZO+02ckEdKEv307xF1bvzqH7tMrXa9gaK7+5\nRfVbKsP51yr5PKQmNANxolED2TPeoALLOxUx3mg5awbDIzPwPaIoCfmSvb7uYWh3\neZmc4paIlYcCgYBbh7HKSKHaPvdzfmppLBYY222QqEFGa3SGuNi4xxkhFhagEqr8\nkjmS6HjZGm5Eu8yc7KeBaOlDErEgHSmW1VhhVbflM+BeiSiqM0MbPu8nrzAWWf3w\nmvAy2arxKhu5WoZI0kv54sic6NX74fn7ight3CVEpY8lyPDqoeC5E3IaAQKBgHWE\n2Y2r/eQWmqiftlURg2JWNx4ObCj/Bd26LQvBiEuN/mRAz7nsrtYklFY3qcnoaf4P\nb7HSJMr8/uiFsRO1ZaMJAzuI8EswHMcw7ge6jjvIWLEUEpzxoLKpUSaOLmgCjn/l\nXTNjx4zvAYaRT542JljywY9xRkji9oxJjwhmYiZJAoGAHwW0UuiU46zm5pBhiEpl\nH3tgTx7ZKx6TNHKSEpa4WX5G0UF77N6Ps7wuMBWof033YhxQwt056rL5B4KELLJ0\nSqwWp8dfuDf90MOjm20ySdK+cQtA8zs9MsNX3oliAMfRbb7GVcdFPMJn3axMQyDx\nvAxj1TCva9wAviNDaGbaIJo=\n-----END PRIVATE KEY-----',
+                    cert: '-----BEGIN CERTIFICATE-----\nMIIE2TCCA8GgAwIBAgIJANkrklW5OnnjMA0GCSqGSIb3DQEBCwUAMIGWMQswCQYD\nVQQGEwJFRTEOMAwGA1UECAwFSGFyanUxEDAOBgNVBAcMB1RhbGxpbm4xFjAUBgNV\nBAoMDVBvc3RhbFN5c3RlbXMxCzAJBgNVBAsMAkNBMRwwGgYDVQQDDBNyb290Lndp\nbGRkdWNrLmVtYWlsMSIwIAYJKoZIhvcNAQkBFhNpbmZvQHdpbGRkdWNrLmVtYWls\nMB4XDTIxMDUxNzA2NDAzNFoXDTMxMDUxNTA2NDAzNFowgaAxCzAJBgNVBAYTAkVF\nMQ4wDAYDVQQIDAVIYXJqdTEQMA4GA1UEBwwHVGFsbGlubjEWMBQGA1UECgwNUG9z\ndGFsU3lzdGVtczEVMBMGA1UECwwMbG9jYWxfUm9vdENBMSIwIAYJKoZIhvcNAQkB\nFhNpbmZvQHdpbGRkdWNrLmVtYWlsMRwwGgYDVQQDDBNyb290LndpbGRkdWNrLmVt\nYWlsMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAygvRvQSZaSXSiDDb\nIy04ArYSga7UMt0yOAAuRaKKsjCMXKTZZSOTLutyDx0WgRhPfjtO6B7WIT6vxKt0\nlQZNPpSt+Opx6H2alQ1nlrohxS9opX4T9WxSm6+RrU1q93LYOStVVZ/wk0z774bw\n5SBBGqmtduY0VRmm3UOd1rurHGOCIK4BQuqpzGS7mE65o51QgHoVsbUIT1x/kd57\nMx4VDHICpw0r999aeAJzw2Yp7+UosW4Ys3TqBTxQQwHV+Al5sItzIgc/RcDIAM+n\nxm6FtAw8ZptwMY6TLVbuyPAXLBiHuLGGx7WnDbdMuyCjBHZR9/DBNb5x33FWncEk\nUArjhwIDAQABo4IBHDCCARgwgbUGA1UdIwSBrTCBqqGBnKSBmTCBljELMAkGA1UE\nBhMCRUUxDjAMBgNVBAgMBUhhcmp1MRAwDgYDVQQHDAdUYWxsaW5uMRYwFAYDVQQK\nDA1Qb3N0YWxTeXN0ZW1zMQswCQYDVQQLDAJDQTEcMBoGA1UEAwwTcm9vdC53aWxk\nZHVjay5lbWFpbDEiMCAGCSqGSIb3DQEJARYTaW5mb0B3aWxkZHVjay5lbWFpbIIJ\nANnaLorM6YWQMAkGA1UdEwQCMAAwCwYDVR0PBAQDAgTwMEYGA1UdEQQ/MD2CEHd3\ndy5teWRvbWFpbi5jb22CDG15ZG9tYWluLmNvbYIOKi5teWRvbWFpbi5jb22CC2Fu\nb3RoZXIuY29tMA0GCSqGSIb3DQEBCwUAA4IBAQBAD4ZW6eP3UmlLyvdrMHlRadzO\nt0cdL1CJKBCmpaG92KHTuJMXpM+gqFWm0dvt4bCEPjaQuD1uKXdIUxqvpTPv6L1C\nN0bgLiaVGr6n2XP/rrlbvd8FwApg0NPOh0abRn6gTH48UBa/a0tTBy+p8r7NGWt0\nFV49S4VJQbJgv5sue0IiJMo1Az05KdlZtMMfS7tghgQIF111K/ICMEZgSg1oY7zU\nNUoQCVJLFdLPh1Hxtu2bMFIiUSuo8tAcvSAOyXoKevjvuBRPLsntItAR7JQWmX+8\n5VGYeKxgOR8fanaeJxHm+rBL3uyxgHxfzqhzNX5JTPqB9DjUihnJiwVKs2X3\n-----END CERTIFICATE-----\n-----BEGIN CERTIFICATE-----\nMIIDqjCCApICCQDZ2i6KzOmFkDANBgkqhkiG9w0BAQsFADCBljELMAkGA1UEBhMC\nRUUxDjAMBgNVBAgMBUhhcmp1MRAwDgYDVQQHDAdUYWxsaW5uMRYwFAYDVQQKDA1Q\nb3N0YWxTeXN0ZW1zMQswCQYDVQQLDAJDQTEcMBoGA1UEAwwTcm9vdC53aWxkZHVj\nay5lbWFpbDEiMCAGCSqGSIb3DQEJARYTaW5mb0B3aWxkZHVjay5lbWFpbDAeFw0y\nMTA1MTcwNjM5MjdaFw0zMTA1MTUwNjM5MjdaMIGWMQswCQYDVQQGEwJFRTEOMAwG\nA1UECAwFSGFyanUxEDAOBgNVBAcMB1RhbGxpbm4xFjAUBgNVBAoMDVBvc3RhbFN5\nc3RlbXMxCzAJBgNVBAsMAkNBMRwwGgYDVQQDDBNyb290LndpbGRkdWNrLmVtYWls\nMSIwIAYJKoZIhvcNAQkBFhNpbmZvQHdpbGRkdWNrLmVtYWlsMIIBIjANBgkqhkiG\n9w0BAQEFAAOCAQ8AMIIBCgKCAQEAmBEFPdz350w5++Ds+sAkVktqrk7+eO67R9lu\n9f6wJNTeyq8+w2bGZgfoZo3K+8OFry+ET1yPQDrJgiYIKCe4ZgUohbaUh4/GS6xE\n22InmU+Pt7PJ7UoBZgoVQOD1bf9Z6E68pVfoBA2yj0sPVDFvXd8/ToVMmOdl8voW\nVu3pn8bzgvWy8vpOrIzsWhjy7J2SWlWcAVtO5nwK8Eoqj8Um4X5Zg2+pC7wEMN0G\nnGOCLg7Ky1AFn4v/zoz1c+AW+I2uO6YNE1tRka/lC1ohm0D9SLikrWpmzoANUIDD\n1mKX6Jy+uJjA7iaj2B2Hb4wG83fzx8rPBqxV/AFEFMIdPd2JpwIDAQABMA0GCSqG\nSIb3DQEBCwUAA4IBAQBi0Qzu/+MwvHZQyN9GfqzrFRMi6mdwR1Ti4y7N++mAYVJi\nOh9QL/4QufsRd/5x8KjRcy+3ZZkGLT2yxUUWA15DNx3fQMH1g6jlXgpYl/VDBHUw\npJ1zNolP1YQsN6TI9JahGcHOAjNNNbFQSW1fSSd/D0cGxUM0DkC4O47RQ7ZoTFNt\nPoOEQkw8JhQSBpCw+ise6EvoWjOOhFd1M9hy6XemAVTTix5ff7GzOx+ylwcoaNhW\nTEtB3hWRJmbmqBgojUL2/iHQYpkQiBoxIa7tXgy2eFaEHix/Qt3ivEPte7kOSz53\nAsIaoM78oZNm5A3EgzsFyJbjWv/JNgmeKN4E0PoS\n-----END CERTIFICATE-----',
+                    description: 'test key',
+                    servername: 'mydomain.com'
+                })
+                .expect(200);
+            expect(response1.body.fingerprint).to.equal('6a:bc:80:54:22:30:d2:4e:20:74:e1:11:df:f0:bb:6d:93:4a:f8:82:ee:48:79:8e:17:2e:ad:80:83:06:62:97');
+            expect(response1.body.altNames).to.deep.equal(['www.mydomain.com', 'mydomain.com', '*.mydomain.com', 'another.com']);
         });
     });
 });
