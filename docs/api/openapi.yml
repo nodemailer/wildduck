@@ -19,7 +19,7 @@ tags:
     - name: Authentication
     - name: Autoreplies
     - name: Certs
-      description: WildDuck allows to register TLS certificates to be used with SNI connections. These certificates are used by IMAP and POP3 servers when a SNI capable client establishes a TLS connection.
+      description: WildDuck allows to register TLS certificates to be used with SNI connections. These certificates are used by IMAP, POP3, API and SMTP servers when a SNI capable client establishes a TLS connection. This does not apply for MX servers.
     - name: DKIM
       description: Whenever an email is sent WildDuck checks if there is a DKIM key registered for the domain name of the sender address and uses it to sign the message.
     - name: DomainAccess
@@ -949,10 +949,10 @@ paths:
             tags:
                 - Certs
             summary: Create or update TLS certificate for server name
-            description: Add a new TLS certificate for a server name or update existing one. There can be single certificate key registered for each server name.
+            description: Add a new TLS certificate for a server name or update existing one. You can add a single certificate for each server name but SAN names are supported as well. For example you can add a sertificate for "mydomain.com" that has a "\*.mydomain.com" SAN set and it would be used for requests that do not have it's own server name registered but match the SAN value.
             operationId: updateTLSCertificate
             requestBody:
-                description: Add a new TLS certificate for a server name or update existing one. There can be single certificate key registered for each server name.
+                description: Add a new TLS certificate for a server name or update existing one
                 content:
                     application/json:
                         schema:
