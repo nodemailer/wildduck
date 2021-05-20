@@ -919,10 +919,11 @@ paths:
                       example: example.com
                 - name: altNames
                   in: query
-                  description: Match `query` value against SAN as well (by default checks only registered server names)
+                  description: Match `query` value against SAN as well (including wildcard names)
                   schema:
                       type: boolean
-                      example: false
+                      example: true
+                      default: false
                 - name: limit
                   in: query
                   description: How many records to return
@@ -955,7 +956,11 @@ paths:
             tags:
                 - Certs
             summary: Create or update TLS certificate for server name
-            description: Add a new TLS certificate for a server name or update existing one. You can add a single certificate for each server name but SAN names are supported as well. For example you can add a sertificate for "mydomain.com" that has a "\*.mydomain.com" SAN set and it would be used for requests that do not have it's own server name registered but match the SAN value.
+            description: >
+                Add a new TLS certificate for a server name or update existing one. You can add a single certificate for each server name but SAN names are supported as well.
+                For example you can add a sertificate for "mydomain.com" that includes "\*.mydomain.com" in SAN and the same certificate would be used for requests that do not have it's own server name registered but match the SAN value.
+
+                > NB! you must ensure yourself that the `servername` value is actually listed in certificate's common name or SAN as WildDuck is going to use this certificate regardless.
             operationId: updateTLSCertificate
             requestBody:
                 description: Add a new TLS certificate for a server name or update existing one
