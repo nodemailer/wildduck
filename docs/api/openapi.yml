@@ -4088,7 +4088,7 @@ components:
                     example: '2021-06-26T21:55:55.000Z'
                 altNames:
                     type: array
-                    description: Hostnames listed in the certificate
+                    description: SAN servernames listed in the certificate
                     items:
                         type: string
                     example: ['example.com', 'www.example.com']
@@ -5962,7 +5962,7 @@ components:
                     example: '2021-06-26T21:55:55.000Z'
                 altNames:
                     type: array
-                    description: Hostnames listed in the certificate
+                    description: SAN servernames listed in the certificate
                     items:
                         type: string
                     example: ['example.com', 'www.example.com']
