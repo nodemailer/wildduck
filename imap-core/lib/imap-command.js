@@ -80,6 +80,7 @@ class IMAPCommand {
 
                 if (!this.command || !this.tag) {
                     let err = new Error('Invalid tag');
+                    err.responseCode = 400;
                     err.code = 'InvalidTag';
                     if (this.payload) {
                         // no payload means empty line
@@ -93,6 +94,7 @@ class IMAPCommand {
 
                 if (!commands.has(this.command)) {
                     let err = new Error('Unknown command');
+                    err.responseCode = 400;
                     err.code = 'UnknownCommand';
                     errors.notifyConnection(this.connection, err, {
                         payload: this.payload ? (this.payload.length < 256 ? this.payload : this.payload.toString().substr(0, 150) + '...') : false
@@ -107,6 +109,7 @@ class IMAPCommand {
             // check if the literal size is in acceptable bounds
             if (isNaN(command.expecting) || isNaN(command.expecting) < 0 || command.expecting > Number.MAX_SAFE_INTEGER) {
                 let err = new Error('Invalid literal size');
+                err.responseCode = 400;
                 err.code = 'InvalidLiteralSize';
                 errors.notifyConnection(this.connection, err, {
                     command: {
@@ -149,6 +152,7 @@ class IMAPCommand {
                 }
 
                 let err = new Error('Literal too large');
+                err.responseCode = 400;
                 err.code = 'InvalidLiteralSize';
                 return callback(err);
             }
@@ -357,6 +361,7 @@ class IMAPCommand {
         // Check if the command can be run in current state
         if (handler.state && [].concat(handler.state || []).indexOf(this.connection.state) < 0) {
             let err = new Error(parsed.command.toUpperCase() + ' not allowed now');
+            err.responseCode = 500;
             err.code = 'InvalidState';
             return callback(err);
         }
@@ -369,6 +374,7 @@ class IMAPCommand {
         // Deny commands with too many arguments
         if (parsed.attributes && parsed.attributes.length > maxArgs) {
             let err = new Error('Too many arguments provided');
+            err.responseCode = 400;
             err.code = 'InvalidArguments';
             return callback(err);
         }
@@ -376,6 +382,7 @@ class IMAPCommand {
         // Deny commands with too little arguments
         if (((parsed.attributes && parsed.attributes.length) || 0) < minArgs) {
             let err = new Error('Not enough arguments provided');
+            err.responseCode = 400;
             err.code = 'InvalidArguments';
             return callback(err);
         }

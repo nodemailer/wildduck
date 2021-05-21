@@ -352,6 +352,7 @@ function markAsSeen(session, messages, callback) {
             let mailboxData = item && item.value;
             if (!item) {
                 let err = new Error('Selected mailbox does not exist');
+                err.responseCode = 404;
                 err.code = 'NoSuchMailbox';
                 return callback(err);
             }

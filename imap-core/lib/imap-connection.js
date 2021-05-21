@@ -414,6 +414,7 @@ class IMAPConnection extends EventEmitter {
         if (err && /SSL[23]*_GET_CLIENT_HELLO|ssl[23]*_read_bytes|ssl_bytes_to_cipher_list/i.test(err.message)) {
             let message = err.message;
             err.message = 'Failed to establish TLS session';
+            err.responseCode = 500;
             err.code = err.code || 'TLSError';
             err.meta = {
                 protocol: 'imap',
@@ -425,6 +426,7 @@ class IMAPConnection extends EventEmitter {
 
         if (!err || !err.message) {
             err = new Error('Socket closed unexpectedly');
+            err.responseCode = 500;
             err.code = 'SocketError';
             err.meta = {
                 remoteAddress: this.remoteAddress
