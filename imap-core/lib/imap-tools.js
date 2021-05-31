@@ -744,7 +744,6 @@ module.exports.sendCapabilityResponse = connection => {
 
         capabilities.push('SPECIAL-USE');
         capabilities.push('UIDPLUS');
-        capabilities.push('UNSELECT');
         capabilities.push('ENABLE');
         capabilities.push('CONDSTORE');
         capabilities.push('UTF8=ACCEPT');

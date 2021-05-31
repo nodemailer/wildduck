@@ -203,7 +203,7 @@ class IMAPConnection extends EventEmitter {
      * @param {String|Array} data If data is Array, send a multi-line response
      */
     send(payload, callback) {
-        if (this._socket && this._socket.writable) {
+        if (this._socket && !this._socket.destroyed && this._socket.readyState === 'open') {
             try {
                 this[!this.compression ? '_socket' : '_deflate'].write(payload + '\r\n', 'binary', (...args) => {
                     if (args[0]) {
