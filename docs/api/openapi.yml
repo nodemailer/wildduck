@@ -4403,7 +4403,11 @@ components:
                     description: Message-ID header
                 date:
                     type: string
-                    description: Datestring of message header
+                    description: Date string from header
+                    format: date-time
+                idate:
+                    type: string
+                    description: Date string of receive time
                     format: date-time
                 list:
                     $ref: '#/components/schemas/List'
@@ -5847,7 +5851,11 @@ components:
                     description: Message subject
                 date:
                     type: string
-                    description: Datestring
+                    description: Date string from header
+                    format: date-time
+                idate:
+                    type: string
+                    description: Date string of receive time
                     format: date-time
                 intro:
                     type: string
@@ -6138,7 +6146,11 @@ components:
                     description: Message subject
                 date:
                     type: string
-                    description: Datestring
+                    description: Date string from header
+                    format: date-time
+                idate:
+                    type: string
+                    description: Date string of receive time
                     format: date-time
                 size:
                     type: number
@@ -6220,7 +6232,11 @@ components:
                     description: Message subject
                 date:
                     type: string
-                    description: Datestring
+                    description: Date string from header
+                    format: date-time
+                idate:
+                    type: string
+                    description: Date string of receive time
                     format: date-time
                 intro:
                     type: string
