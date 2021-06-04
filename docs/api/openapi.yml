@@ -3684,12 +3684,15 @@ components:
                 success:
                     type: boolean
                     description: Indicates successful response
+                    example: true
                 id:
                     type: string
                     description: ID of the Application Password
+                    example: '60b91b5cc419d97445f8e57d'
                 password:
                     type: string
                     description: 'Application Specific Password. Generated password is whitespace agnostic, so it could be displayed to the client as "abcd efgh ijkl mnop" instead of "abcdefghijklmnop"'
+                    example: 'aaaaaaaaaaaaaaaa'
                 mobileconfig:
                     type: string
                     description: Base64 encoded mobileconfig file. Generated profile file should be sent to the client with Content-Type value of application/x-apple-aspen-config.
@@ -4997,24 +5000,30 @@ components:
                     items:
                         type: string
                     description: List of scopes this Password applies to. Special scope "*" indicates that this password can be used for any scope except "master"
+                    example: ['imap', 'smtp']
                 generateMobileconfig:
                     type: boolean
                     description: If true then result contains a mobileconfig formatted file with account config
+                    example: true
                 address:
                     type: string
                     description: E-mail address to be used as the account address in mobileconfig file. Must be one of the listed identity addresses of the user. Defaults to the main address of the user
+                    example: 'user@example.com'
                 password:
                     type: string
                     description: Optional pregenerated password. Must be 16 characters, latin letters only.
+                    example: 'aaaaaaaaaaaaaaaa'
                 ttl:
                     type: number
                     description: 'TTL in seconds for this password. Every time password is used, TTL is reset to this value'
+                    example: 3600000
                 sess:
                     type: string
                     description: Session identifier for the logs
                 ip:
                     type: string
                     description: IP address for the logs
+                    example: '127.0.0.1'
         RestoreMessageRequest:
             type: object
             properties:
