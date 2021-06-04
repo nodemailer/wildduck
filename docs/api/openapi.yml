@@ -5003,6 +5003,9 @@ components:
                 address:
                     type: string
                     description: E-mail address to be used as the account address in mobileconfig file. Must be one of the listed identity addresses of the user. Defaults to the main address of the user
+                password:
+                    type: string
+                    description: Optional pregenerated password. Must be 16 characters, latin letters only.
                 ttl:
                     type: number
                     description: 'TTL in seconds for this password. Every time password is used, TTL is reset to this value'

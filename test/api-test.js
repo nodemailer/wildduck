@@ -151,12 +151,53 @@ describe('API tests', function () {
             asp = response.body.password;
         });
 
+        it('should POST /users/:user/asps to generate ASP with custom password', async () => {
+            const response = await server
+                .post(`/users/${userId}/asps`)
+                .send({
+                    description: 'test',
+                    scopes: ['imap', 'smtp'],
+                    generateMobileconfig: true,
+                    password: 'a'.repeat(16)
+                })
+                .expect(200);
+            expect(response.body.error).to.not.exist;
+            expect(response.body.success).to.be.true;
+            expect(response.body.password).to.equal('a'.repeat(16));
+            expect(response.body.mobileconfig).to.exist;
+        });
+
+        it('should fail POST /users/:user/asps to generate ASP with custom password', async () => {
+            const response = await server
+                .post(`/users/${userId}/asps`)
+                .send({
+                    description: 'test',
+                    scopes: ['imap', 'smtp'],
+                    generateMobileconfig: true,
+                    password: '0'.repeat(16)
+                })
+                .expect(400);
+            expect(response.body.error).to.exist;
+        });
+
         it('should POST /authenticate using ASP and allowed scope', async () => {
             const response = await server
                 .post(`/authenticate`)
                 .send({
                     username: 'testuser@jõgeva.öö',
                     password: asp,
+                    scope: 'imap'
+                })
+                .expect(200);
+            expect(response.body.success).to.be.true;
+        });
+
+        it('should POST /authenticate using ASP and allowed scope with custom password', async () => {
+            const response = await server
+                .post(`/authenticate`)
+                .send({
+                    username: 'testuser@jõgeva.öö',
+                    password: 'a'.repeat(16),
                     scope: 'imap'
                 })
                 .expect(200);
