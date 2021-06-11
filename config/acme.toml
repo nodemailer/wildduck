@@ -1,0 +1,16 @@
+
+# if hostname has a CAA record set then match it against this list
+caaDomains = ["letsencrypt.org"]
+
+keyBits = 2048
+keyExponent = 65537
+
+# ACME development settings
+key = "devel"
+directoryUrl = "https://acme-staging-v02.api.letsencrypt.org/directory"
+email = "domainadmin@example.com" # must be valid email address
+
+# ACME production settings
+#key = "production"
+#directoryUrl = "https://acme-v02.api.letsencrypt.org/directory"
+#email = "domainadmin@example.com" # must be valid email address

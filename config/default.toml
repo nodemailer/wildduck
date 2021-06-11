@@ -80,6 +80,9 @@ maxForwards=2000
 [dkim]
 # @include "dkim.toml"
 
+[acme]
+# @include "acme.toml"
+
 [certs]
 # Encrypt stored TLS private keys
 #cipher="aes192"

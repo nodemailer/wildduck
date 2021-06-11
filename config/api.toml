@@ -1,5 +1,5 @@
 enabled=true
-port=8080
+port=7003
 # by default bind to localhost only
 host="127.0.0.1"
 

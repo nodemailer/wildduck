@@ -20,9 +20,9 @@ const Gelf = require('gelf');
 const os = require('os');
 const util = require('util');
 const ObjectID = require('mongodb').ObjectID;
-const tlsOptions = require('./imap-core/lib/tls-options');
 const tls = require('tls');
 
+const acmeRoutes = require('./lib/api/acme');
 const usersRoutes = require('./lib/api/users');
 const addressesRoutes = require('./lib/api/addresses');
 const mailboxesRoutes = require('./lib/api/mailboxes');
@@ -498,6 +498,7 @@ module.exports = done => {
 
     server.loggelf = message => loggelf(message);
 
+    acmeRoutes(db, server);
     usersRoutes(db, server, userHandler);
     addressesRoutes(db, server, userHandler);
     mailboxesRoutes(db, server, mailboxHandler);

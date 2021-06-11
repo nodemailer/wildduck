@@ -697,3 +697,11 @@ indexes:
           key:
               user: 1
               type: 1
+
+    - collection: settings
+      index:
+          name: key_enumerable
+          unique: true
+          key:
+              key: 1
+              enumerable: 1
