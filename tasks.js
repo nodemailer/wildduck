@@ -9,7 +9,11 @@ const yaml = require('js-yaml');
 const fs = require('fs');
 const MessageHandler = require('./lib/message-handler');
 const MailboxHandler = require('./lib/mailbox-handler');
+const CertHandler = require('./lib/cert-handler');
 const AuditHandler = require('./lib/audit-handler');
+
+const { getCertificate } = require('./lib/acme/certs');
+
 const setupIndexes = yaml.load(fs.readFileSync(__dirname + '/indexes.yaml', 'utf8'));
 const Gelf = require('gelf');
 const os = require('os');
@@ -18,11 +22,13 @@ const taskRestore = require('./lib/tasks/restore');
 const taskUserDelete = require('./lib/tasks/user-delete');
 const taskQuota = require('./lib/tasks/quota');
 const taskAudit = require('./lib/tasks/audit');
+const taskAcme = require('./lib/tasks/acme');
 const taskClearFolder = require('./lib/tasks/clear-folder');
 
 let messageHandler;
 let mailboxHandler;
 let auditHandler;
+let certHandler;
 let gcTimeout;
 let taskTimeout;
 let gcLock;
@@ -100,6 +106,13 @@ module.exports.start = callback => {
         gridfs: db.gridfs,
         bucket: 'audit',
         loggelf: message => loggelf(message)
+    });
+
+    certHandler = new CertHandler({
+        cipher: config.certs && config.certs.cipher,
+        secret: config.certs && config.certs.secret,
+        database: db.database,
+        redis: db.redis
     });
 
     let start = () => {
@@ -454,7 +467,7 @@ function runTasks() {
                         }
                     },
                     {
-                        returnOriginal: false
+                        returnDocument: 'after'
                     },
                     (err, r) => {
                         if (err) {
@@ -594,6 +607,23 @@ function processTask(taskData, callback) {
                 {
                     messageHandler,
                     auditHandler,
+                    loggelf
+                },
+                err => {
+                    if (err) {
+                        return callback(err);
+                    }
+                    // release
+                    callback(null, true);
+                }
+            );
+
+        case 'acme':
+            return taskAcme(
+                taskData,
+                {
+                    certHandler,
+                    getCertificate,
                     loggelf
                 },
                 err => {

@@ -342,7 +342,7 @@ function markAsSeen(session, messages, callback) {
             }
         },
         {
-            returnOriginal: false
+            returnDocument: 'after'
         },
         (err, item) => {
             if (err) {

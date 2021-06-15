@@ -6,6 +6,7 @@ const imap = require('./imap');
 const pop3 = require('./pop3');
 const lmtp = require('./lmtp');
 const api = require('./api');
+const acme = require('./acme');
 const tasks = require('./tasks');
 const webhooks = require('./webhooks');
 const plugins = require('./lib/plugins');
@@ -67,37 +68,46 @@ db.connect(err => {
                                 return setTimeout(() => process.exit(1), 3000);
                             }
 
-                            // downgrade user and group if needed
-                            if (config.group) {
-                                try {
-                                    process.setgid(config.group);
-                                    log.info('App', 'Changed group to "%s" (%s)', config.group, process.getgid());
-                                } catch (E) {
-                                    log.error('App', 'Failed to change group to "%s" (%s)', config.group, E.message);
-                                    errors.notify(E);
-                                    return setTimeout(() => process.exit(1), 3000);
-                                }
-                            }
-                            if (config.user) {
-                                try {
-                                    process.setuid(config.user);
-                                    log.info('App', 'Changed user to "%s" (%s)', config.user, process.getuid());
-                                } catch (E) {
-                                    log.error('App', 'Failed to change user to "%s" (%s)', config.user, E.message);
-                                    errors.notify(E);
-                                    return setTimeout(() => process.exit(1), 3000);
-                                }
-                            }
-
-                            plugins.init(err => {
+                            // Start HTTP ACME server
+                            acme(err => {
                                 if (err) {
-                                    log.error('App', 'Failed to start plugins');
+                                    log.error('App', 'Failed to start ACME server');
                                     errors.notify(err);
                                     return setTimeout(() => process.exit(1), 3000);
                                 }
 
-                                plugins.runHooks('init', () => {
-                                    log.info('App', 'All servers started, ready to process some mail');
+                                // downgrade user and group if needed
+                                if (config.group) {
+                                    try {
+                                        process.setgid(config.group);
+                                        log.info('App', 'Changed group to "%s" (%s)', config.group, process.getgid());
+                                    } catch (E) {
+                                        log.error('App', 'Failed to change group to "%s" (%s)', config.group, E.message);
+                                        errors.notify(E);
+                                        return setTimeout(() => process.exit(1), 3000);
+                                    }
+                                }
+                                if (config.user) {
+                                    try {
+                                        process.setuid(config.user);
+                                        log.info('App', 'Changed user to "%s" (%s)', config.user, process.getuid());
+                                    } catch (E) {
+                                        log.error('App', 'Failed to change user to "%s" (%s)', config.user, E.message);
+                                        errors.notify(E);
+                                        return setTimeout(() => process.exit(1), 3000);
+                                    }
+                                }
+
+                                plugins.init(err => {
+                                    if (err) {
+                                        log.error('App', 'Failed to start plugins');
+                                        errors.notify(err);
+                                        return setTimeout(() => process.exit(1), 3000);
+                                    }
+
+                                    plugins.runHooks('init', () => {
+                                        log.info('App', 'All servers started, ready to process some mail');
+                                    });
                                 });
                             });
                         });
