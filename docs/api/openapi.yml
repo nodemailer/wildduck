@@ -5142,21 +5142,23 @@ components:
         UpdateTLSCertRequest:
             required:
                 - servername
-                - privateKey
-                - cert
             type: object
             properties:
                 servername:
                     type: string
                     description: Server name this TLS certificate applies to
                     example: imap.example.com
+                acme:
+                    type: boolean
+                    description: If true then private key and certificate are managed automatically by ACME
+                    example: false
                 privateKey:
                     type: string
-                    description: PEM formatted TLS private key
+                    description: PEM formatted TLS private key. Optional if certificate is managed by ACME
                     example: "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADA..."
                 cert:
                     type: string
-                    description: 'PEM formatted TLS certificate or a certificate bundle with concatenated certificate and CA chain'
+                    description: 'PEM formatted TLS certificate or a certificate bundle with concatenated certificate and CA chain. Optional if certificate is managed by ACME'
                     example: "-----BEGIN CERTIFICATE-----\nMIIDEDCCAfg..."
                 ca:
                     type: array
@@ -5963,6 +5965,10 @@ components:
                     type: string
                     description: The server name this certificate applies to
                     example: 'imap.example.com'
+                acme:
+                    type: boolean
+                    description: If true then private key and certificate are managed automatically by ACME
+                    example: false
                 description:
                     type: string
                     description: Key description

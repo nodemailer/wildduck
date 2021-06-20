@@ -11,6 +11,7 @@ const MessageHandler = require('./lib/message-handler');
 const MailboxHandler = require('./lib/mailbox-handler');
 const CertHandler = require('./lib/cert-handler');
 const AuditHandler = require('./lib/audit-handler');
+const TaskHandler = require('./lib/task-handler');
 
 const { getCertificate } = require('./lib/acme/certs');
 
@@ -28,6 +29,7 @@ const taskClearFolder = require('./lib/tasks/clear-folder');
 let messageHandler;
 let mailboxHandler;
 let auditHandler;
+let taskHandler;
 let certHandler;
 let gcTimeout;
 let taskTimeout;
@@ -106,6 +108,10 @@ module.exports.start = callback => {
         gridfs: db.gridfs,
         bucket: 'audit',
         loggelf: message => loggelf(message)
+    });
+
+    taskHandler = new TaskHandler({
+        database: db.database
     });
 
     certHandler = new CertHandler({
@@ -430,145 +436,63 @@ function clearExpiredMessages() {
     });
 }
 
-function runTasks() {
-    // first release expired tasks
-    db.database.collection('tasks').updateMany(
-        {
-            locked: true,
-            lockedUntil: { $lt: new Date() }
-        },
-        {
-            $set: {
-                locked: false,
-                status: 'queued'
-            }
-        },
-        err => {
-            if (err) {
-                log.error('Tasks', 'Failed releasing expired tasks. error=%s', err.message);
-
-                // back off processing tasks for 5 minutes
-                taskTimeout = setTimeout(runTasks, consts.TASK_STARTUP_INTERVAL);
-                taskTimeout.unref();
-                return;
-            }
-
-            let nextTask = () => {
-                // try to fetch a new task from the queue
-                db.database.collection('tasks').findOneAndUpdate(
-                    {
-                        locked: false
-                    },
-                    {
-                        $set: {
-                            locked: true,
-                            lockedUntil: new Date(Date.now() + consts.TASK_LOCK_INTERVAL),
-                            status: 'processing'
-                        }
-                    },
-                    {
-                        returnDocument: 'after'
-                    },
-                    (err, r) => {
-                        if (err) {
-                            log.error('Tasks', 'Failed releasing expired tasks. error=%s', err.message);
-
-                            // back off processing tasks for 5 minutes
-                            taskTimeout = setTimeout(runTasks, consts.TASK_STARTUP_INTERVAL);
-                            taskTimeout.unref();
-                            return;
-                        }
-                        if (!r || !r.value) {
-                            // no pending tasks found
-                            taskTimeout = setTimeout(runTasks, consts.TASK_IDLE_INTERVAL);
-                            taskTimeout.unref();
-                            return;
-                        }
-
-                        let taskData = r.value;
-
-                        // keep lock alive
-                        let keepAliveTimer;
-                        let processed = false;
-                        let keepAlive = () => {
-                            clearTimeout(keepAliveTimer);
-                            keepAliveTimer = setTimeout(() => {
-                                if (processed) {
-                                    return;
-                                }
-                                db.database.collection('tasks').updateOne(
-                                    {
-                                        _id: taskData._id,
-                                        locked: true
-                                    },
-                                    {
-                                        $set: {
-                                            lockedUntil: new Date(Date.now() + consts.TASK_LOCK_INTERVAL),
-                                            status: 'processing'
-                                        }
-                                    },
-                                    (err, r) => {
-                                        if (!err && !processed && r.matchedCount) {
-                                            keepAlive();
-                                        }
-                                    }
-                                );
-                            }, consts.TASK_UPDATE_INTERVAL);
-                            keepAliveTimer.unref();
-                        };
-
-                        keepAlive();
-
-                        // we have a task to process
-                        processTask(taskData, (err, release) => {
-                            clearTimeout(keepAliveTimer);
-                            processed = true;
-                            if (err) {
-                                log.error('Tasks', 'Failed processing task id=%s error=%s', taskData._id, err.message);
-
-                                // back off processing tasks for 5 minutes
-                                taskTimeout = setTimeout(runTasks, consts.TASK_STARTUP_INTERVAL);
-                                taskTimeout.unref();
-                                return;
-                            }
-                            if (release) {
-                                db.database.collection('tasks').deleteOne(
-                                    {
-                                        _id: taskData._id
-                                    },
-                                    nextTask()
-                                );
-                            } else {
-                                // requeue
-                                db.database.collection('tasks').updateOne(
-                                    {
-                                        _id: taskData._id
-                                    },
-                                    {
-                                        $set: {
-                                            locked: false,
-                                            status: 'queued'
-                                        }
-                                    },
-                                    nextTask()
-                                );
-                            }
-                        });
-                    }
-                );
-            };
-            nextTask();
-        }
-    );
+function timer(ttl) {
+    return new Promise(done => {
+        let t = setTimeout(done, ttl);
+        t.unref();
+    });
 }
 
-function processTask(taskData, callback) {
-    log.verbose('Tasks', 'task=%s', JSON.stringify(taskData));
+async function runTasks() {
+    // first release expired tasks
+    try {
+        await taskHandler.releasePending();
+    } catch (err) {
+        log.error('Tasks', 'Failed releasing expired tasks. error=%s', err.message);
+        taskTimeout = setTimeout(runTasks, consts.TASK_STARTUP_INTERVAL);
+        await timer(consts.TASK_STARTUP_INTERVAL);
+        return runTasks();
+    }
 
-    switch (taskData.task) {
+    let done = false;
+    while (!done) {
+        try {
+            let { data, task } = await taskHandler.getNext();
+            if (!task) {
+                await timer(consts.TASK_IDLE_INTERVAL);
+                continue;
+            }
+
+            try {
+                await new Promise((resolve, reject) => {
+                    processTask(task, data, err => {
+                        if (err) {
+                            return reject(err);
+                        } else {
+                            resolve();
+                        }
+                    });
+                });
+                await taskHandler.release(task, true);
+            } catch (err) {
+                await timer(consts.TASK_STARTUP_INTERVAL);
+                await taskHandler.release(task, false);
+            }
+        } catch (err) {
+            await timer(consts.TASK_STARTUP_INTERVAL);
+            continue;
+        }
+    }
+}
+
+function processTask(task, data, callback) {
+    log.verbose('Tasks', 'type=%s id=%s data=%s', task.type, task._id, JSON.stringify(data));
+
+    switch (task.type) {
         case 'restore':
             return taskRestore(
-                taskData,
+                task,
+                data,
                 {
                     messageHandler,
                     mailboxHandler,
@@ -584,7 +508,7 @@ function processTask(taskData, callback) {
             );
 
         case 'user-delete':
-            return taskUserDelete(taskData, { loggelf }, err => {
+            return taskUserDelete(task, data, { loggelf }, err => {
                 if (err) {
                     return callback(err);
                 }
@@ -593,7 +517,7 @@ function processTask(taskData, callback) {
             });
 
         case 'quota':
-            return taskQuota(taskData, { loggelf }, err => {
+            return taskQuota(task, data, { loggelf }, err => {
                 if (err) {
                     return callback(err);
                 }
@@ -603,7 +527,8 @@ function processTask(taskData, callback) {
 
         case 'audit':
             return taskAudit(
-                taskData,
+                task,
+                data,
                 {
                     messageHandler,
                     auditHandler,
@@ -620,7 +545,8 @@ function processTask(taskData, callback) {
 
         case 'acme':
             return taskAcme(
-                taskData,
+                task,
+                data,
                 {
                     certHandler,
                     getCertificate,
@@ -637,7 +563,8 @@ function processTask(taskData, callback) {
 
         case 'clear-folder':
             return taskClearFolder(
-                taskData,
+                task,
+                data,
                 {
                     messageHandler,
                     loggelf
