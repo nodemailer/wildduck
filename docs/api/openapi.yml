@@ -2350,6 +2350,29 @@ paths:
                   type: string
 
     '/users/{id}/restore':
+        get:
+            tags:
+                - Users
+            summary: Return recovery info for a deleted user
+            operationId: restoreUserInfo
+            parameters:
+                - name: sess
+                  in: query
+                  description: Session identifier for the logs
+                  schema:
+                      type: string
+                - name: ip
+                  in: query
+                  description: IP address for the logs
+                  schema:
+                      type: string
+            responses:
+                '200':
+                    description: Success
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/RecoverInfoResponse'
         post:
             tags:
                 - Users
@@ -4108,6 +4131,50 @@ components:
                     type: string
                     description: Unique ID (24 byte hex)
                     example: '609d201236d1d936948f23b1'
+
+        RecoverInfoResponse:
+            type: object
+            required:
+                - success
+                - user
+                - username
+                - storageUsed
+                - tags
+                - deleted
+                - recoverableAddresses
+            properties:
+                success:
+                    type: boolean
+                    description: Indicates successful response
+                    example: true
+                user:
+                    type: string
+                    description: ID of the deleted User
+                    example: '609d201236d1d936948f23b1'
+                username:
+                    type: string
+                    description: Username of the User
+                    example: andris
+                storageUsed:
+                    type: number
+                    description: Calculated quota usage for the user
+                    example: 2423070
+                tags:
+                    type: array
+                    items:
+                        type: string
+                    description: List of tags associated with the User
+                    example: ['domain:andrisreinman.com']
+                deleted:
+                    type: string
+                    description: Datestring of the time the user was deleted
+                    format: date-time
+                recoverableAddresses:
+                    type: array
+                    items:
+                        type: string
+                    description: List of email addresses that can be restored
+                    example: ['andris@andrisreinman.com']
 
         GetAllowedDomainResponse:
             required:

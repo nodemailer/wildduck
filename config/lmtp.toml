@@ -1,6 +1,6 @@
 # If enabled then WildDuck exposes a LMTP interface for pushing messages to mail store
 # NB! If you are using WildDuck plugin for Haraka then LMTP is not needed
-enabled=true
+enabled=false
 port=2424
 
 # by default bind to localhost only
