@@ -448,25 +448,21 @@ function timer(ttl) {
 }
 
 async function runTasks() {
-    // first release expired tasks
-    try {
-        await taskHandler.releasePending();
-    } catch (err) {
-        log.error('Tasks', 'Failed releasing expired tasks. error=%s', err.message);
-        taskTimeout = setTimeout(runTasks, consts.TASK_STARTUP_INTERVAL);
-        await timer(consts.TASK_STARTUP_INTERVAL);
-        return runTasks();
-    }
+    let pendingCheckTime = 0;
 
-    let startTime = Date.now();
     let done = false;
     log.verbose('Tasks', 'Starting task poll loop');
     while (!done) {
-        if (Date.now() - startTime > 3600 * 1000) {
-            // Once in a while break the loop, so that pending tasks can be unlocked
-            done = true;
-            log.verbose('Tasks', 'Breaking task poll loop');
-            break;
+        if (Date.now() - pendingCheckTime > consts.TASK_RELEASE_DELAYED_INTERVAL) {
+            // Once in a while release pending tasks
+            try {
+                await taskHandler.releasePending();
+            } catch (err) {
+                log.error('Tasks', 'Failed releasing expired tasks. error=%s', err.message);
+                await timer(consts.TASK_IDLE_INTERVAL);
+            } finally {
+                pendingCheckTime = Date.now();
+            }
         }
 
         try {

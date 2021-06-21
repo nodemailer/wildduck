@@ -54,7 +54,7 @@
         "html-to-text": "8.0.0",
         "humanname": "0.2.2",
         "iconv-lite": "0.6.3",
-        "ioredfour": "1.0.2-ioredis-03",
+        "ioredfour": "1.1.0-ioredis-05",
         "ioredis": "4.27.6",
         "ipaddr": "0.1.0",
         "ipaddr.js": "2.0.1",
