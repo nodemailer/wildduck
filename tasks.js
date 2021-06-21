@@ -194,6 +194,7 @@ module.exports.start = callback => {
                 setTimeout(() => {
                     gcLock.releaseLock(lock, err => {
                         if (err) {
+                            console.error(lock);
                             log.error('GC', 'Failed to release lock error=%s', err.message);
                         }
                     });
@@ -215,7 +216,9 @@ function clearExpiredMessages() {
             gcTimeout = setTimeout(clearExpiredMessages, consts.GC_INTERVAL);
             gcTimeout.unref();
             return;
-        } else if (!lock.success) {
+        }
+
+        if (!lock.success) {
             log.verbose('GC', 'Lock already acquired');
             gcTimeout = setTimeout(clearExpiredMessages, consts.GC_INTERVAL);
             gcTimeout.unref();
@@ -227,6 +230,7 @@ function clearExpiredMessages() {
         let done = () => {
             gcLock.releaseLock(lock, err => {
                 if (err) {
+                    console.error(lock);
                     log.error('GC', 'Failed to release lock error=%s', err.message);
                 }
                 gcTimeout = setTimeout(clearExpiredMessages, consts.GC_INTERVAL);
@@ -454,8 +458,16 @@ async function runTasks() {
         return runTasks();
     }
 
+    let startTime = Date.now();
     let done = false;
     while (!done) {
+        if (Date.now() - startTime > 3600 * 1000) {
+            // Once in a while break the loop, so that pending tasks can be unlocked
+            done = true;
+            log.verbose('Tasks', 'Breaking task poll loop');
+            break;
+        }
+
         try {
             let { data, task } = await taskHandler.getNext();
             if (!task) {
@@ -475,14 +487,16 @@ async function runTasks() {
                 });
                 await taskHandler.release(task, true);
             } catch (err) {
-                await timer(consts.TASK_STARTUP_INTERVAL);
                 await taskHandler.release(task, false);
             }
         } catch (err) {
+            log.error('Tasks', 'Failed to process task queue error=%s', err.message);
+        } finally {
             await timer(consts.TASK_STARTUP_INTERVAL);
-            continue;
         }
     }
+
+    return runTasks();
 }
 
 function processTask(task, data, callback) {
