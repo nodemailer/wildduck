@@ -3848,8 +3848,6 @@ components:
                 - id
                 - action
                 - result
-                - sess
-                - ip
                 - created
             type: object
             properties:
@@ -5893,8 +5891,6 @@ components:
                 - id
                 - action
                 - result
-                - sess
-                - ip
                 - created
             type: object
             properties:

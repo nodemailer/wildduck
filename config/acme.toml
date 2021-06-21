@@ -18,6 +18,6 @@ email = "domainadmin@example.com" # must be valid email address
 [agent]
 # If enabled then starts a HTTP server that listens for ACME verification requests
 # If you have API already listening on port 80 then you don't need this
-enabled = true
-port = 7003 # use 80 in production
-redirect = "https://wildduck.email" # redirect requests unrelated to ACME updates to this URL
+    enabled = true
+    port = 7003 # use 80 in production
+    redirect = "https://wildduck.email" # redirect requests unrelated to ACME updates to this URL

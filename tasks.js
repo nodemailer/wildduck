@@ -460,6 +460,7 @@ async function runTasks() {
 
     let startTime = Date.now();
     let done = false;
+    log.verbose('Tasks', 'Starting task poll loop');
     while (!done) {
         if (Date.now() - startTime > 3600 * 1000) {
             // Once in a while break the loop, so that pending tasks can be unlocked
@@ -492,7 +493,7 @@ async function runTasks() {
         } catch (err) {
             log.error('Tasks', 'Failed to process task queue error=%s', err.message);
         } finally {
-            await timer(consts.TASK_STARTUP_INTERVAL);
+            await timer(consts.TASK_IDLE_INTERVAL);
         }
     }
 
