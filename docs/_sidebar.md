@@ -18,6 +18,7 @@
 -   In Depth
     -   [Operating WildDuck](in-depth/operating-wildduck.md)
     -   [E-Mail Protocol support](in-depth/protocol-support.md)
+    -   [ACME certificates](in-depth/acme-certificates.md)
     -   [Security implementation](in-depth/security.md)
     -   [Administrating WildDuck via command line](in-depth/command-line.md)
     -   [Attachment deduplication](in-depth/attachment-deduplication.md)
