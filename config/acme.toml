@@ -1,23 +1,25 @@
 
-# if hostname has a CAA record set then match it against this list
+# ACME production settings
+key = "production" # variable to identify account settings for specified directory url
+directoryUrl = "https://acme-v02.api.letsencrypt.org/directory"
+email = "domainadmin@example.com" # must be valid email address
+
+# ACME development settings
+#key = "devel" # variable to identify account settings for specified directory url
+#directoryUrl = "https://acme-staging-v02.api.letsencrypt.org/directory"
+#email = "domainadmin@example.com" # must be valid email address
+
+# If hostname has a CAA record set then match it against this list
+# CAA check is done before WildDuck tries to request certificate from ACME
 caaDomains = [ "letsencrypt.org" ]
 
+# Private key settings, if WildDuck has to generate a key by itself
 keyBits = 2048
 keyExponent = 65537
 
-# ACME development settings
-key = "devel"
-directoryUrl = "https://acme-staging-v02.api.letsencrypt.org/directory"
-email = "domainadmin@example.com" # must be valid email address
-
-# ACME production settings
-#key = "production"
-#directoryUrl = "https://acme-v02.api.letsencrypt.org/directory"
-#email = "domainadmin@example.com" # must be valid email address
-
 [agent]
 # If enabled then starts a HTTP server that listens for ACME verification requests
-# If you have API already listening on port 80 then you don't need this
-    enabled = true
-    port = 7003 # use 80 in production
+# If you have WildDuck API already listening on port 80 then you don't need this
+    enabled = false
+    port = 80 # use 80 in production
     redirect = "https://wildduck.email" # redirect requests unrelated to ACME updates to this URL

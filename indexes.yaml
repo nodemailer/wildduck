@@ -616,6 +616,14 @@ indexes:
               altNames: 1
               v: 1
 
+    - collection: certs
+      index:
+          name: renewal_check
+          key:
+              acme: 1
+              expires: 1
+              '_acme.lastRenewalCheck': 1
+
     - collection: audits
       index:
           name: user_expire_time

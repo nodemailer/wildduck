@@ -13,7 +13,7 @@ const CertHandler = require('./lib/cert-handler');
 const AuditHandler = require('./lib/audit-handler');
 const TaskHandler = require('./lib/task-handler');
 
-const { getCertificate } = require('./lib/acme/certs');
+const { getCertificate, acquireCert } = require('./lib/acme/certs');
 
 const setupIndexes = yaml.load(fs.readFileSync(__dirname + '/indexes.yaml', 'utf8'));
 const Gelf = require('gelf');
@@ -24,6 +24,7 @@ const taskUserDelete = require('./lib/tasks/user-delete');
 const taskQuota = require('./lib/tasks/quota');
 const taskAudit = require('./lib/tasks/audit');
 const taskAcme = require('./lib/tasks/acme');
+const taskAcmeUpdate = require('./lib/tasks/acme-update');
 const taskClearFolder = require('./lib/tasks/clear-folder');
 
 let messageHandler;
@@ -460,9 +461,26 @@ async function runTasks() {
             } catch (err) {
                 log.error('Tasks', 'Failed releasing expired tasks. error=%s', err.message);
                 await timer(consts.TASK_IDLE_INTERVAL);
-            } finally {
-                pendingCheckTime = Date.now();
             }
+
+            // and run recurring ACME checks
+            try {
+                await new Promise((resolve, reject) => {
+                    // run pseudo task
+                    processTask({ type: 'acme-update', _id: 'acme-update-id', lock: 'acme-update-lock' }, {}, err => {
+                        if (err) {
+                            return reject(err);
+                        } else {
+                            resolve();
+                        }
+                    });
+                });
+            } catch (err) {
+                log.error('Tasks', 'Failed running recurring ACME checks. error=%s', err.message);
+                await timer(consts.TASK_IDLE_INTERVAL);
+            }
+
+            pendingCheckTime = Date.now();
         }
 
         try {
@@ -493,6 +511,7 @@ async function runTasks() {
         }
     }
 
+    // probably should never be reached as the loop should take forever
     return runTasks();
 }
 
@@ -561,6 +580,24 @@ function processTask(task, data, callback) {
                 {
                     certHandler,
                     getCertificate,
+                    loggelf
+                },
+                err => {
+                    if (err) {
+                        return callback(err);
+                    }
+                    // release
+                    callback(null, true);
+                }
+            );
+
+        case 'acme-update':
+            return taskAcmeUpdate(
+                task,
+                data,
+                {
+                    certHandler,
+                    acquireCert,
                     loggelf
                 },
                 err => {
