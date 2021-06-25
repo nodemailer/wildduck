@@ -27,12 +27,12 @@ echo "deb https://deb.nodesource.com/$NODEREPO $CODENAME main" > /etc/apt/source
 echo "deb-src https://deb.nodesource.com/$NODEREPO $CODENAME main" >> /etc/apt/sources.list.d/nodesource.list
 
 # mongo keys
-
-MONGORELEASE=$CODENAME
-if [ "$MONGORELEASE" = "focal" ]; then
+# ubuntu focal is supported as of 2021-06-14!
+# MONGORELEASE=$CODENAME
+# if [ "$MONGORELEASE" = "focal" ]; then
   # Ubuntu 20 is not yet supported (as of 2020-07-01), fallback to 18
-  MONGORELEASE="bionic"
-fi
+  # MONGORELEASE="bionic"
+# fi
 
 wget -qO- https://www.mongodb.org/static/pgp/server-${MONGODB}.asc | apt-key add
 echo "deb [ arch=amd64 ] http://repo.mongodb.org/apt/ubuntu $MONGORELEASE/mongodb-org/$MONGODB multiverse" > /etc/apt/sources.list.d/mongodb-org.list
@@ -44,4 +44,6 @@ echo "deb-src http://rspamd.com/apt-stable/ $CODENAME main" >> /etc/apt/sources.
 apt-get update
 
 # redis
-apt-add-repository -y ppa:chris-lea/redis-server
+# use redis team repo
+add-apt-repository -y ppa:redislabs/redis
+# apt-add-repository -y ppa:chris-lea/redis-server
