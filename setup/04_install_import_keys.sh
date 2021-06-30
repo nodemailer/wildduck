@@ -28,7 +28,7 @@ echo "deb-src https://deb.nodesource.com/$NODEREPO $CODENAME main" >> /etc/apt/s
 
 # mongo keys
 # ubuntu focal is supported as of 2021-06-14!
-# MONGORELEASE=$CODENAME
+MONGORELEASE=$CODENAME
 # if [ "$MONGORELEASE" = "focal" ]; then
   # Ubuntu 20 is not yet supported (as of 2020-07-01), fallback to 18
   # MONGORELEASE="bionic"
