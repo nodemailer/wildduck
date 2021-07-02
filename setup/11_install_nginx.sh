@@ -14,6 +14,14 @@ openssl req -subj "/CN=$HOSTNAME/O=My Company Name LTD./C=US" -new -newkey rsa:2
 chown -R wildduck:wildduck /etc/wildduck/certs
 chmod 0700 /etc/wildduck/certs/privkey.pem
 
+# create nginx config dirs - if missing
+if [[ ! -d /etc/nginx/sites-available ]]; then
+    mkdir -p /etc/nginx/sites-available
+fi
+if [[ ! -d /etc/nginx/sites-enabled ]]; then
+    mkdir -p /etc/nginx/sites-enabled
+fi
+
 # Setup domain without SSL at first, otherwise acme.sh will fail
 echo "server {
     listen 80;

@@ -20,8 +20,8 @@ $SYSTEMCTL_PATH restart wildduck-webmail" > /usr/local/bin/reload-services.sh
 chmod +x /usr/local/bin/reload-services.sh
 
 ### start services ####
-
 $SYSTEMCTL_PATH start mongod
+$SYSTEMCTL_PATH start redis
 $SYSTEMCTL_PATH start wildduck
 $SYSTEMCTL_PATH start haraka
 $SYSTEMCTL_PATH start zone-mta

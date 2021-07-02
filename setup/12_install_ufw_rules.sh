@@ -4,9 +4,14 @@ OURNAME=12_install_ufw_rules.sh
 
 echo -e "\n-- Executing ${ORANGE}${OURNAME}${NC} subscript --"
 
-#### UFW ####
+# get sshd port from /etc/ssh/sshd_config
+_var_sshd_port="$(cat /etc/ssh/sshd_config|grep -i -E ^port|cut -f2 -d' ')"
+if [[ $_var_sshd_port == "" ]]; then
+    _var_sshd_port=22
+fi
 
-ufw allow 22/tcp
+#### UFW ####
+ufw allow $_var_sshd_port/tcp
 ufw allow 80/tcp
 ufw allow 443/tcp
 ufw allow 25/tcp
