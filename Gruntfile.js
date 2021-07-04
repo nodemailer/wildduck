@@ -33,6 +33,11 @@ module.exports = function (grunt) {
                 options: {
                     async: true
                 }
+            },
+            options: {
+                stdout: data => console.log(data.toString().trim()),
+                stderr: data => console.log(data.toString().trim()),
+                failOnError: true
             }
         }
     });

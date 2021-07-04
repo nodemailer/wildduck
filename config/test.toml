@@ -12,3 +12,7 @@
 
 [imap]
     autoExpunge=false
+
+[lmtp]
+    enabled=true
+    port=2424
