@@ -121,7 +121,7 @@ let createInterface = (ifaceOptions, callback) => {
 
     server.lock = new Lock({
         redis: db.redis,
-        namespace: 'imap'
+        namespace: 'mail'
     });
 
     // setup command handlers for the server instance

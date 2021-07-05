@@ -21,6 +21,7 @@ const os = require('os');
 const util = require('util');
 const ObjectID = require('mongodb').ObjectID;
 const tls = require('tls');
+const Lock = require('ioredfour');
 
 const acmeRoutes = require('./lib/api/acme');
 const usersRoutes = require('./lib/api/users');
@@ -497,6 +498,11 @@ module.exports = done => {
     });
 
     server.loggelf = message => loggelf(message);
+
+    server.lock = new Lock({
+        redis: db.redis,
+        namespace: 'mail'
+    });
 
     acmeRoutes(db, server);
     usersRoutes(db, server, userHandler);
