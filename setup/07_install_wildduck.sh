@@ -45,8 +45,7 @@ port=24
 disableSTARTTLS=true" > /etc/wildduck/lmtp.toml
 
 # make sure that DKIM keys are not stored to database as cleartext
-#echo "secret=\"$DKIM_SECRET\"
-#cipher=\"aes192\"" >> /etc/wildduck/dkim.toml
+echo "secret=\"$DKIM_SECRET\"" >> /etc/wildduck/dkim.toml
 
 echo "user=\"wildduck\"
 group=\"wildduck\"

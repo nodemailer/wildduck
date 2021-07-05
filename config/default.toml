@@ -29,8 +29,8 @@ maxForwards=2000
     # If enabled then encrypt TOTP seed tokens with the secret password. By default TOTP seeds
     # are not encrypted and stored as cleartext. Once set up do not change these values,
     # otherwise decrypting totp seeds is going to fail
-    #cipher="aes192"
     #secret="a secret cat"
+    #cipher="aes192" # only for decrypting legacy values (if there are any)
 
 [u2f]
     # Fully qualified URL of your website (must use HTTPS!)
@@ -84,9 +84,9 @@ maxForwards=2000
 # @include "acme.toml"
 
 [certs]
-# Encrypt stored TLS private keys
-#cipher="aes192"
+# Encrypt stored TLS private keys with the following password (disabled by default):
 #secret="a secret cat"
+#cipher="aes192" # only for decrypting legacy values (if there are any)
 
 [plugins]
 # @include "plugins/*.toml"
