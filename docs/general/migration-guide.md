@@ -9,9 +9,9 @@ This is a recollection of migrating from Microsoft Exchange server to wildduck.
 This is rather straightforward. Install it via the [builtin setup script][0].
 The best is on a server or virtual server (I installed inside a kvm virtual server).
 
-## Check your email server 
+## Check your email server
 
-There [are][1] some [useful][2] website to [check][3] if your email server working correctly. 
+There [are][1] some [useful][2] website to [check][3] if your email server working correctly.
 You may need to remove yourself from some [spam site][4].
 
 ## Domain settings
@@ -29,11 +29,12 @@ Also DKIM settings.
 jun2018._domainkey .yourdomain.com
 v=DKIM1;p=MIIBIjANBgkqhkiG9...
 ```
+
 ### Certification (for wildduck-webmail)
 
 ```
 HOSTNAME="mail.yourdomain.com"
-/root/.acme.sh/acme.sh --issue --nginx \
+/root/.acme.sh/acme.sh --issue --nginx --server letsencrypt \
     -d "$HOSTNAME" \
     --key-file       /etc/wildduck/certs/privkey.pem  \
     --fullchain-file /etc/wildduck/certs/fullchain.pem \
@@ -53,7 +54,6 @@ hostname="mail.yourdomain.com"
 ## Outlook client settings
 
 (Wildduck server is on your local network)
-
 
 ```
 name: Anon Imous
@@ -95,7 +95,7 @@ The best method was to convert the outlook's .pst file to maildir format:
 sudo apt-get install pst-utils
 sudo apt-get install isync
 mkdir anon_maildir; cd anon_maildir
-readpst -M anon_inbox.pst 
+readpst -M anon_inbox.pst
 ```
 
 ### Migrate maildir to WildDuck
@@ -126,8 +126,8 @@ $ ./bin/import-maildir userid:maildirpath
 
 Where
 
-  * **userid** is either user id (24byte hex), username or an email address of the user to be imported (the user account must already exists in WildDuck)
-  * **maildirpath** is the maildir folder location of that user
+-   **userid** is either user id (24byte hex), username or an email address of the user to be imported (the user account must already exists in WildDuck)
+-   **maildirpath** is the maildir folder location of that user
 
 ```
 $ ./bin/import-maildir user@example.com:/var/mail/user_example.com/
@@ -138,6 +138,7 @@ If you want to import multiple users, then you can do so with a single command
 ```
 $ ./bin/import-maildir user1@example.com:/var/mail/user1_example.com/ user2@example.com:/var/mail/user2_example.com/ user3@example.com:/var/mail/user3_example.com/
 ```
+
 > In case of multiple users you might want to edit `uploaders` value to something greater than 1. This would allow to import users in parallel.
 
 #### 2. mbsync tool
@@ -145,6 +146,7 @@ $ ./bin/import-maildir user1@example.com:/var/mail/user1_example.com/ user2@exam
 mbsync is a proven tool but to use it you need to know the passwords of IMAP users. Additionally it is much slower than import-maildir as there is IMAP overhead.
 
 Sync emails (in maildir format) to wildduck:
+
 ```
 $ cat ~/.mbsyncrc
 IMAPAccount yourdomain
@@ -186,9 +188,9 @@ SyncState *
 ```
 
 Sync it:
-`mbsync -a` 
+`mbsync -a`
 
-[0]: https://github.com/nodemailer/wildduck/blob/master/setup/README.md 
+[0]: https://github.com/nodemailer/wildduck/blob/master/setup/README.md
 [1]: https://toolbox.googleapps.com/apps/checkmx/check?domain=yourserver.com&dkim_selector=
 [2]: https://www.mail-tester.com/
 [3]: http://www.appmaildev.com/en/dkim/
