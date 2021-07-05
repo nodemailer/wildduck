@@ -14,6 +14,7 @@ const packageData = require('./package.json');
 const certs = require('./lib/certs');
 const Gelf = require('gelf');
 const os = require('os');
+const Lock = require('ioredfour');
 
 const onFetch = require('./lib/handlers/on-fetch');
 const onAuth = require('./lib/handlers/on-auth');
@@ -117,6 +118,11 @@ let createInterface = (ifaceOptions, callback) => {
     // TODO: is this even used anywhere?
     server.indexer = indexer;
     server.notifier = notifier;
+
+    server.lock = new Lock({
+        redis: db.redis,
+        namespace: 'imap'
+    });
 
     // setup command handlers for the server instance
     server.onFetch = onFetch(server, messageHandler, userHandler.userCache);

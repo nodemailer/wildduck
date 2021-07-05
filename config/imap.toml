@@ -52,9 +52,6 @@ ignoredHosts=[]
 #secure=false
 #ignoreSTARTTLS=true
 
-# If true then EXPUNGE is called after a message gets a \Deleted flag set
-autoExpunge=true
-
 [setup]
 # Public configuration for IMAP
 hostname="localhost"
