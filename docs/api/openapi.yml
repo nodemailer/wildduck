@@ -1993,10 +1993,10 @@ paths:
                         encoding: {}
                         schema:
                             required:
-                                - body
+                                - content
                             type: object
                             properties:
-                                body:
+                                content:
                                     type: string
                                     format: binary
                 required: false
