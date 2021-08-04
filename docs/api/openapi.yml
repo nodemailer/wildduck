@@ -5274,13 +5274,6 @@ components:
                     type: number
                     description: Retention policy for the created Mailbox. Milliseconds after a message added to mailbox expires. Set to 0 to disable.
         UpdateMessageRequest:
-            required:
-                - message
-                - moveTo
-                - seen
-                - flagged
-                - draft
-                - expires
             type: object
             properties:
                 message:
