@@ -205,6 +205,11 @@ paths:
                   description: How many records to return
                   schema:
                       type: number
+                - name: page
+                  in: query
+                  description: 'Current page number. Informational only, page numbers start from 1'
+                  schema:
+                      type: number
                 - name: next
                   in: query
                   description: 'Cursor value for next page, retrieved from nextCursor response value'
@@ -442,6 +447,11 @@ paths:
                   description: How many records to return
                   schema:
                       type: number
+                - name: page
+                  in: query
+                  description: 'Current page number. Informational only, page numbers start from 1'
+                  schema:
+                      type: number
                 - name: order
                   in: query
                   description: Ordering of the records by insert date
@@ -644,6 +654,11 @@ paths:
                   description: How many records to return
                   schema:
                       type: number
+                - name: page
+                  in: query
+                  description: 'Current page number. Informational only, page numbers start from 1'
+                  schema:
+                      type: number
                 - name: next
                   in: query
                   description: 'Cursor value for next page, retrieved from nextCursor response value'
@@ -794,6 +809,11 @@ paths:
                   description: How many records to return
                   schema:
                       type: number
+                - name: page
+                  in: query
+                  description: 'Current page number. Informational only, page numbers start from 1'
+                  schema:
+                      type: number
                 - name: next
                   in: query
                   description: 'Cursor value for next page, retrieved from nextCursor response value'
@@ -907,6 +927,11 @@ paths:
                 - name: limit
                   in: query
                   description: How many records to return
+                  schema:
+                      type: number
+                - name: page
+                  in: query
+                  description: 'Current page number. Informational only, page numbers start from 1'
                   schema:
                       type: number
                 - name: next
@@ -1482,6 +1507,11 @@ paths:
                   description: How many records to return
                   schema:
                       type: number
+                - name: page
+                  in: query
+                  description: 'Current page number. Informational only, page numbers start from 1'
+                  schema:
+                      type: number
                 - name: order
                   in: query
                   description: Ordering of the records by insert date
@@ -1802,6 +1832,11 @@ paths:
                   description: How many records to return
                   schema:
                       type: number
+                - name: page
+                  in: query
+                  description: 'Current page number. Informational only, page numbers start from 1'
+                  schema:
+                      type: number
                 - name: next
                   in: query
                   description: 'Cursor value for next page, retrieved from nextCursor response value'
@@ -1922,6 +1957,11 @@ paths:
                 - name: limit
                   in: query
                   description: How many records to return
+                  schema:
+                      type: number
+                - name: page
+                  in: query
+                  description: 'Current page number. Informational only, page numbers start from 1'
                   schema:
                       type: number
                 - name: next
@@ -2398,6 +2438,11 @@ paths:
                   description: How many records to return
                   schema:
                       type: number
+                - name: page
+                  in: query
+                  description: 'Current page number. Informational only, page numbers start from 1'
+                  schema:
+                      type: number
                 - name: next
                   in: query
                   description: 'Cursor value for next page, retrieved from nextCursor response value'
@@ -2563,6 +2608,11 @@ paths:
                 - name: limit
                   in: query
                   description: How many records to return
+                  schema:
+                      type: number
+                - name: page
+                  in: query
+                  description: 'Current page number. Informational only, page numbers start from 1'
                   schema:
                       type: number
                 - name: next
