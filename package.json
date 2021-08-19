@@ -55,7 +55,7 @@
         "humanname": "0.2.2",
         "iconv-lite": "0.6.3",
         "ioredfour": "1.2.0-ioredis-06",
-        "ioredis": "4.27.6",
+        "ioredis": "4.27.8",
         "ipaddr": "0.1.0",
         "ipaddr.js": "2.0.1",
         "isemail": "3.2.0",
