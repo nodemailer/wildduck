@@ -19,7 +19,7 @@ const crypto = require('crypto');
 const Gelf = require('gelf');
 const os = require('os');
 const util = require('util');
-const ObjectID = require('mongodb').ObjectID;
+const ObjectId = require('mongodb').ObjectId;
 const tls = require('tls');
 const Lock = require('ioredfour');
 
@@ -347,7 +347,7 @@ server.use(
                         let tokenAuthVersion = Number(tokenData.authVersion) || 0;
                         let userData = await db.users.collection('users').findOne(
                             {
-                                _id: new ObjectID(req.user)
+                                _id: new ObjectId(req.user)
                             },
                             { projection: { authVersion: true } }
                         );

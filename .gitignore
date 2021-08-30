@@ -5,3 +5,4 @@ npm-debug.log
 config/production.*
 config/development.*
 package-lock.json*
+certs/test-*

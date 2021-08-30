@@ -7,7 +7,7 @@ const os = require('os');
 const Queue = require('bull');
 const db = require('./lib/db');
 const tools = require('./lib/tools');
-const { ObjectID } = require('mongodb');
+const { ObjectId } = require('mongodb');
 const axios = require('axios');
 const packageData = require('./package.json');
 const { MARKED_SPAM, MARKED_HAM } = require('./lib/events');
@@ -58,7 +58,7 @@ async function postWebhook(webhook, data) {
         // autodelete
         try {
             await db.users.collection('webhooks').deleteOne({
-                _id: new ObjectID(webhook._id)
+                _id: new ObjectId(webhook._id)
             });
         } catch (err) {
             // ignore
@@ -138,10 +138,10 @@ module.exports.start = callback => {
 
             const query = { type: { $in: evtList } };
             if (data.user) {
-                query.user = { $in: [new ObjectID(data.user), null] };
+                query.user = { $in: [new ObjectId(data.user), null] };
             }
 
-            let whid = new ObjectID();
+            let whid = new ObjectId();
             let count = 0;
 
             let webhooks = await db.database.collection('webhooks').find(query).toArray();
@@ -152,7 +152,7 @@ module.exports.start = callback => {
             }
 
             if ([MARKED_SPAM, MARKED_HAM].includes(data.ev)) {
-                let message = new ObjectID(data.message);
+                let message = new ObjectId(data.message);
                 data.message = data.id;
                 delete data.id;
 

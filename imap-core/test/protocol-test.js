@@ -13,11 +13,11 @@ let chunks = require('./fixtures/chunks');
 let expect = chai.expect;
 chai.config.includeStack = true;
 
-describe('IMAP Protocol integration tests', function() {
+describe('IMAP Protocol integration tests', function () {
     this.timeout(10000); // eslint-disable-line no-invalid-this
     let port = 9993;
 
-    beforeEach(function(done) {
+    beforeEach(function (done) {
         exec(__dirname + '/prepare.sh ' + config.dbs.dbname, { cwd: __dirname }, (err, stdout, stderr) => {
             if (process.env.DEBUG_CONSOLE) {
                 console.log(stdout.toString());
@@ -30,11 +30,11 @@ describe('IMAP Protocol integration tests', function() {
         });
     });
 
-    afterEach(function(done) {
+    afterEach(function (done) {
         done();
     });
 
-    after(function(done) {
+    after(function (done) {
         //mongo "$DBNAME" --eval "db.getCollectionNames().forEach(function(key){db[key].deleteMany({});})" > /dev/null
         exec('mongo ' + config.dbs.dbname + ' --eval "db.getCollectionNames().forEach(function(key){db[key].deleteMany({});})"', err => {
             if (err) {
@@ -44,8 +44,8 @@ describe('IMAP Protocol integration tests', function() {
         });
     });
 
-    describe('CAPABILITY', function() {
-        it('should list capabilites', function(done) {
+    describe('CAPABILITY', function () {
+        it('should list capabilites', function (done) {
             let cmds = ['T1 CAPABILITY', 'T2 LOGOUT'];
 
             testClient(
@@ -54,7 +54,7 @@ describe('IMAP Protocol integration tests', function() {
                     secure: true,
                     port
                 },
-                function(resp) {
+                function (resp) {
                     expect(/^\* CAPABILITY IMAP4rev1 /m.test(resp.toString())).to.be.true;
                     expect(/^T1 OK/m.test(resp.toString())).to.be.true;
                     done();
@@ -63,7 +63,7 @@ describe('IMAP Protocol integration tests', function() {
         });
     });
 
-    describe('LOGIN', function() {
+    describe('LOGIN', function () {
         /*
         let stlsServer;
         let stlsPort;
@@ -71,7 +71,7 @@ describe('IMAP Protocol integration tests', function() {
         let txtPort;
         */
 
-        beforeEach(function(done) {
+        beforeEach(function (done) {
             /*
             stlsServer = testServer({
                 secure: false,
@@ -95,7 +95,7 @@ describe('IMAP Protocol integration tests', function() {
             done();
         });
 
-        afterEach(function(done) {
+        afterEach(function (done) {
             /*
             stlsServer.close(function() {
                 txtServer.close(done);
@@ -104,7 +104,7 @@ describe('IMAP Protocol integration tests', function() {
             done();
         });
 
-        it('should authenticate', function(done) {
+        it('should authenticate', function (done) {
             let cmds = ['T1 LOGIN testuser pass', 'T2 LOGOUT'];
 
             testClient(
@@ -113,7 +113,7 @@ describe('IMAP Protocol integration tests', function() {
                     secure: true,
                     port
                 },
-                function(resp) {
+                function (resp) {
                     expect(/^T1 OK/m.test(resp.toString())).to.be.true;
                     done();
                 }
@@ -168,7 +168,7 @@ describe('IMAP Protocol integration tests', function() {
             );
         });
 */
-        it('should fail authentication', function(done) {
+        it('should fail authentication', function (done) {
             let cmds = ['T1 LOGIN testuser wrongpass', 'T2 LOGOUT'];
 
             testClient(
@@ -177,7 +177,7 @@ describe('IMAP Protocol integration tests', function() {
                     secure: true,
                     port
                 },
-                function(resp) {
+                function (resp) {
                     expect(/^T1 NO/m.test(resp.toString())).to.be.true;
                     done();
                 }
@@ -185,8 +185,8 @@ describe('IMAP Protocol integration tests', function() {
         });
     });
 
-    describe('AUTHENTICATE PLAIN', function() {
-        it('should authenticate', function(done) {
+    describe('AUTHENTICATE PLAIN', function () {
+        it('should authenticate', function (done) {
             let cmds = ['T1 AUTHENTICATE PLAIN', Buffer.from('\x00testuser\x00pass', 'utf-8').toString('base64'), 'T2 LOGOUT'];
 
             testClient(
@@ -195,14 +195,14 @@ describe('IMAP Protocol integration tests', function() {
                     secure: true,
                     port
                 },
-                function(resp) {
+                function (resp) {
                     expect(/^T1 OK/m.test(resp.toString())).to.be.true;
                     done();
                 }
             );
         });
 
-        it('should authenticate using SASL-IR', function(done) {
+        it('should authenticate using SASL-IR', function (done) {
             let cmds = ['T1 AUTHENTICATE PLAIN ' + Buffer.from('\x00testuser\x00pass', 'utf-8').toString('base64'), 'T2 LOGOUT'];
 
             testClient(
@@ -211,14 +211,14 @@ describe('IMAP Protocol integration tests', function() {
                     secure: true,
                     port
                 },
-                function(resp) {
+                function (resp) {
                     expect(/^T1 OK/m.test(resp.toString())).to.be.true;
                     done();
                 }
             );
         });
 
-        it('should fail authentication', function(done) {
+        it('should fail authentication', function (done) {
             let cmds = ['T1 AUTHENTICATE PLAIN', Buffer.from('\x00testuser\x00wrongpass', 'utf-8').toString('base64'), 'T2 LOGOUT'];
 
             testClient(
@@ -227,14 +227,14 @@ describe('IMAP Protocol integration tests', function() {
                     secure: true,
                     port
                 },
-                function(resp) {
+                function (resp) {
                     expect(/^T1 NO/m.test(resp.toString())).to.be.true;
                     done();
                 }
             );
         });
 
-        it('should reject client token', function(done) {
+        it('should reject client token', function (done) {
             let cmds = ['T1 AUTHENTICATE PLAIN', Buffer.from('\x00testuser\x00pass\x00token', 'utf-8').toString('base64'), 'T2 LOGOUT'];
 
             testClient(
@@ -243,14 +243,14 @@ describe('IMAP Protocol integration tests', function() {
                     secure: true,
                     port
                 },
-                function(resp) {
+                function (resp) {
                     expect(/^T1 BAD/m.test(resp.toString())).to.be.true;
                     done();
                 }
             );
         });
 
-        it('should authenticate with client token', function(done) {
+        it('should authenticate with client token', function (done) {
             let cmds = ['T1 AUTHENTICATE PLAIN-CLIENTTOKEN', Buffer.from('\x00testuser\x00pass\x00token', 'utf-8').toString('base64'), 'T2 LOGOUT'];
 
             testClient(
@@ -259,7 +259,7 @@ describe('IMAP Protocol integration tests', function() {
                     secure: true,
                     port
                 },
-                function(resp) {
+                function (resp) {
                     expect(/^T1 OK/m.test(resp.toString())).to.be.true;
                     done();
                 }
@@ -267,8 +267,8 @@ describe('IMAP Protocol integration tests', function() {
         });
     });
 
-    describe('NAMESPACE', function() {
-        it('should list namespaces', function(done) {
+    describe('NAMESPACE', function () {
+        it('should list namespaces', function (done) {
             let cmds = ['T1 LOGIN testuser pass', 'T2 NAMESPACE', 'T3 LOGOUT'];
 
             testClient(
@@ -277,7 +277,7 @@ describe('IMAP Protocol integration tests', function() {
                     secure: true,
                     port
                 },
-                function(resp) {
+                function (resp) {
                     expect(/^\* NAMESPACE \(\("" "\/"\)\) NIL NIL$/m.test(resp.toString())).to.be.true;
                     expect(/^T2 OK/m.test(resp.toString())).to.be.true;
                     done();
@@ -286,8 +286,8 @@ describe('IMAP Protocol integration tests', function() {
         });
     });
 
-    describe('LIST', function() {
-        it('should list delimiter', function(done) {
+    describe('LIST', function () {
+        it('should list delimiter', function (done) {
             let cmds = ['T1 LOGIN testuser pass', 'T2 LIST "" ""', 'T3 LOGOUT'];
 
             testClient(
@@ -296,7 +296,7 @@ describe('IMAP Protocol integration tests', function() {
                     secure: true,
                     port
                 },
-                function(resp) {
+                function (resp) {
                     resp = resp.toString();
                     expect(resp.match(/^\* LIST /gm).length).to.equal(1);
                     expect(resp.indexOf('\r\n* LIST (\\Noselect) "/" "/"\r\n') >= 0).to.be.true;
@@ -306,7 +306,7 @@ describe('IMAP Protocol integration tests', function() {
             );
         });
 
-        it('should list all mailboxes', function(done) {
+        it('should list all mailboxes', function (done) {
             let cmds = ['T1 LOGIN testuser pass', 'T2 LIST "" "*"', 'T3 LOGOUT'];
 
             testClient(
@@ -315,7 +315,7 @@ describe('IMAP Protocol integration tests', function() {
                     secure: true,
                     port
                 },
-                function(resp) {
+                function (resp) {
                     resp = resp.toString();
                     expect(resp.match(/^\* LIST /gm).length).to.equal(6);
                     expect(resp.indexOf('\r\n* LIST (\\HasNoChildren) "/" "INBOX"\r\n') >= 0).to.be.true;
@@ -327,7 +327,7 @@ describe('IMAP Protocol integration tests', function() {
             );
         });
 
-        it('should list all mailboxes using XLIST', function(done) {
+        it('should list all mailboxes using XLIST', function (done) {
             let cmds = ['T1 LOGIN testuser pass', 'T2 XLIST "" "*"', 'T3 LOGOUT'];
 
             testClient(
@@ -336,7 +336,7 @@ describe('IMAP Protocol integration tests', function() {
                     secure: true,
                     port
                 },
-                function(resp) {
+                function (resp) {
                     resp = resp.toString();
                     expect(resp.match(/^\* XLIST /gm).length).to.equal(6);
                     expect(resp.indexOf('\r\n* XLIST (\\HasNoChildren \\Inbox) "/" "Inbox"\r\n') >= 0).to.be.true;
@@ -348,7 +348,7 @@ describe('IMAP Protocol integration tests', function() {
             );
         });
 
-        it('should list first level mailboxes', function(done) {
+        it('should list first level mailboxes', function (done) {
             let cmds = ['T1 LOGIN testuser pass', 'T2 LIST "" "%"', 'T3 LOGOUT'];
 
             testClient(
@@ -357,7 +357,7 @@ describe('IMAP Protocol integration tests', function() {
                     secure: true,
                     port
                 },
-                function(resp) {
+                function (resp) {
                     resp = resp.toString();
                     expect(resp.match(/^\* LIST /gm).length).to.equal(5);
                     expect(resp.indexOf('\r\n* LIST (\\HasNoChildren) "/" "INBOX"\r\n') >= 0).to.be.true;
@@ -369,7 +369,7 @@ describe('IMAP Protocol integration tests', function() {
             );
         });
 
-        it('should list second level mailboxes', function(done) {
+        it('should list second level mailboxes', function (done) {
             let cmds = ['T1 LOGIN testuser pass', 'T2 LIST "" "[Gmail]/%"', 'T3 LOGOUT'];
 
             testClient(
@@ -378,7 +378,7 @@ describe('IMAP Protocol integration tests', function() {
                     secure: true,
                     port
                 },
-                function(resp) {
+                function (resp) {
                     resp = resp.toString();
                     expect(resp.match(/^\* LIST /gm).length).to.equal(1);
                     expect(resp.indexOf('\r\n* LIST (\\HasNoChildren \\Sent) "/" "[Gmail]/Sent Mail"\r\n') >= 0).to.be.true;
@@ -389,8 +389,8 @@ describe('IMAP Protocol integration tests', function() {
         });
     });
 
-    describe('LSUB', function() {
-        it('should list all mailboxes', function(done) {
+    describe('LSUB', function () {
+        it('should list all mailboxes', function (done) {
             let cmds = ['T1 LOGIN testuser pass', 'T2 LSUB "" "*"', 'T3 LOGOUT'];
 
             testClient(
@@ -399,7 +399,7 @@ describe('IMAP Protocol integration tests', function() {
                     secure: true,
                     port
                 },
-                function(resp) {
+                function (resp) {
                     resp = resp.toString();
                     expect(resp.match(/^\* LSUB /gm).length).to.equal(5);
                     expect(resp.indexOf('\r\n* LSUB (\\HasNoChildren) "/" "INBOX"\r\n') >= 0).to.be.true;
@@ -410,7 +410,7 @@ describe('IMAP Protocol integration tests', function() {
             );
         });
 
-        it('should list first level mailboxes', function(done) {
+        it('should list first level mailboxes', function (done) {
             let cmds = ['T1 LOGIN testuser pass', 'T2 LSUB "" "%"', 'T3 LOGOUT'];
 
             testClient(
@@ -419,7 +419,7 @@ describe('IMAP Protocol integration tests', function() {
                     secure: true,
                     port
                 },
-                function(resp) {
+                function (resp) {
                     resp = resp.toString();
                     expect(resp.match(/^\* LSUB /gm).length).to.equal(4);
                     expect(resp.indexOf('\r\n* LSUB (\\HasNoChildren) "/" "INBOX"\r\n') >= 0).to.be.true;
@@ -430,7 +430,7 @@ describe('IMAP Protocol integration tests', function() {
             );
         });
 
-        it('should list second level mailboxes', function(done) {
+        it('should list second level mailboxes', function (done) {
             let cmds = ['T1 LOGIN testuser pass', 'T2 LSUB "" "[Gmail]/%"', 'T3 LOGOUT'];
 
             testClient(
@@ -439,7 +439,7 @@ describe('IMAP Protocol integration tests', function() {
                     secure: true,
                     port
                 },
-                function(resp) {
+                function (resp) {
                     resp = resp.toString();
                     expect(resp.match(/^\* LSUB /gm).length).to.equal(1);
                     expect(resp.indexOf('\r\n* LSUB (\\HasNoChildren) "/" "[Gmail]/Sent Mail"\r\n') >= 0).to.be.true;
@@ -450,8 +450,8 @@ describe('IMAP Protocol integration tests', function() {
         });
     });
 
-    describe('CREATE', function() {
-        it('should create new mailbox', function(done) {
+    describe('CREATE', function () {
+        it('should create new mailbox', function (done) {
             let cmds = ['T1 LOGIN testuser pass', 'T2 CREATE testfolder', 'T3 CREATE parent/child', 'T4 CREATE testfolder', 'T5 LIST "" "*"', 'T6 LOGOUT'];
 
             testClient(
@@ -460,7 +460,7 @@ describe('IMAP Protocol integration tests', function() {
                     secure: true,
                     port
                 },
-                function(resp) {
+                function (resp) {
                     resp = resp.toString();
                     expect(/^T2 OK/m.test(resp)).to.be.true;
                     expect(/^T3 OK/m.test(resp)).to.be.true;
@@ -474,8 +474,8 @@ describe('IMAP Protocol integration tests', function() {
         });
     });
 
-    describe('RENAME', function() {
-        it('should rename existing mailbox', function(done) {
+    describe('RENAME', function () {
+        it('should rename existing mailbox', function (done) {
             let cmds = [
                 'T1 LOGIN testuser pass',
                 'T2 CREATE testfolder',
@@ -491,7 +491,7 @@ describe('IMAP Protocol integration tests', function() {
                     secure: true,
                     port
                 },
-                function(resp) {
+                function (resp) {
                     resp = resp.toString();
                     expect(/^T3 OK/m.test(resp)).to.be.true;
                     expect(/^T4 NO \[NONEXISTENT\]/m.test(resp)).to.be.true;
@@ -504,8 +504,8 @@ describe('IMAP Protocol integration tests', function() {
         });
     });
 
-    describe('DELETE', function() {
-        it('should delete existing mailbox', function(done) {
+    describe('DELETE', function () {
+        it('should delete existing mailbox', function (done) {
             let cmds = ['T1 LOGIN testuser pass', 'T2 CREATE testfolder', 'T3 DELETE testfolder', 'T4 DELETE testfolder', 'T5 LIST "" "*"', 'T6 LOGOUT'];
 
             testClient(
@@ -514,7 +514,7 @@ describe('IMAP Protocol integration tests', function() {
                     secure: true,
                     port
                 },
-                function(resp) {
+                function (resp) {
                     resp = resp.toString();
                     expect(/^T3 OK/m.test(resp)).to.be.true;
                     expect(/^T4 NO \[NONEXISTENT\]/m.test(resp)).to.be.true;
@@ -524,7 +524,7 @@ describe('IMAP Protocol integration tests', function() {
             );
         });
 
-        it('should disconnect deleted mailbox clients', function(done) {
+        it('should disconnect deleted mailbox clients', function (done) {
             let cmds = ['T1 LOGIN testuser pass', 'T2 CREATE testfolder', 'T3 SELECT testfolder', 'T4 DELETE testfolder'];
 
             testClient(
@@ -533,7 +533,7 @@ describe('IMAP Protocol integration tests', function() {
                     secure: true,
                     port
                 },
-                function(resp) {
+                function (resp) {
                     resp = resp.toString();
                     expect(/^T3 OK/m.test(resp)).to.be.true;
                     expect(resp.indexOf('\r\n* BYE') >= 0).to.be.true;
@@ -543,10 +543,10 @@ describe('IMAP Protocol integration tests', function() {
         });
     });
 
-    describe('APPEND', function() {
+    describe('APPEND', function () {
         this.timeout(60000); // eslint-disable-line no-invalid-this
 
-        it('should fail appending to nonexistent mailbox', function(done) {
+        it('should fail appending to nonexistent mailbox', function (done) {
             let message = Buffer.from('From: sender <sender@example.com>\r\nTo: receiver@example.com\r\nSubject: HELLO!\r\n\r\nWORLD!');
             let cmds = ['T1 LOGIN testuser pass', 'T2 APPEND zzz {' + message.length + '}\r\n' + message.toString('binary'), 'T3 LOGOUT'];
 
@@ -556,7 +556,7 @@ describe('IMAP Protocol integration tests', function() {
                     secure: true,
                     port
                 },
-                function(resp) {
+                function (resp) {
                     resp = resp.toString();
                     expect(/^T2 NO/m.test(resp)).to.be.true;
                     expect(resp.indexOf('\r\n* LIST (\\HasNoChildren) "/" "testfolder"\r\n') >= 0).to.be.false;
@@ -565,7 +565,7 @@ describe('IMAP Protocol integration tests', function() {
             );
         });
 
-        it('should append to mailbox', function(done) {
+        it('should append to mailbox', function (done) {
             let message = Buffer.from('From: sender <sender@example.com>\r\nTo: receiver@example.com\r\nSubject: HELLO!\r\n\r\nWORLD!');
             let cmds = ['T1 LOGIN testuser pass', 'T2 APPEND INBOX {' + message.length + '}\r\n' + message.toString('binary'), 'T3 LOGOUT'];
 
@@ -575,7 +575,7 @@ describe('IMAP Protocol integration tests', function() {
                     secure: true,
                     port
                 },
-                function(resp) {
+                function (resp) {
                     resp = resp.toString();
                     expect(/^T2 OK/m.test(resp)).to.be.true;
                     expect(resp.indexOf('\r\n* LIST (\\HasNoChildren) "/" "testfolder"\r\n') >= 0).to.be.false;
@@ -584,7 +584,7 @@ describe('IMAP Protocol integration tests', function() {
             );
         });
 
-        it('should append to mailbox with optional arguments', function(done) {
+        it('should append to mailbox with optional arguments', function (done) {
             let message = Buffer.from('From: sender <sender@example.com>\r\nTo: receiver@example.com\r\nSubject: HELLO!\r\n\r\nWORLD!');
             let cmds = [
                 'T1 LOGIN testuser pass',
@@ -598,7 +598,7 @@ describe('IMAP Protocol integration tests', function() {
                     secure: true,
                     port
                 },
-                function(resp) {
+                function (resp) {
                     resp = resp.toString();
                     expect(/^T2 OK/m.test(resp)).to.be.true;
                     expect(resp.indexOf('\r\n* LIST (\\HasNoChildren) "/" "testfolder"\r\n') >= 0).to.be.false;
@@ -608,7 +608,7 @@ describe('IMAP Protocol integration tests', function() {
             );
         });
 
-        it('should append large file in chunks', function(done) {
+        it('should append large file in chunks', function (done) {
             let lchunks = [].concat(chunks);
             let message = lchunks.join('');
 
@@ -626,7 +626,7 @@ describe('IMAP Protocol integration tests', function() {
                     //debug: true,
                     port
                 },
-                function(resp) {
+                function (resp) {
                     resp = resp.toString();
                     expect(/^T2 OK/m.test(resp)).to.be.true;
                     expect(resp.indexOf('\r\n* LIST (\\HasNoChildren) "/" "testfolder"\r\n') >= 0).to.be.false;
@@ -637,8 +637,8 @@ describe('IMAP Protocol integration tests', function() {
         });
     });
 
-    describe('SELECT', function() {
-        it('should not select nonexistent mailbox', function(done) {
+    describe('SELECT', function () {
+        it('should not select nonexistent mailbox', function (done) {
             let cmds = ['T1 LOGIN testuser pass', 'T2 SELECT zzz', 'T3 LOGOUT'];
 
             testClient(
@@ -647,7 +647,7 @@ describe('IMAP Protocol integration tests', function() {
                     secure: true,
                     port
                 },
-                function(resp) {
+                function (resp) {
                     resp = resp.toString();
                     expect(/^T2 NO/m.test(resp)).to.be.true;
                     done();
@@ -655,7 +655,7 @@ describe('IMAP Protocol integration tests', function() {
             );
         });
 
-        it('should not select existing mailbox', function(done) {
+        it('should not select existing mailbox', function (done) {
             let cmds = ['T1 LOGIN testuser pass', 'T2 SELECT INBOX', 'T3 LOGOUT'];
 
             testClient(
@@ -664,7 +664,7 @@ describe('IMAP Protocol integration tests', function() {
                     secure: true,
                     port
                 },
-                function(resp) {
+                function (resp) {
                     resp = resp.toString();
                     expect(/^\* FLAGS /m.test(resp)).to.be.true;
                     expect(/^\* OK \[PERMANENTFLAGS /m.test(resp)).to.be.true;
@@ -679,8 +679,8 @@ describe('IMAP Protocol integration tests', function() {
         });
     });
 
-    describe('COPY', function() {
-        it('should not copy to nonexistent mailbox', function(done) {
+    describe('COPY', function () {
+        it('should not copy to nonexistent mailbox', function (done) {
             let cmds = ['T1 LOGIN testuser pass', 'T2 SELECT INBOX', 'T3 COPY 1:* zzz', 'T4 LOGOUT'];
 
             testClient(
@@ -689,7 +689,7 @@ describe('IMAP Protocol integration tests', function() {
                     secure: true,
                     port
                 },
-                function(resp) {
+                function (resp) {
                     resp = resp.toString();
                     expect(/^T3 NO/m.test(resp)).to.be.true;
                     done();
@@ -697,7 +697,7 @@ describe('IMAP Protocol integration tests', function() {
             );
         });
 
-        it('should copy to selected mailbox', function(done) {
+        it('should copy to selected mailbox', function (done) {
             let cmds = ['T1 LOGIN testuser pass', 'T2 SELECT INBOX', 'T3 COPY 1:* "[Gmail]/Sent Mail"', 'T4 LOGOUT'];
 
             testClient(
@@ -706,7 +706,7 @@ describe('IMAP Protocol integration tests', function() {
                     secure: true,
                     port
                 },
-                function(resp) {
+                function (resp) {
                     resp = resp.toString();
                     expect(/^T3 OK/m.test(resp)).to.be.true;
                     done();
@@ -715,8 +715,8 @@ describe('IMAP Protocol integration tests', function() {
         });
     });
 
-    describe('STATUS', function() {
-        it('should error on nonexistent mailbox', function(done) {
+    describe('STATUS', function () {
+        it('should error on nonexistent mailbox', function (done) {
             let cmds = ['T1 LOGIN testuser pass', 'T2 STATUS zzz (UIDNEXT MESSAGES)', 'T3 LOGOUT'];
 
             testClient(
@@ -725,7 +725,7 @@ describe('IMAP Protocol integration tests', function() {
                     secure: true,
                     port
                 },
-                function(resp) {
+                function (resp) {
                     resp = resp.toString();
                     expect(/^T2 NO/m.test(resp)).to.be.true;
                     done();
@@ -733,7 +733,7 @@ describe('IMAP Protocol integration tests', function() {
             );
         });
 
-        it('should return status response', function(done) {
+        it('should return status response', function (done) {
             let cmds = ['T1 LOGIN testuser pass', 'T2 STATUS INBOX (UIDNEXT MESSAGES HIGHESTMODSEQ)', 'T3 LOGOUT'];
 
             testClient(
@@ -742,7 +742,7 @@ describe('IMAP Protocol integration tests', function() {
                     secure: true,
                     port
                 },
-                function(resp) {
+                function (resp) {
                     resp = resp.toString();
                     expect(/^\* STATUS INBOX \(UIDNEXT \d+ MESSAGES \d+ HIGHESTMODSEQ \d+\)$/m.test(resp)).to.be.true;
                     expect(/^T2 OK/m.test(resp)).to.be.true;
@@ -752,8 +752,8 @@ describe('IMAP Protocol integration tests', function() {
         });
     });
 
-    describe('ENABLE', function() {
-        it('should not enable anything', function(done) {
+    describe('ENABLE', function () {
+        it('should not enable anything', function (done) {
             let cmds = ['T1 LOGIN testuser pass', 'T2 ENABLE X-TEST', 'T3 LOGOUT'];
 
             testClient(
@@ -762,7 +762,7 @@ describe('IMAP Protocol integration tests', function() {
                     secure: true,
                     port
                 },
-                function(resp) {
+                function (resp) {
                     resp = resp.toString();
                     expect(/^\* ENABLED$/m.test(resp)).to.be.true;
                     expect(/^T2 OK/m.test(resp)).to.be.true;
@@ -771,7 +771,7 @@ describe('IMAP Protocol integration tests', function() {
             );
         });
 
-        it('should enable CONDSTORE', function(done) {
+        it('should enable CONDSTORE', function (done) {
             let cmds = ['T1 LOGIN testuser pass', 'T2 ENABLE CONDSTORE', 'T3 LOGOUT'];
 
             testClient(
@@ -780,7 +780,7 @@ describe('IMAP Protocol integration tests', function() {
                     secure: true,
                     port
                 },
-                function(resp) {
+                function (resp) {
                     resp = resp.toString();
                     expect(/^\* ENABLED CONDSTORE$/m.test(resp)).to.be.true;
                     expect(/^T2 OK/m.test(resp)).to.be.true;
@@ -790,8 +790,8 @@ describe('IMAP Protocol integration tests', function() {
         });
     });
 
-    describe('CLOSE', function() {
-        it('should error if not in selected state', function(done) {
+    describe('CLOSE', function () {
+        it('should error if not in selected state', function (done) {
             let cmds = ['T1 LOGIN testuser pass', 'T2 CLOSE', 'T3 LOGOUT'];
 
             testClient(
@@ -800,7 +800,7 @@ describe('IMAP Protocol integration tests', function() {
                     secure: true,
                     port
                 },
-                function(resp) {
+                function (resp) {
                     resp = resp.toString();
                     expect(/^T2 BAD/m.test(resp)).to.be.true;
                     done();
@@ -808,7 +808,7 @@ describe('IMAP Protocol integration tests', function() {
             );
         });
 
-        it('should close mailbox', function(done) {
+        it('should close mailbox', function (done) {
             let cmds = ['T1 LOGIN testuser pass', 'T2 SELECT INBOX', 'T3 CLOSE', 'T4 LOGOUT'];
 
             testClient(
@@ -817,7 +817,7 @@ describe('IMAP Protocol integration tests', function() {
                     secure: true,
                     port
                 },
-                function(resp) {
+                function (resp) {
                     resp = resp.toString();
                     expect(/^T3 OK/m.test(resp)).to.be.true;
                     done();
@@ -826,8 +826,8 @@ describe('IMAP Protocol integration tests', function() {
         });
     });
 
-    describe('UNSELECT', function() {
-        it('should close mailbox', function(done) {
+    describe('UNSELECT', function () {
+        it('should close mailbox', function (done) {
             let cmds = ['T1 LOGIN testuser pass', 'T2 SELECT INBOX', 'T3 UNSELECT', 'T4 LOGOUT'];
 
             testClient(
@@ -836,7 +836,7 @@ describe('IMAP Protocol integration tests', function() {
                     secure: true,
                     port
                 },
-                function(resp) {
+                function (resp) {
                     resp = resp.toString();
                     expect(/^T3 OK/m.test(resp)).to.be.true;
                     done();
@@ -845,8 +845,8 @@ describe('IMAP Protocol integration tests', function() {
         });
     });
 
-    describe('ID', function() {
-        it('should return ID info', function(done) {
+    describe('ID', function () {
+        it('should return ID info', function (done) {
             let cmds = ['T1 ID NIL', 'T2 LOGOUT'];
 
             testClient(
@@ -855,7 +855,7 @@ describe('IMAP Protocol integration tests', function() {
                     secure: true,
                     port
                 },
-                function(resp) {
+                function (resp) {
                     resp = resp.toString();
                     expect(/^\* ID \("name"/m.test(resp)).to.be.true;
                     expect(/^T1 OK/m.test(resp)).to.be.true;
@@ -865,8 +865,8 @@ describe('IMAP Protocol integration tests', function() {
         });
     });
 
-    describe('STORE', function() {
-        it('should set flags', function(done) {
+    describe('STORE', function () {
+        it('should set flags', function (done) {
             let cmds = ['T1 LOGIN testuser pass', 'T2 SELECT INBOX', 'T3 STORE 1:* FLAGS (MyFlag1 MyFlag2)', 'T4 LOGOUT'];
 
             testClient(
@@ -875,7 +875,7 @@ describe('IMAP Protocol integration tests', function() {
                     secure: true,
                     port
                 },
-                function(resp) {
+                function (resp) {
                     resp = resp.toString();
                     expect(resp.match(/^\* \d+ FETCH \(FLAGS \(MyFlag1 MyFlag2\)\)$/gm).length).to.equal(6);
                     expect(/^T3 OK/m.test(resp)).to.be.true;
@@ -884,7 +884,7 @@ describe('IMAP Protocol integration tests', function() {
             );
         });
 
-        it('should add flags', function(done) {
+        it('should add flags', function (done) {
             let cmds = ['T1 LOGIN testuser pass', 'T2 SELECT INBOX', 'T3 STORE 1:* +FLAGS (MyFlag1 MyFlag2)', 'T4 LOGOUT'];
 
             testClient(
@@ -893,7 +893,7 @@ describe('IMAP Protocol integration tests', function() {
                     secure: true,
                     port
                 },
-                function(resp) {
+                function (resp) {
                     resp = resp.toString();
                     expect(resp.match(/^\* \d+ FETCH \(FLAGS \(MyFlag1 MyFlag2\)\)$/gm).length).to.equal(4);
                     expect(resp.match(/^\* \d+ FETCH \(FLAGS \(\\Seen MyFlag1 MyFlag2\)\)$/gm).length).to.equal(2);
@@ -903,7 +903,7 @@ describe('IMAP Protocol integration tests', function() {
             );
         });
 
-        it('should remove flags', function(done) {
+        it('should remove flags', function (done) {
             let cmds = ['T1 LOGIN testuser pass', 'T2 SELECT INBOX', 'T3 STORE 1:* -FLAGS (\\Seen MyFlag2)', 'T4 LOGOUT'];
 
             testClient(
@@ -912,7 +912,7 @@ describe('IMAP Protocol integration tests', function() {
                     secure: true,
                     port
                 },
-                function(resp) {
+                function (resp) {
                     resp = resp.toString();
                     expect(resp.match(/^\* \d+ FETCH \(FLAGS \(\)\)$/gm).length).to.equal(2);
                     expect(/^T3 OK/m.test(resp)).to.be.true;
@@ -921,7 +921,7 @@ describe('IMAP Protocol integration tests', function() {
             );
         });
 
-        it('should set some flags with modifier', function(done) {
+        it('should set some flags with modifier', function (done) {
             let cmds = ['T1 LOGIN testuser pass', 'T2 SELECT INBOX', 'T3 STORE 1:* (UNCHANGEDSINCE 99) FLAGS (MyFlag1 MyFlag2)', 'T4 LOGOUT'];
 
             testClient(
@@ -930,7 +930,7 @@ describe('IMAP Protocol integration tests', function() {
                     secure: true,
                     port
                 },
-                function(resp) {
+                function (resp) {
                     resp = resp.toString();
                     expect(resp.match(/^\* \d+ FETCH \(FLAGS \(MyFlag1 MyFlag2\) MODSEQ \(\d+\)\)$/gm).length).to.equal(4);
                     expect(/\[MODIFIED [\d,:]+\]/.test(resp)).to.be.true;
@@ -940,7 +940,7 @@ describe('IMAP Protocol integration tests', function() {
             );
         });
 
-        it('should set flags with modifier', function(done) {
+        it('should set flags with modifier', function (done) {
             let cmds = ['T1 LOGIN testuser pass', 'T2 SELECT INBOX', 'T3 STORE 1:* (UNCHANGEDSINCE 100000) FLAGS (MyFlag1 MyFlag2)', 'T4 LOGOUT'];
 
             testClient(
@@ -949,7 +949,7 @@ describe('IMAP Protocol integration tests', function() {
                     secure: true,
                     port
                 },
-                function(resp) {
+                function (resp) {
                     resp = resp.toString();
                     expect(resp.match(/^\* \d+ FETCH \(FLAGS \(MyFlag1 MyFlag2\) MODSEQ \(\d+\)\)$/gm).length).to.equal(6);
                     expect(/MODIFIED/.test(resp)).to.be.false;
@@ -960,8 +960,8 @@ describe('IMAP Protocol integration tests', function() {
         });
     });
 
-    describe('UID STORE', function() {
-        it('should set flags', function(done) {
+    describe('UID STORE', function () {
+        it('should set flags', function (done) {
             let cmds = ['T1 LOGIN testuser pass', 'T2 SELECT INBOX', 'T3 UID STORE 1:* FLAGS (MyFlag1 MyFlag2)', 'T4 LOGOUT'];
 
             testClient(
@@ -970,7 +970,7 @@ describe('IMAP Protocol integration tests', function() {
                     secure: true,
                     port
                 },
-                function(resp) {
+                function (resp) {
                     resp = resp.toString();
                     expect(resp.match(/^\* \d+ FETCH \(UID \d+ FLAGS \(MyFlag1 MyFlag2\)\)$/gm).length).to.equal(6);
                     expect(/^T3 OK/m.test(resp)).to.be.true;
@@ -979,7 +979,7 @@ describe('IMAP Protocol integration tests', function() {
             );
         });
 
-        it('should add flags', function(done) {
+        it('should add flags', function (done) {
             let cmds = ['T1 LOGIN testuser pass', 'T2 SELECT INBOX', 'T3 UID STORE 1:* +FLAGS (MyFlag1 MyFlag2)', 'T4 LOGOUT'];
 
             testClient(
@@ -988,7 +988,7 @@ describe('IMAP Protocol integration tests', function() {
                     secure: true,
                     port
                 },
-                function(resp) {
+                function (resp) {
                     resp = resp.toString();
                     expect(resp.match(/^\* \d+ FETCH \(UID \d+ FLAGS \(MyFlag1 MyFlag2\)\)$/gm).length).to.equal(4);
                     expect(resp.match(/^\* \d+ FETCH \(UID \d+ FLAGS \(\\Seen MyFlag1 MyFlag2\)\)$/gm).length).to.equal(2);
@@ -998,7 +998,7 @@ describe('IMAP Protocol integration tests', function() {
             );
         });
 
-        it('should remove flags', function(done) {
+        it('should remove flags', function (done) {
             let cmds = ['T1 LOGIN testuser pass', 'T2 SELECT INBOX', 'T3 UID STORE 1:* -FLAGS (\\Seen MyFlag2)', 'T4 LOGOUT'];
 
             testClient(
@@ -1007,7 +1007,7 @@ describe('IMAP Protocol integration tests', function() {
                     secure: true,
                     port
                 },
-                function(resp) {
+                function (resp) {
                     resp = resp.toString();
                     expect(resp.match(/^\* \d+ FETCH \(UID \d+ FLAGS \(\)\)$/gm).length).to.equal(2);
                     expect(/^T3 OK/m.test(resp)).to.be.true;
@@ -1016,7 +1016,7 @@ describe('IMAP Protocol integration tests', function() {
             );
         });
 
-        it('should set some flags with modifier', function(done) {
+        it('should set some flags with modifier', function (done) {
             let cmds = ['T1 LOGIN testuser pass', 'T2 SELECT INBOX', 'T3 UID STORE 1:* (UNCHANGEDSINCE 99) FLAGS (MyFlag1 MyFlag2)', 'T4 LOGOUT'];
 
             testClient(
@@ -1025,7 +1025,7 @@ describe('IMAP Protocol integration tests', function() {
                     secure: true,
                     port
                 },
-                function(resp) {
+                function (resp) {
                     resp = resp.toString();
                     expect(resp.match(/^\* \d+ FETCH \(UID \d+ FLAGS \(MyFlag1 MyFlag2\) MODSEQ \(\d+\)\)$/gm).length).to.equal(4);
                     expect(/\[MODIFIED [\d,:]+\]/.test(resp)).to.be.true;
@@ -1035,7 +1035,7 @@ describe('IMAP Protocol integration tests', function() {
             );
         });
 
-        it('should set some flags with modifier', function(done) {
+        it('should set some flags with modifier', function (done) {
             let cmds = ['T1 LOGIN testuser pass', 'T2 SELECT INBOX', 'T3 UID STORE 1:* (UNCHANGEDSINCE 10000) FLAGS (MyFlag1 MyFlag2)', 'T4 LOGOUT'];
 
             testClient(
@@ -1044,7 +1044,7 @@ describe('IMAP Protocol integration tests', function() {
                     secure: true,
                     port
                 },
-                function(resp) {
+                function (resp) {
                     resp = resp.toString();
                     expect(resp.match(/^\* \d+ FETCH \(UID \d+ FLAGS \(MyFlag1 MyFlag2\) MODSEQ \(\d+\)\)$/gm).length).to.equal(6);
                     expect(/MODIFIED/.test(resp)).to.be.false;
@@ -1055,8 +1055,8 @@ describe('IMAP Protocol integration tests', function() {
         });
     });
 
-    describe('SUBSCRIBE', function() {
-        it('should subscribe to mailbox', function(done) {
+    describe('SUBSCRIBE', function () {
+        it('should subscribe to mailbox', function (done) {
             let cmds = [
                 'T1 LOGIN testuser pass',
                 'T2 CREATE testfolder',
@@ -1072,7 +1072,7 @@ describe('IMAP Protocol integration tests', function() {
                     secure: true,
                     port
                 },
-                function(resp) {
+                function (resp) {
                     resp = resp.toString();
                     expect(resp.match(/^\* LSUB /gm).length).to.equal(6);
                     expect(resp.indexOf('\r\n* LSUB (\\HasNoChildren) "/" "INBOX"\r\n') >= 0).to.be.true;
@@ -1085,8 +1085,8 @@ describe('IMAP Protocol integration tests', function() {
         });
     });
 
-    describe('UNSUBSCRIBE', function() {
-        it('should unsubscribe from mailbox', function(done) {
+    describe('UNSUBSCRIBE', function () {
+        it('should unsubscribe from mailbox', function (done) {
             let cmds = [
                 'T1 LOGIN testuser pass',
                 'T2 CREATE testfolder',
@@ -1102,7 +1102,7 @@ describe('IMAP Protocol integration tests', function() {
                     secure: true,
                     port
                 },
-                function(resp) {
+                function (resp) {
                     resp = resp.toString();
                     expect(resp.match(/^\* LSUB /gm).length).to.equal(5);
                     expect(resp.indexOf('\r\n* LSUB (\\HasNoChildren) "/" "INBOX"\r\n') >= 0).to.be.true;
@@ -1115,9 +1115,9 @@ describe('IMAP Protocol integration tests', function() {
         });
     });
 
-    describe('EXPUNGE', function() {
+    describe('EXPUNGE', function () {
         // EXPUNGE is a NO OP with autoexpunge
-        it('should expunge all deleted messages', function(done) {
+        it('should expunge all deleted messages', function (done) {
             let cmds = ['T1 LOGIN testuser pass', 'T2 SELECT INBOX', 'T3 STORE 2:* +FLAGS (\\Deleted)', 'T4 EXPUNGE', 'T6 LOGOUT'];
 
             testClient(
@@ -1126,7 +1126,7 @@ describe('IMAP Protocol integration tests', function() {
                     secure: true,
                     port
                 },
-                function(resp) {
+                function (resp) {
                     resp = resp.toString();
                     expect(resp.match(/^\* \d+ EXPUNGE/gm).length).to.equal(5);
                     expect(/^T4 OK/m.test(resp)).to.be.true;
@@ -1136,9 +1136,9 @@ describe('IMAP Protocol integration tests', function() {
         });
     });
 
-    describe('UID EXPUNGE', function() {
+    describe('UID EXPUNGE', function () {
         // UID EXPUNGE is a NO OP with autoexpunge
-        it('should expunge specific messages', function(done) {
+        it('should expunge specific messages', function (done) {
             let cmds = ['T1 LOGIN testuser pass', 'T2 SELECT INBOX', 'T3 STORE 1:* +FLAGS (\\Deleted)', 'T4 UID EXPUNGE 103,105', 'T5 LOGOUT'];
 
             testClient(
@@ -1147,7 +1147,7 @@ describe('IMAP Protocol integration tests', function() {
                     secure: true,
                     port
                 },
-                function(resp) {
+                function (resp) {
                     resp = resp.toString();
                     expect(resp.match(/^\* \d+ EXPUNGE/gm).length).to.equal(2);
                     expect(resp.match(/^\* 3 EXPUNGE/gm).length).to.equal(1);
@@ -1159,8 +1159,8 @@ describe('IMAP Protocol integration tests', function() {
         });
     });
 
-    describe('FETCH command', function() {
-        it('should list by UID', function(done) {
+    describe('FETCH command', function () {
+        it('should list by UID', function (done) {
             let cmds = ['T1 LOGIN testuser pass', 'T2 SELECT INBOX', 'T3 UID FETCH 103 (FLAGS)', 'T4 FETCH 3 (FLAGS)', 'T4 LOGOUT'];
 
             testClient(
@@ -1169,7 +1169,7 @@ describe('IMAP Protocol integration tests', function() {
                     secure: true,
                     port
                 },
-                function(resp) {
+                function (resp) {
                     resp = resp.toString();
                     expect(resp.slice(/\n/).indexOf('* 3 FETCH (FLAGS (\\Seen) UID 103)') >= 0).to.be.true; // UID FETCH FLAGS
                     expect(resp.slice(/\n/).indexOf('* 3 FETCH (FLAGS (\\Seen))') >= 0).to.be.true; // FETCH FLAGS
@@ -1179,7 +1179,7 @@ describe('IMAP Protocol integration tests', function() {
             );
         });
 
-        it('should list with MODSEQ', function(done) {
+        it('should list with MODSEQ', function (done) {
             let cmds = [
                 'T1 LOGIN testuser pass',
                 'T2 SELECT INBOX',
@@ -1196,7 +1196,7 @@ describe('IMAP Protocol integration tests', function() {
                     secure: true,
                     port
                 },
-                function(resp) {
+                function (resp) {
                     resp = resp.toString();
                     expect(resp.slice(/\n/).indexOf('* 3 FETCH (FLAGS (\\Seen) UID 103 MODSEQ (3))') >= 0).to.be.true; // UID FETCH FLAGS
                     expect(resp.slice(/\n/).indexOf('* 3 FETCH (FLAGS (\\Seen) MODSEQ (3))') >= 0).to.be.true; // FETCH FLAGS
@@ -1210,8 +1210,8 @@ describe('IMAP Protocol integration tests', function() {
             );
         });
 
-        describe('Multiple values', function() {
-            it('should list mixed data', function(done) {
+        describe('Multiple values', function () {
+            it('should list mixed data', function (done) {
                 let cmds = ['T1 LOGIN testuser pass', 'T2 SELECT INBOX', 'T3 FETCH 1:* (UID BODYSTRUCTURE ENVELOPE)', 'T4 LOGOUT'];
                 testClient(
                     {
@@ -1219,7 +1219,7 @@ describe('IMAP Protocol integration tests', function() {
                         secure: true,
                         port
                     },
-                    function(resp) {
+                    function (resp) {
                         resp = resp.toString();
                         expect(
                             resp
@@ -1235,8 +1235,8 @@ describe('IMAP Protocol integration tests', function() {
             });
         });
 
-        describe('BODY[] marks message as seen', function() {
-            it('should list raw message', function(done) {
+        describe('BODY[] marks message as seen', function () {
+            it('should list raw message', function (done) {
                 let cmds = ['T1 LOGIN testuser pass', 'T2 SELECT INBOX', 'T3 FETCH 3 BODY[2.HEADER]', 'T4 LOGOUT'];
 
                 testClient(
@@ -1245,7 +1245,7 @@ describe('IMAP Protocol integration tests', function() {
                         secure: true,
                         port
                     },
-                    function(resp) {
+                    function (resp) {
                         resp = resp.toString();
 
                         expect(
@@ -1266,8 +1266,8 @@ describe('IMAP Protocol integration tests', function() {
             });
         });
 
-        describe('UID', function() {
-            it('should return correct UID', function(done) {
+        describe('UID', function () {
+            it('should return correct UID', function (done) {
                 let cmds = ['T1 LOGIN testuser pass', 'T2 SELECT INBOX', 'T3 FETCH 3 UID', 'T4 LOGOUT'];
 
                 testClient(
@@ -1276,7 +1276,7 @@ describe('IMAP Protocol integration tests', function() {
                         secure: true,
                         port
                     },
-                    function(resp) {
+                    function (resp) {
                         resp = resp.toString();
 
                         expect(resp.indexOf('\n* 3 FETCH (UID 103)\r\n') >= 0).to.be.true;
@@ -1288,8 +1288,8 @@ describe('IMAP Protocol integration tests', function() {
             });
         });
 
-        describe('FLAGS', function() {
-            it('should return corretc FLAGS', function(done) {
+        describe('FLAGS', function () {
+            it('should return corretc FLAGS', function (done) {
                 let cmds = ['T1 LOGIN testuser pass', 'T2 SELECT INBOX', 'T3 FETCH 3 FLAGS', 'T4 LOGOUT'];
 
                 testClient(
@@ -1298,7 +1298,7 @@ describe('IMAP Protocol integration tests', function() {
                         secure: true,
                         port
                     },
-                    function(resp) {
+                    function (resp) {
                         resp = resp.toString();
 
                         expect(resp.indexOf('\n* 3 FETCH (FLAGS (\\Seen))\r\n') >= 0).to.be.true;
@@ -1310,8 +1310,8 @@ describe('IMAP Protocol integration tests', function() {
             });
         });
 
-        describe('BODYSTRUCTURE', function() {
-            it('should list bodystructure object', function(done) {
+        describe('BODYSTRUCTURE', function () {
+            it('should list bodystructure object', function (done) {
                 let cmds = ['T1 LOGIN testuser pass', 'T2 SELECT INBOX', 'T3 FETCH 3 BODYSTRUCTURE', 'T4 LOGOUT'];
 
                 testClient(
@@ -1320,7 +1320,7 @@ describe('IMAP Protocol integration tests', function() {
                         secure: true,
                         port
                     },
-                    function(resp) {
+                    function (resp) {
                         resp = resp.toString();
                         expect(
                             resp.indexOf(
@@ -1334,8 +1334,8 @@ describe('IMAP Protocol integration tests', function() {
             });
         });
 
-        describe('ENVELOPE', function() {
-            it('should list envelope object', function(done) {
+        describe('ENVELOPE', function () {
+            it('should list envelope object', function (done) {
                 let cmds = ['T1 LOGIN testuser pass', 'T2 SELECT INBOX', 'T3 FETCH 1:* ENVELOPE', 'T4 LOGOUT'];
 
                 testClient(
@@ -1344,7 +1344,7 @@ describe('IMAP Protocol integration tests', function() {
                         secure: true,
                         port
                     },
-                    function(resp) {
+                    function (resp) {
                         resp = resp.toString();
                         expect(
                             resp.indexOf(
@@ -1358,8 +1358,8 @@ describe('IMAP Protocol integration tests', function() {
             });
         });
 
-        describe('BODY', function() {
-            it('should return BODY', function(done) {
+        describe('BODY', function () {
+            it('should return BODY', function (done) {
                 let cmds = ['T1 LOGIN testuser pass', 'T2 SELECT INBOX', 'T3 FETCH 1 BODY', 'T4 LOGOUT'];
 
                 testClient(
@@ -1368,7 +1368,7 @@ describe('IMAP Protocol integration tests', function() {
                         secure: true,
                         port
                     },
-                    function(resp) {
+                    function (resp) {
                         resp = resp.toString();
                         expect(resp.indexOf('\n* 1 FETCH (BODY ("TEXT" "PLAIN" NIL NIL NIL "7BIT" 6 1))\r\n') >= 0).to.be.true;
                         expect(/^T3 OK/m.test(resp)).to.be.true;
@@ -1377,7 +1377,7 @@ describe('IMAP Protocol integration tests', function() {
                 );
             });
 
-            it('should return BODY[]', function(done) {
+            it('should return BODY[]', function (done) {
                 let cmds = ['T1 LOGIN testuser pass', 'T2 SELECT INBOX', 'T3 FETCH 4 BODY.PEEK[]', 'T4 LOGOUT'];
 
                 testClient(
@@ -1386,7 +1386,7 @@ describe('IMAP Protocol integration tests', function() {
                         secure: true,
                         port
                     },
-                    function(resp) {
+                    function (resp) {
                         resp = resp.toString();
                         expect(
                             resp.indexOf(
@@ -1399,7 +1399,7 @@ describe('IMAP Protocol integration tests', function() {
                 );
             });
 
-            it('should return partial BODY[]', function(done) {
+            it('should return partial BODY[]', function (done) {
                 let cmds = ['T1 LOGIN testuser pass', 'T2 SELECT INBOX', 'T3 FETCH 4 BODY.PEEK[]<4.5>', 'T4 FETCH 4 BODY.PEEK[]<4.10000>', 'T5 LOGOUT'];
 
                 testClient(
@@ -1408,7 +1408,7 @@ describe('IMAP Protocol integration tests', function() {
                         secure: true,
                         port
                     },
-                    function(resp) {
+                    function (resp) {
                         resp = resp.toString();
                         expect(resp.indexOf('\n* 4 FETCH (BODY[]<4> {5}\r\n: sen)\r\n') >= 0).to.be.true;
                         expect(
@@ -1423,7 +1423,7 @@ describe('IMAP Protocol integration tests', function() {
                 );
             });
 
-            it('should return partial BODY[1]', function(done) {
+            it('should return partial BODY[1]', function (done) {
                 let cmds = ['T1 LOGIN testuser pass', 'T2 SELECT INBOX', 'T3 FETCH 3 BODY.PEEK[1]', 'T4 LOGOUT'];
 
                 testClient(
@@ -1432,7 +1432,7 @@ describe('IMAP Protocol integration tests', function() {
                         secure: true,
                         port
                     },
-                    function(resp) {
+                    function (resp) {
                         resp = resp.toString();
                         expect(
                             resp.indexOf(
@@ -1446,7 +1446,7 @@ describe('IMAP Protocol integration tests', function() {
                 );
             });
 
-            it('should return BODY[HEADER]', function(done) {
+            it('should return BODY[HEADER]', function (done) {
                 let cmds = ['T1 LOGIN testuser pass', 'T2 SELECT INBOX', 'T3 FETCH 4 BODY.PEEK[HEADER]', 'T4 LOGOUT'];
 
                 testClient(
@@ -1455,7 +1455,7 @@ describe('IMAP Protocol integration tests', function() {
                         secure: true,
                         port
                     },
-                    function(resp) {
+                    function (resp) {
                         resp = resp.toString();
                         expect(
                             resp.indexOf(
@@ -1468,7 +1468,7 @@ describe('IMAP Protocol integration tests', function() {
                 );
             });
 
-            it('should return BODY[HEADER.FIELDS]', function(done) {
+            it('should return BODY[HEADER.FIELDS]', function (done) {
                 let cmds = ['T1 LOGIN testuser pass', 'T2 SELECT INBOX', 'T3 FETCH 4 BODY.PEEK[HEADER.FIELDS (From Cc)]', 'T4 LOGOUT'];
 
                 testClient(
@@ -1477,7 +1477,7 @@ describe('IMAP Protocol integration tests', function() {
                         secure: true,
                         port
                     },
-                    function(resp) {
+                    function (resp) {
                         resp = resp.toString();
                         expect(
                             resp.indexOf('\r\n* 4 FETCH (BODY[HEADER.FIELDS (From Cc)] {48}\r\nfrom: sender@example.com\r\ncc: cc@example.com\r\n\r\n)\r\n') >=
@@ -1489,7 +1489,7 @@ describe('IMAP Protocol integration tests', function() {
                 );
             });
 
-            it('should return BODY[HEADER.FIELDS.NOT]', function(done) {
+            it('should return BODY[HEADER.FIELDS.NOT]', function (done) {
                 let cmds = ['T1 LOGIN testuser pass', 'T2 SELECT INBOX', 'T3 FETCH 4 BODY.PEEK[HEADER.FIELDS.NOT (From Cc)]', 'T4 LOGOUT'];
 
                 testClient(
@@ -1498,7 +1498,7 @@ describe('IMAP Protocol integration tests', function() {
                         secure: true,
                         port
                     },
-                    function(resp) {
+                    function (resp) {
                         resp = resp.toString();
                         expect(resp.indexOf('\r\n* 4 FETCH (BODY[HEADER.FIELDS.NOT (From Cc)] {37}\r\nto: to@example.com\r\nsubject: test\r\n\r\n)\r\n') >= 0)
                             .to.be.true;
@@ -1508,7 +1508,7 @@ describe('IMAP Protocol integration tests', function() {
                 );
             });
 
-            it('should return BODY[TEXT]', function(done) {
+            it('should return BODY[TEXT]', function (done) {
                 let cmds = ['T1 LOGIN testuser pass', 'T2 SELECT INBOX', 'T3 FETCH 4 BODY.PEEK[TEXT]', 'T4 LOGOUT'];
 
                 testClient(
@@ -1517,7 +1517,7 @@ describe('IMAP Protocol integration tests', function() {
                         secure: true,
                         port
                     },
-                    function(resp) {
+                    function (resp) {
                         resp = resp.toString();
                         expect(resp.indexOf('\r\n* 4 FETCH (BODY[TEXT] {14}\r\nHello World!\r\n)\r\n') >= 0).to.be.true;
                         expect(/^T3 OK/m.test(resp)).to.be.true;
@@ -1526,7 +1526,7 @@ describe('IMAP Protocol integration tests', function() {
                 );
             });
 
-            it('should return BODY[x.HEADER]', function(done) {
+            it('should return BODY[x.HEADER]', function (done) {
                 let cmds = ['T1 LOGIN testuser pass', 'T2 SELECT INBOX', 'T3 FETCH 3 BODY.PEEK[1.HEADER]', 'T4 FETCH 3 BODY.PEEK[2.HEADER]', 'T5 LOGOUT'];
 
                 testClient(
@@ -1535,8 +1535,9 @@ describe('IMAP Protocol integration tests', function() {
                         secure: true,
                         port
                     },
-                    function(resp) {
+                    function (resp) {
                         resp = resp.toString();
+                        console.log(1, resp);
 
                         expect(
                             resp.indexOf(
@@ -1568,7 +1569,7 @@ describe('IMAP Protocol integration tests', function() {
                 );
             });
 
-            it('should return BODY[1.MIME]', function(done) {
+            it('should return BODY[1.MIME]', function (done) {
                 let cmds = ['T1 LOGIN testuser pass', 'T2 SELECT INBOX', 'T3 FETCH 3 BODY.PEEK[1.MIME]', 'T4 LOGOUT'];
 
                 testClient(
@@ -1577,7 +1578,7 @@ describe('IMAP Protocol integration tests', function() {
                         secure: true,
                         port
                     },
-                    function(resp) {
+                    function (resp) {
                         resp = resp.toString();
                         expect(
                             resp.indexOf('\r\n* 3 FETCH (BODY[1.MIME] {65}\r\nContent-Type: message/rfc822\r\nContent-Transfer-Encoding: 7bit\r\n\r\n)\r\n') >=
@@ -1590,8 +1591,8 @@ describe('IMAP Protocol integration tests', function() {
             });
         });
 
-        describe('RFC822', function() {
-            it('should return RFC822', function(done) {
+        describe('RFC822', function () {
+            it('should return RFC822', function (done) {
                 let cmds = ['T1 LOGIN testuser pass', 'T2 SELECT INBOX', 'T3 FETCH 4 RFC822', 'T4 LOGOUT'];
 
                 testClient(
@@ -1600,7 +1601,7 @@ describe('IMAP Protocol integration tests', function() {
                         secure: true,
                         port
                     },
-                    function(resp) {
+                    function (resp) {
                         resp = resp.toString();
                         expect(
                             resp.indexOf(
@@ -1613,7 +1614,7 @@ describe('IMAP Protocol integration tests', function() {
                 );
             });
 
-            it('should return RFC822.SIZE', function(done) {
+            it('should return RFC822.SIZE', function (done) {
                 let cmds = ['T1 LOGIN testuser pass', 'T2 SELECT INBOX', 'T3 FETCH 4 RFC822.SIZE', 'T4 LOGOUT'];
 
                 testClient(
@@ -1622,7 +1623,7 @@ describe('IMAP Protocol integration tests', function() {
                         secure: true,
                         port
                     },
-                    function(resp) {
+                    function (resp) {
                         resp = resp.toString();
                         expect(resp.indexOf('\r\n* 4 FETCH (RFC822.SIZE 97)\r\n') >= 0).to.be.true;
                         expect(/^T3 OK/m.test(resp)).to.be.true;
@@ -1631,7 +1632,7 @@ describe('IMAP Protocol integration tests', function() {
                 );
             });
 
-            it('should return RFC822.HEADER', function(done) {
+            it('should return RFC822.HEADER', function (done) {
                 let cmds = ['T1 LOGIN testuser pass', 'T2 SELECT INBOX', 'T3 FETCH 4 RFC822.HEADER', 'T4 LOGOUT'];
 
                 testClient(
@@ -1640,7 +1641,7 @@ describe('IMAP Protocol integration tests', function() {
                         secure: true,
                         port
                     },
-                    function(resp) {
+                    function (resp) {
                         resp = resp.toString();
                         expect(
                             resp.indexOf(
@@ -1653,7 +1654,7 @@ describe('IMAP Protocol integration tests', function() {
                 );
             });
 
-            it('should return RFC822.TEXT', function(done) {
+            it('should return RFC822.TEXT', function (done) {
                 let cmds = ['T1 LOGIN testuser pass', 'T2 SELECT INBOX', 'T3 FETCH 4 RFC822.TEXT', 'T4 LOGOUT'];
 
                 testClient(
@@ -1662,7 +1663,7 @@ describe('IMAP Protocol integration tests', function() {
                         secure: true,
                         port
                     },
-                    function(resp) {
+                    function (resp) {
                         resp = resp.toString();
 
                         expect(resp.indexOf('\r\n* 4 FETCH (RFC822.TEXT {14}\r\nHello World!\r\n)\r\n') >= 0).to.be.true;
@@ -1673,8 +1674,8 @@ describe('IMAP Protocol integration tests', function() {
             });
         });
 
-        describe('INTERNALDATE', function() {
-            it('should return message internaldate', function(done) {
+        describe('INTERNALDATE', function () {
+            it('should return message internaldate', function (done) {
                 let cmds = ['T1 LOGIN testuser pass', 'T2 SELECT INBOX', 'T3 FETCH 1 INTERNALDATE', 'T4 LOGOUT'];
 
                 testClient(
@@ -1683,7 +1684,7 @@ describe('IMAP Protocol integration tests', function() {
                         secure: true,
                         port
                     },
-                    function(resp) {
+                    function (resp) {
                         resp = resp.toString();
                         expect(resp.indexOf('\r\n* 1 FETCH (INTERNALDATE "15-Sep-2013 00:22:28 +0000")\r\n') >= 0).to.be.true;
                         expect(/^T3 OK/m.test(resp)).to.be.true;
@@ -1694,8 +1695,8 @@ describe('IMAP Protocol integration tests', function() {
         });
     });
 
-    describe('SEARCH command', function() {
-        it('should succeed', function(done) {
+    describe('SEARCH command', function () {
+        it('should succeed', function (done) {
             let cmds = ['T1 LOGIN testuser pass', 'T2 SELECT INBOX', 'T3 SEARCH ALL', 'T4 UID SEARCH ALL', 'T7 LOGOUT'];
 
             testClient(
@@ -1704,7 +1705,7 @@ describe('IMAP Protocol integration tests', function() {
                     secure: true,
                     port
                 },
-                function(resp) {
+                function (resp) {
                     resp = resp.toString();
                     expect(resp.match(/^\* SEARCH /gm).length).to.equal(2);
                     expect(/^T3 OK/m.test(resp)).to.be.true;
@@ -1714,7 +1715,7 @@ describe('IMAP Protocol integration tests', function() {
             );
         });
 
-        it('should find with FLAGS', function(done) {
+        it('should find with FLAGS', function (done) {
             let cmds = ['T1 LOGIN testuser pass', 'T2 SELECT INBOX', 'T3 SEARCH (UNSEEN)', 'T4 UID SEARCH UNSEEN', 'T7 LOGOUT'];
 
             testClient(
@@ -1723,7 +1724,7 @@ describe('IMAP Protocol integration tests', function() {
                     secure: true,
                     port
                 },
-                function(resp) {
+                function (resp) {
                     resp = resp.toString();
                     expect(resp.match(/^\* SEARCH /gm).length).to.equal(2);
                     expect(/^\* SEARCH 1 4 5 6$/m.test(resp)).to.be.true;
@@ -1735,7 +1736,7 @@ describe('IMAP Protocol integration tests', function() {
             );
         });
 
-        it('should find with MODSEQ', function(done) {
+        it('should find with MODSEQ', function (done) {
             let cmds = ['T1 LOGIN testuser pass', 'T2 SELECT INBOX', 'T3 SEARCH MODSEQ 1000', 'T4 LOGOUT'];
 
             testClient(
@@ -1744,7 +1745,7 @@ describe('IMAP Protocol integration tests', function() {
                     secure: true,
                     port
                 },
-                function(resp) {
+                function (resp) {
                     resp = resp.toString();
                     expect(resp.match(/^\* SEARCH /gm).length).to.equal(1);
                     expect(/^\* SEARCH 2 \(MODSEQ 5000\)$/m.test(resp)).to.be.true;
