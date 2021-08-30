@@ -56,7 +56,6 @@
         "iconv-lite": "0.6.3",
         "ioredfour": "1.2.0-ioredis-06",
         "ioredis": "4.27.8",
-        "ipaddr": "0.1.0",
         "ipaddr.js": "2.0.1",
         "isemail": "3.2.0",
         "joi": "17.4.2",
@@ -74,7 +73,6 @@
         "nodemailer": "6.6.3",
         "npmlog": "5.0.0",
         "openpgp": "4.10.10",
-        "pem": "1.14.4",
         "pem-jwk": "2.0.0",
         "punycode": "2.1.1",
         "pwnedpasswords": "1.0.5",
@@ -97,6 +95,6 @@
         "url": "git://github.com/wildduck-email/wildduck.git"
     },
     "engines": {
-        "node": ">=10.0.0"
+        "node": ">=12.0.0"
     }
 }
