@@ -1537,7 +1537,6 @@ describe('IMAP Protocol integration tests', function () {
                     },
                     function (resp) {
                         resp = resp.toString();
-                        console.log(1, resp);
 
                         expect(
                             resp.indexOf(
