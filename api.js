@@ -141,7 +141,7 @@ if (config.api.secure && certOptions.key) {
     let httpsServerOptions = {};
 
     httpsServerOptions.key = certOptions.key;
-    if (httpsServerOptions.ca) {
+    if (certOptions.ca) {
         httpsServerOptions.ca = certOptions.ca;
     }
     httpsServerOptions.cert = certOptions.cert;
@@ -151,7 +151,9 @@ if (config.api.secure && certOptions.key) {
     httpsServerOptions.SNICallback = (servername, cb) => {
         certs
             .getContextForServername(servername, httpsServerOptions)
-            .then(context => cb(null, context || defaultSecureContext))
+            .then(context => {
+                cb(null, context || defaultSecureContext);
+            })
             .catch(err => cb(err));
     };
 
