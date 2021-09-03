@@ -44,6 +44,7 @@ const domainaliasRoutes = require('./lib/api/domainaliases');
 const dkimRoutes = require('./lib/api/dkim');
 const certsRoutes = require('./lib/api/certs');
 const webhooksRoutes = require('./lib/api/webhooks');
+const settingsRoutes = require('./lib/api/settings');
 
 let userHandler;
 let mailboxHandler;
@@ -527,6 +528,7 @@ module.exports = done => {
     dkimRoutes(db, server);
     certsRoutes(db, server);
     webhooksRoutes(db, server);
+    settingsRoutes(db, server);
 
     server.on('error', err => {
         if (!started) {
