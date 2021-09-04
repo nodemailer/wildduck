@@ -200,8 +200,16 @@ server.use(
     })
 );
 
+// public files
+server.get({ name: 'public_get', path: '/public/*' }, restify.plugins.serveStaticFiles('./public'));
+
 server.use(
     tools.asyncifyJson(async (req, res, next) => {
+        if (['public_get', 'public_post'].includes(req.route.name)) {
+            // skip token check for public pages
+            return next();
+        }
+
         let accessToken = req.query.accessToken || req.headers['x-access-token'] || false;
 
         if (req.query.accessToken) {
@@ -511,7 +519,7 @@ module.exports = done => {
         namespace: 'mail'
     });
 
-    acmeRoutes(db, server);
+    acmeRoutes(db, server, { disableRedirect: true });
     usersRoutes(db, server, userHandler, settingsHandler);
     addressesRoutes(db, server, userHandler, settingsHandler);
     mailboxesRoutes(db, server, mailboxHandler);

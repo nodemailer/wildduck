@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <title>WildDuck Settings</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link rel="stylesheet" href="/public/css/normalize.css" />
+        <link rel="stylesheet" href="/public/css/skeleton.css" />
+
+        <style type="text/css">
+            input.no-bottom,
+            button.no-bottom {
+                margin-bottom: 0px;
+            }
+        </style>
+
+        <script>
+            function getAccessToken() {
+                return document.getElementById('accessToken').value.trim();
+            }
+
+            function addSettingsRow(tableElm, setting) {
+                let trElm = document.createElement('tr');
+
+                let nameTdElm = document.createElement('td');
+                let keyTdElm = document.createElement('td');
+                let defaultTdElm = document.createElement('td');
+                let valueTdElm = document.createElement('td');
+                let btnTdElm = document.createElement('td');
+
+                nameTdElm.textContent = setting.name || setting.key;
+                nameTdElm.title = setting.description;
+
+                let keyTextElm = document.createElement('code');
+                keyTextElm.textContent = setting.key;
+                keyTdElm.title = setting.description;
+                keyTdElm.appendChild(keyTextElm);
+
+                if (setting.default) {
+                    let defaultTextElm = document.createElement('code');
+                    defaultTextElm.textContent = setting.default;
+                    defaultTdElm.title = setting.description;
+                    defaultTdElm.appendChild(defaultTextElm);
+                } else {
+                    defaultTdElm.textContent = ' ';
+                }
+
+                // Value
+                //<input class="u-full-width" type="password" placeholder="Access token" id="accessToken" autocomplete="off" data-lpignore="true" />
+
+                let valueInputElm = document.createElement('input');
+                valueInputElm.classList.add('u-full-width', 'no-bottom');
+                valueInputElm.setAttribute('type', 'text');
+                valueInputElm.setAttribute('placeholder', 'Value');
+                valueInputElm.setAttribute('autocomplete', 'off');
+                valueInputElm.setAttribute('data-lpignore', 'true');
+                valueInputElm.value = setting.value || '';
+                valueTdElm.appendChild(valueInputElm);
+
+                let btnInputElm = document.createElement('button');
+                btnInputElm.classList.add('button', 'u-full-width', 'no-bottom');
+                btnInputElm.textContent = 'Update';
+                btnTdElm.appendChild(btnInputElm);
+
+                btnInputElm.addEventListener('click', e => {
+                    e.preventDefault();
+                    if (confirm(`Update value for "${setting.name}"?`)) {
+                        fetch(`/settings/${setting.key}`, {
+                            method: 'POST',
+                            headers: {
+                                Accept: 'application/json',
+                                'X-Access-Token': getAccessToken(),
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                value: valueInputElm.value
+                            })
+                        })
+                            .then(res => {
+                                return res.json();
+                            })
+                            .then(res => {
+                                if (res.error) {
+                                    alert(res.error);
+                                    return;
+                                }
+                                alert(res.success ? 'Updated' : 'Failed');
+                            })
+                            .catch(err => {
+                                alert(err.message);
+                            });
+                    }
+                });
+
+                trElm.appendChild(nameTdElm);
+                trElm.appendChild(keyTdElm);
+                trElm.appendChild(defaultTdElm);
+                trElm.appendChild(valueTdElm);
+                trElm.appendChild(btnTdElm);
+
+                tableElm.appendChild(trElm);
+            }
+
+            async function loadSettings(filter) {
+                let response;
+                try {
+                    let data = await fetch('/settings' + (filter ? `?filter=${encodeURIComponent(filter)}` : ''), {
+                        headers: {
+                            Accept: 'application/json',
+                            'X-Access-Token': getAccessToken()
+                        }
+                    });
+                    response = await data.json();
+                } catch (err) {
+                    alert(err.message);
+                    return;
+                }
+                if (response.error) {
+                    alert(response.error);
+                    return;
+                }
+
+                let tableElm = document.getElementById('settings-table');
+                tableElm.innerHTML = '';
+
+                for (let setting of response.settings) {
+                    addSettingsRow(tableElm, setting);
+                }
+            }
+
+            document.addEventListener('DOMContentLoaded', () => {
+                document.getElementById('filter-form').addEventListener('submit', e => {
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    let filter = document.getElementById('filter').value.trim();
+                    loadSettings(filter);
+                });
+            });
+        </script>
+    </head>
+    <body>
+        <div class="container">
+            <div class="row">
+                <div class="one-half column" style="margin-top: 2rem">
+                    <h4>WildDuck Settings</h4>
+                    <p>This page allows to edit default setting values.</p>
+                </div>
+            </div>
+
+            <form autocomplete="off" id="filter-form">
+                <div class="row">
+                    <div class="three columns">
+                        <input class="u-full-width" type="password" placeholder="Access token" id="accessToken" autocomplete="off" data-lpignore="true" />
+                    </div>
+                    <div class="seven columns">
+                        <input class="u-full-width" type="text" placeholder="Filter" id="filter" autocomplete="off" data-lpignore="true" />
+                    </div>
+                    <div class="two columns">
+                        <input class="button-primary u-full-width" type="submit" value="Show" />
+                    </div>
+                </div>
+            </form>
+
+            <div>
+                <table class="u-full-width">
+                    <thead>
+                        <tr>
+                            <th>Setting</th>
+                            <th>Key</th>
+                            <th>Default</th>
+                            <th colspan="2">Value</th>
+                        </tr>
+                    </thead>
+                    <tbody id="settings-table"></tbody>
+                </table>
+            </div>
+        </div>
+    </body>
+</html>
