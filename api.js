@@ -45,12 +45,14 @@ const dkimRoutes = require('./lib/api/dkim');
 const certsRoutes = require('./lib/api/certs');
 const webhooksRoutes = require('./lib/api/webhooks');
 const settingsRoutes = require('./lib/api/settings');
+const { SettingsHandler } = require('./lib/settings-handler');
 
 let userHandler;
 let mailboxHandler;
 let messageHandler;
 let storageHandler;
 let auditHandler;
+let settingsHandler;
 let notifier;
 let loggelf;
 
@@ -500,6 +502,8 @@ module.exports = done => {
         loggelf: message => loggelf(message)
     });
 
+    settingsHandler = new SettingsHandler({ db: db.database });
+
     server.loggelf = message => loggelf(message);
 
     server.lock = new Lock({
@@ -508,10 +512,10 @@ module.exports = done => {
     });
 
     acmeRoutes(db, server);
-    usersRoutes(db, server, userHandler);
-    addressesRoutes(db, server, userHandler);
+    usersRoutes(db, server, userHandler, settingsHandler);
+    addressesRoutes(db, server, userHandler, settingsHandler);
     mailboxesRoutes(db, server, mailboxHandler);
-    messagesRoutes(db, server, messageHandler, userHandler, storageHandler);
+    messagesRoutes(db, server, messageHandler, userHandler, storageHandler, settingsHandler);
     storageRoutes(db, server, storageHandler);
     filtersRoutes(db, server);
     domainaccessRoutes(db, server);
@@ -522,13 +526,13 @@ module.exports = done => {
     updatesRoutes(db, server, notifier);
     authRoutes(db, server, userHandler);
     autoreplyRoutes(db, server);
-    submitRoutes(db, server, messageHandler, userHandler);
+    submitRoutes(db, server, messageHandler, userHandler, settingsHandler);
     auditRoutes(db, server, auditHandler);
     domainaliasRoutes(db, server);
     dkimRoutes(db, server);
     certsRoutes(db, server);
     webhooksRoutes(db, server);
-    settingsRoutes(db, server);
+    settingsRoutes(db, server, settingsHandler);
 
     server.on('error', err => {
         if (!started) {
