@@ -19,6 +19,159 @@
                 return document.getElementById('accessToken').value.trim();
             }
 
+            function formatDuration(value) {
+                value = Number(value);
+
+                let parts = [];
+
+                let days = Math.floor(value / (24 * 3600 * 1000));
+                value = value - days * 24 * 3600 * 1000;
+                if (days) {
+                    parts.push(`${days}d`);
+                }
+
+                let hours = Math.floor(value / (3600 * 1000));
+                value = value - hours * 3600 * 1000;
+                if (hours) {
+                    parts.push(`${hours}h`);
+                }
+
+                let minutes = Math.floor(value / (60 * 1000));
+                value = value - minutes * 60 * 1000;
+                if (minutes) {
+                    parts.push(`${minutes}m`);
+                }
+
+                let seconds = Math.floor(value / 1000);
+                value = value - seconds * 1000;
+                if (seconds) {
+                    parts.push(`${seconds}s`);
+                }
+
+                let ms = value;
+                if (ms || !parts.length) {
+                    parts.push(`${ms}ms`);
+                }
+
+                return parts.join(' ');
+            }
+
+            function formatSize(value) {
+                value = Number(value);
+
+                let parts = [];
+
+                let gb = Math.floor(value / (1024 * 1024 * 1024));
+                value = value - gb * 1024 * 1024 * 1024;
+                if (gb) {
+                    parts.push(`${gb}GB`);
+                }
+
+                let mb = Math.floor(value / (1024 * 1024));
+                value = value - mb * 1024 * 1024;
+                if (mb) {
+                    parts.push(`${mb}MB`);
+                }
+
+                let kb = Math.floor(value / 1024);
+                value = value - kb * 1024;
+                if (kb) {
+                    parts.push(`${kb}kB`);
+                }
+
+                let b = value;
+                if (b || !parts.length) {
+                    parts.push(`${b}B`);
+                }
+
+                return parts.join(' ');
+            }
+
+            function formatNumber(value, type) {
+                switch (type) {
+                    case 'duration':
+                        return formatDuration(value);
+                    case 'size':
+                        return formatSize(value);
+                    default:
+                        return value;
+                }
+            }
+
+            function parseSize(value) {
+                // remove unneeded spaces
+                value = value.toString().replace(/(\d)[\s\.]+(?=\d|g|m|k|b)/gi, '$1');
+
+                let result = 0;
+
+                let parts = value.split(/\s+/);
+                for (let part of parts) {
+                    part.replace(/(\d+)(g|m|k|b)?/i, (o, num, unit) => {
+                        switch ((unit || '').toString().toLowerCase()) {
+                            case 'g':
+                                result += Number(num) * 1024 * 1024 * 1024;
+                                break;
+                            case 'm':
+                                result += Number(num) * 1024 * 1024;
+                                break;
+                            case 'k':
+                                result += Number(num) * 1024;
+                                break;
+                            case 'b':
+                            default:
+                                result += Number(num);
+                                break;
+                        }
+                    });
+                }
+
+                return result;
+            }
+
+            function parseDuration(value) {
+                // remove unneeded spaces
+                value = value.toString().replace(/(\d)[\s\.]+(?=\d|d|h|ms|m|s)/gi, '$1');
+
+                let result = 0;
+
+                let parts = value.split(/\s+/);
+                for (let part of parts) {
+                    part.replace(/(\d+)(d|h|ms|m|s)?/i, (o, num, unit) => {
+                        switch ((unit || '').toString().toLowerCase()) {
+                            case 'd':
+                                result += Number(num) * 24 * 3600 * 1000;
+                                break;
+                            case 'h':
+                                result += Number(num) * 3600 * 1000;
+                                break;
+                            case 'm':
+                                result += Number(num) * 60 * 1000;
+                                break;
+                            case 's':
+                                result += Number(num) * 1000;
+                                break;
+                            case 'ms':
+                            default:
+                                result += Number(num);
+                                break;
+                        }
+                    });
+                }
+
+                return result;
+            }
+
+            function parseNumber(value, type) {
+                switch (type) {
+                    case 'duration':
+                        return parseDuration(value);
+                    case 'size':
+                        return parseSize(value);
+                    default:
+                        return value;
+                }
+            }
+
             function addSettingsRow(tableElm, setting) {
                 let trElm = document.createElement('tr');
 
@@ -38,7 +191,7 @@
 
                 if (setting.default) {
                     let defaultTextElm = document.createElement('code');
-                    defaultTextElm.textContent = setting.default;
+                    defaultTextElm.textContent = formatNumber(setting.default, setting.type);
                     defaultTdElm.title = setting.description;
                     defaultTdElm.appendChild(defaultTextElm);
                 } else {
@@ -54,7 +207,7 @@
                 valueInputElm.setAttribute('placeholder', 'Value');
                 valueInputElm.setAttribute('autocomplete', 'off');
                 valueInputElm.setAttribute('data-lpignore', 'true');
-                valueInputElm.value = setting.value || '';
+                valueInputElm.value = formatNumber(setting.value || '', setting.type);
                 valueTdElm.appendChild(valueInputElm);
 
                 let btnInputElm = document.createElement('button');
@@ -73,7 +226,7 @@
                                 'Content-Type': 'application/json'
                             },
                             body: JSON.stringify({
-                                value: valueInputElm.value
+                                value: parseNumber(valueInputElm.value, setting.type)
                             })
                         })
                             .then(res => {
@@ -174,6 +327,13 @@
                     </thead>
                     <tbody id="settings-table"></tbody>
                 </table>
+            </div>
+
+            <div>
+                <ul>
+                    <li>Duration: <code>XXd XXh XXm XXs XXms</code></li>
+                    <li>Size: <code>XXGB XXMB XXkB XXB</code></li>
+                </ul>
             </div>
         </div>
     </body>

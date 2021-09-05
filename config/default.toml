@@ -51,7 +51,8 @@ processes=1
     # changing this value only affects new entries
     # set to false to not log authentication events
     # set to 0 to keep the logs infinitely
-    authlogExpireDays=30
+    # NB! Removed. Use const:authlog:time setting instead
+    #authlogExpireDays=30
 
     [log.gelf]
         enabled=false

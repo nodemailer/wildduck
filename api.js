@@ -490,7 +490,6 @@ module.exports = done => {
         users: db.users,
         redis: db.redis,
         messageHandler,
-        authlogExpireDays: config.log.authlogExpireDays,
         loggelf: message => loggelf(message)
     });
 
