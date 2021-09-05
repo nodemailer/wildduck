@@ -2,7 +2,7 @@
 
 You can set system wide defaults using either the [Settings API endpoints](https://docs.wildduck.email/api/#tag/Settings) or by using the built in API client for system settings.
 
-You can find the client from API path _/public/config.html_, eg. if your API is runnin gon port 8080 then the URL should be http://127.0.0.1:8080/public/config.html
+You can find the client from API path _/public/config.html_, eg. if your API is running on port 8080 then the URL should be http://127.0.0.1:8080/public/config.html
 
 If your API is configured to require authentication, then you need to provide either a _root_ token or a _settings_-role token. Otherwise you can leave the access token field empty.
 
