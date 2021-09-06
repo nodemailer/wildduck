@@ -1,6 +1,6 @@
 {
     "name": "wildduck",
-    "version": "1.35.4-beta.01",
+    "version": "1.35.4",
     "description": "IMAP/POP3 server built with Node.js and MongoDB",
     "main": "server.js",
     "scripts": {
@@ -44,7 +44,7 @@
         "@root/csr": "0.8.1",
         "accesscontrol": "2.2.1",
         "argon2-browser": "1.18.0",
-        "axios": "0.21.1",
+        "axios": "0.21.3",
         "base32.js": "0.1.0",
         "bcryptjs": "2.4.3",
         "bull": "3.29.1",
