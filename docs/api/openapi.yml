@@ -4613,7 +4613,7 @@ components:
                 results:
                     type: array
                     items:
-                        $ref: '#/components/schemas/SearchMessagesResult'
+                        $ref: '#/components/schemas/GetMessagesResult'
                     description: Message listing
         SubmitStoredMessageResponse:
             type: object
@@ -6254,83 +6254,6 @@ components:
                 metaData:
                     type: object
                     description: Custom metadata value. Included if metaData query argument was true
-        SearchMessagesResult:
-            required:
-                - id
-                - mailbox
-                - thread
-                - from
-                - to
-                - cc
-                - bcc
-                - subject
-                - date
-                - intro
-                - attachments
-                - seen
-                - deleted
-                - flagged
-                - url
-                - contentType
-            type: object
-            properties:
-                id:
-                    type: number
-                    description: ID of the Message
-                mailbox:
-                    type: string
-                    description: ID of the Mailbox
-                thread:
-                    type: string
-                    description: ID of the Thread
-                from:
-                    $ref: '#/components/schemas/Address'
-                to:
-                    type: array
-                    items:
-                        $ref: '#/components/schemas/Address'
-                    description: 'Recipients in To: field'
-                cc:
-                    type: array
-                    items:
-                        $ref: '#/components/schemas/Address'
-                    description: 'Recipients in Cc: field'
-                bcc:
-                    type: array
-                    items:
-                        $ref: '#/components/schemas/Address'
-                    description: 'Recipients in Bcc: field. Usually only available for drafts'
-                subject:
-                    type: string
-                    description: Message subject
-                date:
-                    type: string
-                    description: Date string from header
-                    format: date-time
-                idate:
-                    type: string
-                    description: Date string of receive time
-                    format: date-time
-                intro:
-                    type: string
-                    description: First 128 bytes of the message
-                attachments:
-                    type: boolean
-                    description: Does the message have attachments
-                seen:
-                    type: boolean
-                    description: Is this message alread seen or not
-                deleted:
-                    type: boolean
-                    description: Does this message have a \Deleted flag (should not have as messages are automatically deleted once this flag is set)
-                flagged:
-                    type: boolean
-                    description: Does this message have a \Flagged flag
-                url:
-                    type: string
-                    description: Relative API url for fetching message contents
-                contentType:
-                    $ref: '#/components/schemas/ContentType'
         GetFilesResult:
             required:
                 - id
