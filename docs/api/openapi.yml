@@ -4107,9 +4107,10 @@ components:
                     description: Key fingerprint (SHA1)
                     example: '59:8b:ed:11:5b:4f:ce:b4:e5:1a:2f:35:b1:6f:7d:93:40:c8:2f:9c:38:3b:cd:f4:04:92:a1:0e:17:2c:3f:f3'
                 expires:
-                    type: date-time
+                    type: string
                     description: Certificate expiration time
                     example: '2021-06-26T21:55:55.000Z'
+                    format: date-time
                 altNames:
                     type: array
                     description: SAN servernames listed in the certificate
@@ -6036,9 +6037,10 @@ components:
                     format: date-time
                     example: '2021-05-13T20:06:46.179Z'
                 expires:
-                    type: date-time
+                    type: string
                     description: Certificate expiration time
                     example: '2021-06-26T21:55:55.000Z'
+                    format: date-time
                 altNames:
                     type: array
                     description: SAN servernames listed in the certificate
