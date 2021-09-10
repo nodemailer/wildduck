@@ -205,7 +205,7 @@ server.get({ name: 'public_get', path: '/public/*' }, restify.plugins.serveStati
 
 server.use(
     tools.asyncifyJson(async (req, res, next) => {
-        if (['public_get', 'public_post', 'acmeToken_get'].includes(req.route.name)) {
+        if (['public_get', 'public_post', 'acmeToken'].includes(req.route.name)) {
             // skip token check for public pages
             return next();
         }
