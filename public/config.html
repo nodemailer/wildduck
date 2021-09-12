@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <title>WildDuck Settings</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link rel="stylesheet" href="/public/css/normalize.css" />
+        <link rel="stylesheet" href="/public/css/skeleton.css" />
+
+        <style type="text/css">
+            input.no-bottom,
+            button.no-bottom {
+                margin-bottom: 0px;
+            }
+        </style>
+
+        <script>
+            function getAccessToken() {
+                return document.getElementById('accessToken').value.trim();
+            }
+
+            function formatDuration(value) {
+                value = Number(value);
+
+                let parts = [];
+
+                let days = Math.floor(value / (24 * 3600 * 1000));
+                value = value - days * 24 * 3600 * 1000;
+                if (days) {
+                    parts.push(`${days}d`);
+                }
+
+                let hours = Math.floor(value / (3600 * 1000));
+                value = value - hours * 3600 * 1000;
+                if (hours) {
+                    parts.push(`${hours}h`);
+                }
+
+                let minutes = Math.floor(value / (60 * 1000));
+                value = value - minutes * 60 * 1000;
+                if (minutes) {
+                    parts.push(`${minutes}m`);
+                }
+
+                let seconds = Math.floor(value / 1000);
+                value = value - seconds * 1000;
+                if (seconds) {
+                    parts.push(`${seconds}s`);
+                }
+
+                let ms = value;
+                if (ms || !parts.length) {
+                    parts.push(`${ms}ms`);
+                }
+
+                return parts.join(' ');
+            }
+
+            function formatSize(value) {
+                value = Number(value);
+
+                let parts = [];
+
+                let gb = Math.floor(value / (1024 * 1024 * 1024));
+                value = value - gb * 1024 * 1024 * 1024;
+                if (gb) {
+                    parts.push(`${gb}GB`);
+                }
+
+                let mb = Math.floor(value / (1024 * 1024));
+                value = value - mb * 1024 * 1024;
+                if (mb) {
+                    parts.push(`${mb}MB`);
+                }
+
+                let kb = Math.floor(value / 1024);
+                value = value - kb * 1024;
+                if (kb) {
+                    parts.push(`${kb}kB`);
+                }
+
+                let b = value;
+                if (b || !parts.length) {
+                    parts.push(`${b}B`);
+                }
+
+                return parts.join(' ');
+            }
+
+            function formatNumber(value, type) {
+                switch (type) {
+                    case 'duration':
+                        return formatDuration(value);
+                    case 'size':
+                        return formatSize(value);
+                    default:
+                        return value;
+                }
+            }
+
+            function parseSize(value) {
+                // remove unneeded spaces
+                value = value.toString().replace(/(\d)[\s\.]+(?=\d|g|m|k|b)/gi, '$1');
+
+                let result = 0;
+
+                let parts = value.split(/\s+/);
+                for (let part of parts) {
+                    part.replace(/(\d+)(g|m|k|b)?/i, (o, num, unit) => {
+                        switch ((unit || '').toString().toLowerCase()) {
+                            case 'g':
+                                result += Number(num) * 1024 * 1024 * 1024;
+                                break;
+                            case 'm':
+                                result += Number(num) * 1024 * 1024;
+                                break;
+                            case 'k':
+                                result += Number(num) * 1024;
+                                break;
+                            case 'b':
+                            default:
+                                result += Number(num);
+                                break;
+                        }
+                    });
+                }
+
+                return result;
+            }
+
+            function parseDuration(value) {
+                // remove unneeded spaces
+                value = value.toString().replace(/(\d)[\s\.]+(?=\d|d|h|ms|m|s)/gi, '$1');
+
+                let result = 0;
+
+                let parts = value.split(/\s+/);
+                for (let part of parts) {
+                    part.replace(/(\d+)(d|h|ms|m|s)?/i, (o, num, unit) => {
+                        switch ((unit || '').toString().toLowerCase()) {
+                            case 'd':
+                                result += Number(num) * 24 * 3600 * 1000;
+                                break;
+                            case 'h':
+                                result += Number(num) * 3600 * 1000;
+                                break;
+                            case 'm':
+                                result += Number(num) * 60 * 1000;
+                                break;
+                            case 's':
+                                result += Number(num) * 1000;
+                                break;
+                            case 'ms':
+                            default:
+                                result += Number(num);
+                                break;
+                        }
+                    });
+                }
+
+                return result;
+            }
+
+            function parseNumber(value, type) {
+                switch (type) {
+                    case 'duration':
+                        return parseDuration(value);
+                    case 'size':
+                        return parseSize(value);
+                    default:
+                        return value;
+                }
+            }
+
+            function addSettingsRow(tableElm, setting) {
+                let trElm = document.createElement('tr');
+
+                let nameTdElm = document.createElement('td');
+                let keyTdElm = document.createElement('td');
+                let defaultTdElm = document.createElement('td');
+                let valueTdElm = document.createElement('td');
+                let btnTdElm = document.createElement('td');
+
+                nameTdElm.textContent = setting.name || setting.key;
+                nameTdElm.title = setting.description;
+
+                let keyTextElm = document.createElement('code');
+                keyTextElm.textContent = setting.key;
+                keyTdElm.title = setting.description;
+                keyTdElm.appendChild(keyTextElm);
+
+                if (setting.default) {
+                    let defaultTextElm = document.createElement('code');
+                    defaultTextElm.textContent = formatNumber(setting.default, setting.type);
+                    defaultTdElm.title = setting.description;
+                    defaultTdElm.appendChild(defaultTextElm);
+                } else {
+                    defaultTdElm.textContent = ' ';
+                }
+
+                // Value
+                //<input class="u-full-width" type="password" placeholder="Access token" id="accessToken" autocomplete="off" data-lpignore="true" />
+
+                let valueInputElm = document.createElement('input');
+                valueInputElm.classList.add('u-full-width', 'no-bottom');
+                valueInputElm.setAttribute('type', 'text');
+                valueInputElm.setAttribute('placeholder', 'Value');
+                valueInputElm.setAttribute('autocomplete', 'off');
+                valueInputElm.setAttribute('data-lpignore', 'true');
+                valueInputElm.value = formatNumber(setting.value || '', setting.type);
+                valueTdElm.appendChild(valueInputElm);
+
+                let btnInputElm = document.createElement('button');
+                btnInputElm.classList.add('button', 'u-full-width', 'no-bottom');
+                btnInputElm.textContent = 'Update';
+                btnTdElm.appendChild(btnInputElm);
+
+                btnInputElm.addEventListener('click', e => {
+                    e.preventDefault();
+                    if (confirm(`Update value for "${setting.name}"?`)) {
+                        fetch(`/settings/${setting.key}`, {
+                            method: 'POST',
+                            headers: {
+                                Accept: 'application/json',
+                                'X-Access-Token': getAccessToken(),
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                value: parseNumber(valueInputElm.value, setting.type)
+                            })
+                        })
+                            .then(res => {
+                                return res.json();
+                            })
+                            .then(res => {
+                                if (res.error) {
+                                    alert(res.error);
+                                    return;
+                                }
+                                alert(res.success ? 'Updated' : 'Failed');
+                            })
+                            .catch(err => {
+                                alert(err.message);
+                            });
+                    }
+                });
+
+                trElm.appendChild(nameTdElm);
+                trElm.appendChild(keyTdElm);
+                trElm.appendChild(defaultTdElm);
+                trElm.appendChild(valueTdElm);
+                trElm.appendChild(btnTdElm);
+
+                tableElm.appendChild(trElm);
+            }
+
+            async function loadSettings(filter) {
+                let response;
+                try {
+                    let data = await fetch('/settings' + (filter ? `?filter=${encodeURIComponent(filter)}` : ''), {
+                        headers: {
+                            Accept: 'application/json',
+                            'X-Access-Token': getAccessToken()
+                        }
+                    });
+                    response = await data.json();
+                } catch (err) {
+                    alert(err.message);
+                    return;
+                }
+                if (response.error) {
+                    alert(response.error);
+                    return;
+                }
+
+                let tableElm = document.getElementById('settings-table');
+                tableElm.innerHTML = '';
+
+                for (let setting of response.settings) {
+                    addSettingsRow(tableElm, setting);
+                }
+            }
+
+            document.addEventListener('DOMContentLoaded', () => {
+                document.getElementById('filter-form').addEventListener('submit', e => {
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    let filter = document.getElementById('filter').value.trim();
+                    loadSettings(filter);
+                });
+            });
+        </script>
+    </head>
+    <body>
+        <div class="container">
+            <div class="row">
+                <div class="one-half column" style="margin-top: 2rem">
+                    <h4>WildDuck Settings</h4>
+                    <p>This page allows to edit default setting values.</p>
+                </div>
+            </div>
+
+            <form autocomplete="off" id="filter-form">
+                <div class="row">
+                    <div class="three columns">
+                        <input class="u-full-width" type="password" placeholder="Access token" id="accessToken" autocomplete="off" data-lpignore="true" />
+                    </div>
+                    <div class="seven columns">
+                        <input class="u-full-width" type="text" placeholder="Filter" id="filter" autocomplete="off" data-lpignore="true" />
+                    </div>
+                    <div class="two columns">
+                        <input class="button-primary u-full-width" type="submit" value="Show" />
+                    </div>
+                </div>
+            </form>
+
+            <div>
+                <table class="u-full-width">
+                    <thead>
+                        <tr>
+                            <th>Setting</th>
+                            <th>Key</th>
+                            <th>Default</th>
+                            <th colspan="2">Value</th>
+                        </tr>
+                    </thead>
+                    <tbody id="settings-table"></tbody>
+                </table>
+            </div>
+
+            <div>
+                <ul>
+                    <li>Duration: <code>XXd XXh XXm XXs XXms</code></li>
+                    <li>Size: <code>XXGB XXMB XXkB XXB</code></li>
+                </ul>
+            </div>
+        </div>
+    </body>
+</html>

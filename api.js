@@ -19,7 +19,7 @@ const crypto = require('crypto');
 const Gelf = require('gelf');
 const os = require('os');
 const util = require('util');
-const ObjectID = require('mongodb').ObjectID;
+const ObjectId = require('mongodb').ObjectId;
 const tls = require('tls');
 const Lock = require('ioredfour');
 
@@ -44,12 +44,15 @@ const domainaliasRoutes = require('./lib/api/domainaliases');
 const dkimRoutes = require('./lib/api/dkim');
 const certsRoutes = require('./lib/api/certs');
 const webhooksRoutes = require('./lib/api/webhooks');
+const settingsRoutes = require('./lib/api/settings');
+const { SettingsHandler } = require('./lib/settings-handler');
 
 let userHandler;
 let mailboxHandler;
 let messageHandler;
 let storageHandler;
 let auditHandler;
+let settingsHandler;
 let notifier;
 let loggelf;
 
@@ -141,7 +144,7 @@ if (config.api.secure && certOptions.key) {
     let httpsServerOptions = {};
 
     httpsServerOptions.key = certOptions.key;
-    if (httpsServerOptions.ca) {
+    if (certOptions.ca) {
         httpsServerOptions.ca = certOptions.ca;
     }
     httpsServerOptions.cert = certOptions.cert;
@@ -151,7 +154,9 @@ if (config.api.secure && certOptions.key) {
     httpsServerOptions.SNICallback = (servername, cb) => {
         certs
             .getContextForServername(servername, httpsServerOptions)
-            .then(context => cb(null, context || defaultSecureContext))
+            .then(context => {
+                cb(null, context || defaultSecureContext);
+            })
             .catch(err => cb(err));
     };
 
@@ -195,8 +200,16 @@ server.use(
     })
 );
 
+// public files
+server.get({ name: 'public_get', path: '/public/*' }, restify.plugins.serveStaticFiles('./public'));
+
 server.use(
     tools.asyncifyJson(async (req, res, next) => {
+        if (['public_get', 'public_post', 'acmeToken'].includes(req.route.name)) {
+            // skip token check for public pages
+            return next();
+        }
+
         let accessToken = req.query.accessToken || req.headers['x-access-token'] || false;
 
         if (req.query.accessToken) {
@@ -347,7 +360,7 @@ server.use(
                         let tokenAuthVersion = Number(tokenData.authVersion) || 0;
                         let userData = await db.users.collection('users').findOne(
                             {
-                                _id: new ObjectID(req.user)
+                                _id: new ObjectId(req.user)
                             },
                             { projection: { authVersion: true } }
                         );
@@ -477,7 +490,6 @@ module.exports = done => {
         users: db.users,
         redis: db.redis,
         messageHandler,
-        authlogExpireDays: config.log.authlogExpireDays,
         loggelf: message => loggelf(message)
     });
 
@@ -497,6 +509,8 @@ module.exports = done => {
         loggelf: message => loggelf(message)
     });
 
+    settingsHandler = new SettingsHandler({ db: db.database });
+
     server.loggelf = message => loggelf(message);
 
     server.lock = new Lock({
@@ -504,11 +518,11 @@ module.exports = done => {
         namespace: 'mail'
     });
 
-    acmeRoutes(db, server);
-    usersRoutes(db, server, userHandler);
-    addressesRoutes(db, server, userHandler);
+    acmeRoutes(db, server, { disableRedirect: true });
+    usersRoutes(db, server, userHandler, settingsHandler);
+    addressesRoutes(db, server, userHandler, settingsHandler);
     mailboxesRoutes(db, server, mailboxHandler);
-    messagesRoutes(db, server, messageHandler, userHandler, storageHandler);
+    messagesRoutes(db, server, messageHandler, userHandler, storageHandler, settingsHandler);
     storageRoutes(db, server, storageHandler);
     filtersRoutes(db, server);
     domainaccessRoutes(db, server);
@@ -519,12 +533,13 @@ module.exports = done => {
     updatesRoutes(db, server, notifier);
     authRoutes(db, server, userHandler);
     autoreplyRoutes(db, server);
-    submitRoutes(db, server, messageHandler, userHandler);
+    submitRoutes(db, server, messageHandler, userHandler, settingsHandler);
     auditRoutes(db, server, auditHandler);
     domainaliasRoutes(db, server);
     dkimRoutes(db, server);
     certsRoutes(db, server);
     webhooksRoutes(db, server);
+    settingsRoutes(db, server, settingsHandler);
 
     server.on('error', err => {
         if (!started) {

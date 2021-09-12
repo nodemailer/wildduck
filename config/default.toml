@@ -10,14 +10,17 @@ ident="wildduck"
 # how many processes to start
 processes=1
 
-# default quota storage in MB (can be overriden per user)
-maxStorage=1024
+# Default quota storage in MB (can be overriden per user)
+# Deprecated option. Use 'const:max:storage' setting instead
+#maxStorage=1024
 
-# default smtp recipients for 24h (can be overriden per user)
-maxRecipients=2000
+# Default smtp recipients for 24h (can be overriden per user)
+# Deprecated option. Use 'const:max:recipients' setting instead
+#maxRecipients=2000
 
 # default forwarded messages for 24h (can be overriden per user)
-maxForwards=2000
+# Deprecated option. Use 'const:max:forwards' setting instead
+#maxForwards=2000
 
 # If usernames are not email addresses then use this domain as hostname part
 #emailDomain="mydomain.info"
@@ -48,7 +51,8 @@ maxForwards=2000
     # changing this value only affects new entries
     # set to false to not log authentication events
     # set to 0 to keep the logs infinitely
-    authlogExpireDays=30
+    # NB! Removed. Use const:authlog:time setting instead
+    #authlogExpireDays=30
 
     [log.gelf]
         enabled=false

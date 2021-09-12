@@ -17,6 +17,7 @@
     -   [Third party projects](additional-software/third-party-projects.md)
 -   In Depth
     -   [Operating WildDuck](in-depth/operating-wildduck.md)
+    -   [Default values](in-depth/default-values.md)
     -   [E-Mail Protocol support](in-depth/protocol-support.md)
     -   [ACME certificates](in-depth/acme-certificates.md)
     -   [Security implementation](in-depth/security.md)

@@ -6,7 +6,7 @@ const POP3Server = require('./lib/pop3/server');
 const UserHandler = require('./lib/user-handler');
 const MessageHandler = require('./lib/message-handler');
 const packageData = require('./package.json');
-const ObjectID = require('mongodb').ObjectID;
+const ObjectId = require('mongodb').ObjectId;
 const db = require('./lib/db');
 const certs = require('./lib/certs');
 const LimitedFetch = require('./lib/limited-fetch');
@@ -210,7 +210,7 @@ const serverOptions = {
                 }
                 db.database.collection('messages').findOne(
                     {
-                        _id: new ObjectID(message.id),
+                        _id: new ObjectId(message.id),
                         // shard key
                         mailbox: message.mailbox,
                         uid: message.uid
@@ -330,7 +330,7 @@ function trashMessages(session, messages, callback) {
 }
 
 function markAsSeen(session, messages, callback) {
-    let ids = messages.map(message => new ObjectID(message.id));
+    let ids = messages.map(message => new ObjectId(message.id));
 
     return db.database.collection('mailboxes').findOneAndUpdate(
         {
@@ -392,7 +392,7 @@ function markAsSeen(session, messages, callback) {
                                 command: 'FETCH',
                                 uid: message.uid,
                                 flags: message.flags.concat('\\Seen'),
-                                message: new ObjectID(message.id),
+                                message: new ObjectId(message.id),
                                 modseq: mailboxData.modifyIndex,
                                 // Indicate that unseen values are changed. Not sure how much though
                                 unseenChange: true
@@ -464,7 +464,6 @@ module.exports = done => {
         database: db.database,
         users: db.users,
         redis: db.redis,
-        authlogExpireDays: config.log.authlogExpireDays,
         loggelf: message => loggelf(message)
     });
 

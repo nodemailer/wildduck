@@ -708,8 +708,19 @@ indexes:
 
     - collection: settings
       index:
-          name: key_enumerable
+          name: key_unique
           unique: true
           key:
               key: 1
               enumerable: 1
+
+    - collection: settings
+      index:
+          name: enumerable_key
+          key:
+              enumerable: 1
+              key: 1
+
+deleteindexes:
+    - collection: settings
+      index: key_enumerable

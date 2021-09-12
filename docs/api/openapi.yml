@@ -28,6 +28,7 @@ tags:
     - name: Filters
     - name: Mailboxes
     - name: Messages
+    - name: Settings
     - name: Storage
       description: Storage allows easier attachment handling when composing Draft messages. Instead of uploading the attachmnent with every draft update, you store the attachment to the Storage and then link stored file for the Draft.
     - name: Submission
@@ -2567,6 +2568,7 @@ paths:
               required: true
               schema:
                   type: string
+
     '/webhooks/{webhook}':
         delete:
             tags:
@@ -2652,6 +2654,106 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/CreateWebhookResponse'
+
+    '/settings/{setting}':
+        get:
+            tags:
+                - Settings
+            summary: Get Setting value
+            operationId: getSetting
+            parameters:
+                - name: sess
+                  in: query
+                  description: Session identifier for the logs
+                  schema:
+                      type: string
+                - name: ip
+                  in: query
+                  description: IP address for the logs
+                  schema:
+                      type: string
+
+            responses:
+                '200':
+                    description: Success
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetSettingResponse'
+
+        post:
+            tags:
+                - Settings
+            summary: Create or Update Setting
+            description: Create a new or update an existing setting
+            operationId: createSetting
+            requestBody:
+                description: Create or Update Setting
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateSettingRequest'
+                required: true
+            responses:
+                '200':
+                    description: Success
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateSettingResponse'
+
+        delete:
+            tags:
+                - Settings
+            summary: Delete a setting
+            operationId: deleteSetting
+            responses:
+                '200':
+                    description: Success
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/SuccessResponse'
+
+        parameters:
+            - name: setting
+              in: path
+              description: Key of the Setting
+              required: true
+              schema:
+                  type: string
+
+    /settings:
+        get:
+            tags:
+                - Settings
+            summary: List registered Settings
+            operationId: getSettings
+            parameters:
+                - name: filter
+                  in: query
+                  description: 'Optional partial match of the Setting key'
+                  schema:
+                      type: string
+                - name: sess
+                  in: query
+                  description: Session identifier for the logs
+                  schema:
+                      type: string
+                - name: ip
+                  in: query
+                  description: IP address for the logs
+                  schema:
+                      type: string
+
+            responses:
+                '200':
+                    description: Success
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetSettingsResponse'
+
 components:
     schemas:
         AddressLimits:
@@ -4860,6 +4962,7 @@ components:
                 password:
                     type: string
                     description: Temporary password
+
         GetWebhooksResponse:
             required:
                 - success
@@ -4890,6 +4993,7 @@ components:
                     items:
                         $ref: '#/components/schemas/GetWebhooksResult'
                     description: Webhook listing
+
         CreateWebhookResponse:
             required:
                 - success
@@ -4901,7 +5005,57 @@ components:
                     description: Indicates successful response
                 id:
                     type: string
-                    description: ID of the Address
+                    description: ID of the Webhook
+
+        GetSettingResponse:
+            required:
+                - success
+                - id
+            type: object
+            properties:
+                success:
+                    type: boolean
+                    description: Indicates successful response
+                key:
+                    type: string
+                    description: Key of the Setting
+                value:
+                    oneOf:
+                        - type: string
+                        - type: number
+                    description: Setting value
+
+        GetSettingsResponse:
+            required:
+                - success
+                - settings
+            type: object
+            properties:
+                success:
+                    type: boolean
+                    description: Indicates successful response
+                filter:
+                    type: string
+                    description: Partial match if requested
+                settings:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/GetSettingsResult'
+                    description: Setting listing
+
+        CreateSettingResponse:
+            required:
+                - success
+                - id
+            type: object
+            properties:
+                success:
+                    type: boolean
+                    description: Indicates successful response
+                key:
+                    type: string
+                    description: Key of the Setting
+
         UpdateForwardedAddressRequest:
             type: object
             description: ''
@@ -5757,6 +5911,26 @@ components:
                 url:
                     type: string
                     description: URL to POST data to
+
+        CreateSettingRequest:
+            required:
+                - value
+            type: object
+            properties:
+                value:
+                    oneOf:
+                        - type: string
+                        - type: number
+                    description: Setting value
+                sess:
+                    description: Session identifier for the logs
+                    schema:
+                        type: string
+                ip:
+                    description: IP address for the logs
+                    schema:
+                        type: string
+
         GetAddressesResult:
             required:
                 - id
@@ -6349,6 +6523,7 @@ components:
                 suspended:
                     type: boolean
                     description: If true then the user can not authenticate
+
         GetWebhooksResult:
             required:
                 - id
@@ -6389,6 +6564,37 @@ components:
             enum:
                 - asc
                 - desc
+
+        GetSettingsResult:
+            required:
+                - key
+            type: object
+            properties:
+                key:
+                    type: string
+                    description: Setting key
+                value:
+                    oneOf:
+                        - type: string
+                        - type: number
+                    description: Setting value
+                name:
+                    type: string
+                    description: Setting name
+                description:
+                    type: string
+                    description: Setting description
+                default:
+                    oneOf:
+                        - type: string
+                        - type: number
+                    description: Default value for this key
+                type:
+                    type: string
+                    description: Value subtype
+                custom:
+                    type: boolean
+                    description: If true then the value is set
 
     securitySchemes:
         AccessTokenAuth:

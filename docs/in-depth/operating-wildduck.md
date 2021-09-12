@@ -41,7 +41,7 @@ sh.enableSharding('attachments');
 sh.shardCollection('attachments.attachments.files', { _id: 'hashed' });
 sh.shardCollection('attachments.attachments.chunks', { files_id: 'hashed' });
 
-// storage _id is an ObjectID
+// storage _id is an ObjectId
 sh.shardCollection('attachments.storage.files', { _id: 'hashed' });
 sh.shardCollection('attachments.storage.chunks', { files_id: 'hashed' });
 ```
@@ -100,13 +100,14 @@ updated certs.
 
 Beware though that if configuration loading fails, then it ends with an exception. Make sure that TLS certificate files are readable for the WildDuck user.
 
-## fail2ban setup 
+## fail2ban setup
 
 NB: setup tested on Ubuntu 20.04 LTS using the scripted install. Should not be too different for those using the docker install.
 
 Create a /etc/fail2ban/jail.d/custom.conf
 In the default section, add the IPs that should never be blocked then your standard settings for findtime, bantime & maxretry.
 For example:
+
 ```toml
 [DEFAULT]
 ignoreip = 127.0.0.0/8 <your public IP> <any IP you need here>
@@ -116,6 +117,7 @@ maxretry = 3
 ```
 
 Then add this section for wildduck
+
 ```toml
 [wildduck]
 enabled  = true
@@ -125,6 +127,7 @@ logpath  = /var/log/wildduck-server/wildduck-server.log
 ```
 
 Then create /etc/fail2ban/filter.d/wildduck.conf
+
 ```toml
 [INCLUDES]
 before = common.conf

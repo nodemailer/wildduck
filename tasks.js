@@ -146,11 +146,31 @@ module.exports.start = callback => {
         }
         let collection = collections[collectionpos++];
         db[collection.type || 'database'].createCollection(collection.collection, collection.options, err => {
-            if (err) {
+            if (err && err.codeName !== 'NamespaceExists') {
                 log.error('Setup', 'Failed creating collection %s %s. %s', collectionpos, JSON.stringify(collection.collection), err.message);
             }
 
             ensureCollections(next);
+        });
+    };
+
+    let deleteindexes = setupIndexes.deleteindexes;
+    let deleteindexpos = 0;
+    let deleteIndexes = next => {
+        if (deleteindexpos >= deleteindexes.length) {
+            return next();
+        }
+        let index = deleteindexes[deleteindexpos++];
+        db[index.type || 'database'].collection(index.collection).dropIndex(index.index, (err, r) => {
+            if (r && r.ok) {
+                log.info('Setup', 'Deleted index %s from %s', index.index, index.collection);
+            }
+
+            if (err && err.codeName !== 'IndexNotFound') {
+                log.error('Setup', 'Failed to delete index %s %s. %s', deleteindexpos, JSON.stringify(index.collection + '.' + index.index), err.message);
+            }
+
+            deleteIndexes(next);
         });
     };
 
@@ -167,21 +187,13 @@ module.exports.start = callback => {
                 log.error('Setup', 'Failed creating index %s %s. %s', indexpos, JSON.stringify(index.collection + '.' + index.index.name), err.message);
             } else if (r.numIndexesAfter !== r.numIndexesBefore) {
                 log.verbose('Setup', 'Created index %s %s', indexpos, JSON.stringify(index.collection + '.' + index.index.name));
-            } else {
-                log.verbose(
-                    'Setup',
-                    'Skipped index %s %s: %s',
-                    indexpos,
-                    JSON.stringify(index.collection + '.' + index.index.name),
-                    r.note || 'No index added'
-                );
             }
 
             ensureIndexes(next);
         });
     };
 
-    gcLock.acquireLock('db_indexes', 1 * 60 * 1000, (err, lock) => {
+    gcLock.acquireLock('db_indexes', 5 * 60 * 1000, (err, lock) => {
         if (err) {
             log.error('GC', 'Failed to acquire lock error=%s', err.message);
             return start();
@@ -190,17 +202,19 @@ module.exports.start = callback => {
         }
 
         ensureCollections(() => {
-            ensureIndexes(() => {
-                // Do not release the indexing lock immediatelly
-                setTimeout(() => {
-                    gcLock.releaseLock(lock, err => {
-                        if (err) {
-                            console.error(lock);
-                            log.error('GC', 'Failed to release lock error=%s', err.message);
-                        }
-                    });
-                }, 60 * 1000);
-                return start();
+            deleteIndexes(() => {
+                ensureIndexes(() => {
+                    // Do not release the indexing lock immediatelly
+                    setTimeout(() => {
+                        gcLock.releaseLock(lock, err => {
+                            if (err) {
+                                console.error(lock);
+                                log.error('GC', 'Failed to release lock error=%s', err.message);
+                            }
+                        });
+                    }, 60 * 1000);
+                    return start();
+                });
             });
         });
     });

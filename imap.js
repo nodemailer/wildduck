@@ -9,6 +9,7 @@ const Indexer = require('./imap-core/lib/indexer/indexer');
 const MessageHandler = require('./lib/message-handler');
 const UserHandler = require('./lib/user-handler');
 const MailboxHandler = require('./lib/mailbox-handler');
+const { SettingsHandler } = require('./lib/settings-handler');
 const db = require('./lib/db');
 const packageData = require('./package.json');
 const certs = require('./lib/certs');
@@ -79,7 +80,7 @@ let createInterface = (ifaceOptions, callback) => {
         logger,
 
         maxMessage: config.imap.maxMB * 1024 * 1024,
-        maxStorage: config.maxStorage * 1024 * 1024,
+        maxStorage: ifaceOptions.maxStorage,
 
         enableCompression: !!config.imap.enableCompression,
 
@@ -226,7 +227,6 @@ module.exports = done => {
         database: db.database,
         users: db.users,
         redis: db.redis,
-        authlogExpireDays: config.log.authlogExpireDays,
         loggelf: message => loggelf(message)
     });
 
@@ -238,43 +238,52 @@ module.exports = done => {
         loggelf: message => loggelf(message)
     });
 
-    let ifaceOptions = [
-        {
-            enabled: true,
-            secure: config.imap.secure,
-            disableSTARTTLS: config.imap.disableSTARTTLS,
-            ignoreSTARTTLS: config.imap.ignoreSTARTTLS,
-            host: config.imap.host,
-            port: config.imap.port
-        }
-    ]
-        .concat(config.imap.interface || [])
-        .filter(iface => iface.enabled);
+    let settingsHandler = new SettingsHandler({ db: db.database });
 
-    let iPos = 0;
-    let startInterfaces = () => {
-        if (iPos >= ifaceOptions.length) {
-            return db.redis.del('lim:imap', () => done());
-        }
-        let opts = ifaceOptions[iPos++];
+    settingsHandler
+        .getMulti(['const:max:storage'])
+        .then(settings => {
+            let ifaceOptions = [
+                {
+                    enabled: true,
+                    secure: config.imap.secure,
+                    disableSTARTTLS: config.imap.disableSTARTTLS || false,
+                    ignoreSTARTTLS: config.imap.ignoreSTARTTLS || false,
+                    host: config.imap.host,
+                    port: config.imap.port,
 
-        createInterface(opts, err => {
-            if (err) {
-                logger.error(
-                    {
-                        err,
-                        tnx: 'bind'
-                    },
-                    'Failed starting %sIMAP interface %s:%s. %s',
-                    opts.secure ? 'secure ' : '',
-                    opts.host,
-                    opts.port,
-                    err.message
-                );
-                return done(err);
-            }
+                    maxStorage: config.maxStorage ? config.maxStorage * 1024 * 1024 : settings['const:max:storage']
+                }
+            ]
+                .concat(config.imap.interface || [])
+                .filter(iface => iface.enabled);
+
+            let iPos = 0;
+            let startInterfaces = () => {
+                if (iPos >= ifaceOptions.length) {
+                    return db.redis.del('lim:imap', () => done());
+                }
+                let opts = ifaceOptions[iPos++];
+
+                createInterface(opts, err => {
+                    if (err) {
+                        logger.error(
+                            {
+                                err,
+                                tnx: 'bind'
+                            },
+                            'Failed starting %sIMAP interface %s:%s. %s',
+                            opts.secure ? 'secure ' : '',
+                            opts.host,
+                            opts.port,
+                            err.message
+                        );
+                        return done(err);
+                    }
+                    setImmediate(startInterfaces);
+                });
+            };
             setImmediate(startInterfaces);
-        });
-    };
-    setImmediate(startInterfaces);
+        })
+        .catch(err => done(err));
 };

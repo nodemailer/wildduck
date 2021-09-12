@@ -4,7 +4,7 @@
 
 const config = require('wild-config');
 const log = require('npmlog');
-const ObjectID = require('mongodb').ObjectID;
+const ObjectId = require('mongodb').ObjectId;
 const SMTPServer = require('smtp-server').SMTPServer;
 const tools = require('./lib/tools');
 const MessageHandler = require('./lib/message-handler');
@@ -124,7 +124,7 @@ const serverOptions = {
             let users = session.users;
             let stored = 0;
 
-            let transactionId = new ObjectID();
+            let transactionId = new ObjectId();
             let prepared = false;
 
             let storeNext = () => {
@@ -247,7 +247,6 @@ module.exports = done => {
         database: db.database,
         users: db.users,
         redis: db.redis,
-        authlogExpireDays: config.log.authlogExpireDays,
         loggelf: message => loggelf(message)
     });
 

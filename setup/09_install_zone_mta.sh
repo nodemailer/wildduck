@@ -70,9 +70,6 @@ interfaces=[\"feeder\"]
 # defaults to os.hostname()
 hostname=\"$HOSTNAME\"
 
-# How long to keep auth records in log
-authlogExpireDays=30
-
 # SRS settings for forwarded emails
 
 [wildduck.srs]

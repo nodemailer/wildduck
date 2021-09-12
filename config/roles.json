@@ -108,6 +108,13 @@
             "read:any": ["*"],
             "update:any": ["*"],
             "delete:any": ["*"]
+        },
+
+        "settings": {
+            "create:any": ["*"],
+            "read:any": ["*"],
+            "update:any": ["*"],
+            "delete:any": ["*"]
         }
     },
 
@@ -388,6 +395,15 @@
     "auditclient": {
         "audit": {
             "read:any": ["*"]
+        }
+    },
+
+    "settings": {
+        "settings": {
+            "create:any": ["*"],
+            "read:any": ["*"],
+            "update:any": ["*"],
+            "delete:any": ["*"]
         }
     }
 }
