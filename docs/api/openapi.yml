@@ -1503,6 +1503,11 @@ paths:
                   description: 'If true, then includes metaData in the response'
                   schema:
                       type: boolean
+                - name: threadCounters
+                  in: query
+                  description: 'If true, then includes threadMessageCount in the response. Counters come with some overhead'
+                  schema:
+                      type: boolean
                 - name: limit
                   in: query
                   description: How many records to return
@@ -1828,6 +1833,11 @@ paths:
                   description: Maximal message size in bytes
                   schema:
                       type: number
+                - name: threadCounters
+                  in: query
+                  description: 'If true, then includes threadMessageCount in the response. Counters come with some overhead'
+                  schema:
+                      type: boolean
                 - name: limit
                   in: query
                   description: How many records to return
@@ -6379,6 +6389,9 @@ components:
                 thread:
                     type: string
                     description: ID of the Thread
+                threadMessageCount:
+                    type: number
+                    description: Amount of messages in the Thread. Included if threadCounters query argument was true
                 from:
                     $ref: '#/components/schemas/Address'
                 to:
