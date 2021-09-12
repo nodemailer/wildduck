@@ -5924,12 +5924,10 @@ components:
                     description: Setting value
                 sess:
                     description: Session identifier for the logs
-                    schema:
-                        type: string
+                    type: string
                 ip:
                     description: IP address for the logs
-                    schema:
-                        type: string
+                    type: string
 
         GetAddressesResult:
             required:
