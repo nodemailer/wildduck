@@ -181,6 +181,11 @@ paths:
                   description: Partial match of an address
                   schema:
                       type: string
+                - name: forward
+                  in: query
+                  description: Partial match of a forward email address or URL
+                  schema:
+                      type: string
                 - name: tags
                   in: query
                   description: Comma separated list of tags. The Address must have at least one to be set
@@ -1264,6 +1269,47 @@ paths:
               required: true
               schema:
                   type: string
+
+    /filters:
+        get:
+            tags:
+                - Filters
+            summary: List all Filters
+            operationId: getAllFilters
+            parameters:
+                - name: forward
+                  in: query
+                  description: Partial match of a forward email address or URL
+                  schema:
+                      type: string
+                - name: limit
+                  in: query
+                  description: How many records to return
+                  schema:
+                      type: number
+                - name: page
+                  in: query
+                  description: 'Current page number. Informational only, page numbers start from 1'
+                  schema:
+                      type: number
+                - name: next
+                  in: query
+                  description: 'Cursor value for next page, retrieved from nextCursor response value'
+                  schema:
+                      type: number
+                - name: previous
+                  in: query
+                  description: 'Cursor value for previous page, retrieved from previousCursor response value'
+                  schema:
+                      type: number
+            responses:
+                '200':
+                    description: Success
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetAllFiltersResponse'
+
     '/users/{user}/filters':
         get:
             tags:
@@ -2422,6 +2468,11 @@ paths:
                 - name: query
                   in: query
                   description: Partial match of username or default email address
+                  schema:
+                      type: string
+                - name: forward
+                  in: query
+                  description: Partial match of a forward email address or URL
                   schema:
                       type: string
                 - name: tags
@@ -4447,6 +4498,36 @@ components:
                 id:
                     type: string
                     description: ID for the created Filter
+        GetAllFiltersResponse:
+            required:
+                - success
+                - total
+                - page
+                - previousCursor
+                - nextCursor
+                - results
+            type: object
+            properties:
+                success:
+                    type: boolean
+                    description: Indicates successful response
+                total:
+                    type: number
+                    description: How many results were found
+                page:
+                    type: number
+                    description: Current page number. Derived from page query argument
+                previousCursor:
+                    type: string
+                    description: Either a cursor string or false if there are not any previous results
+                nextCursor:
+                    type: string
+                    description: Either a cursor string or false if there are not any next results
+                results:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/GetAllFiltersResult'
+                    description: Address listing
         GetFiltersResponse:
             required:
                 - success
@@ -6280,6 +6361,51 @@ components:
                 domain:
                     type: string
                     description: The domain this alias applies to
+        GetAllFiltersResult:
+            required:
+                - id
+                - user
+                - name
+                - created
+                - query
+                - action
+                - disabled
+            type: object
+            properties:
+                id:
+                    type: string
+                    description: Filter ID
+                user:
+                    type: string
+                    description: User ID
+                name:
+                    type: string
+                    description: Name for the filter
+                created:
+                    type: string
+                    description: Datestring of the time the filter was created
+                    format: date-time
+                query:
+                    type: array
+                    items:
+                        type: array
+                        items:
+                            type: string
+                action:
+                    type: array
+                    items:
+                        type: array
+                        items:
+                            type: string
+                disabled:
+                    type: boolean
+                    description: 'If true, then this filter is ignored'
+                targets:
+                    type: array
+                    items:
+                        type: string
+                    description: List of forwarding targets
+
         GetFiltersResult:
             required:
                 - id
