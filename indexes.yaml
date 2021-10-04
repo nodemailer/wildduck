@@ -181,6 +181,12 @@ indexes:
           key:
               user: 1
 
+    - collection: filters
+      index:
+          name: forward_target
+          key:
+              action.targets.value: 1
+
     # Indexes for the allow/block list collection
 
     - collection: domainaccess

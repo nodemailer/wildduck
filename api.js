@@ -524,7 +524,7 @@ module.exports = done => {
     mailboxesRoutes(db, server, mailboxHandler);
     messagesRoutes(db, server, messageHandler, userHandler, storageHandler, settingsHandler);
     storageRoutes(db, server, storageHandler);
-    filtersRoutes(db, server);
+    filtersRoutes(db, server, userHandler);
     domainaccessRoutes(db, server);
     aspsRoutes(db, server, userHandler);
     totpRoutes(db, server, userHandler);
