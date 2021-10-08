@@ -41,9 +41,16 @@ const serverOptions = {
 
     SNICallback(servername, cb) {
         certs
-            .getContextForServername(servername, serverOptions, {
-                source: 'pop3'
-            })
+            .getContextForServername(
+                servername,
+                serverOptions,
+                {
+                    source: 'pop3'
+                },
+                {
+                    loggelf: message => loggelf(message)
+                }
+            )
             .then(context => cb(null, context))
             .catch(err => cb(err));
     },

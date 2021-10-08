@@ -88,9 +88,16 @@ let createInterface = (ifaceOptions, callback) => {
 
         SNICallback(servername, cb) {
             certs
-                .getContextForServername(servername, serverOptions, {
-                    source: 'imap'
-                })
+                .getContextForServername(
+                    servername,
+                    serverOptions,
+                    {
+                        source: 'imap'
+                    },
+                    {
+                        loggelf: message => loggelf(message)
+                    }
+                )
                 .then(context => cb(null, context))
                 .catch(err => cb(err));
         }

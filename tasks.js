@@ -119,7 +119,8 @@ module.exports.start = callback => {
         cipher: config.certs && config.certs.cipher,
         secret: config.certs && config.certs.secret,
         database: db.database,
-        redis: db.redis
+        redis: db.redis,
+        loggelf: message => loggelf(message)
     });
 
     let start = () => {
