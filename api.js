@@ -153,7 +153,9 @@ if (config.api.secure && certOptions.key) {
 
     httpsServerOptions.SNICallback = (servername, cb) => {
         certs
-            .getContextForServername(servername, httpsServerOptions)
+            .getContextForServername(servername, httpsServerOptions, {
+                source: 'API'
+            })
             .then(context => {
                 cb(null, context || defaultSecureContext);
             })
