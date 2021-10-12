@@ -559,6 +559,12 @@ module.exports.getQueryResponse = function (query, message, options) {
             case 'envelope':
                 if (message.envelope) {
                     value = message.envelope;
+                    // cast invalidly stored In-Reply-To (8) and Message-ID (9) to strings
+                    for (let index of [9, 10]) {
+                        if (value[index] && Array.isArray(value[index])) {
+                            value[index] = value[index].pop() || null;
+                        }
+                    }
                 } else {
                     if (!mimeTree) {
                         mimeTree = indexer.parseMimeTree(message.raw);

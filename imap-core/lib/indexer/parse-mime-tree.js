@@ -217,7 +217,16 @@ class MIMEParser {
         });
 
         // ensure single value for selected fields
-        ['content-transfer-encoding', 'content-id', 'content-description', 'content-language', 'content-md5', 'content-location'].forEach(key => {
+        [
+            'in-reply-to',
+            'message-id',
+            'content-transfer-encoding',
+            'content-id',
+            'content-description',
+            'content-language',
+            'content-md5',
+            'content-location'
+        ].forEach(key => {
             if (Array.isArray(this._node.parsedHeader[key])) {
                 this._node.parsedHeader[key] = this._node.parsedHeader[key].pop();
             }
