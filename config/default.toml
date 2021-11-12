@@ -8,21 +8,10 @@
 ident="wildduck"
 
 # how many processes to start
+# either a number for specific process count or "cpus" for machine thread count
 processes=1
 
-# Default quota storage in MB (can be overriden per user)
-# Deprecated option. Use 'const:max:storage' setting instead
-#maxStorage=1024
-
-# Default smtp recipients for 24h (can be overriden per user)
-# Deprecated option. Use 'const:max:recipients' setting instead
-#maxRecipients=2000
-
-# default forwarded messages for 24h (can be overriden per user)
-# Deprecated option. Use 'const:max:forwards' setting instead
-#maxForwards=2000
-
-# If usernames are not email addresses then use this domain as hostname part
+# If usernames are not email addresses then use this domain as default hostname part
 #emailDomain="mydomain.info"
 
 [dbs]

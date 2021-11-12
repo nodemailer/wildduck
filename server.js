@@ -13,6 +13,7 @@ if (process.env.NODE_CONFIG_ONLY === 'true') {
 
 const errors = require('./lib/errors');
 const fs = require('fs');
+const os = require('os');
 const log = require('npmlog');
 const packageData = require('./package.json');
 
@@ -42,7 +43,22 @@ const printLogo = () => {
     log.info('App', '');
 };
 
-if (!config.processes || config.processes <= 1) {
+let processCount = config.processes;
+if (processCount) {
+    if (/^\s*cpus\s*$/i.test(processCount)) {
+        processCount = os.cpus().length;
+    }
+
+    if (typeof processCount !== 'number' && !isNaN(processCount)) {
+        processCount = Number(processCount);
+    }
+
+    if (isNaN(processCount)) {
+        processCount = 1;
+    }
+}
+
+if (!processCount || processCount <= 1) {
     printLogo();
     if (config.ident) {
         process.title = config.ident;
@@ -70,7 +86,7 @@ if (!config.processes || config.processes <= 1) {
         };
 
         // Fork workers.
-        for (let i = 0; i < config.processes; i++) {
+        for (let i = 0; i < processCount; i++) {
             forkWorker();
         }
 
