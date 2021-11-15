@@ -2053,6 +2053,15 @@ paths:
                                 - content
                             type: object
                             properties:
+                                filename:
+                                    type: string
+                                    description: Name of the file
+                                contentType:
+                                    type: string
+                                    description: MIME type of the file. Is detected from the file name by default
+                                encoding:
+                                    type: string
+                                    description: Encoding of the file content. Useful if you want to upload the file in base64 encoded format. Valid options "base64", "hex", "utf8"
                                 content:
                                     type: string
                                     format: binary
@@ -3540,6 +3549,18 @@ components:
                         - type: string
                 reference:
                     $ref: '#/components/schemas/ReferenceWithAttachments'
+                replacePrevious:
+                    type: object
+                    description: If set, then deletes a previous message when storing the new one. Useful when uploading a new Draft message.
+                    required:
+                        - id
+                    properties:
+                        mailbox:
+                            type: string
+                            description: Mailbox ID. Defaults to the mailbox of the uploaded message.
+                        id:
+                            type: number
+                            description: Message ID in Mailbox
                 sess:
                     type: string
                     description: Session identifier for the logs
@@ -3568,6 +3589,9 @@ components:
                     description: Indicates successful response
                 message:
                     $ref: '#/components/schemas/Message'
+                previousDeleted:
+                    type: boolean
+                    description: Set if replacing a previous message was requested
         ForwardStoredMessageResponse:
             required:
                 - success

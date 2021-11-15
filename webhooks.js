@@ -117,8 +117,8 @@ module.exports.start = callback => {
         }
     };
 
-    const webhooksQueue = new Queue('webhooks', { redis: config.dbs.redis });
-    const webhooksPostQueue = new Queue('webhooks_post', { redis: config.dbs.redis });
+    const webhooksQueue = new Queue('webhooks', typeof config.dbs.redis === 'object' ? { redis: config.dbs.redis } : config.dbs.redis);
+    const webhooksPostQueue = new Queue('webhooks_post', typeof config.dbs.redis === 'object' ? { redis: config.dbs.redis } : config.dbs.redis);
 
     webhooksQueue.process(async job => {
         try {
