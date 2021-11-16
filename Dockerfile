@@ -1,6 +1,6 @@
 FROM node:lts-alpine
 
-RUN apk add --no-cache make git dumb-init python openssl
+RUN apk --no-cache add make git dumb-init openssl
 
 WORKDIR /wildduck
 
@@ -8,7 +8,6 @@ COPY package*.json ./
 RUN npm install --production
 
 COPY . .
-
 
 ENV WILDDUCK_APPDIR=/wildduck \
     WILDDUCK_CONFIG=/wildduck/config/default.toml \
