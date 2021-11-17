@@ -71,7 +71,7 @@
         "mongodb-extended-json": "1.11.1",
         "node-forge": "0.10.0",
         "nodemailer": "6.7.1",
-        "npmlog": "5.0.1",
+        "npmlog": "6.0.0",
         "openpgp": "5.0.0",
         "pem-jwk": "2.0.0",
         "punycode": "2.1.1",
