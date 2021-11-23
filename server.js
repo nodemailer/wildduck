@@ -5,42 +5,26 @@
 process.env.UV_THREADPOOL_SIZE = 16;
 
 const config = require('wild-config');
+const pino = require('pino');
+
+const logger = pino().child({
+    process: 'server'
+});
 
 if (process.env.NODE_CONFIG_ONLY === 'true') {
-    console.log(require('util').inspect(config, false, 22)); // eslint-disable-line
+    logger.info(config);
     return process.exit();
 }
 
 const errors = require('./lib/errors');
-const fs = require('fs');
 const os = require('os');
-const log = require('npmlog');
 const packageData = require('./package.json');
 
-log.level = config.log.level;
-
 const printLogo = () => {
-    let logo = fs
-        .readFileSync(__dirname + '/logo.txt', 'utf-8')
-        .replace(/^\n+|\n+$/g, '')
-        .split('\n');
-
-    let columnLength = logo.map(l => l.length).reduce((max, val) => (val > max ? val : max), 0);
-    let versionString = ' ' + packageData.name + '@' + packageData.version + ' ';
-    let versionPrefix = '-'.repeat(Math.round(columnLength / 2 - versionString.length / 2));
-    let versionSuffix = '-'.repeat(columnLength - versionPrefix.length - versionString.length);
-
-    log.info('App', ' ' + '-'.repeat(columnLength));
-    log.info('App', '');
-
-    logo.forEach(line => {
-        log.info('App', ' ' + line);
+    logger.info({
+        app: packageData.name,
+        version: packageData.version
     });
-
-    log.info('App', '');
-
-    log.info('App', ' ' + versionPrefix + versionString + versionSuffix);
-    log.info('App', '');
 };
 
 let processCount = config.processes;
@@ -75,14 +59,14 @@ if (!processCount || processCount <= 1) {
             process.title = config.ident + ' master';
         }
 
-        log.info('App', `Master [${process.pid}] is running`);
+        logger.info({ msg: `Master process is running`, pid: process.pid });
 
         let workers = new Set();
 
         let forkWorker = () => {
             let worker = cluster.fork();
             workers.add(worker);
-            log.info('App', `Forked worker ${worker.process.pid}`);
+            logger.info({ msg: `Forked worker`, pid: worker.process.pid });
         };
 
         // Fork workers.
@@ -91,7 +75,7 @@ if (!processCount || processCount <= 1) {
         }
 
         cluster.on('exit', worker => {
-            log.info('App', `Worker ${worker.process.pid} died`);
+            logger.info({ msg: `Worker died`, pid: worker.process.pid });
             workers.delete(worker);
             setTimeout(forkWorker, 1000);
         });
@@ -115,6 +99,6 @@ if (!processCount || processCount <= 1) {
 }
 
 process.on('unhandledRejection', err => {
-    log.error('App', 'Unhandled rejection: %s' + ((err && err.stack) || err));
+    logger.error({ msg: 'Unhandled rejection', err });
     errors.notify(err);
 });

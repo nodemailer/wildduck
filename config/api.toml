@@ -3,6 +3,8 @@ port=8080
 # by default bind to localhost only
 host="127.0.0.1"
 
+proxy = false
+
 # Use `true` (HTTPS) for port 443 and `false` (HTTP) for 80
 secure=false
 
