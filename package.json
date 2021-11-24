@@ -76,7 +76,7 @@
         "pem-jwk": "2.0.0",
         "punycode": "2.1.1",
         "pwnedpasswords": "1.0.5",
-        "qrcode": "1.4.4",
+        "qrcode": "1.5.0",
         "restify": "8.6.0",
         "restify-cors-middleware2": "2.1.2",
         "restify-logger": "2.0.1",
