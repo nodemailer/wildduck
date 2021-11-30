@@ -323,6 +323,7 @@ async function start() {
     // API routes
     acmeRoutes(server, db);
     certsRoutes(server, db);
+    dkimRoutes(server, db);
 
     /*
     usersRoutes(db, server, userHandler, settingsHandler);
@@ -342,7 +343,7 @@ async function start() {
     submitRoutes(db, server, messageHandler, userHandler, settingsHandler);
     auditRoutes(db, server, auditHandler);
     domainaliasRoutes(db, server);
-    dkimRoutes(db, server);
+    
     webhooksRoutes(db, server);
     settingsRoutes(db, server, settingsHandler);
     */
