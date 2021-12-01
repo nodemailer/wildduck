@@ -333,6 +333,7 @@ async function start() {
     certsRoutes(server, db);
     dkimRoutes(server, db);
     updatesRoutes(server, db, notifier);
+    domainaliasRoutes(server, db);
 
     /*
     usersRoutes(db, server, userHandler, settingsHandler);
@@ -351,7 +352,7 @@ async function start() {
     autoreplyRoutes(db, server);
     submitRoutes(db, server, messageHandler, userHandler, settingsHandler);
     auditRoutes(db, server, auditHandler);
-    domainaliasRoutes(db, server);
+    
     
     webhooksRoutes(db, server);
     settingsRoutes(db, server, settingsHandler);
