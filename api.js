@@ -51,6 +51,7 @@ const dkimRoutes = require('./lib/api/dkim');
 const webhooksRoutes = require('./lib/api/webhooks');
 const settingsRoutes = require('./lib/api/settings');
 const { SettingsHandler } = require('./lib/settings-handler');
+const { ObjectId } = require('mongodb');
 
 let userHandler;
 let mailboxHandler;
@@ -236,6 +237,13 @@ async function start() {
         loggelf: message => loggelf(message)
     });
 
+    /*
+    setInterval(() => {
+        console.log('Triggering logout');
+        userHandler.logout(new ObjectId('5e2a9b67ab7ea4a226529417'), 'Authentication required');
+    }, 60 * 1000);
+*/
+
     mailboxHandler = new MailboxHandler({
         database: db.database,
         users: db.users,
@@ -324,6 +332,7 @@ async function start() {
     acmeRoutes(server, db);
     certsRoutes(server, db);
     dkimRoutes(server, db);
+    updatesRoutes(server, db, notifier);
 
     /*
     usersRoutes(db, server, userHandler, settingsHandler);
@@ -337,7 +346,7 @@ async function start() {
     totpRoutes(db, server, userHandler);
     custom2faRoutes(db, server, userHandler);
     u2fRoutes(db, server, userHandler);
-    updatesRoutes(db, server, notifier);
+    
     authRoutes(db, server, userHandler);
     autoreplyRoutes(db, server);
     submitRoutes(db, server, messageHandler, userHandler, settingsHandler);
