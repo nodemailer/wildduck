@@ -46,7 +46,7 @@ const authRoutes = require('./lib/api/auth');
 const autoreplyRoutes = require('./lib/api/autoreply');
 const submitRoutes = require('./lib/api/submit');
 const auditRoutes = require('./lib/api/audit');
-const domainaliasRoutes = require('./lib/api/domainaliases');
+const domainaliasesRoutes = require('./lib/api/domainaliases');
 const dkimRoutes = require('./lib/api/dkim');
 const webhooksRoutes = require('./lib/api/webhooks');
 const settingsRoutes = require('./lib/api/settings');
@@ -333,7 +333,7 @@ async function start() {
     certsRoutes(server, db);
     dkimRoutes(server, db);
     updatesRoutes(server, db, notifier);
-    domainaliasRoutes(server, db);
+    domainaliasesRoutes(server, db);
 
     /*
     usersRoutes(db, server, userHandler, settingsHandler);
