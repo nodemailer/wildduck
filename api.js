@@ -334,6 +334,7 @@ async function start() {
     dkimRoutes(server, db);
     updatesRoutes(server, db, notifier);
     domainaliasesRoutes(server, db);
+    authRoutes(server, db, userHandler);
 
     /*
     usersRoutes(db, server, userHandler, settingsHandler);
@@ -348,7 +349,7 @@ async function start() {
     custom2faRoutes(db, server, userHandler);
     u2fRoutes(db, server, userHandler);
     
-    authRoutes(db, server, userHandler);
+    
     autoreplyRoutes(db, server);
     submitRoutes(db, server, messageHandler, userHandler, settingsHandler);
     auditRoutes(db, server, auditHandler);
