@@ -44,10 +44,10 @@ describe('API DomainAliases', function () {
     });
 
     it('should GET /domainaliases', async () => {
-        const response = await server.get(`/domainaliases`).expect(200);
+        const response = await server.get(`/domainaliases?query=alias.example.com`).expect(200);
 
         expect(response.body.success).to.be.true;
-        expect(response.body.results.length).to.equal(1);
+        expect(response.body.results.length).to.gte(1);
         expect(response.body.results.find(entry => entry.id === domainalias)).to.exist;
     });
 
