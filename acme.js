@@ -78,6 +78,10 @@ async function start() {
             instance: logger.child({ provider: 'hapi' }),
             // Redact Authorization headers, see https://getpino.io/#/docs/redaction
             redact: REDACTED_KEYS
+        },
+
+        router: {
+            stripTrailingSlash: true
         }
     });
 

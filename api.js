@@ -196,6 +196,10 @@ async function start() {
             instance: logger.child({ provider: 'hapi' }),
             // Redact Authorization headers, see https://getpino.io/#/docs/redaction
             redact: REDACTED_KEYS
+        },
+
+        router: {
+            stripTrailingSlash: true
         }
     });
 
@@ -311,7 +315,10 @@ async function start() {
             request.errorInfo = error.output.payload;
         }
 
-        return h.response(request.errorInfo).code(request.errorInfo.statusCode || 500);
+        request.logger.error({ msg: 'Request failed', err: error });
+
+        const statusCode = request.errorInfo.statusCode || 500;
+        return h.response(request.errorInfo || { statusCode }).code(statusCode);
     });
 
     // Static files
@@ -335,9 +342,9 @@ async function start() {
     updatesRoutes(server, db, notifier);
     domainaliasesRoutes(server, db);
     authRoutes(server, db, userHandler);
+    usersRoutes(server, db, userHandler, settingsHandler);
 
     /*
-    usersRoutes(db, server, userHandler, settingsHandler);
     addressesRoutes(db, server, userHandler, settingsHandler);
     mailboxesRoutes(db, server, mailboxHandler);
     messagesRoutes(db, server, messageHandler, userHandler, storageHandler, settingsHandler);
