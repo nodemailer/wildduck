@@ -70,6 +70,110 @@ describe('API Users', function () {
         user = response.body.id;
     });
 
+    it('should POST /authenticate', async () => {
+        const authResponse = await server
+            .post('/authenticate')
+            .send({
+                username: 'myuser2',
+                password: 'secretvalue'
+            })
+            .expect(200);
+
+        expect(authResponse.body.success).to.be.true;
+        expect(authResponse.body).to.deep.equal({
+            success: true,
+            id: user,
+            username: 'myuser2',
+            scope: 'master',
+            require2fa: false,
+            requirePasswordChange: false
+        });
+    });
+
+    it('should POST /authenticate and fail', async () => {
+        const authResponse = await server
+            .post('/authenticate')
+            .send({
+                username: 'myuser2',
+                password: 'invalidpass'
+            })
+            .expect(403);
+
+        expect(authResponse.body).to.deep.equal({
+            statusCode: 403,
+            error: 'Forbidden',
+            message: 'Authentication failed',
+            code: 'AuthFailed',
+            id: user
+        });
+    });
+
+    it('should POST /users and fail - invalid username', async () => {
+        const response = await server
+            .post('/users')
+            .send({
+                username: 'ömyuser2',
+                name: 'John Smith',
+                password: 'secretvalue'
+            })
+            .expect(400);
+
+        expect(response.body.fields.find(f => f.key === 'username')).to.exist;
+    });
+
+    it('should POST /users with hashed password', async () => {
+        const response = await server
+            .post('/users')
+            .send({
+                username: 'myuser2hash',
+                name: 'John Smith',
+                // password: 'test',
+                password: '$argon2i$v=19$m=16,t=2,p=1$SFpGczI1bWV1RVRpYjNYaw$EBE/WnOGeWint3eQ+SQ7Sg',
+                hashedPassword: true
+            })
+            .expect(200);
+
+        expect(response.body.success).to.be.true;
+        let userId = response.body.id;
+
+        const authResponse = await server
+            .post('/authenticate')
+            .send({
+                username: 'myuser2hash',
+                password: 'test'
+            })
+            .expect(200);
+
+        expect(authResponse.body.success).to.be.true;
+        expect(authResponse.body).to.deep.equal({
+            success: true,
+            id: userId,
+            username: 'myuser2hash',
+            scope: 'master',
+            require2fa: false,
+            requirePasswordChange: false
+        });
+    });
+
+    it('should GET /users/resolve/{username}', async () => {
+        const response = await server.get('/users/resolve/myuser2').expect(200);
+
+        expect(response.body).to.deep.equal({
+            success: true,
+            id: user
+        });
+    });
+
+    it('should GET /users/resolve/{username} and fail', async () => {
+        const response = await server.get('/users/resolve/myuser2invalid').expect(404);
+        expect(response.body).to.deep.equal({
+            statusCode: 404,
+            error: 'Not Found',
+            message: 'This user does not exist',
+            code: 'UserNotFound'
+        });
+    });
+
     it('should GET /users', async () => {
         const response = await server.get('/users?query=myuser2').expect(200);
 
