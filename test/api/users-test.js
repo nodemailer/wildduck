@@ -180,4 +180,10 @@ describe('API Users', function () {
         expect(response.body.success).to.be.true;
         expect(response.body.results.find(entry => entry.id === user)).to.exist;
     });
+
+    it('should GET /users/{user}', async () => {
+        let response = await server.get(`/users/${user}`);
+        expect(response.body.success).to.be.true;
+        expect(response.body.id).to.equal(user);
+    });
 });
