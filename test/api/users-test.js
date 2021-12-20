@@ -186,4 +186,24 @@ describe('API Users', function () {
         expect(response.body.success).to.be.true;
         expect(response.body.id).to.equal(user);
     });
+
+    it('should PUT /users', async () => {
+        const name = 'John Smith 2';
+
+        // update user data
+        const response = await server
+            .put(`/users/${user}`)
+            .send({
+                name
+            })
+            .expect(200);
+        expect(response.body.success).to.be.true;
+        expect(response.body.id).to.equal(user);
+
+        // request and verify
+        let getResponse = await server.get(`/users/${user}`);
+        expect(getResponse.body.success).to.be.true;
+        expect(getResponse.body.id).to.equal(user);
+        expect(getResponse.body.name).to.equal(name);
+    });
 });
