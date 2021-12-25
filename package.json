@@ -80,7 +80,7 @@
         "npmlog": "6.0.0",
         "openpgp": "5.0.1",
         "pem-jwk": "2.0.0",
-        "pino": "7.6.0",
+        "pino": "7.6.1",
         "punycode": "2.1.1",
         "qrcode": "1.5.0",
         "restify": "8.6.0",
@@ -94,7 +94,7 @@
         "unixcrypt": "1.0.13",
         "uuid": "8.3.2",
         "wild-config": "1.5.1",
-        "yargs": "17.3.0"
+        "yargs": "17.3.1"
     },
     "repository": {
         "type": "git",
