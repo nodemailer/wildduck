@@ -206,4 +206,118 @@ describe('API Users', function () {
         expect(getResponse.body.id).to.equal(user);
         expect(getResponse.body.name).to.equal(name);
     });
+
+    it('should PUT /users/{user}/logout', async () => {
+        // request logout
+        const response = await server.put(`/users/${user}/logout`).send({ reason: 'Just because' }).expect(200);
+        expect(response.body.success).to.be.true;
+        expect(response.body.id).to.equal(user);
+    });
+
+    it('should POST /users/{user}/quota/reset', async () => {
+        const response = await server.post(`/users/${user}/quota/reset`).send({ ip: '127.0.0.1' }).expect(200);
+        expect(response.body.success).to.be.true;
+        expect(response.body.id).to.equal(user);
+        expect(response.body.storageUsed).to.exist;
+        expect(response.body.previousStorageUsed).to.exist;
+    });
+
+    it('should POST /quota/reset', async () => {
+        const response = await server.post(`/quota/reset`).send({ ip: '127.0.0.1' }).expect(200);
+        expect(response.body.success).to.be.true;
+        expect(response.body.task).to.exist;
+    });
+
+    it('should POST /users/{user}/password/reset', async () => {
+        const response = await server.post(`/users/${user}/password/reset`).send({ ip: '127.0.0.1' }).expect(200);
+        expect(response.body.success).to.be.true;
+        expect(response.body.id).to.equal(user);
+        expect(response.body.password).to.exist;
+
+        const authResponse = await server
+            .post('/authenticate')
+            .send({
+                username: 'myuser2',
+                password: response.body.password
+            })
+            .expect(200);
+
+        expect(authResponse.body.success).to.be.true;
+        expect(authResponse.body).to.deep.equal({
+            success: true,
+            id: user,
+            username: 'myuser2',
+            scope: 'master',
+            require2fa: false,
+            // using a temporary password requires a password change
+            requirePasswordChange: true
+        });
+    });
+
+    it('should POST /users/{user}/password/reset using a future date', async () => {
+        const response = await server
+            .post(`/users/${user}/password/reset`)
+            .send({
+                validAfter: new Date(Date.now() + 1 * 3600 * 1000).toISOString(),
+                ip: '127.0.0.1'
+            })
+            .expect(200);
+        expect(response.body.success).to.be.true;
+        expect(response.body.id).to.equal(user);
+        expect(response.body.password).to.exist;
+
+        // password not yet valid
+        await server
+            .post('/authenticate')
+            .send({
+                username: 'myuser2',
+                password: response.body.password
+            })
+            .expect(403);
+    });
+
+    it('should DELETE /users/{user}', async () => {
+        // first set the user password
+        const passwordUpdateResponse = await server
+            .put(`/users/${user}`)
+            .send({
+                password: 'secretvalue'
+            })
+            .expect(200);
+
+        expect(passwordUpdateResponse.body.success).to.be.true;
+        expect(passwordUpdateResponse.body.id).to.equal(user);
+
+        // Delete user
+        const response = await server.delete(`/users/${user}?deleteAfter=${encodeURIComponent(new Date(Date.now() + 3600 * 1000).toISOString())}`).expect(200);
+        expect(response.body.success).to.be.true;
+        expect(response.body.id).to.equal(user);
+        expect(response.body.addresses.deleted).to.gte(1);
+        expect(response.body.task).to.exist;
+
+        // Try to authenticate, should fail
+        await server
+            .post('/authenticate')
+            .send({
+                username: 'myuser2',
+                password: 'secretvalue'
+            })
+            .expect(403);
+    });
+
+    it('should GET /users/{user}/restore', async () => {
+        const response = await server.get(`/users/${user}/restore`).expect(200);
+        expect(response.body.success).to.be.true;
+        expect(response.body.id).to.equal(user);
+        expect(response.body.username).to.equal('myuser2');
+        expect(response.body.recoverableAddresses).to.deep.equal(['john@example.com']);
+    });
+
+    it('should POST /users/{user}/restore', async () => {
+        const response = await server.post(`/users/${user}/restore`).send({ ip: '127.0.0.1' }).expect(200);
+        expect(response.body.success).to.be.true;
+        expect(response.body.id).to.equal(user);
+        expect(response.body.addresses.recovered).to.gte(1);
+        expect(response.body.addresses.main).to.equal('john@example.com');
+    });
 });

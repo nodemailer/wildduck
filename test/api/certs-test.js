@@ -99,7 +99,7 @@ rp+tEw==
         const response = await server.get(`/certs`).expect(200);
 
         expect(response.body.success).to.be.true;
-        expect(response.body.results.length).to.equal(1);
+        expect(response.body.results.length).to.gte(1);
         expect(response.body.results.find(entry => entry.id === cert)).to.exist;
     });
 
