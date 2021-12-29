@@ -27,6 +27,8 @@ const os = require('os');
 const tls = require('tls');
 const Lock = require('ioredfour');
 
+const HapiToken = require('./lib/hapi-token');
+
 const acmeRoutes = require('./lib/api/acme');
 const certsRoutes = require('./lib/api/certs');
 
@@ -116,7 +118,7 @@ if (config.api.secure && certOptions.key) {
     serverOptions.tls = httpsServerOptions;
 }
 
-const swaggerOptions = {
+let swaggerOptions = {
     swaggerUI: true,
     swaggerUIPath: '/swagger/',
     documentationPage: true,
@@ -124,7 +126,7 @@ const swaggerOptions = {
 
     grouping: 'tags',
 
-    //auth: 'api-token',
+    auth: false,
 
     info: {
         title: 'WildDuck Email Server',
@@ -134,17 +136,6 @@ const swaggerOptions = {
             email: 'andris@kreata.ee'
         }
     }
-    /*
-    securityDefinitions: {
-        bearerAuth: {
-            type: 'apiKey',
-            //scheme: 'bearer',
-            name: 'access_token',
-            in: 'query'
-        }
-    },
-    security: [{ bearerAuth: [] }]
-    */
 };
 
 const component = config.log.gelf.component || 'wildduck';
@@ -202,6 +193,46 @@ async function start() {
             stripTrailingSlash: true
         }
     });
+
+    await server.register(HapiToken);
+
+    server.auth.strategy('token', 'access-token', {
+        validate: async (request, token, h) => {
+            // here is where you validate your token
+            // comparing with token from your database for example
+
+            if (!token) {
+                if (!config.api.accessControl.enabled && !config.api.accessToken) {
+                    return { status: 'valid', credentials: { token: '' }, artifacts: { auth: 'disabled' } };
+                }
+
+                return { status: 'missing' };
+            }
+
+            const status = token === '1234' ? 'valid' : 'fail';
+
+            const credentials = { token };
+            const artifacts = { test: 'info' };
+
+            return { status, credentials, artifacts };
+        }
+    });
+
+    server.auth.default('token');
+
+    if (config.api.accessControl.enabled || config.api.accessToken) {
+        swaggerOptions = Object.assign(swaggerOptions, {
+            securityDefinitions: {
+                bearerAuth: {
+                    type: 'apiKey',
+                    //scheme: 'bearer',
+                    name: 'accessToken',
+                    in: 'query'
+                }
+            },
+            security: [{ bearerAuth: [] }]
+        });
+    }
 
     await server.register([
         Inert,
@@ -299,6 +330,19 @@ async function start() {
                 throw error;
             }
         };
+
+        return h.continue;
+    });
+
+    server.ext('onPostAuth', async (request, h) => {
+        for (let key of ['ip', 'sess']) {
+            if (request.payload && request.payload[key]) {
+                if (!request.query[key]) {
+                    request.query[key] = request.payload[key];
+                }
+                delete request.payload[key];
+            }
+        }
 
         return h.continue;
     });

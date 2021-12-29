@@ -58,9 +58,7 @@ describe('API Users', function () {
                 },
                 pubKey: '-----BEGIN PGP PUBLIC KEY BLOCK-----\nVersion: Keybase OpenPGP v1.0.0\nComment: https://keybase.io/crypto\n\nxo0EYb0PqAEEANJtI/ivwudfCMmxm+a77Fll5YwSzaaI2nqhcp6pMRJ4l0aafsX3\nBcXUQpsyyELelt2xFtwTNygR4RFWVTn4OoXmO5zFtWCSegAwSyUNK7R/GXi2GTKk\nkYtxUwGcNKBkfY7yAn5KsaeuZL1feDXUGt0YHUmBds5i+6ylI+i4tNbRABEBAAHN\nH1dpbGQgRHVjayA8dGVzdEB3aWxkZHVjay5lbWFpbD7CrQQTAQoAFwUCYb0PqAIb\nLwMLCQcDFQoIAh4BAheAAAoJEJVLs8wf5gSCzBoD/3gz32OfJM1D4IrmKVwyLKxC\n1P81kL7E6ICWD2A0JF9EkojsMHl+/zagwoJejBQhmzTNkFmui5zwmdLGforKl303\ntB0l9vCTb5+eDDHOTUatJrvlw76Fz2ZjIhQTqD4xEM7MWx4xwTGY8bC5roIpdZJD\n9+vr81MXxiq9LZJDBXIyzo0EYb0PqAEEAL/uCTOrAncTRC/3cOQz+kLIzF4A9OTe\n6yxdNWWmx+uo9yJxnBv59Xz9qt8OT8Ih7SD/A4kFCuQqlyd0OFVhyd3KTAQ3CEml\nYOgL5jOE11YrEQjr36xPqO646JZuZIorKDf9PoIyipAMG89BlAoAjSXB1oeQADYn\n5fFLFVm1S7pLABEBAAHCwIMEGAEKAA8FAmG9D6gFCQ8JnAACGy4AqAkQlUuzzB/m\nBIKdIAQZAQoABgUCYb0PqAAKCRBhR/oKY9pg/YqnA/0Szmy4q4TnTBby+j57oXtn\nX/7H/xiaqlCd6bA3lbj3cPK4ybn/gnI4ECsfZfmSFG3T5C9EcZU0e9ByzimH6sxi\nOwPgKFWeJzpl5o8toR7m4wQVhv2NZRUukHe+2JH7nITS0gKeIBHMq2TbufcH6do1\n8s2G7XyLSd5Kkljxx7YmNiKoA/9CQ4l2WkARAFByyEJT9BEE4NBO0m0bI8sg0HRK\nGuP3FKcUu0Pz9R8AExEecofh8s4kaxofa2sbrTcK+L0p0hdR/39JWNuTJbxwEU3C\nA0mZKthjzL7seiRTG7Eny5gGenejRp2x0ziyMEaTgkvf44LPi06XiuE6FGnhElOc\nC7JoIc6NBGG9D6gBBADzW30GOysnqYkexL+bY9o+ai1mL+X58GPLilXJ5WXgEEdf\n8Pg/9jlEOzOnWTTgJAQDGHtwm0duKmK7EJGozLEY94QGOzRjAir6tMF2OYDQIDgj\nAoXavPAc5chFABEVUS12hUPPLoW6YgvaIb3AAZbIM8603BLXTaLGbtZ0z7eYxwAR\nAQABwsCDBBgBCgAPBQJhvQ+oBQkPCZwAAhsuAKgJEJVLs8wf5gSCnSAEGQEKAAYF\nAmG9D6gACgkQ58zrS0TNGbAiVAP/UIxYiSdoHDnBW5qB7onEiUVL5ZFk1Xk+NB0z\n7jOm1oAV0RH8I5NRQBtZ+75xar0vPTX122IdkgpaiNT0wy5Kd/2vz4LKVK9apyJI\neaZ+D7dt5Ipu1p0lWtglqL0xtjOSWuwHFwHuiRYg6eyhGN1RylFpuiKi5KykhrBS\nuBL/BHrk6AP/boRA+KIlb6s19KHNt54Kl8n8G4ZApCwZbUc2jzvbP5DZL5rcjlHd\ns4i4XE+uIJxsiX3iJZtVXzhTKuQlaoEljlhPs/TZYUmxeJ3TdV4o7emWiZ4gE8EQ\nhfxV37ew/GoYm6yME3tAZLIXbv2+bj6HZ4eE8bAMmPvpcQ+UwNJXvnk=\n=dR+x\n-----END PGP PUBLIC KEY BLOCK-----',
                 encryptMessages: false,
-                encryptForwarded: false,
-                sess: '62a173d53d4048599f85c2e0',
-                ip: '127.0.0.1'
+                encryptForwarded: false
             })
             .expect(200);
 
@@ -215,7 +213,7 @@ describe('API Users', function () {
     });
 
     it('should POST /users/{user}/quota/reset', async () => {
-        const response = await server.post(`/users/${user}/quota/reset`).send({ ip: '127.0.0.1' }).expect(200);
+        const response = await server.post(`/users/${user}/quota/reset`).send({}).expect(200);
         expect(response.body.success).to.be.true;
         expect(response.body.id).to.equal(user);
         expect(response.body.storageUsed).to.exist;
@@ -223,13 +221,13 @@ describe('API Users', function () {
     });
 
     it('should POST /quota/reset', async () => {
-        const response = await server.post(`/quota/reset`).send({ ip: '127.0.0.1' }).expect(200);
+        const response = await server.post(`/quota/reset`).send({}).expect(200);
         expect(response.body.success).to.be.true;
         expect(response.body.task).to.exist;
     });
 
     it('should POST /users/{user}/password/reset', async () => {
-        const response = await server.post(`/users/${user}/password/reset`).send({ ip: '127.0.0.1' }).expect(200);
+        const response = await server.post(`/users/${user}/password/reset`).send({}).expect(200);
         expect(response.body.success).to.be.true;
         expect(response.body.id).to.equal(user);
         expect(response.body.password).to.exist;
@@ -258,8 +256,7 @@ describe('API Users', function () {
         const response = await server
             .post(`/users/${user}/password/reset`)
             .send({
-                validAfter: new Date(Date.now() + 1 * 3600 * 1000).toISOString(),
-                ip: '127.0.0.1'
+                validAfter: new Date(Date.now() + 1 * 3600 * 1000).toISOString()
             })
             .expect(200);
         expect(response.body.success).to.be.true;
@@ -281,7 +278,8 @@ describe('API Users', function () {
         const passwordUpdateResponse = await server
             .put(`/users/${user}`)
             .send({
-                password: 'secretvalue'
+                password: 'secretvalue',
+                ip: '1.2.3.5'
             })
             .expect(200);
 
@@ -314,7 +312,7 @@ describe('API Users', function () {
     });
 
     it('should POST /users/{user}/restore', async () => {
-        const response = await server.post(`/users/${user}/restore`).send({ ip: '127.0.0.1' }).expect(200);
+        const response = await server.post(`/users/${user}/restore`).send({}).expect(200);
         expect(response.body.success).to.be.true;
         expect(response.body.id).to.equal(user);
         expect(response.body.addresses.recovered).to.gte(1);
