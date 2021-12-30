@@ -4,7 +4,7 @@
 
 const config = require('wild-config');
 const log = require('npmlog');
-const ObjectId = require('mongodb').ObjectId;
+const { ObjectId } = require('mongodb');
 const SMTPServer = require('smtp-server').SMTPServer;
 const tools = require('./lib/tools');
 const MessageHandler = require('./lib/message-handler');

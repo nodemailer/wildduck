@@ -19,6 +19,9 @@ const StorageHandler = require('./lib/storage-handler');
 const AuditHandler = require('./lib/audit-handler');
 const ImapNotifier = require('./lib/imap-notifier');
 
+const { checkAccessToken, deleteAccessToken } = require('./lib/access-tokens');
+const roles = require('./lib/roles');
+
 const db = require('./lib/db');
 const certs = require('./lib/certs');
 
@@ -172,76 +175,24 @@ loggelf = message => {
     gelf.emit('gelf.log', message);
 };
 
+const getRequestIp = request => {
+    // Check for the client IP from the Forwarded-For header
+    if (config.api.proxy) {
+        const xFF = request.headers['x-forwarded-for'] || '';
+        return xFF
+            .split(',')
+            .concat(request.info.remoteAddress)
+            .map(entry => entry.trim())
+            .filter(entry => entry)[0];
+    } else {
+        return request.info.remoteAddress;
+    }
+};
+
 async function start() {
     if (!config.api.enabled) {
         return false;
     }
-
-    const server = Hapi.server(serverOptions);
-
-    // Login
-    await server.register({
-        plugin: hapiPino,
-        options: {
-            //getChildBindings: request => ({ req: request }),
-            instance: logger.child({ provider: 'hapi' }),
-            // Redact Authorization headers, see https://getpino.io/#/docs/redaction
-            redact: REDACTED_KEYS
-        },
-
-        router: {
-            stripTrailingSlash: true
-        }
-    });
-
-    await server.register(HapiToken);
-
-    server.auth.strategy('token', 'access-token', {
-        validate: async (request, token, h) => {
-            // here is where you validate your token
-            // comparing with token from your database for example
-
-            if (!token) {
-                if (!config.api.accessControl.enabled && !config.api.accessToken) {
-                    return { status: 'valid', credentials: { token: '' }, artifacts: { auth: 'disabled' } };
-                }
-
-                return { status: 'missing' };
-            }
-
-            const status = token === '1234' ? 'valid' : 'fail';
-
-            const credentials = { token };
-            const artifacts = { test: 'info' };
-
-            return { status, credentials, artifacts };
-        }
-    });
-
-    server.auth.default('token');
-
-    if (config.api.accessControl.enabled || config.api.accessToken) {
-        swaggerOptions = Object.assign(swaggerOptions, {
-            securityDefinitions: {
-                bearerAuth: {
-                    type: 'apiKey',
-                    //scheme: 'bearer',
-                    name: 'accessToken',
-                    in: 'query'
-                }
-            },
-            security: [{ bearerAuth: [] }]
-        });
-    }
-
-    await server.register([
-        Inert,
-        Vision,
-        {
-            plugin: HapiSwagger,
-            options: swaggerOptions
-        }
-    ]);
 
     notifier = new ImapNotifier({
         database: db.database,
@@ -272,13 +223,6 @@ async function start() {
         loggelf: message => loggelf(message)
     });
 
-    /*
-    setInterval(() => {
-        console.log('Triggering logout');
-        userHandler.logout(new ObjectId('5e2a9b67ab7ea4a226529417'), 'Authentication required');
-    }, 60 * 1000);
-*/
-
     mailboxHandler = new MailboxHandler({
         database: db.database,
         users: db.users,
@@ -297,6 +241,109 @@ async function start() {
 
     settingsHandler = new SettingsHandler({ db: db.database });
 
+    const server = Hapi.server(serverOptions);
+
+    // Login
+    await server.register({
+        plugin: hapiPino,
+        options: {
+            //getChildBindings: request => ({ req: request }),
+            instance: logger.child({ provider: 'hapi' }),
+            // Redact Authorization headers, see https://getpino.io/#/docs/redaction
+            redact: REDACTED_KEYS,
+            logQueryParams: true,
+            logPayload: false,
+            logRouteTags: true
+        },
+
+        router: {
+            stripTrailingSlash: true
+        }
+    });
+
+    await server.register(HapiToken);
+
+    server.auth.strategy('token', 'access-token', {
+        validate: async (request, token /*, h */) => {
+            // here is where you validate your token
+            // comparing with token from your database for example
+
+            try {
+                if (!token) {
+                    if (!config.api.accessControl.enabled && !config.api.accessToken) {
+                        // default role if authentication is not required
+                        request.app.role = 'root';
+                        request.app.user = 'root';
+                        request.app.accessToken = false;
+
+                        return { status: 'valid', credentials: { user: request.app.user }, artifacts: { auth: 'disabled', role: request.app.role } };
+                    }
+
+                    return { status: 'missing' };
+                }
+
+                if (config.api.accessToken === token) {
+                    // root token
+                    request.app.role = 'root';
+                    request.app.user = 'root';
+                    request.app.accessToken = false;
+
+                    return { status: 'valid', credentials: { user: request.app.user }, artifacts: { auth: 'enabled', role: request.app.role } };
+                }
+
+                let { user, role } = await checkAccessToken(token);
+                if (!user || !role) {
+                    return { status: 'fail' };
+                }
+
+                request.app.role = role;
+                request.app.user = user;
+                request.app.accessToken = token;
+
+                if (request.params.user === 'me') {
+                    if (/^[0-9a-f]{24}$/i.test(user)) {
+                        request.params.user = user;
+                    } else {
+                        let error = Boom.boomify(new Error('Can not assign an account'), { statusCode: 403 });
+                        error.output.payload.code = 'NonAccountUser';
+                        throw error;
+                    }
+                }
+
+                return { status: 'valid', credentials: { user: request.app.user }, artifacts: { auth: 'enabled', role: request.app.role } };
+            } finally {
+                if (request.app.user && request.app.role) {
+                    request.logger.info({ user: request.app.user, role: request.app.role }, 'user authorized');
+                }
+            }
+        }
+    });
+
+    server.auth.default('token');
+
+    if (config.api.accessControl.enabled || config.api.accessToken) {
+        swaggerOptions = Object.assign(swaggerOptions, {
+            securityDefinitions: {
+                bearerAuth: {
+                    type: 'apiKey',
+                    //scheme: 'bearer',
+                    name: 'accessToken',
+                    in: 'query'
+                }
+            },
+            security: [{ bearerAuth: [] }]
+        });
+    }
+
+    await server.register([
+        Inert,
+        Vision,
+        {
+            plugin: HapiSwagger,
+            options: swaggerOptions
+        }
+    ]);
+
     server.decorate('server', 'loggelf', loggelf);
     server.decorate(
         'server',
@@ -308,28 +355,48 @@ async function start() {
             })
     );
 
+    // update version info of an access token
+    server.decorate(
+        'request',
+        'updateAccessToken',
+        request => async () => {
+            if (!request.app.accessToken) {
+                return false;
+            }
+            await userHandler.setAuthToken(request.app.user, request.app.accessToken);
+        },
+        {
+            apply: true
+        }
+    );
+
+    server.decorate(
+        'request',
+        'deleteAccessToken',
+        request => async () => {
+            if (!request.app.accessToken) {
+                return false;
+            }
+            return await deleteAccessToken(request.app.accessToken);
+        },
+        {
+            apply: true
+        }
+    );
+
+    server.decorate('request', 'validateAcl', permission => {
+        if (!permission.granted) {
+            let error = Boom.boomify(new Error('Not enough privileges'), { statusCode: 403 });
+            error.output.payload.code = 'MissingPrivileges';
+            throw error;
+        }
+    });
+
     // Hapi lifecycle handlers
     server.ext('onRequest', async (request, h) => {
         // Check for the client IP from the Forwarded-For header
-        if (config.api.proxy) {
-            const xFF = request.headers['x-forwarded-for'] || '';
-            request.app.ip = xFF
-                .split(',')
-                .concat(request.info.remoteAddress)
-                .map(entry => entry.trim())
-                .filter(entry => entry)[0];
-        } else {
-            request.app.ip = request.info.remoteAddress;
-        }
-
-        request.app.role = 'root';
-        request.validateAcl = permission => {
-            if (!permission.granted) {
-                let error = Boom.boomify(new Error('Not enough privileges'), { statusCode: 403 });
-                error.output.payload.code = 'MissingPrivileges';
-                throw error;
-            }
-        };
+        request.app.ip = getRequestIp(request);
+        request.app.role = false;
 
         return h.continue;
     });

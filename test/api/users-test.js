@@ -13,7 +13,7 @@ const server = supertest.agent('http://localhost:8080');
 describe('API Users', function () {
     this.timeout(10000); // eslint-disable-line no-invalid-this
 
-    let user;
+    let user, user2, token;
 
     it('should POST /users', async () => {
         const response = await server
@@ -119,6 +119,22 @@ describe('API Users', function () {
         expect(response.body.fields.find(f => f.key === 'username')).to.exist;
     });
 
+    it('should POST /authenticate and request a token', async () => {
+        const authResponse = await server
+            .post('/authenticate')
+            .send({
+                username: 'myuser2',
+                password: 'secretvalue',
+                token: true
+            })
+            .expect(200);
+
+        expect(authResponse.body.success).to.be.true;
+        expect(authResponse.body.token).to.exist;
+
+        token = authResponse.body.token;
+    });
+
     it('should POST /users with hashed password', async () => {
         const response = await server
             .post('/users')
@@ -132,7 +148,7 @@ describe('API Users', function () {
             .expect(200);
 
         expect(response.body.success).to.be.true;
-        let userId = response.body.id;
+        user2 = response.body.id;
 
         const authResponse = await server
             .post('/authenticate')
@@ -145,7 +161,7 @@ describe('API Users', function () {
         expect(authResponse.body.success).to.be.true;
         expect(authResponse.body).to.deep.equal({
             success: true,
-            id: userId,
+            id: user2,
             username: 'myuser2hash',
             scope: 'master',
             require2fa: false,
@@ -180,9 +196,43 @@ describe('API Users', function () {
     });
 
     it('should GET /users/{user}', async () => {
-        let response = await server.get(`/users/${user}`);
+        let response = await server.get(`/users/${user}`).expect(200);
         expect(response.body.success).to.be.true;
         expect(response.body.id).to.equal(user);
+    });
+
+    it('should GET /users/{user} using a token', async () => {
+        let response = await server.get(`/users/${user}?accessToken=${token}`).expect(200);
+        expect(response.body.success).to.be.true;
+        expect(response.body.id).to.equal(user);
+    });
+
+    it('should GET /users/me using a token', async () => {
+        let response = await server.get(`/users/me?accessToken=${token}`).expect(200);
+        expect(response.body.success).to.be.true;
+        expect(response.body.id).to.equal(user);
+    });
+
+    it('should GET /users/{user} using a token and fail against other user', async () => {
+        let response = await server.get(`/users/${user2}?accessToken=${token}`);
+        console.log(response.body);
+        expect(response.body).to.deep.equal({
+            statusCode: 403,
+            error: 'Forbidden',
+            message: 'Not enough privileges',
+            code: 'MissingPrivileges'
+        });
+    });
+
+    it('should DELETE /authenticate', async () => {
+        let response = await server.delete(`/authenticate?accessToken=${token}`).expect(200);
+        expect(response.body.success).to.be.true;
+        expect(response.body.deleted).to.equal(true);
+    });
+
+    it('should DELETE /authenticate with false', async () => {
+        // token is not valid anymore
+        await server.delete(`/authenticate?accessToken=${token}`).expect(401);
     });
 
     it('should PUT /users', async () => {
