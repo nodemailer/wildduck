@@ -215,7 +215,6 @@ describe('API Users', function () {
 
     it('should GET /users/{user} using a token and fail against other user', async () => {
         let response = await server.get(`/users/${user2}?accessToken=${token}`);
-        console.log(response.body);
         expect(response.body).to.deep.equal({
             statusCode: 403,
             error: 'Forbidden',
@@ -235,7 +234,7 @@ describe('API Users', function () {
         await server.delete(`/authenticate?accessToken=${token}`).expect(401);
     });
 
-    it('should PUT /users', async () => {
+    it('should PUT /users/{user}', async () => {
         const name = 'John Smith 2';
 
         // update user data
@@ -253,6 +252,65 @@ describe('API Users', function () {
         expect(getResponse.body.success).to.be.true;
         expect(getResponse.body.id).to.equal(user);
         expect(getResponse.body.name).to.equal(name);
+    });
+
+    it('should PUT /users/{user} and renew a token', async () => {
+        const authResponse1 = await server
+            .post('/authenticate')
+            .send({
+                username: 'myuser2',
+                password: 'secretvalue',
+                token: true
+            })
+            .expect(200);
+
+        expect(authResponse1.body.success).to.be.true;
+        expect(authResponse1.body.token).to.exist;
+
+        let token1 = authResponse1.body.token;
+
+        const authResponse2 = await server
+            .post('/authenticate')
+            .send({
+                username: 'myuser2',
+                password: 'secretvalue',
+                token: true
+            })
+            .expect(200);
+
+        expect(authResponse2.body.success).to.be.true;
+        expect(authResponse2.body.token).to.exist;
+
+        let token2 = authResponse2.body.token;
+
+        // try out token 1
+        let getResponse1 = await server.get(`/users/me?accessToken=${token1}`).expect(200);
+        expect(getResponse1.body.success).to.be.true;
+        expect(getResponse1.body.id).to.equal(user);
+
+        // try out token 2
+        let getResponse2 = await server.get(`/users/me?accessToken=${token2}`).expect(200);
+        expect(getResponse2.body.success).to.be.true;
+        expect(getResponse2.body.id).to.equal(user);
+
+        // update password using a token
+        const response = await server
+            .put(`/users/me?accessToken=${token1}`)
+            .send({
+                password: 'secretvalue'
+            })
+            .expect(200);
+
+        expect(response.body.success).to.be.true;
+        expect(response.body.id).to.equal(user);
+
+        // try out token 1, should have been renewed
+        let getResponse3 = await server.get(`/users/me?accessToken=${token1}`).expect(200);
+        expect(getResponse3.body.success).to.be.true;
+        expect(getResponse3.body.id).to.equal(user);
+
+        // try out token 2, should fail as it was not renewed
+        await server.get(`/users/me?accessToken=${token2}`).expect(401);
     });
 
     it('should PUT /users/{user}/logout', async () => {
