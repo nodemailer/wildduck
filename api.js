@@ -454,9 +454,9 @@ async function start() {
     domainaliasesRoutes(server, db);
     authRoutes(server, db, userHandler);
     usersRoutes(server, db, userHandler, settingsHandler);
+    addressesRoutes(server, db, userHandler, settingsHandler);
 
     /*
-    addressesRoutes(db, server, userHandler, settingsHandler);
     mailboxesRoutes(db, server, mailboxHandler);
     messagesRoutes(db, server, messageHandler, userHandler, storageHandler, settingsHandler);
     storageRoutes(db, server, storageHandler);
