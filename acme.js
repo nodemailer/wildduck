@@ -54,7 +54,7 @@ server.use(
 );
 
 module.exports = done => {
-    if (!config.acme.agent.enabled) {
+    if (!config.acme || !config.acme.agent || !config.acme.agent.enabled) {
         return setImmediate(() => done(null, false));
     }
 
