@@ -527,7 +527,10 @@ module.exports = done => {
         namespace: 'mail'
     });
 
-    acmeRoutes(db, server, { disableRedirect: true });
+    if (config.acme && config.acme.agent && config.acme.agent.enabled) {
+        acmeRoutes(db, server, { disableRedirect: true });
+    }
+
     usersRoutes(db, server, userHandler, settingsHandler);
     addressesRoutes(db, server, userHandler, settingsHandler);
     mailboxesRoutes(db, server, mailboxHandler);
