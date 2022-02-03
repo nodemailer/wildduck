@@ -447,7 +447,10 @@ async function start() {
     });
 
     // API routes
-    acmeRoutes(server, db);
+    if (config.acme && config.acme.agent && config.acme.agent.enabled) {
+        acmeRoutes(server, db);
+    }
+
     certsRoutes(server, db);
     dkimRoutes(server, db);
     updatesRoutes(server, db, notifier);

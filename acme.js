@@ -65,7 +65,7 @@ let loggelf = message => {
 };
 
 async function start() {
-    if (!config.acme.agent.enabled) {
+    if (!config.acme || !config.acme.agent || !config.acme.agent.enabled) {
         return false;
     }
 
