@@ -15,7 +15,7 @@ const server = supertest.agent('http://localhost:8080');
 describe('API Users', function () {
     this.timeout(10000); // eslint-disable-line no-invalid-this
 
-    let user, user2;
+    let user, user2, forwarded;
 
     before(async () => {
         // ensure that we have an existing user account
@@ -177,5 +177,24 @@ describe('API Users', function () {
 
         const response = await server.delete(`/users/${user}/addresses/${address}`).expect(200);
         expect(response.body.success).to.be.true;
+    });
+
+    it('should POST /addresses/forwarded', async () => {
+        const response = await server
+            .post(`/addresses/forwarded`)
+            .send({
+                address: `forwarded.1.addrtest@example.com`,
+                tags: ['TAG1', 'tag2']
+            })
+            .expect(200);
+        expect(response.body.success).to.be.true;
+        forwarded = response.body.id;
+    });
+
+    it('should GET /addresses with query', async () => {
+        const addressListResponse = await server.get(`/addresses?query=forwarded.1.addrtest`).expect(200);
+        expect(addressListResponse.body.success).to.be.true;
+        expect(addressListResponse.body.total).to.equal(1);
+        expect(forwarded).to.exist;
     });
 });
