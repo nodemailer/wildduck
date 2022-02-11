@@ -69,7 +69,9 @@ let loggelf;
 
 const REDACTED_KEYS = ['req.headers.authorization', 'req.headers["x-access-token"]', 'req.headers.cookie'];
 
-const logger = pino({ redact: REDACTED_KEYS }).child({
+const logger = pino({
+    redact: REDACTED_KEYS
+}).child({
     process: 'api'
 });
 
@@ -247,7 +249,10 @@ async function start() {
     await server.register({
         plugin: hapiPino,
         options: {
-            //getChildBindings: request => ({ req: request }),
+            getChildBindings(request) {
+                let mixin = { req: request };
+                return mixin;
+            },
             instance: logger.child({ provider: 'hapi' }),
             // Redact Authorization headers, see https://getpino.io/#/docs/redaction
             redact: REDACTED_KEYS,
@@ -268,6 +273,8 @@ async function start() {
             // here is where you validate your token
             // comparing with token from your database for example
 
+            let artifacts;
+
             try {
                 if (!token) {
                     if (!config.api.accessControl.enabled && !config.api.accessToken) {
@@ -276,7 +283,13 @@ async function start() {
                         request.app.user = 'root';
                         request.app.accessToken = false;
 
-                        return { status: 'valid', credentials: { user: request.app.user }, artifacts: { auth: 'disabled', role: request.app.role } };
+                        artifacts = { user: request.app.user, source: 'global', role: request.app.role };
+
+                        return {
+                            status: 'valid',
+                            credentials: { user: request.app.user },
+                            artifacts
+                        };
                     }
 
                     return { status: 'missing' };
@@ -288,7 +301,13 @@ async function start() {
                     request.app.user = 'root';
                     request.app.accessToken = false;
 
-                    return { status: 'valid', credentials: { user: request.app.user }, artifacts: { auth: 'enabled', role: request.app.role } };
+                    artifacts = { user: request.app.user, source: 'root', role: request.app.role };
+
+                    return {
+                        status: 'valid',
+                        credentials: { user: request.app.user },
+                        artifacts
+                    };
                 }
 
                 let { user, role } = await checkAccessToken(token);
@@ -310,10 +329,20 @@ async function start() {
                     }
                 }
 
-                return { status: 'valid', credentials: { user: request.app.user }, artifacts: { auth: 'enabled', role: request.app.role } };
+                artifacts = { user: request.app.user, source: 'token', role: request.app.role };
+
+                return {
+                    status: 'valid',
+                    credentials: { user: request.app.user },
+                    artifacts
+                };
             } finally {
+                if (artifacts) {
+                    request.logger[pino.symbols.chindingsSym] += `,"auth":${JSON.stringify(artifacts)}`;
+                }
+
                 if (request.app.user && request.app.role) {
-                    request.logger.info({ user: request.app.user, role: request.app.role }, 'user authorized');
+                    request.logger.info({ action: 'token_auth', authSatus: 'success' }, 'User authorized');
                 }
             }
         }
@@ -395,20 +424,64 @@ async function start() {
     // Hapi lifecycle handlers
     server.ext('onRequest', async (request, h) => {
         // Check for the client IP from the Forwarded-For header
-        request.app.ip = getRequestIp(request);
+        request.app.remoteAddress = getRequestIp(request);
         request.app.role = false;
+
+        // remove ip, sess and accessToken keys from query arguments if present
+        if (request.url.searchParams.has('sess') || request.url.searchParams.has('ip') || request.url.searchParams.has('accessToken')) {
+            // remove session and IP values from URL
+            let updatedUrl = new URL(request.url.href);
+
+            if (request.url.searchParams.has('accessToken')) {
+                request.app.accessToken = request.url.searchParams.get('accessToken');
+                updatedUrl.searchParams.delete('accessToken');
+            }
+
+            if (request.url.searchParams.has('sess')) {
+                let sess = request.url.searchParams.get('sess');
+                updatedUrl.searchParams.delete('sess');
+                // TODO: validate sess
+
+                request.app.client = request.app.client || {};
+                request.app.client.sess = sess;
+            }
+
+            if (request.url.searchParams.has('ip')) {
+                let ip = request.url.searchParams.get('ip');
+                updatedUrl.searchParams.delete('ip');
+                // TODO: validate ip
+
+                request.app.client = request.app.client || {};
+                request.app.client.ip = ip;
+            }
+
+            request.setUrl(`${updatedUrl.pathname}${updatedUrl.search}`);
+        }
 
         return h.continue;
     });
 
     server.ext('onPostAuth', async (request, h) => {
-        for (let key of ['ip', 'sess']) {
+        for (let [key, clientKey] of [
+            ['ip', 'ip'],
+            ['sess', 'id']
+        ]) {
             if (request.payload && request.payload[key]) {
-                if (!request.query[key]) {
-                    request.query[key] = request.payload[key];
-                }
+                let value = request.payload[key];
+                // FIXME: By hapi docs payload is read-only
                 delete request.payload[key];
+
+                // TODO: validate ip and sess
+
+                if (!request.app.client || !request.app.client[clientKey]) {
+                    request.app.client = request.app.client || {};
+                    request.app.client[clientKey] = value;
+                }
             }
+        }
+
+        if (request.app.client) {
+            request.logger[pino.symbols.chindingsSym] += `,"sess":${JSON.stringify(request.app.client)}`;
         }
 
         return h.continue;

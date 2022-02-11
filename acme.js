@@ -92,13 +92,13 @@ async function start() {
         // Check for the client IP from the Forwarded-For header
         if (config.api.proxy) {
             const xFF = request.headers['x-forwarded-for'] || '';
-            request.app.ip = xFF
+            request.app.remoteAddress = xFF
                 .split(',')
                 .concat(request.info.remoteAddress)
                 .map(entry => entry.trim())
                 .filter(entry => entry)[0];
         } else {
-            request.app.ip = request.info.remoteAddress;
+            request.app.remoteAddress = request.info.remoteAddress;
         }
 
         return h.continue;
