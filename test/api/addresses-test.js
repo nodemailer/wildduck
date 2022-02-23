@@ -184,6 +184,7 @@ describe('API Users', function () {
             .post(`/addresses/forwarded`)
             .send({
                 address: `forwarded.1.addrtest@example.com`,
+                targets: ['andris@ethereal.email'],
                 tags: ['TAG1', 'tag2']
             })
             .expect(200);
@@ -196,5 +197,18 @@ describe('API Users', function () {
         expect(addressListResponse.body.success).to.be.true;
         expect(addressListResponse.body.total).to.equal(1);
         expect(forwarded).to.exist;
+    });
+
+    it('should PUT /addresses/forwarded/{address}', async () => {
+        const response = await server
+            .put(`/addresses/forwarded/${forwarded}`)
+            .send({
+                tags: ['tAG2', 'tAg3']
+            })
+            .expect(200);
+        expect(response.body.success).to.be.true;
+
+        const addressListResponse = await server.get(`/addresses?query=forwarded.1.addrtest`).expect(200);
+        console.log('RESULT', JSON.stringify(addressListResponse.body.results, false, 2));
     });
 });
