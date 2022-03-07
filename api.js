@@ -34,7 +34,7 @@ const domainaccessRoutes = require('./lib/api/domainaccess');
 const aspsRoutes = require('./lib/api/asps');
 const totpRoutes = require('./lib/api/2fa/totp');
 const custom2faRoutes = require('./lib/api/2fa/custom');
-const u2fRoutes = require('./lib/api/2fa/u2f');
+const webauthnRoutes = require('./lib/api/2fa/webauthn');
 const updatesRoutes = require('./lib/api/updates');
 const authRoutes = require('./lib/api/auth');
 const autoreplyRoutes = require('./lib/api/autoreply');
@@ -541,7 +541,7 @@ module.exports = done => {
     aspsRoutes(db, server, userHandler);
     totpRoutes(db, server, userHandler);
     custom2faRoutes(db, server, userHandler);
-    u2fRoutes(db, server, userHandler);
+    webauthnRoutes(db, server, userHandler);
     updatesRoutes(db, server, notifier);
     authRoutes(db, server, userHandler);
     autoreplyRoutes(db, server);
