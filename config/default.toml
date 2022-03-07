@@ -25,9 +25,12 @@ processes=1
     #cipher="aes192" # only for decrypting legacy values (if there are any)
 
 [webauthn]
-    rpId="example.com" # origin domain
-    rpName="WildDuck Email Server"
-    challengeSize=64
+    rpId = "example.com" # origin domain
+    rpName = "WildDuck Email Server"
+
+    challengeSize = 64
+    attestation = "none"
+    authenticatorUserVerification = "discouraged"
 
 [attachments]
 # @include "attachments.toml"
