@@ -24,9 +24,13 @@ processes=1
     #secret="a secret cat"
     #cipher="aes192" # only for decrypting legacy values (if there are any)
 
-[u2f]
-    # Fully qualified URL of your website (must use HTTPS!)
-    appId="https://localhost:3000"
+[webauthn]
+    rpId = "example.com" # origin domain
+    rpName = "WildDuck Email Server"
+
+    challengeSize = 64
+    attestation = "none"
+    authenticatorUserVerification = "discouraged"
 
 [attachments]
 # @include "attachments.toml"
