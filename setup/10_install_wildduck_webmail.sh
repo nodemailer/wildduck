@@ -18,7 +18,7 @@ rm -rf /opt/wildduck-webmail
 
 # fresh install
 cd /var/opt
-git clone --bare git://github.com/nodemailer/wildduck-webmail.git
+git clone --bare https://github.com/nodemailer/wildduck-webmail.git
 
 # create update hook so we can later deploy to this location
 hook_script_bower wildduck-webmail
