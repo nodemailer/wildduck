@@ -1,0 +1,62 @@
+/*eslint no-unused-expressions: 0, prefer-arrow-callback: 0, no-console:0 */
+
+'use strict';
+
+const supertest = require('supertest');
+const chai = require('chai');
+
+const expect = chai.expect;
+chai.config.includeStack = true;
+
+const server = supertest.agent('http://localhost:8080');
+
+describe('API DKIM', function () {
+    let dkim;
+
+    this.timeout(10000); // eslint-disable-line no-invalid-this
+
+    it('should POST /dkim', async () => {
+        const response = await server
+            .post('/dkim')
+            .send({
+                domain: 'example.com',
+                selector: 'wildduck',
+                privateKey:
+                    '-----BEGIN RSA PRIVATE KEY-----\nMIICXQIBAAKBgQDFCPszabID2MLAzzfja3/TboKp4dHUGSkl6hNSly7IRdAhfh6J\nh6vNa+2Y7pyNagX00ukycZ/03O/93X3UxjzX/NpLESo3GwSjp39R4AgdW91nKt7X\nzGoz4ZQELAao+AH1QhJ8vumXFLFc6sS9l7Eu3+cZcAdWij2TCPKrB56tMQIDAQAB\nAoGAAQNfz07e1Hg74CPwpKG74Yly8I6xtoZ+mKxQdx9B5VO+kz2DyK9C6eaBLUUk\n1vFRoIWpH1JIQUkVjtehuwNd8rgPacPZRjSJrGuvwtP/bjzA8m/z/lI0+rfQW7L7\nRfPoi2fl6MJ3KkjNypmVPPNvtJA42aPUDW6SFcXFvSv43gECQQD12RFLlZ5H3W6z\n2ncJXiZha508LoyABkYeb+veCFwicoNEreQrToDgC3GuBRkODsUgRZaVu2sa4tlv\nzO0rwkXRAkEAzSvmAxTvkSf/gMy5mO+sZKeUEtMHibF4LKxw7Men2oADgVTnS38r\nf8uYJteLt3lkfHfV5ezEOERvQutKnMfpYQJBAL7apceUvkyyBWfQWIrIMWl9vpHi\n3SXiOPsWDfjPap8/YNKnYDOSfQ/xMm5S/NFh+/yCqVVSKuKzavOVFiXbapECQQDC\nhWdK7rN/xRNaUz93/2xL9hHOkyNnacoNWOSrqVO8NnicSxoLmyNrw2SbFusRZdde\npuM2XfdffYqbQKd545OhAkBiCm/hUl5+hCJI6xl4wh3aR4h8j/TA6/u4ohPjqYco\nLUPpKBaWeKdwQRbkkpMsVz6lFtpyZlV6V8joGEd8OLMO\n-----END RSA PRIVATE KEY-----',
+                description: 'Some text about this DKIM certificate',
+                sess: '12345',
+                ip: '127.0.0.1'
+            })
+            .expect(200);
+        expect(response.body.success).to.be.true;
+        expect(/^[0-9a-f]{24}$/.test(response.body.id)).to.be.true;
+        dkim = response.body.id;
+    });
+
+    it('should GET /dkim/:dkim', async () => {
+        const response = await server.get(`/dkim/${dkim}`).expect(200);
+
+        expect(response.body.success).to.be.true;
+        expect(response.body.id).to.equal(dkim);
+    });
+
+    it('should GET /dkim/resolve/:domain', async () => {
+        const response = await server.get(`/dkim/resolve/example.com`).expect(200);
+        expect(response.body.success).to.be.true;
+        expect(response.body.id).to.equal(dkim);
+    });
+
+    it('should GET /dkim', async () => {
+        const response = await server.get(`/dkim`).expect(200);
+
+        expect(response.body.success).to.be.true;
+        expect(response.body.results.length).to.equal(1);
+        expect(response.body.results.find(entry => entry.id === dkim)).to.exist;
+    });
+
+    it('should DELETE /dkim/:dkim', async () => {
+        const response = await server.delete(`/dkim/${dkim}`).expect(200);
+
+        expect(response.body.success).to.be.true;
+    });
+});
