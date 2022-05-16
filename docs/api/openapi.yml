@@ -1786,6 +1786,7 @@ paths:
                 - Messages
             summary: Search for messages
             operationId: searchMessages
+            description: This method allows searching for matching messages.
             parameters:
                 - name: mailbox
                   in: query
@@ -1917,8 +1918,8 @@ paths:
                 - Messages
             summary: Search and update messages
             operationId: searchApplyMessages
+            description: This method allows applying an action to all matching messages. This is an async method so that it will return immediately. Actual modifications are run in the background.
             requestBody:
-                description: This method allows to submit a draft message for delivery. Draft is moved to Sent mail folder.
                 content:
                     application/json:
                         schema:
@@ -1965,6 +1966,7 @@ paths:
                                     type: boolean
                                 or:
                                     type: object
+                                    description: 'At least onOne of the included terms must match'
                                     properties:
                                         query:
                                             description: 'Search string, uses MongoDB fulltext index. Covers data from mesage body and also common headers like from, to, subject etc.'
@@ -1986,6 +1988,7 @@ paths:
                                     type: number
                                 action:
                                     type: object
+                                    description: 'Define actions to take with matching messages'
                                     properties:
                                         moveTo:
                                             type: string
