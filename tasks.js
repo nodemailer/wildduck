@@ -26,6 +26,7 @@ const taskAudit = require('./lib/tasks/audit');
 const taskAcme = require('./lib/tasks/acme');
 const taskAcmeUpdate = require('./lib/tasks/acme-update');
 const taskClearFolder = require('./lib/tasks/clear-folder');
+const taskSearchApply = require('./lib/tasks/search-apply');
 
 let messageHandler;
 let mailboxHandler;
@@ -630,6 +631,24 @@ function processTask(task, data, callback) {
                 data,
                 {
                     messageHandler,
+                    loggelf
+                },
+                err => {
+                    if (err) {
+                        return callback(err);
+                    }
+                    // release
+                    callback(null, true);
+                }
+            );
+
+        case 'search-apply':
+            return taskSearchApply(
+                task,
+                data,
+                {
+                    messageHandler,
+                    mailboxHandler,
                     loggelf
                 },
                 err => {

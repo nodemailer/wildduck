@@ -1911,6 +1911,107 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/SearchMessagesResponse'
+
+        post:
+            tags:
+                - Messages
+            summary: Search and update messages
+            operationId: searchApplyMessages
+            requestBody:
+                description: This method allows to submit a draft message for delivery. Draft is moved to Sent mail folder.
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            properties:
+                                mailbox:
+                                    description: ID of the Mailbox
+                                    type: string
+                                thread:
+                                    description: Thread ID
+                                    type: string
+                                query:
+                                    description: 'Search string, uses MongoDB fulltext index. Covers data from mesage body and also common headers like from, to, subject etc.'
+                                    type: string
+                                datestart:
+                                    description: Datestring for the earliest message storing time
+                                    type: string
+                                    format: date-time
+                                dateend:
+                                    description: Datestring for the latest message storing time
+                                    type: string
+                                    format: date-time
+                                from:
+                                    description: 'Partial match for the From: header line'
+                                    type: string
+                                to:
+                                    in: query
+                                    description: 'Partial match for the To: and Cc: header lines'
+                                    type: string
+                                subject:
+                                    description: 'Partial match for the Subject: header line'
+                                    type: string
+                                attachments:
+                                    description: 'If true, then matches only messages with attachments'
+                                    type: boolean
+                                flagged:
+                                    description: 'If true, then matches only messages with \Flagged flags'
+                                    type: boolean
+                                unseen:
+                                    description: 'If true, then matches only messages without \Seen flags'
+                                    type: boolean
+                                searchable:
+                                    description: 'If true, then matches messages not in Junk or Trash'
+                                    type: boolean
+                                or:
+                                    type: object
+                                    properties:
+                                        query:
+                                            description: 'Search string, uses MongoDB fulltext index. Covers data from mesage body and also common headers like from, to, subject etc.'
+                                            type: string
+                                        from:
+                                            description: 'Partial match for the From: header line'
+                                            type: string
+                                        to:
+                                            description: 'Partial match for the To: and Cc: header lines'
+                                            type: string
+                                        subject:
+                                            description: 'Partial match for the Subject: header line'
+                                            type: string
+                                minSize:
+                                    description: Minimal message size in bytes
+                                    type: number
+                                maxSize:
+                                    description: Maximal message size in bytes
+                                    type: number
+                                action:
+                                    type: object
+                                    properties:
+                                        moveTo:
+                                            type: string
+                                            description: ID of the target Mailbox if you want to move messages
+                                        seen:
+                                            type: boolean
+                                            description: State of the \Seen flag
+                                        flagged:
+                                            type: boolean
+                                            description: State of the \Flagged flag
+
+            responses:
+                '200':
+                    description: Success
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    success:
+                                        type: boolean
+                                        description: Indicates if the action succeeded or not
+                                    scheduled:
+                                        type: string
+                                        description: ID of the scheduled operation
+
         parameters:
             - name: user
               in: path
