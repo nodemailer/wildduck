@@ -405,4 +405,38 @@ describe('API Users', function () {
         expect(response.body.addresses.recovered).to.gte(1);
         expect(response.body.addresses.main).to.equal('john@example.com');
     });
+
+    it('should POST /users with DES hash', async () => {
+        const response = await server
+            .post('/users')
+            .send({
+                username: 'desuser',
+                name: 'Crypt Des',
+                address: 'des@example.com',
+                password: 'sBk81TlWxyZlc',
+                hashedPassword: true
+            })
+            .expect(200);
+
+        expect(response.body.success).to.be.true;
+        expect(/^[0-9a-f]{24}$/.test(response.body.id)).to.be.true;
+
+        const authResponseSuccess = await server
+            .post('/authenticate')
+            .send({
+                username: 'desuser',
+                password: '12Mina34Ise56P.'
+            })
+            .expect(200);
+        expect(authResponseSuccess.body.success).to.be.true;
+
+        const authResponseFail = await server
+            .post('/authenticate')
+            .send({
+                username: 'desuser',
+                password: 'wrongpass'
+            })
+            .expect(403);
+        expect(authResponseFail.body.error).to.exist;
+    });
 });
