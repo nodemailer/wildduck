@@ -89,7 +89,7 @@
         "unix-crypt-td-js": "1.1.4",
         "unixcrypt": "1.1.0",
         "uuid": "8.3.2",
-        "wild-config": "1.6.0",
+        "wild-config": "1.6.1",
         "yargs": "17.5.1"
     },
     "repository": {
