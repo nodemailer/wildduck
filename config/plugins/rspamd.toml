@@ -1,5 +1,5 @@
 ["core/rspamd"]
-    enabled = false # ["receiver"]
+    enabled = false # use `true` or `["receiver"]` to enable
     url = "http://maildev.zone.wtf:11333/check"
     interfaces = ["maildrop"]
     ignoreOrigins = []
