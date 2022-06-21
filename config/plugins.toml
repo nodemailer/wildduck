@@ -1,0 +1,6 @@
+
+
+pluginsPath = "./plugins"
+
+[conf]
+# @include "plugins/*.toml"

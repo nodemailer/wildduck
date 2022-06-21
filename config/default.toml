@@ -86,7 +86,7 @@ processes=1
 #cipher="aes192" # only for decrypting legacy values (if there are any)
 
 [plugins]
-# @include "plugins/*.toml"
+# @include "plugins.toml"
 
 [tasks]
 # if enabled then process jobs like deleting expired messages etc
