@@ -38,3 +38,4 @@
 -   `U2fDisabled`: U2F 2FA is not initialized for this user
 -   `InvalidU2fRequest`: Failed to validate U2F response
 -   `NoUpdates`: Nothing was updated
+-   `TooMany`: Instance limit hit
