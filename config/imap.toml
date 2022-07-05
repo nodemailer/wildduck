@@ -14,10 +14,12 @@ maxMB=25
 retention=30
 
 # Default max donwload bandwith per day in megabytes
-maxDownloadMB=10000
+# Replaced by 'const:max:imap:download' setting
+maxDownloadMB=10240
 
 # Default max upload bandwith per day in  megabytes
-maxUploadMB=10000
+# Replaced by 'const:max:imap:upload' setting
+maxUploadMB=10240
 
 # Default max concurrent connections per service per client
 maxConnections=15

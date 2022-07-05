@@ -553,8 +553,9 @@ describe('API tests', function () {
             expect(response.body.success).to.be.true;
 
             const messageData = messageDataResponse.body;
+
             expect(messageData.subject).to.equal(message.subject);
-            expect(messageData.html[0]).to.equal('<p>Hello hello world! <img src="attachment:ATT00001" alt="Red dot" /></p>');
+            expect(messageData.html[0]).to.equal('<p>Hello hello world! <img src="attachment:ATT00001" alt="Red dot"></p>');
             expect(messageData.attachments).to.deep.equal([
                 {
                     contentType: 'image/png',
@@ -600,6 +601,7 @@ describe('API tests', function () {
             const sentMessageDataResponse = await server.get(
                 `/users/${userId}/mailboxes/${submitResponse.body.message.mailbox}/messages/${submitResponse.body.message.id}`
             );
+
             expect(sentMessageDataResponse.body.outbound[0].queueId).to.equal(submitResponse.body.queueId);
 
             const deleteResponse = await server.delete(`/users/${userId}/outbound/${submitResponse.body.queueId}`).expect(200);
