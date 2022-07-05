@@ -30,7 +30,10 @@ jobs:
                 env:
                     MONGO_INITDB_ROOT_USERNAME: wildduck
                     MONGO_INITDB_ROOT_PASSWORD: wildduck
-                    MONGO_INITDB_DATABASE: wildduck-test
+                    MONGO_INITDB_DATABASE: 'wildduck-test'
+                command: [--auth]
+                volumes:
+                    - ./init-mongo.js:/docker-entrypoint-initdb.d/init-mongo-js.js:ro
                 options: >-
                     --health-cmd mongo
                     --health-interval 10s
