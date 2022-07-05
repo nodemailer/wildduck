@@ -53,4 +53,4 @@ jobs:
               run: npm run runtest
               env:
                   APPCONF_dbs_redis: redis://127.0.0.1:6379/1
-                  APPCONF_dbs_mongodb: 'mongodb://wildduck:wildduck@127.0.0.1:27017/wildduck-test'
+                  APPCONF_dbs_mongodb: 'mongodb://wildduck:wildduck@127.0.0.1:27017/wildduck-test?authSource=admin'
