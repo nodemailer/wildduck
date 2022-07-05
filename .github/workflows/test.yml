@@ -5,12 +5,12 @@ on:
     pull_request:
 
 jobs:
-    container-job:
-        # Containers must run in Linux based operating systems
-        runs-on: ubuntu-latest
-        # Docker Hub image that `container-job` executes in
-        container: node:10.18-jessie
-
+    test:
+        strategy:
+            matrix:
+                node: [16.x]
+                os: [ubuntu-latest]
+        runs-on: ${{ matrix.os }}
         # Service containers to run with `container-job`
         services:
             # Label used to access the service container
@@ -37,14 +37,8 @@ jobs:
                     --health-retries 5
                 ports:
                     - 27017:27017
-    test:
-        strategy:
-            matrix:
-                node: [16.x]
-                os: [ubuntu-latest]
-        runs-on: ${{ matrix.os }}
         steps:
-            - uses: actions/checkout@v3
+            - uses: actions/checkout@v2
             - name: Use Node.js ${{ matrix.node }}
               uses: actions/setup-node@v1
               with:
