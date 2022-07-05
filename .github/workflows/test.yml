@@ -5,6 +5,38 @@ on:
     pull_request:
 
 jobs:
+    container-job:
+        # Containers must run in Linux based operating systems
+        runs-on: ubuntu-latest
+        # Docker Hub image that `container-job` executes in
+        container: node:10.18-jessie
+
+        # Service containers to run with `container-job`
+        services:
+            # Label used to access the service container
+            redis:
+                # Docker Hub image
+                image: redis
+                # Set health checks to wait until redis has started
+                options: >-
+                    --health-cmd "redis-cli ping"
+                    --health-interval 10s
+                    --health-timeout 5s
+                    --health-retries 5
+
+            mongo:
+                image: mongo
+                env:
+                    MONGO_INITDB_ROOT_USERNAME: wildduck
+                    MONGO_INITDB_ROOT_PASSWORD: wildduck
+                    MONGO_INITDB_DATABASE: wildduck-test
+                options: >-
+                    --health-cmd mongo
+                    --health-interval 10s
+                    --health-timeout 5s
+                    --health-retries 5
+                ports:
+                    - 27017:27017
     test:
         strategy:
             matrix:
@@ -12,10 +44,15 @@ jobs:
                 os: [ubuntu-latest]
         runs-on: ${{ matrix.os }}
         steps:
-            - uses: actions/checkout@v2
+            - uses: actions/checkout@v3
             - name: Use Node.js ${{ matrix.node }}
               uses: actions/setup-node@v1
               with:
                   node-version: ${{ matrix.node }}
             - run: npm install
-            - run: npm test
+            - name: Run tests
+              run: npm test
+              env:
+                  APPCONF_dbs_redis: redis://redis:6379/1
+                  APPCONF_dbs_mongodb: mongodb://wildduck:wildduck@mongo:27017/wildduck-test
+                  NODE_CONFIG_ONLY: 'true'
