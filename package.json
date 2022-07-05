@@ -4,7 +4,10 @@
     "description": "IMAP/POP3 server built with Node.js and MongoDB",
     "main": "server.js",
     "scripts": {
-        "test": "mongo --eval 'db.dropDatabase()' wildduck-test && redis-cli -n 13 flushdb && NODE_ENV=test grunt",
+        "test": "mongo --eval 'db.dropDatabase()' wildduck-test && redis-cli -n 13 flushdb && npm run runtest",
+        "printconf": "NODE_CONFIG_ONLY=true npm start",
+        "runtest": "NODE_ENV=test grunt",
+        "runci": "npm run printconf && npm run runtest",
         "apidoc": "apidoc -i lib/api/ -o docs/api/",
         "show": "NODE_CONFIG_ONLY=true node server.js",
         "start": "node server.js"

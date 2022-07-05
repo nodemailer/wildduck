@@ -10,6 +10,7 @@ const ObjectId = require('mongodb').ObjectId;
 const db = require('./lib/db');
 const certs = require('./lib/certs');
 const LimitedFetch = require('./lib/limited-fetch');
+const tools = require('./lib/tools');
 const Gelf = require('gelf');
 const os = require('os');
 
@@ -204,7 +205,7 @@ const serverOptions = {
     },
 
     onFetchMessage(message, session, callback) {
-        userHandler.userCache.get(session.user.id, 'pop3MaxDownload', (config.pop3.maxDownloadMB || 10000) * 1024 * 1024, (err, limit) => {
+        userHandler.userCache.get(session.user.id, 'pop3MaxDownload', { setting: 'const:max:pop3:download' }, (err, limit) => {
             if (err) {
                 return callback(err);
             }
@@ -214,9 +215,14 @@ const serverOptions = {
                     return callback(err);
                 }
                 if (!res.success) {
-                    let err = new Error('Download was rate limited. Check again in ' + res.ttl + ' seconds');
+                    let err = new Error('Download was rate limited');
+                    err.response = 'NO';
+                    err.code = 'DownloadRateLimited';
+                    err.ttl = res.ttl;
+                    err.responseMessage = `Download was rate limited. Try again in ${tools.roundTime(res.ttl)}.`;
                     return callback(err);
                 }
+
                 db.database.collection('messages').findOne(
                     {
                         _id: new ObjectId(message.id),

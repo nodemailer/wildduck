@@ -153,6 +153,8 @@ module.exports = {
                 logdata._error = err.message;
                 logdata._code = err.code;
                 logdata._response = err.response;
+                logdata._responseMessage = err.responseMessage;
+                logdata._ratelimit_ttl = err.ttl;
                 this._server.loggelf(logdata);
 
                 if (err.code === 10334) {
@@ -166,7 +168,8 @@ module.exports = {
                 // do not return actual error to user
                 return callback(null, {
                     response: 'NO',
-                    code: 'TEMPFAIL'
+                    code: 'TEMPFAIL',
+                    message: err.responseMessage
                 });
             }
 

@@ -15,7 +15,8 @@ disableVersionString=false
 maxMessages=250
 
 # Max donwload bandwith per day in megabytes
-maxDownloadMB=10000
+# Replaced by 'const:max:pop3:download' setting
+maxDownloadMB=10240
 
 # If true, then expect HAProxy PROXY header as the first line of data
 useProxy=false
