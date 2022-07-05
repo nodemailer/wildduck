@@ -31,10 +31,6 @@ jobs:
                     MONGO_INITDB_ROOT_USERNAME: wildduck
                     MONGO_INITDB_ROOT_PASSWORD: wildduck
                     MONGO_INITDB_DATABASE: 'wildduck-test'
-                volumes:
-                    - ./mongo:/home/mongodb
-                    - ./mongo/init-db.d/:/docker-entrypoint-initdb.d/
-                    - ./mongo/db:/data/db
                 options: >-
                     --health-cmd mongo
                     --health-interval 10s
