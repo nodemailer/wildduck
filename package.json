@@ -5,7 +5,9 @@
     "main": "server.js",
     "scripts": {
         "test": "mongo --eval 'db.dropDatabase()' wildduck-test && redis-cli -n 13 flushdb && npm run runtest",
-        "runtest": "env && NODE_CONFIG_ONLY=true npm start && NODE_ENV=test grunt",
+        "printconf": "NODE_CONFIG_ONLY=true npm start",
+        "runtest": "NODE_ENV=test grunt",
+        "runci": "npm run printconf && npm run runtest",
         "apidoc": "apidoc -i lib/api/ -o docs/api/",
         "show": "NODE_CONFIG_ONLY=true node server.js",
         "start": "node server.js"
