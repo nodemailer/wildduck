@@ -5702,7 +5702,7 @@ components:
             properties:
                 message:
                     type: string
-                    description: 'Message ID values. Either comma separated numbers (1,2,3) or colon separated range (3:15)'
+                    description: 'Message ID values. Either comma separated numbers (1,2,3) or colon separated range (3:15), or a range from UID to end (3:*)'
                 moveTo:
                     type: string
                     description: ID of the target Mailbox if you want to move messages
