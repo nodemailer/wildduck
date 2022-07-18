@@ -4831,6 +4831,19 @@ components:
                     description: Attachments for the message
                 verificationResults:
                     $ref: '#/components/schemas/VerificationResults'
+                bimi:
+                    type: object
+                    description: BIMI logo info. If logo validation failed in any way, then this property is not set
+                    properties:
+                        certified:
+                            type: boolean
+                            description: If true, then this logo is from a VMC file
+                        url:
+                            type: string
+                            description: URL of the resource the logo was retrieved from
+                        image:
+                            type: string
+                            description: Data URL for the SVG image
                 contentType:
                     $ref: '#/components/schemas/ContentType'
                 metaData:
