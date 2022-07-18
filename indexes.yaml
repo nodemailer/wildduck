@@ -698,6 +698,14 @@ indexes:
           key:
               metadata.subject: 1
 
+    - collection: bimi
+      index:
+          name: by_type
+          unique: true
+          key:
+              type: 1
+              url: 1
+
     - collection: webhooks
       index:
           name: by_type
