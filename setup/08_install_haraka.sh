@@ -36,7 +36,7 @@ cd
 npm install --production --no-optional --no-package-lock --no-audit --no-shrinkwrap --unsafe-perm -g Haraka@$HARAKA_VERSION
 haraka -i /opt/haraka
 cd /opt/haraka
-npm install --production --no-optional --no-package-lock --no-audit --no-shrinkwrap --unsafe-perm --save haraka-plugin-rspamd haraka-plugin-redis haraka-plugin-mailauth Haraka@$HARAKA_VERSION
+npm install --production --no-optional --no-package-lock --no-audit --no-shrinkwrap --unsafe-perm --save haraka-plugin-rspamd haraka-plugin-redis Haraka@$HARAKA_VERSION
 
 # Haraka WildDuck plugin. Install as separate repo as it can be edited more easily later
 mkdir -p plugins/wildduck
