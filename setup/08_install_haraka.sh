@@ -52,8 +52,8 @@ echo "26214400" > config/databytes
 echo "$HOSTNAME" > config/me
 echo "WildDuck MX" > config/smtpgreeting
 
-echo "spf
-dkim_verify
+echo "#spf
+#dkim_verify
 
 ## ClamAV is disabled by default. Make sure freshclam has updated all
 ## virus definitions and clamav-daemon has successfully started before
