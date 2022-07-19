@@ -1,6 +1,6 @@
 {
     "name": "wildduck",
-    "version": "1.37.2",
+    "version": "1.37.3",
     "description": "IMAP/POP3 server built with Node.js and MongoDB",
     "main": "server.js",
     "scripts": {
@@ -44,7 +44,7 @@
     "dependencies": {
         "@fidm/x509": "1.2.1",
         "@phc/pbkdf2": "1.1.14",
-        "@postalsys/vmc": "1.0.4",
+        "@postalsys/vmc": "1.0.5",
         "@root/acme": "3.1.0",
         "@root/csr": "0.8.1",
         "accesscontrol": "2.2.1",
@@ -70,7 +70,7 @@
         "libbase64": "1.2.1",
         "libmime": "5.1.0",
         "libqp": "1.1.0",
-        "mailauth": "3.0.2",
+        "mailauth": "3.0.3",
         "mailsplit": "5.3.2",
         "mobileconfig": "2.4.0",
         "mongo-cursor-pagination": "7.6.1",
