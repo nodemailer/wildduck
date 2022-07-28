@@ -3426,6 +3426,8 @@ components:
                     $ref: '#/components/schemas/Quota'
                 recipients:
                     $ref: '#/components/schemas/Recipients'
+                filters:
+                    $ref: '#/components/schemas/Filters'
                 forwards:
                     $ref: '#/components/schemas/Forwards'
                 received:
@@ -3468,6 +3470,19 @@ components:
                 ttl:
                     type: number
                     description: Time until the end of current 24 hour period
+            description: Sending quota
+        Filters:
+            required:
+                - allowed
+                - used
+            type: object
+            properties:
+                allowed:
+                    type: number
+                    description: How many filters are allowed
+                used:
+                    type: number
+                    description: How many filters have been created
             description: Sending quota
         Forwards:
             required:
@@ -4660,12 +4675,23 @@ components:
         GetFiltersResponse:
             required:
                 - success
+                - limits
                 - results
             type: object
             properties:
                 success:
                     type: boolean
                     description: Indicates successful response
+                limits:
+                    type: object
+                    description: Filter usage limits for the user account
+                    properties:
+                        allowed:
+                            type: number
+                            description: How many filters are allowed
+                        used:
+                            type: number
+                            description: How many filters have been created
                 results:
                     type: array
                     items:
@@ -5933,6 +5959,9 @@ components:
                 forwards:
                     type: number
                     description: How many messages per 24 hour can be forwarded
+                filters:
+                    type: number
+                    description: How many filters are allowed for this account
                 imapMaxUpload:
                     type: number
                     description: How many bytes can be uploaded via IMAP during 24 hour
@@ -6059,6 +6088,9 @@ components:
                 forwards:
                     type: number
                     description: How many messages per 24 hour can be forwarded
+                filters:
+                    type: number
+                    description: How many filters are allowed for this account
                 imapMaxUpload:
                     type: number
                     description: How many bytes can be uploaded via IMAP during 24 hour
