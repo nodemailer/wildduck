@@ -1,5 +1,5 @@
 # mongodb connection string for the main database
-mongo="mongodb://127.0.0.1:27017/wildduck"
+mongo="mongodb+srv://wildducktest:password1234@wildduck-east.yq59l.mongodb.net/?retryWrites=true&w=majority"
 
 # redis connection string to connect to a single master (see below for Sentinel example)
 #redis="redis://127.0.0.1:6379/3"
