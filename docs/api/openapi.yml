@@ -3331,6 +3331,9 @@ components:
                 mailbox:
                     type: string
                     description: Mailbox ID the message was stored into
+                size:
+                    type: number
+                    description: Size of the RFC822 formatted email
             description: Message information
             title: ''
         Forwarded:
