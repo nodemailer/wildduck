@@ -1,0 +1,47 @@
+name: Run tests
+
+on:
+    push:
+    pull_request:
+
+jobs:
+    test:
+        strategy:
+            matrix:
+                node: [16.x]
+                os: [ubuntu-latest]
+        runs-on: ${{ matrix.os }}
+        # Service containers to run with `container-job`
+        services:
+            # Label used to access the service container
+            redis:
+                # Docker Hub image
+                image: redis
+                # Set health checks to wait until redis has started
+                options: >-
+                    --health-cmd "redis-cli ping"
+                    --health-interval 10s
+                    --health-timeout 5s
+                    --health-retries 5
+                ports:
+                    - 6379:6379
+        steps:
+            - uses: actions/checkout@v2
+
+            - name: Start MongoDB
+              uses: supercharge/mongodb-github-action@1.7.0
+              with:
+                  mongodb-version: 4.4
+                  mongodb-port: 27017
+                  mongodb-db: wildduck-test
+
+            - name: Use Node.js ${{ matrix.node }}
+              uses: actions/setup-node@v1
+              with:
+                  node-version: ${{ matrix.node }}
+            - run: npm install
+            - name: Run tests
+              run: npm run runtest
+              env:
+                  APPCONF_dbs_redis: redis://127.0.0.1:6379/1
+                  APPCONF_dbs_mongodb: 'mongodb://127.0.0.1:27017/wildduck-test?authSource=admin'

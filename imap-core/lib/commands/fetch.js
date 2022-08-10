@@ -311,10 +311,14 @@ module.exports = {
                     logdata._error = err.message;
                     logdata._code = err.code;
                     logdata._response = err.response;
+                    logdata._responseMessage = err.responseMessage;
+                    logdata._ratelimit_ttl = err.ttl;
                     this._server.loggelf(logdata);
+
                     return callback(null, {
                         response: 'NO',
-                        code: 'TEMPFAIL'
+                        code: 'TEMPFAIL',
+                        message: err.responseMessage
                     });
                 }
 

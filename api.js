@@ -22,6 +22,7 @@ const util = require('util');
 const ObjectId = require('mongodb').ObjectId;
 const tls = require('tls');
 const Lock = require('ioredfour');
+const Path = require('path');
 
 const acmeRoutes = require('./lib/api/acme');
 const usersRoutes = require('./lib/api/users');
@@ -192,8 +193,6 @@ server.use((req, res, next) => {
     next();
 });
 
-server.use(restify.plugins.gzipResponse());
-
 server.use(
     restify.plugins.queryParser({
         allowDots: true,
@@ -210,7 +209,15 @@ server.use(
 );
 
 // public files
-server.get({ name: 'public_get', path: '/public/*' }, restify.plugins.serveStaticFiles('./public'));
+server.get(
+    { name: 'public_get', path: '/public/*' },
+    restify.plugins.serveStatic({
+        directory: Path.join(__dirname, 'public'),
+        default: 'index.html'
+    })
+);
+
+server.use(restify.plugins.gzipResponse());
 
 server.use(
     tools.asyncifyJson(async (req, res, next) => {
@@ -536,7 +543,7 @@ module.exports = done => {
     mailboxesRoutes(db, server, mailboxHandler);
     messagesRoutes(db, server, messageHandler, userHandler, storageHandler, settingsHandler);
     storageRoutes(db, server, storageHandler);
-    filtersRoutes(db, server, userHandler);
+    filtersRoutes(db, server, userHandler, settingsHandler);
     domainaccessRoutes(db, server);
     aspsRoutes(db, server, userHandler);
     totpRoutes(db, server, userHandler);

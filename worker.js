@@ -98,14 +98,10 @@ db.connect(err => {
                                     }
                                 }
 
-                                plugins.init(err => {
-                                    if (err) {
-                                        log.error('App', 'Failed to start plugins');
-                                        errors.notify(err);
-                                        return setTimeout(() => process.exit(1), 3000);
-                                    }
-
-                                    plugins.runHooks('init', () => {
+                                plugins.init('receiver');
+                                plugins.handler.load(() => {
+                                    log.verbose('Plugins', 'Plugins loaded');
+                                    plugins.handler.runHooks('init', [], () => {
                                         log.info('App', 'All servers started, ready to process some mail');
                                     });
                                 });

@@ -1786,6 +1786,7 @@ paths:
                 - Messages
             summary: Search for messages
             operationId: searchMessages
+            description: This method allows searching for matching messages.
             parameters:
                 - name: mailbox
                   in: query
@@ -1916,6 +1917,109 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/SearchMessagesResponse'
+
+        post:
+            tags:
+                - Messages
+            summary: Search and update messages
+            operationId: searchApplyMessages
+            description: This method allows applying an action to all matching messages. This is an async method so that it will return immediately. Actual modifications are run in the background.
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            properties:
+                                mailbox:
+                                    description: ID of the Mailbox
+                                    type: string
+                                thread:
+                                    description: Thread ID
+                                    type: string
+                                query:
+                                    description: 'Search string, uses MongoDB fulltext index. Covers data from mesage body and also common headers like from, to, subject etc.'
+                                    type: string
+                                datestart:
+                                    description: Datestring for the earliest message storing time
+                                    type: string
+                                    format: date-time
+                                dateend:
+                                    description: Datestring for the latest message storing time
+                                    type: string
+                                    format: date-time
+                                from:
+                                    description: 'Partial match for the From: header line'
+                                    type: string
+                                to:
+                                    in: query
+                                    description: 'Partial match for the To: and Cc: header lines'
+                                    type: string
+                                subject:
+                                    description: 'Partial match for the Subject: header line'
+                                    type: string
+                                attachments:
+                                    description: 'If true, then matches only messages with attachments'
+                                    type: boolean
+                                flagged:
+                                    description: 'If true, then matches only messages with \Flagged flags'
+                                    type: boolean
+                                unseen:
+                                    description: 'If true, then matches only messages without \Seen flags'
+                                    type: boolean
+                                searchable:
+                                    description: 'If true, then matches messages not in Junk or Trash'
+                                    type: boolean
+                                or:
+                                    type: object
+                                    description: 'At least onOne of the included terms must match'
+                                    properties:
+                                        query:
+                                            description: 'Search string, uses MongoDB fulltext index. Covers data from mesage body and also common headers like from, to, subject etc.'
+                                            type: string
+                                        from:
+                                            description: 'Partial match for the From: header line'
+                                            type: string
+                                        to:
+                                            description: 'Partial match for the To: and Cc: header lines'
+                                            type: string
+                                        subject:
+                                            description: 'Partial match for the Subject: header line'
+                                            type: string
+                                minSize:
+                                    description: Minimal message size in bytes
+                                    type: number
+                                maxSize:
+                                    description: Maximal message size in bytes
+                                    type: number
+                                action:
+                                    type: object
+                                    description: 'Define actions to take with matching messages'
+                                    properties:
+                                        moveTo:
+                                            type: string
+                                            description: ID of the target Mailbox if you want to move messages
+                                        seen:
+                                            type: boolean
+                                            description: State of the \Seen flag
+                                        flagged:
+                                            type: boolean
+                                            description: State of the \Flagged flag
+
+            responses:
+                '200':
+                    description: Success
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    success:
+                                        type: boolean
+                                        description: Indicates if the action succeeded or not
+                                    scheduled:
+                                        type: string
+                                        description: ID of the scheduled operation
+
         parameters:
             - name: user
               in: path
@@ -3232,6 +3336,9 @@ components:
                 mailbox:
                     type: string
                     description: Mailbox ID the message was stored into
+                size:
+                    type: number
+                    description: Size of the RFC822 formatted email
             description: Message information
             title: ''
         Forwarded:
@@ -3327,6 +3434,8 @@ components:
                     $ref: '#/components/schemas/Quota'
                 recipients:
                     $ref: '#/components/schemas/Recipients'
+                filters:
+                    $ref: '#/components/schemas/Filters'
                 forwards:
                     $ref: '#/components/schemas/Forwards'
                 received:
@@ -3369,6 +3478,19 @@ components:
                 ttl:
                     type: number
                     description: Time until the end of current 24 hour period
+            description: Sending quota
+        Filters:
+            required:
+                - allowed
+                - used
+            type: object
+            properties:
+                allowed:
+                    type: number
+                    description: How many filters are allowed
+                used:
+                    type: number
+                    description: How many filters have been created
             description: Sending quota
         Forwards:
             required:
@@ -4561,12 +4683,23 @@ components:
         GetFiltersResponse:
             required:
                 - success
+                - limits
                 - results
             type: object
             properties:
                 success:
                     type: boolean
                     description: Indicates successful response
+                limits:
+                    type: object
+                    description: Filter usage limits for the user account
+                    properties:
+                        allowed:
+                            type: number
+                            description: How many filters are allowed
+                        used:
+                            type: number
+                            description: How many filters have been created
                 results:
                     type: array
                     items:
@@ -4732,6 +4865,19 @@ components:
                     description: Attachments for the message
                 verificationResults:
                     $ref: '#/components/schemas/VerificationResults'
+                bimi:
+                    type: object
+                    description: BIMI logo info. If logo validation failed in any way, then this property is not set
+                    properties:
+                        certified:
+                            type: boolean
+                            description: If true, then this logo is from a VMC file
+                        url:
+                            type: string
+                            description: URL of the resource the logo was retrieved from
+                        image:
+                            type: string
+                            description: Data URL for the SVG image
                 contentType:
                     $ref: '#/components/schemas/ContentType'
                 metaData:
@@ -5603,7 +5749,7 @@ components:
             properties:
                 message:
                     type: string
-                    description: 'Message ID values. Either comma separated numbers (1,2,3) or colon separated range (3:15)'
+                    description: 'Message ID values. Either comma separated numbers (1,2,3) or colon separated range (3:15), or a range from UID to end (3:*)'
                 moveTo:
                     type: string
                     description: ID of the target Mailbox if you want to move messages
@@ -5821,6 +5967,9 @@ components:
                 forwards:
                     type: number
                     description: How many messages per 24 hour can be forwarded
+                filters:
+                    type: number
+                    description: How many filters are allowed for this account
                 imapMaxUpload:
                     type: number
                     description: How many bytes can be uploaded via IMAP during 24 hour
@@ -5947,6 +6096,9 @@ components:
                 forwards:
                     type: number
                     description: How many messages per 24 hour can be forwarded
+                filters:
+                    type: number
+                    description: How many filters are allowed for this account
                 imapMaxUpload:
                     type: number
                     description: How many bytes can be uploaded via IMAP during 24 hour
