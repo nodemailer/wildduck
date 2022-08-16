@@ -145,10 +145,7 @@ if (config.api.secure && certOptions.key) {
     let httpsServerOptions = {};
 
     httpsServerOptions.key = certOptions.key;
-    if (certOptions.ca) {
-        httpsServerOptions.ca = certOptions.ca;
-    }
-    httpsServerOptions.cert = certOptions.cert;
+    httpsServerOptions.cert = tools.buildCertChain(certOptions.cert, certOptions.ca);
 
     let defaultSecureContext = tls.createSecureContext(httpsServerOptions);
 
@@ -534,10 +531,7 @@ module.exports = done => {
         namespace: 'mail'
     });
 
-    if (config.acme && config.acme.agent && config.acme.agent.enabled) {
-        acmeRoutes(db, server, { disableRedirect: true });
-    }
-
+    acmeRoutes(db, server, { disableRedirect: true });
     usersRoutes(db, server, userHandler, settingsHandler);
     addressesRoutes(db, server, userHandler, settingsHandler);
     mailboxesRoutes(db, server, mailboxHandler);
