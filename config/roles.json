@@ -16,6 +16,14 @@
             "read:any": ["*"]
         },
 
+        "export": {
+            "create:any": ["*"]
+        },
+
+        "import": {
+            "create:any": ["*"]
+        },
+
         "userlisting": {
             "read:any": ["*"]
         },
@@ -132,6 +140,14 @@
 
         "authentication": {
             "create:any": ["*"],
+            "read:any": ["*"]
+        },
+
+        "export": {
+            "create:any": ["*"]
+        },
+
+        "import": {
             "read:any": ["*"]
         },
 
