@@ -16,14 +16,6 @@
             "read:any": ["*"]
         },
 
-        "export": {
-            "create:any": ["*"]
-        },
-
-        "import": {
-            "create:any": ["*"]
-        },
-
         "userlisting": {
             "read:any": ["*"]
         },
@@ -140,14 +132,6 @@
 
         "authentication": {
             "create:any": ["*"],
-            "read:any": ["*"]
-        },
-
-        "export": {
-            "create:any": ["*"]
-        },
-
-        "import": {
             "read:any": ["*"]
         },
 
@@ -411,6 +395,16 @@
     "auditclient": {
         "audit": {
             "read:any": ["*"]
+        }
+    },
+
+    "export": {
+        "export": {
+            "create:any": ["*"]
+        },
+
+        "import": {
+            "create:any": ["*"]
         }
     },
 
