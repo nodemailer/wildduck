@@ -1212,6 +1212,76 @@ paths:
               required: true
               schema:
                   type: string
+
+    /data/export:
+        post:
+            tags:
+                - Export
+            summary: Export data
+            description: Export data for matching users. Export dump does not include emails, only account structure (user data, password hashes, mailboxes, filters, etc.). A special "export"-role access token is required for exporting and importing.
+            operationId: createExport
+            requestBody:
+                description: Export data for matching users
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            properties:
+                                users:
+                                    type: array
+                                    items:
+                                        type: string
+                                    description: 'An array of User ID values to export'
+                                tags:
+                                    type: array
+                                    items:
+                                        type: string
+                                    description: 'An array of user tags to export. If set then at least one tag must exist on an user.'
+                required: true
+            responses:
+                '200':
+                    description: Success
+                    content:
+                        application/octet-stream:
+                            schema:
+                                type: binary
+
+    /data/import:
+        post:
+            tags:
+                - Export
+            summary: Import user data
+            description: Import data from an export dump. If a database entry already exists, it is not modified. A special "export"-role access token is required for exporting and importing.
+            operationId: createImport
+            requestBody:
+                description: Import user data
+                content:
+                    application/octet-stream:
+                        schema:
+                            type: binary  
+                required: true
+            responses:
+                '200':
+                    description: Success
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    entries:
+                                        type: number
+                                        description: 'How many database entries were found from the export file'
+                                    imported:
+                                        type: number
+                                        description: 'How many database entries were imported from the export file'
+                                    failed:
+                                        type: number
+                                        description: 'How many database entries were not imported due to some error'
+                                    existing:
+                                        type: number
+                                        description: 'How many database existing entries were not imported'
+
+
     '/users/{user}/filters/{filter}':
         delete:
             tags:

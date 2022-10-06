@@ -398,6 +398,16 @@
         }
     },
 
+    "export": {
+        "export": {
+            "create:any": ["*"]
+        },
+
+        "import": {
+            "create:any": ["*"]
+        }
+    },
+
     "settings": {
         "settings": {
             "create:any": ["*"],
