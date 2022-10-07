@@ -133,6 +133,30 @@ describe('API tests', function () {
         });
     });
 
+    describe('preauth', () => {
+        it('should POST /preauth with success', async () => {
+            const response = await server
+                .post(`/preauth`)
+                .send({
+                    username: 'testuser@example.com',
+                    scope: 'master'
+                })
+                .expect(200);
+            expect(response.body.success).to.be.true;
+        });
+
+        it('should POST /preauth using alias domain', async () => {
+            const response = await server
+                .post(`/preauth`)
+                .send({
+                    username: 'testuser@jõgeva.öö',
+                    scope: 'master'
+                })
+                .expect(200);
+            expect(response.body.success).to.be.true;
+        });
+    });
+
     describe('asp', () => {
         it('should POST /users/:user/asps to generate ASP', async () => {
             const response = await server

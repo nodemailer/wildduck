@@ -296,7 +296,8 @@
         },
 
         "authentication": {
-            "read:own": ["*"]
+            "read:own": ["*"],
+            "create:own": ["*"]
         },
 
         "userlisting": {
