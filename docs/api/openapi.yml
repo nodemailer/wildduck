@@ -638,6 +638,67 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/AuthenticateResponse'
+
+    /preauth:
+        post:
+            tags:
+                - Authentication
+            summary: Pre-auth check
+            description: Check if an username exists and can be used for authentication
+            operationId: preauth
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            required:
+                                - username
+                            type: object
+                            properties:
+                                username:
+                                    type: string
+                                    description: Username or E-mail address
+                                scope:
+                                    type: string
+                                    description: 'Required scope. One of master, imap, smtp, pop3'
+                                sess:
+                                    type: string
+                                    description: Session identifier for the logs
+                                ip:
+                                    type: string
+                                    description: IP address for the logs
+                required: true
+            responses:
+                '200':
+                    description: Success
+                    content:
+                        application/json:
+                            schema:
+                                required:
+                                    - success
+                                    - id
+                                    - username
+                                    - scope
+                                    - require2fa
+                                type: object
+                                properties:
+                                    success:
+                                        type: boolean
+                                        description: Indicates successful response
+                                    id:
+                                        type: string
+                                        description: ID of authenticated User
+                                    username:
+                                        type: string
+                                        description: Username of authenticated User
+                                    scope:
+                                        type: string
+                                        description: The scope this authentication is valid for
+                                    require2fa:
+                                        type: array
+                                        items:
+                                            type: string
+                                        description: List of enabled 2FA mechanisms
+
     '/users/{user}/authlog':
         get:
             tags:
