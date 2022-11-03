@@ -3802,6 +3802,18 @@ components:
                         - type: string
                 reference:
                     $ref: '#/components/schemas/ReferenceWithAttachments'
+                bimi:
+                    type: object
+                    description: Marks BIMI verification as passed for a domain. NB! BIMI record and logo files for the domain must be valid.
+                    required:
+                        - domain
+                    properties:
+                        domain:
+                            type: string
+                            description: Domain name for the BIMI record. It does not have to be the same as the From address.
+                        selector:
+                            type: string
+                            description: Optional BIMI selector
                 replacePrevious:
                     type: object
                     description: If set, then deletes a previous message when storing the new one. Useful when uploading a new Draft message.
