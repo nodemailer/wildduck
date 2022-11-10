@@ -9,7 +9,6 @@ const libmime = require('libmime');
 const libcharset = require('libmime/lib/charset');
 const libqp = require('libqp');
 const libbase64 = require('libbase64');
-const iconv = require('iconv-lite');
 const he = require('he');
 const { htmlToText } = require('html-to-text');
 const crypto = require('crypto');
