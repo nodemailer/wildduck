@@ -1,5 +1,14 @@
 #!/bin/bash
 
+echo "ENV"
+ENV
+
+echo "PATH"
+echo $PATH
+
+echo "which mongo"
+which mongo
+
 DBNAME="$1"
 
 echo "Clearing DB"
