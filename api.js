@@ -565,8 +565,15 @@ module.exports = done => {
             started = true;
             return done(err);
         }
-
         log.error('API', err);
+    });
+
+    server.on('restifyError', (req, res, err, callback) => {
+        if (!started) {
+            started = true;
+            return done(err);
+        }
+        return callback();
     });
 
     server.listen(config.api.port, config.api.host, () => {
