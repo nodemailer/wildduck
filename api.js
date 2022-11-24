@@ -4,7 +4,7 @@ const config = require('wild-config');
 const restify = require('restify');
 const log = require('npmlog');
 const logger = require('restify-logger');
-const corsMiddleware = require('restify-cors-middleware2');
+const corsMiddleware = require('@andris/restify-cors-middleware2');
 const UserHandler = require('./lib/user-handler');
 const MailboxHandler = require('./lib/mailbox-handler');
 const MessageHandler = require('./lib/message-handler');
@@ -174,7 +174,7 @@ const server = restify.createServer(serverOptions);
 
 const cors = corsMiddleware({
     origins: [].concat(config.api.cors.origins || ['*']),
-    allowHeaders: ['X-Access-Token'],
+    allowHeaders: ['X-Access-Token', 'Authorization'],
     allowCredentialsAllOrigins: true
 });
 
@@ -183,11 +183,10 @@ server.use(cors.actual);
 
 // disable compression for EventSource response
 // this needs to be called before gzipResponse
-server.use((req, res, next) => {
-    if (req.route.path === '/users/:user/updates') {
+server.use(async (req, res) => {
+    if (res && req.route.path === '/users/:user/updates') {
         req.headers['accept-encoding'] = '';
     }
-    next();
 });
 
 server.use(
@@ -217,13 +216,17 @@ server.get(
 server.use(restify.plugins.gzipResponse());
 
 server.use(
-    tools.asyncifyJson(async (req, res, next) => {
+    tools.responseWrapper(async (req, res) => {
         if (['public_get', 'public_post', 'acmeToken'].includes(req.route.name)) {
             // skip token check for public pages
-            return next();
+            return;
         }
 
-        let accessToken = req.query.accessToken || req.headers['x-access-token'] || false;
+        let accessToken =
+            req.query.accessToken ||
+            req.headers['x-access-token'] ||
+            (req.headers.authorization ? req.headers.authorization.replace(/^Bearer\s+/i, '').trim() : false) ||
+            false;
 
         if (req.query.accessToken) {
             // delete or it will conflict with Joi schemes
@@ -237,6 +240,10 @@ server.use(
 
         if (req.headers['x-access-token']) {
             req.headers['x-access-token'] = '';
+        }
+
+        if (req.headers.authorization) {
+            req.headers.authorization = '';
         }
 
         let tokenRequired = false;
@@ -265,7 +272,7 @@ server.use(
             if (config.api.accessToken === accessToken) {
                 req.role = 'root';
                 req.user = 'root';
-                return next();
+                return;
             }
         }
 
@@ -395,7 +402,7 @@ server.use(
                         }
                     }
 
-                    return next();
+                    return;
                 }
             }
         }
@@ -408,7 +415,6 @@ server.use(
         // allow all
         req.role = 'root';
         req.user = 'root';
-        next();
     })
 );
 
