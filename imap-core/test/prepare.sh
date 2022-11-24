@@ -1,11 +1,5 @@
 #!/bin/bash
 
-echo "ENV"
-ENV
-
-echo "PATH"
-echo $PATH
-
 echo "which mongo"
 which mongo
 
