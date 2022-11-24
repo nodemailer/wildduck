@@ -250,10 +250,11 @@ server.use(async (req, res) => {
     let fail = () => {
         res.status(403);
         res.charSet('utf-8');
-        return res.json({
+        res.json({
             error: 'Invalid accessToken value',
             code: 'InvalidToken'
         });
+        return;
     };
 
     req.validate = permission => {
