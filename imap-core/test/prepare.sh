@@ -1,5 +1,8 @@
 #!/bin/bash
 
+echo "which mongo"
+which mongo
+
 DBNAME="$1"
 
 echo "Clearing DB"

@@ -9,7 +9,7 @@ jobs:
         strategy:
             matrix:
                 node: [16.x]
-                os: [ubuntu-latest]
+                os: [ubuntu-20.04]
         runs-on: ${{ matrix.os }}
         # Service containers to run with `container-job`
         services:
@@ -39,6 +39,7 @@ jobs:
               uses: actions/setup-node@v1
               with:
                   node-version: ${{ matrix.node }}
+            - run: which mongo
             - run: npm install
             - name: Run tests
               run: npm run runtest
