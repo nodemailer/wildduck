@@ -144,7 +144,7 @@ module.exports.start = callback => {
             let whid = new ObjectId();
             let count = 0;
 
-            let webhooks = await db.database.collection('webhooks').find(query).toArray();
+            let webhooks = await db.users.collection('webhooks').find(query).toArray();
 
             if (!webhooks.length) {
                 // ignore this event

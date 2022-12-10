@@ -542,10 +542,29 @@ function processTask(task, data, callback) {
                     mailboxHandler,
                     loggelf
                 },
-                err => {
+                (err, result) => {
                     if (err) {
+                        loggelf({
+                            short_message: '[TASKFAIL] restore',
+                            _task_action: 'restore',
+                            _task_id: task._id.toString(),
+                            _user: data.user.toString(),
+                            _task_result: 'error',
+                            _error: err.message
+                        });
+
                         return callback(err);
                     }
+
+                    loggelf({
+                        short_message: '[TASKOK] restore',
+                        _task_action: 'restore',
+                        _task_id: task._id.toString(),
+                        _user: data.user.toString(),
+                        _task_result: 'finished',
+                        _restored_messages: result.restoredMessages
+                    });
+
                     // release
                     callback(null, true);
                 }

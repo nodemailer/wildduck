@@ -54,7 +54,8 @@ const tlsDefaults = {
         '-----END CERTIFICATE-----',
     honorCipherOrder: true,
     requestOCSP: false,
-    sessionIdContext: crypto.createHash('sha1').update(process.argv.join(' ')).digest('hex').slice(0, 32)
+    sessionIdContext: crypto.createHash('sha1').update(process.argv.join(' ')).digest('hex').slice(0, 32),
+    minVersion: 'TLSv1'
 };
 
 /**
