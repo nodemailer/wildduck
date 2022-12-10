@@ -2023,7 +2023,7 @@ paths:
                       type: number
                 - name: order
                   in: query
-                  description: Ordering of the records by insert date
+                  description: Ordering of the records by insert date. If no order is supplied, results are sorted by heir mongoDB ObjectId.
                   schema:
                       $ref: '#/components/schemas/Order'
                 - name: page
