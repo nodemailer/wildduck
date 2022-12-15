@@ -1,17 +1,22 @@
+[api]
+port = 8080
+host = "0.0.0.0"
+secure = false
+
 [log]
-    level="error"
+level = "silly"
 
 [dbs]
-    # mongodb connection string for the main database
-    mongo="mongodb://127.0.0.1:27017/wildduck-test"
+# mongodb connection string for the main database
+mongo = "mongodb://127.0.0.1:27017/wildduck-test"
 
-    # redis connection string
-    redis="redis://127.0.0.1:6379/13"
+# redis connection string
+redis = "redis://127.0.0.1:6379/13"
 
-    dbname="wildduck-test"
+dbname = "wildduck-test"
 
 [imap]
 
 [lmtp]
-    enabled=true
-    port=2424
+enabled = true
+port = 2424

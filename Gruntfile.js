@@ -22,7 +22,7 @@ module.exports = function (grunt) {
         wait: {
             server: {
                 options: {
-                    delay: 25 * 1000
+                    delay: 12 * 1000
                 }
             }
         },
