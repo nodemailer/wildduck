@@ -8,8 +8,9 @@ const chai = require('chai');
 
 const expect = chai.expect;
 chai.config.includeStack = true;
+const config = require('wild-config');
 
-const server = supertest.agent('http://localhost:8080');
+const server = supertest.agent(`http://localhost:${config.api.port}`);
 
 describe('API tests', function () {
     let userId, asp, address, inbox;
