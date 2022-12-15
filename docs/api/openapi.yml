@@ -2021,6 +2021,11 @@ paths:
                   description: How many records to return
                   schema:
                       type: number
+                - name: order
+                  in: query
+                  description: Ordering of the records by insert date. If no order is supplied, results are sorted by heir mongoDB ObjectId.
+                  schema:
+                      $ref: '#/components/schemas/Order'
                 - name: page
                   in: query
                   description: 'Current page number. Informational only, page numbers start from 1'
