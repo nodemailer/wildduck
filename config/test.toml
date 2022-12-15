@@ -16,6 +16,8 @@ redis = "redis://127.0.0.1:6379/13"
 dbname = "wildduck-test"
 
 [imap]
+port = 9993
+host = "127.0.0.1"
 
 [lmtp]
 enabled = true
