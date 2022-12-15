@@ -9,8 +9,9 @@ const chai = require('chai');
 
 const expect = chai.expect;
 chai.config.includeStack = true;
+const config = require('wild-config');
 
-const server = supertest.agent('http://localhost:8080');
+const server = supertest.agent(`http://127.0.0.1:${config.api.port}`);
 
 describe('API Users', function () {
     this.timeout(10000); // eslint-disable-line no-invalid-this
