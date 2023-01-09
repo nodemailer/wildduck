@@ -44,6 +44,7 @@
     "dependencies": {
         "@andris/restify-cors-middleware2": "2.1.2-patch.3",
         "@fidm/x509": "1.2.1",
+        "@opensearch-project/opensearch": "^2.1.0",
         "@phc/pbkdf2": "1.1.14",
         "@postalsys/vmc": "1.0.6",
         "@root/acme": "3.1.0",
