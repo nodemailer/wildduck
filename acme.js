@@ -20,7 +20,7 @@ const serverOptions = {
 
 const server = restify.createServer(serverOptions);
 
-server.use(restify.plugins.gzipResponse());
+//server.use(restify.plugins.gzipResponse());
 
 server.use(
     restify.plugins.queryParser({

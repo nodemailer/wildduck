@@ -213,7 +213,8 @@ server.get(
     })
 );
 
-server.use(restify.plugins.gzipResponse());
+// Disable GZIP as it does not work with stream.pipe(res)
+//server.use(restify.plugins.gzipResponse());
 
 server.use(async (req, res) => {
     if (['public_get', 'public_post', 'acmeToken'].includes(req.route.name)) {
