@@ -67,8 +67,10 @@ if (!processCount || processCount <= 1) {
     // single process mode, do not fork anything
 
     initElasticSearch()
-        .then(() => {
-            log.info('App', `ElasticSearch setup checked`);
+        .then(started => {
+            if (started) {
+                log.verbose('App', `ElasticSearch setup checked`);
+            }
         })
         .catch(err => {
             log.error('App', `ElasticSearch setup failed: ${err.message}${err.meta?.statusCode ? ` (${err.meta?.statusCode})` : ''}`);
@@ -98,8 +100,10 @@ if (!processCount || processCount <= 1) {
 
         // Fork workers.
         initElasticSearch()
-            .then(() => {
-                log.info('App', `ElasticSearch setup checked`);
+            .then(started => {
+                if (started) {
+                    log.verbose('App', `ElasticSearch setup checked`);
+                }
             })
             .catch(err => {
                 log.error('App', `ElasticSearch setup failed: ${err.message}${err.meta?.statusCode ? ` (${err.meta?.statusCode})` : ''}`);

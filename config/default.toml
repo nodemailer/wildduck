@@ -109,3 +109,7 @@ url = "http://127.0.0.1:9200"
 user = "elastic"
 pass = "supersecret"
 index = "wildduck"
+
+[elasticsearch.indexer]
+# idexing worker
+enabled = false

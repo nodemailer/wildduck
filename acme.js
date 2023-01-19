@@ -21,7 +21,7 @@ const serverOptions = {
 const server = restify.createServer(serverOptions);
 
 // res.pipe does not work if Gzip is enabled
-server.use(restify.plugins.gzipResponse());
+//server.use(restify.plugins.gzipResponse());
 
 server.use(
     restify.plugins.queryParser({
