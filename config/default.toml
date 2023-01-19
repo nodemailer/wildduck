@@ -5,11 +5,11 @@
 #group="wildduck"
 
 # process title
-ident="wildduck"
+ident = "wildduck"
 
 # how many processes to start
 # either a number for specific process count or "cpus" for machine thread count
-processes=1
+processes = 1
 
 # If usernames are not email addresses then use this domain as default hostname part
 #emailDomain="mydomain.info"
@@ -18,43 +18,43 @@ processes=1
 # @include "dbs.toml"
 
 [totp]
-    # If enabled then encrypt TOTP seed tokens with the secret password. By default TOTP seeds
-    # are not encrypted and stored as cleartext. Once set up do not change these values,
-    # otherwise decrypting totp seeds is going to fail
-    #secret="a secret cat"
-    #cipher="aes192" # only for decrypting legacy values (if there are any)
+# If enabled then encrypt TOTP seed tokens with the secret password. By default TOTP seeds
+# are not encrypted and stored as cleartext. Once set up do not change these values,
+# otherwise decrypting totp seeds is going to fail
+#secret="a secret cat"
+#cipher="aes192" # only for decrypting legacy values (if there are any)
 
 [webauthn]
-    rpId = "example.com" # origin domain
-    rpName = "WildDuck Email Server"
+rpId = "example.com"             # origin domain
+rpName = "WildDuck Email Server"
 
-    challengeSize = 64
-    attestation = "none"
-    authenticatorUserVerification = "discouraged"
+challengeSize = 64
+attestation = "none"
+authenticatorUserVerification = "discouraged"
 
 [attachments]
 # @include "attachments.toml"
 
 [log]
-    level="silly"
+level = "silly"
 
-    skipFetchLog=false # if true, then does not output individual * FETCH responses to log
+skipFetchLog = false # if true, then does not output individual * FETCH responses to log
 
-    # delete authentication log entries after 30 days
-    # changing this value only affects new entries
-    # set to false to not log authentication events
-    # set to 0 to keep the logs infinitely
-    # NB! Removed. Use const:authlog:time setting instead
-    #authlogExpireDays=30
+# delete authentication log entries after 30 days
+# changing this value only affects new entries
+# set to false to not log authentication events
+# set to 0 to keep the logs infinitely
+# NB! Removed. Use const:authlog:time setting instead
+#authlogExpireDays=30
 
-    [log.gelf]
-        enabled=false
-        hostname=false # defaults to os.hostname()
-        component="wildduck"
-        [log.gelf.options]
-            graylogPort=12201
-            graylogHostname="127.0.0.1"
-            connection="lan"
+[log.gelf]
+enabled = false
+hostname = false       # defaults to os.hostname()
+component = "wildduck"
+[log.gelf.options]
+graylogPort = 12201
+graylogHostname = "127.0.0.1"
+connection = "lan"
 
 [imap]
 # @include "imap.toml"
@@ -90,15 +90,26 @@ processes=1
 
 [tasks]
 # if enabled then process jobs like deleting expired messages etc
-enabled=true
+enabled = true
 
 [smtp.setup]
 # Public configuration for SMTP MDA, needed for mobileconfig files
-hostname="localhost"
-secure=false
-port=2587
+hostname = "localhost"
+secure = false
+port = 2587
 
 [webhooks]
 # At least one server must have webhook processing enabled,
 # otherwise events would pile up in the Redis queue.
 enabled = true
+
+[elasticsearch]
+enabled = false
+url = "http://127.0.0.1:9200"
+user = "elastic"
+pass = "supersecret"
+index = "wildduck"
+
+[elasticsearch.indexer]
+# idexing worker
+enabled = false
