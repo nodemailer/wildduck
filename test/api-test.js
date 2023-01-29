@@ -8,8 +8,9 @@ const chai = require('chai');
 
 const expect = chai.expect;
 chai.config.includeStack = true;
+const config = require('wild-config');
 
-const server = supertest.agent('http://localhost:8080');
+const server = supertest.agent(`http://127.0.0.1:${config.api.port}`);
 
 describe('API tests', function () {
     let userId, asp, address, inbox;
@@ -130,6 +131,30 @@ describe('API tests', function () {
                 .expect(403);
             expect(response.body.error).to.exist;
             expect(response.body.success).to.not.be.true;
+        });
+    });
+
+    describe('preauth', () => {
+        it('should POST /preauth with success', async () => {
+            const response = await server
+                .post(`/preauth`)
+                .send({
+                    username: 'testuser@example.com',
+                    scope: 'master'
+                })
+                .expect(200);
+            expect(response.body.success).to.be.true;
+        });
+
+        it('should POST /preauth using alias domain', async () => {
+            const response = await server
+                .post(`/preauth`)
+                .send({
+                    username: 'testuser@jõgeva.öö',
+                    scope: 'master'
+                })
+                .expect(200);
+            expect(response.body.success).to.be.true;
         });
     });
 
@@ -579,7 +604,11 @@ describe('API tests', function () {
                 },
                 to: [
                     { name: 'test tester2', address: 'testuser2@example.com' },
-                    { name: 'test tester3', address: 'testuser3@example.com' }
+                    { name: 'test tester3', address: 'testuser3@example.com' },
+                    { name: 'test tester4', address: 'testuser4@example.com' },
+                    { name: 'test tester5', address: 'testuser5@example.com' },
+                    { name: 'test tester6', address: 'testuser6@example.com' },
+                    { name: 'test tester7', address: 'testuser7@example.com' }
                 ],
                 draft: true,
                 subject: 'hello world',
@@ -605,7 +634,43 @@ describe('API tests', function () {
             expect(sentMessageDataResponse.body.outbound[0].queueId).to.equal(submitResponse.body.queueId);
 
             const deleteResponse = await server.delete(`/users/${userId}/outbound/${submitResponse.body.queueId}`).expect(200);
-            expect(deleteResponse.body.deleted).to.equal(2);
+            expect(deleteResponse.body.deleted).to.equal(6);
+        });
+
+        it('should create a draft message and fail submit', async () => {
+            const message = {
+                from: {
+                    name: 'test tester1',
+                    address: 'testuser1@example.com'
+                },
+                to: [
+                    { name: 'test tester2', address: 'testuser2@example.com' },
+                    { name: 'test tester3', address: 'testuser3@example.com' },
+                    { name: 'test tester4', address: 'testuser4@example.com' },
+                    { name: 'test tester5', address: 'testuser5@example.com' },
+                    { name: 'test tester6', address: 'testuser6@example.com' },
+                    { name: 'test tester7', address: 'testuser7@example.com' }
+                ],
+                draft: true,
+                subject: 'hello world',
+                text: 'Hello hello world!',
+                html: '<p>Hello hello world!</p>'
+            };
+
+            const settingsResponse = await server.post(`/settings/const:max:rcpt_to`).send({ value: 3 }).expect(200);
+            expect(settingsResponse.body.success).to.be.true;
+
+            const response = await server.post(`/users/${userId}/mailboxes/${inbox}/messages`).send(message).expect(200);
+            expect(response.body.success).to.be.true;
+            expect(response.body.message.id).to.be.gt(0);
+
+            let sendTime = new Date(Date.now() + 24 * 3600 * 1000).toISOString();
+            const submitResponse = await server
+                .post(`/users/${userId}/mailboxes/${inbox}/messages/${response.body.message.id}/submit`)
+                .send({ sendTime })
+                .expect(403);
+
+            expect(submitResponse.body.code).to.equal('TooMany');
         });
 
         it('should GET /users/:user/addressregister', async () => {

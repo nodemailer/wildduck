@@ -296,7 +296,8 @@
         },
 
         "authentication": {
-            "read:own": ["*"]
+            "read:own": ["*"],
+            "create:own": ["*"]
         },
 
         "userlisting": {
@@ -395,6 +396,16 @@
     "auditclient": {
         "audit": {
             "read:any": ["*"]
+        }
+    },
+
+    "export": {
+        "export": {
+            "create:any": ["*"]
+        },
+
+        "import": {
+            "create:any": ["*"]
         }
     },
 

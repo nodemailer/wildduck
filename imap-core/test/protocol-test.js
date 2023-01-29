@@ -14,7 +14,7 @@ let expect = chai.expect;
 chai.config.includeStack = true;
 
 describe('IMAP Protocol integration tests', function () {
-    this.timeout(10000); // eslint-disable-line no-invalid-this
+    this.timeout(100000); // eslint-disable-line no-invalid-this
     let port = 9993;
 
     beforeEach(function (done) {

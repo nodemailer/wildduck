@@ -16,6 +16,7 @@ const fs = require('fs');
 const os = require('os');
 const log = require('npmlog');
 const packageData = require('./package.json');
+const { init: initElasticSearch } = require('./lib/elasticsearch');
 
 log.level = config.log.level;
 
@@ -64,7 +65,19 @@ if (!processCount || processCount <= 1) {
         process.title = config.ident;
     }
     // single process mode, do not fork anything
-    require('./worker.js');
+
+    initElasticSearch()
+        .then(started => {
+            if (started) {
+                log.verbose('App', `ElasticSearch setup checked`);
+            }
+        })
+        .catch(err => {
+            log.error('App', `ElasticSearch setup failed: ${err.message}${err.meta?.statusCode ? ` (${err.meta?.statusCode})` : ''}`);
+        })
+        .finally(() => {
+            require('./worker.js');
+        });
 } else {
     let cluster = require('cluster');
 
@@ -86,9 +99,20 @@ if (!processCount || processCount <= 1) {
         };
 
         // Fork workers.
-        for (let i = 0; i < processCount; i++) {
-            forkWorker();
-        }
+        initElasticSearch()
+            .then(started => {
+                if (started) {
+                    log.verbose('App', `ElasticSearch setup checked`);
+                }
+            })
+            .catch(err => {
+                log.error('App', `ElasticSearch setup failed: ${err.message}${err.meta?.statusCode ? ` (${err.meta?.statusCode})` : ''}`);
+            })
+            .finally(() => {
+                for (let i = 0; i < processCount; i++) {
+                    forkWorker();
+                }
+            });
 
         cluster.on('exit', worker => {
             log.info('App', `Worker ${worker.process.pid} died`);

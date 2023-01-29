@@ -6,9 +6,9 @@ const BodyStructure = require('./body-structure');
 const createEnvelope = require('./create-envelope');
 const parseMimeTree = require('./parse-mime-tree');
 const libmime = require('libmime');
+const libcharset = require('libmime/lib/charset');
 const libqp = require('libqp');
 const libbase64 = require('libbase64');
-const iconv = require('iconv-lite');
 const he = require('he');
 const { htmlToText } = require('html-to-text');
 const crypto = require('crypto');
@@ -484,11 +484,7 @@ class Indexer {
                                 .toLowerCase()
                         )
                     ) {
-                        try {
-                            content = iconv.decode(content, charset);
-                        } catch (E) {
-                            // do not decode charset
-                        }
+                        content = libcharset.decode(content, charset);
                     }
 
                     if (flowed) {

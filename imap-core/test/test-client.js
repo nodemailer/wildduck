@@ -10,7 +10,7 @@ module.exports = runClientMockup;
 function runClientMockup(options, callback) {
     options = options || {};
 
-    let host = options.host || 'localhost';
+    let host = options.host || '127.0.0.1';
     let port = options.port || 25;
     let commands = [].concat(options.commands || []);
     let debug = options.debug;
@@ -38,7 +38,7 @@ function runClientMockup(options, callback) {
                 }
             });
 
-            let onData = function(chunk) {
+            let onData = function (chunk) {
                 if (ignore_data) {
                     return;
                 }
@@ -119,7 +119,7 @@ function runClientMockup(options, callback) {
 
                             if (Array.isArray(command)) {
                                 let i = 0;
-                                let send = function() {
+                                let send = function () {
                                     if (i >= command.length) {
                                         return;
                                     }

@@ -638,6 +638,67 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/AuthenticateResponse'
+
+    /preauth:
+        post:
+            tags:
+                - Authentication
+            summary: Pre-auth check
+            description: Check if an username exists and can be used for authentication
+            operationId: preauth
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            required:
+                                - username
+                            type: object
+                            properties:
+                                username:
+                                    type: string
+                                    description: Username or E-mail address
+                                scope:
+                                    type: string
+                                    description: 'Required scope. One of master, imap, smtp, pop3'
+                                sess:
+                                    type: string
+                                    description: Session identifier for the logs
+                                ip:
+                                    type: string
+                                    description: IP address for the logs
+                required: true
+            responses:
+                '200':
+                    description: Success
+                    content:
+                        application/json:
+                            schema:
+                                required:
+                                    - success
+                                    - id
+                                    - username
+                                    - scope
+                                    - require2fa
+                                type: object
+                                properties:
+                                    success:
+                                        type: boolean
+                                        description: Indicates successful response
+                                    id:
+                                        type: string
+                                        description: ID of authenticated User
+                                    username:
+                                        type: string
+                                        description: Username of authenticated User
+                                    scope:
+                                        type: string
+                                        description: The scope this authentication is valid for
+                                    require2fa:
+                                        type: array
+                                        items:
+                                            type: string
+                                        description: List of enabled 2FA mechanisms
+
     '/users/{user}/authlog':
         get:
             tags:
@@ -1212,6 +1273,76 @@ paths:
               required: true
               schema:
                   type: string
+
+    /data/export:
+        post:
+            tags:
+                - Export
+            summary: Export data
+            description: Export data for matching users. Export dump does not include emails, only account structure (user data, password hashes, mailboxes, filters, etc.). A special "export"-role access token is required for exporting and importing.
+            operationId: createExport
+            requestBody:
+                description: Export data for matching users
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            properties:
+                                users:
+                                    type: array
+                                    items:
+                                        type: string
+                                    description: 'An array of User ID values to export'
+                                tags:
+                                    type: array
+                                    items:
+                                        type: string
+                                    description: 'An array of user tags to export. If set then at least one tag must exist on an user.'
+                required: true
+            responses:
+                '200':
+                    description: Success
+                    content:
+                        application/octet-stream:
+                            schema:
+                                type: binary
+
+    /data/import:
+        post:
+            tags:
+                - Export
+            summary: Import user data
+            description: Import data from an export dump. If a database entry already exists, it is not modified. A special "export"-role access token is required for exporting and importing.
+            operationId: createImport
+            requestBody:
+                description: Import user data
+                content:
+                    application/octet-stream:
+                        schema:
+                            type: binary  
+                required: true
+            responses:
+                '200':
+                    description: Success
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    entries:
+                                        type: number
+                                        description: 'How many database entries were found from the export file'
+                                    imported:
+                                        type: number
+                                        description: 'How many database entries were imported from the export file'
+                                    failed:
+                                        type: number
+                                        description: 'How many database entries were not imported due to some error'
+                                    existing:
+                                        type: number
+                                        description: 'How many database existing entries were not imported'
+
+
     '/users/{user}/filters/{filter}':
         delete:
             tags:
@@ -1890,6 +2021,11 @@ paths:
                   description: How many records to return
                   schema:
                       type: number
+                - name: order
+                  in: query
+                  description: Ordering of the records by insert date. If no order is supplied, results are sorted by heir mongoDB ObjectId.
+                  schema:
+                      $ref: '#/components/schemas/Order'
                 - name: page
                   in: query
                   description: 'Current page number. Informational only, page numbers start from 1'
@@ -3331,6 +3467,9 @@ components:
                 mailbox:
                     type: string
                     description: Mailbox ID the message was stored into
+                size:
+                    type: number
+                    description: Size of the RFC822 formatted email
             description: Message information
             title: ''
         Forwarded:
@@ -3426,6 +3565,8 @@ components:
                     $ref: '#/components/schemas/Quota'
                 recipients:
                     $ref: '#/components/schemas/Recipients'
+                filters:
+                    $ref: '#/components/schemas/Filters'
                 forwards:
                     $ref: '#/components/schemas/Forwards'
                 received:
@@ -3468,6 +3609,19 @@ components:
                 ttl:
                     type: number
                     description: Time until the end of current 24 hour period
+            description: Sending quota
+        Filters:
+            required:
+                - allowed
+                - used
+            type: object
+            properties:
+                allowed:
+                    type: number
+                    description: How many filters are allowed
+                used:
+                    type: number
+                    description: How many filters have been created
             description: Sending quota
         Forwards:
             required:
@@ -3653,6 +3807,18 @@ components:
                         - type: string
                 reference:
                     $ref: '#/components/schemas/ReferenceWithAttachments'
+                bimi:
+                    type: object
+                    description: Marks BIMI verification as passed for a domain. NB! BIMI record and logo files for the domain must be valid.
+                    required:
+                        - domain
+                    properties:
+                        domain:
+                            type: string
+                            description: Domain name for the BIMI record. It does not have to be the same as the From address.
+                        selector:
+                            type: string
+                            description: Optional BIMI selector
                 replacePrevious:
                     type: object
                     description: If set, then deletes a previous message when storing the new one. Useful when uploading a new Draft message.
@@ -4660,12 +4826,23 @@ components:
         GetFiltersResponse:
             required:
                 - success
+                - limits
                 - results
             type: object
             properties:
                 success:
                     type: boolean
                     description: Indicates successful response
+                limits:
+                    type: object
+                    description: Filter usage limits for the user account
+                    properties:
+                        allowed:
+                            type: number
+                            description: How many filters are allowed
+                        used:
+                            type: number
+                            description: How many filters have been created
                 results:
                     type: array
                     items:
@@ -5933,6 +6110,9 @@ components:
                 forwards:
                     type: number
                     description: How many messages per 24 hour can be forwarded
+                filters:
+                    type: number
+                    description: How many filters are allowed for this account
                 imapMaxUpload:
                     type: number
                     description: How many bytes can be uploaded via IMAP during 24 hour
@@ -6059,6 +6239,9 @@ components:
                 forwards:
                     type: number
                     description: How many messages per 24 hour can be forwarded
+                filters:
+                    type: number
+                    description: How many filters are allowed for this account
                 imapMaxUpload:
                     type: number
                     description: How many bytes can be uploaded via IMAP during 24 hour
