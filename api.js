@@ -199,7 +199,7 @@ server.use(
     restify.plugins.bodyParser({
         maxBodySize: 0,
         mapParams: true,
-        mapFiles: false,
+        mapFiles: true,
         overrideParams: false
     })
 );
