@@ -73,7 +73,7 @@
         "libbase64": "1.2.1",
         "libmime": "5.2.0",
         "libqp": "2.0.1",
-        "mailauth": "4.0.2",
+        "mailauth": "4.3.0",
         "mailsplit": "5.4.0",
         "mobileconfig": "2.4.0",
         "mongo-cursor-pagination": "8.1.2",
