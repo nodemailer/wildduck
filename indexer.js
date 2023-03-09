@@ -5,8 +5,63 @@ const config = require('wild-config');
 const Gelf = require('gelf');
 const os = require('os');
 const Queue = require('bull');
+const db = require('./lib/db');
+const errors = require('./lib/errors');
+const crypto = require('crypto');
 
 let loggelf;
+
+let FORCE_DISABLE = false;
+
+const FORCE_DISABLED_MESSAGE = 'Can not set up change streams. Not a replica set. Changes are not indexed to ElasticSearch.';
+
+const processId = crypto.randomBytes(8).toString('hex');
+
+async function getLock() {
+    let lockSuccess = await db.redis.set('indexer', processId, 'NX', 'EX', 10);
+    if (!lockSuccess) {
+        throw new Error('Failed to get lock');
+    }
+}
+
+async function monitorChanges() {
+    if (FORCE_DISABLE) {
+        log.error('Indexer', FORCE_DISABLED_MESSAGE);
+        return;
+    }
+
+    await getLock();
+
+    const pipeline = [
+        {
+            $match: {
+                operationType: 'insert'
+            }
+        }
+    ];
+
+    const collection = db.database.collection('journal');
+    const changeStream = collection.watch(pipeline, {});
+
+    try {
+        while (await changeStream.hasNext()) {
+            console.log(await changeStream.next());
+        }
+    } catch (error) {
+        if (error.code === 40573) {
+            // not a replica set!
+            FORCE_DISABLE = true;
+            log.error('Indexer', FORCE_DISABLED_MESSAGE);
+            return;
+        }
+
+        if (changeStream.isClosed()) {
+            console.log('The change stream is closed. Will not wait on any more changes.');
+        } else {
+            throw error;
+        }
+    }
+}
 
 module.exports.start = callback => {
     if (!config.elasticsearch || !config.elasticsearch.indexer || !config.elasticsearch.indexer.enabled) {
@@ -52,22 +107,35 @@ module.exports.start = callback => {
         }
     };
 
-    const indexingQueue = new Queue('indexing', typeof config.dbs.redis === 'object' ? { redis: config.dbs.redis } : config.dbs.redis);
-
-    indexingQueue.process(async job => {
-        try {
-            if (!job || !job.data || !job.data.ev) {
-                return false;
-            }
-            const data = job.data;
-            console.log('DATA FOR INDEXING', data);
-
-            loggelf({ _msg: 'hellow world' });
-        } catch (err) {
-            log.error('Indexing', err);
-            throw err;
+    db.connect(err => {
+        if (err) {
+            log.error('Db', 'Failed to setup database connection');
+            errors.notify(err);
+            return setTimeout(() => process.exit(1), 3000);
         }
-    });
 
-    callback();
+        monitorChanges().catch(err => {
+            errors.notify(err);
+            return setTimeout(() => process.exit(1), 3000);
+        });
+
+        const indexingQueue = new Queue('indexing', typeof config.dbs.redis === 'object' ? { redis: config.dbs.redis } : config.dbs.redis);
+
+        indexingQueue.process(async job => {
+            try {
+                if (!job || !job.data || !job.data.ev) {
+                    return false;
+                }
+                const data = job.data;
+                console.log('DATA FOR INDEXING', data);
+
+                loggelf({ _msg: 'hellow world' });
+            } catch (err) {
+                log.error('Indexing', err);
+                throw err;
+            }
+        });
+
+        callback();
+    });
 };
