@@ -42,7 +42,7 @@
         "supertest": "6.3.3"
     },
     "dependencies": {
-        "@andris/restify-cors-middleware2": "2.1.2-patch.3",
+        "restify-cors-middleware2": "2.2.1",
         "@fidm/x509": "1.2.1",
         "@opensearch-project/opensearch": "2.2.0",
         "@phc/pbkdf2": "1.1.14",
@@ -100,7 +100,7 @@
         "uuid": "9.0.0",
         "wild-config": "1.7.0",
         "yargs": "17.7.1",
-        "zone-mta": "3.6.3"
+        "zone-mta": "3.6.5"
     },
     "repository": {
         "type": "git",
