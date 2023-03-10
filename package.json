@@ -42,7 +42,6 @@
         "supertest": "6.3.3"
     },
     "dependencies": {
-        "restify-cors-middleware2": "2.2.1",
         "@fidm/x509": "1.2.1",
         "@opensearch-project/opensearch": "2.2.0",
         "@phc/pbkdf2": "1.1.14",
@@ -54,7 +53,7 @@
         "base32.js": "0.1.0",
         "bcryptjs": "2.4.3",
         "bson": "5.0.1",
-        "bull": "3.29.3",
+        "bullmq": "3.10.1",
         "fido2-lib": "3.3.5",
         "gelf": "2.0.1",
         "generate-password": "1.7.0",
@@ -77,7 +76,7 @@
         "mailsplit": "5.4.0",
         "mobileconfig": "2.4.0",
         "mongo-cursor-pagination": "8.1.3",
-        "mongodb": "4.12.1",
+        "mongodb": "4.14.0",
         "mongodb-extended-json": "1.11.1",
         "msgpack5": "6.0.2",
         "node-forge": "1.3.1",
@@ -90,6 +89,7 @@
         "pwnedpasswords": "1.0.6",
         "qrcode": "1.5.1",
         "restify": "11.1.0",
+        "restify-cors-middleware2": "2.2.1",
         "restify-logger": "2.0.1",
         "saslprep": "1.0.3",
         "seq-index": "1.1.0",
