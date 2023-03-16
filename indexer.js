@@ -104,7 +104,9 @@ class Indexer {
         }
 
         if (payload) {
-            let hasFeatureFlag = await db.redis.sismember(`feature:indexing`, entry.user.toString());
+            let hasFeatureFlag =
+                (config.enabledFeatureFlags && config.enabledFeatureFlags.indexer) || (await db.redis.sismember(`feature:indexing`, entry.user.toString()));
+
             if (!hasFeatureFlag) {
                 log.silly('Indexer', `Feature flag not set, skipping user=%s command=%s message=%s`, entry.user, entry.command, entry.message);
                 return;
