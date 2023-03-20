@@ -256,7 +256,6 @@ server.use(async (req, res) => {
             },
             'Invalid accessToken value'
         );
-
         throw error;
     };
 
