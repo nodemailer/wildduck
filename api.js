@@ -249,13 +249,11 @@ server.use(async (req, res) => {
     let tokenRequired = false;
 
     let fail = () => {
-        res.status(403);
-        res.charSet('utf-8');
-        res.json({
-            error: 'Invalid accessToken value',
-            code: 'InvalidToken'
-        });
-        return;
+        let error = new Error('Invalid accessToken value');
+        error.responseCode = 403;
+        error.code = 'InvalidToken';
+
+        throw error;
     };
 
     req.validate = permission => {
@@ -403,6 +401,7 @@ server.use(async (req, res) => {
                     }
                 }
 
+                // pass
                 return;
             }
         }
