@@ -23,6 +23,7 @@ const ObjectId = require('mongodb').ObjectId;
 const tls = require('tls');
 const Lock = require('ioredfour');
 const Path = require('path');
+const errors = require('restify-errors');
 
 const acmeRoutes = require('./lib/api/acme');
 const usersRoutes = require('./lib/api/users');
@@ -249,9 +250,13 @@ server.use(async (req, res) => {
     let tokenRequired = false;
 
     let fail = () => {
-        let error = new Error('Invalid accessToken value');
-        error.responseCode = 403;
-        error.code = 'InvalidToken';
+        let error = new errors.ForbiddenError(
+            {
+                cause: new Error('Invalid accessToken value'),
+                info: { code: 'InvalidToken' }
+            },
+            'boom!'
+        );
 
         throw error;
     };
