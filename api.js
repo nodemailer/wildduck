@@ -252,10 +252,9 @@ server.use(async (req, res) => {
     let fail = () => {
         let error = new errors.ForbiddenError(
             {
-                cause: new Error('Invalid accessToken value'),
-                info: { code: 'InvalidToken' }
+                code: 'InvalidToken'
             },
-            'boom!'
+            'Invalid accessToken value'
         );
 
         throw error;
