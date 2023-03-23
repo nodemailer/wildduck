@@ -79,7 +79,8 @@ class Indexer {
                     message: entry.message.toString(),
                     mailbox: entry.mailbox.toString(),
                     uid: entry.uid,
-                    modseq: entry.modseq
+                    modseq: entry.modseq,
+                    user: entry.user.toString()
                 };
                 break;
             case 'EXPUNGE':
@@ -88,7 +89,8 @@ class Indexer {
                     message: entry.message.toString(),
                     mailbox: entry.mailbox.toString(),
                     uid: entry.uid,
-                    modseq: entry.modseq
+                    modseq: entry.modseq,
+                    user: entry.user.toString()
                 };
                 break;
             case 'FETCH':
@@ -98,7 +100,8 @@ class Indexer {
                     mailbox: entry.mailbox.toString(),
                     uid: entry.uid,
                     flags: entry.flags,
-                    modseq: entry.modseq
+                    modseq: entry.modseq,
+                    user: entry.user.toString()
                 };
                 break;
         }
@@ -317,9 +320,9 @@ function indexingJob(esclient) {
                         }
                     );
 
-                    const now = new Date();
+                    const now = messageData._id.getTimestamp();
 
-                    let messageObj = removeEmptyKeys({
+                    const messageObj = removeEmptyKeys({
                         user: messageData.user.toString(),
                         mailbox: messageData.mailbox.toString(),
 
@@ -401,6 +404,17 @@ function indexingJob(esclient) {
                         indexResponse.body && indexResponse.body._id
                     );
 
+                    loggelf({
+                        short_message: '[INDEXER]',
+                        _mail_action: `indexer_${data.action}`,
+                        _user: data.user,
+                        _mailbox: data.mailbox,
+                        _uid: data.uid,
+                        _modseq: data.modseq,
+                        _indexer_result: indexResponse.body && indexResponse.body.result,
+                        _indexer_message: indexResponse.body && indexResponse.body._id
+                    });
+
                     break;
                 }
 
@@ -430,6 +444,17 @@ function indexingJob(esclient) {
                         deleteResponse.body && deleteResponse.body.result,
                         deleteResponse.body && deleteResponse.body._id
                     );
+
+                    loggelf({
+                        short_message: '[INDEXER]',
+                        _mail_action: `indexer_${data.action}`,
+                        _user: data.user,
+                        _mailbox: data.mailbox,
+                        _uid: data.uid,
+                        _modseq: data.modseq,
+                        _indexer_result: deleteResponse.body && deleteResponse.body.result,
+                        _indexer_message: deleteResponse.body && deleteResponse.body._id
+                    });
                     break;
                 }
 
@@ -483,6 +508,19 @@ function indexingJob(esclient) {
                         updateResponse.body && updateResponse.body.result,
                         updateResponse.body && updateResponse.body._id
                     );
+
+                    loggelf({
+                        short_message: '[INDEXER]',
+                        _mail_action: `indexer_${data.action}`,
+                        _user: data.user,
+                        _mailbox: data.mailbox,
+                        _uid: data.uid,
+
+                        _modseq: data.modseq,
+                        _flags: data.flags && data.flags.join(', '),
+                        _indexer_result: updateResponse.body && updateResponse.body.result,
+                        _indexer_message: updateResponse.body && updateResponse.body._id
+                    });
                 }
             }
 
@@ -495,6 +533,20 @@ function indexingJob(esclient) {
             }
 
             log.error('Indexing', err);
+
+            const data = job.data;
+            loggelf({
+                short_message: '[INDEXER]',
+                _mail_action: `indexer_${data.action}`,
+                _user: data.user,
+                _mailbox: data.mailbox,
+                _uid: data.uid,
+                _modseq: data.modseq,
+                _indexer_message: err.meta && err.meta.body && err.meta.body._id,
+                _error: err.message,
+                _err_code: err.meta && err.meta.body && err.meta.body.result
+            });
+
             throw err;
         }
     };
