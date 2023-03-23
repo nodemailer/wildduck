@@ -7,6 +7,7 @@ const consts = require('./lib/consts');
 const RedFour = require('ioredfour');
 const yaml = require('js-yaml');
 const fs = require('fs');
+const { Queue } = require('bullmq');
 const MessageHandler = require('./lib/message-handler');
 const MailboxHandler = require('./lib/mailbox-handler');
 const CertHandler = require('./lib/cert-handler');
@@ -27,12 +28,14 @@ const taskAcme = require('./lib/tasks/acme');
 const taskAcmeUpdate = require('./lib/tasks/acme-update');
 const taskClearFolder = require('./lib/tasks/clear-folder');
 const taskSearchApply = require('./lib/tasks/search-apply');
+const taskUserIndexing = require('./lib/tasks/user-indexing');
 
 let messageHandler;
 let mailboxHandler;
 let auditHandler;
 let taskHandler;
 let certHandler;
+let backlogIndexingQueue;
 let gcTimeout;
 let taskTimeout;
 let gcLock;
@@ -123,6 +126,8 @@ module.exports.start = callback => {
         redis: db.redis,
         loggelf: message => loggelf(message)
     });
+
+    backlogIndexingQueue = new Queue('backlog_indexing', db.queueConf);
 
     let start = () => {
         // setup ready
@@ -664,6 +669,25 @@ function processTask(task, data, callback) {
                 task,
                 data,
                 {
+                    messageHandler,
+                    mailboxHandler,
+                    loggelf
+                },
+                err => {
+                    if (err) {
+                        return callback(err);
+                    }
+                    // release
+                    callback(null, true);
+                }
+            );
+
+        case 'user-indexing':
+            return taskUserIndexing(
+                task,
+                data,
+                {
+                    backlogIndexingQueue,
                     messageHandler,
                     mailboxHandler,
                     loggelf

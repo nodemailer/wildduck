@@ -24,7 +24,7 @@ const LOCK_RENEW_TTL = 2;
 let FORCE_DISABLE = false;
 const processId = crypto.randomBytes(8).toString('hex');
 let isCurrentWorker = false;
-let indexingQueue;
+let liveIndexingQueue;
 
 const FORCE_DISABLED_MESSAGE = 'Can not set up change streams. Not a replica set. Changes are not indexed to ElasticSearch.';
 
@@ -114,7 +114,7 @@ class Indexer {
                 log.verbose('Indexer', `Feature flag set, processing user=%s command=%s message=%s`, entry.user, entry.command, entry.message);
             }
 
-            await indexingQueue.add('journal', payload, {
+            await liveIndexingQueue.add('journal', payload, {
                 removeOnComplete: 100,
                 removeOnFail: 100,
                 attempts: 5,
@@ -257,10 +257,247 @@ function formatAddresses(addresses) {
                 addr = addr.substr(0, addr.lastIndexOf('@') + 1) + punycode.toUnicode(addr.substr(addr.lastIndexOf('@') + 1));
             }
 
-            result.push({ name, addres: addr });
+            result.push({ name, address: addr });
         }
     }
     return result;
+}
+
+function indexingJob(esclient) {
+    return async job => {
+        try {
+            if (!job || !job.data) {
+                return false;
+            }
+            const data = job.data;
+
+            const dateKeyTdy = new Date().toISOString().substring(0, 10).replace(/-/g, '');
+            const dateKeyYdy = new Date(Date.now() - 24 * 3600 * 1000).toISOString().substring(0, 10).replace(/-/g, '');
+            const tombstoneTdy = `indexer:tomb:${dateKeyTdy}`;
+            const tombstoneYdy = `indexer:tomb:${dateKeyYdy}`;
+
+            switch (data.action) {
+                case 'new': {
+                    // check tombstone for race conditions (might be already deleted)
+
+                    let [[err1, isDeleted1], [err2, isDeleted2]] = await db.redis
+                        .multi()
+                        .sismember(tombstoneTdy, data.message)
+                        .sismember(tombstoneYdy, data.message)
+                        .exec();
+
+                    if (err1) {
+                        log.verbose('Indexing', 'Failed checking tombstone key=%s erro=%s', tombstoneTdy, err1.message);
+                    }
+
+                    if (err2) {
+                        log.verbose('Indexing', 'Failed checking tombstone key=%s erro=%s', tombstoneYdy, err2.message);
+                    }
+
+                    if (isDeleted1 || isDeleted2) {
+                        log.info('Indexing', 'Document tombstone found, skip index message=%s', data.message);
+                        break;
+                    }
+
+                    // fetch message from DB
+                    let messageData = await db.database.collection('messages').findOne(
+                        {
+                            _id: new ObjectId(data.message),
+                            // shard key
+                            mailbox: new ObjectId(data.mailbox),
+                            uid: data.uid
+                        },
+                        {
+                            projection: {
+                                bodystructure: false,
+                                envelope: false,
+                                'mimeTree.childNodes': false,
+                                'mimeTree.header': false
+                            }
+                        }
+                    );
+
+                    const now = new Date();
+
+                    let messageObj = removeEmptyKeys({
+                        user: messageData.user.toString(),
+                        mailbox: messageData.mailbox.toString(),
+
+                        thread: messageData.thread ? messageData.thread.toString() : null,
+                        uid: messageData.uid,
+                        answered: messageData.flags ? messageData.flags.includes('\\Answered') : null,
+
+                        attachments:
+                            (messageData.attachments &&
+                                messageData.attachments.map(attachment =>
+                                    removeEmptyKeys({
+                                        cid: attachment.cid || null,
+                                        contentType: attachment.contentType || null,
+                                        size: attachment.size,
+                                        filename: attachment.filename,
+                                        id: attachment.id,
+                                        disposition: attachment.disposition
+                                    })
+                                )) ||
+                            null,
+
+                        bcc: formatAddresses(messageData.mimeTree && messageData.mimeTree.parsedHeader && messageData.mimeTree.parsedHeader.bcc),
+                        cc: formatAddresses(messageData.mimeTree && messageData.mimeTree.parsedHeader && messageData.mimeTree.parsedHeader.cc),
+
+                        // Time when stored
+                        created: now.toISOString(),
+
+                        // Internal Date
+                        idate: (messageData.idate && messageData.idate.toISOString()) || now.toISOString(),
+
+                        // Header Date
+                        hdate: (messageData.hdate && messageData.hdate.toISOString()) || now.toISOString(),
+
+                        draft: messageData.flags ? messageData.flags.includes('\\Draft') : null,
+
+                        flagged: messageData.flags ? messageData.flags.includes('\\Flagged') : null,
+
+                        flags: messageData.flags || [],
+
+                        from: formatAddresses(messageData.mimeTree && messageData.mimeTree.parsedHeader && messageData.mimeTree.parsedHeader.from),
+
+                        // do not index authentication and transport headers
+                        headers: messageData.headers
+                            ? messageData.headers.filter(header => !/^x|^received|^arc|^dkim|^authentication/gi.test(header.key))
+                            : null,
+
+                        inReplyTo: messageData.inReplyTo || null,
+
+                        msgid: messageData.msgid || null,
+
+                        replyTo: formatAddresses(messageData.mimeTree && messageData.mimeTree.parsedHeader && messageData.mimeTree.parsedHeader['reply-to']),
+
+                        size: messageData.size || null,
+
+                        subject: messageData.subject || '',
+
+                        to: formatAddresses(messageData.mimeTree && messageData.mimeTree.parsedHeader && messageData.mimeTree.parsedHeader.to),
+
+                        unseen: messageData.flags ? !messageData.flags.includes('\\Seen') : null,
+
+                        html: (messageData.html && messageData.html.join('\n')) || null,
+
+                        text: messageData.text || null,
+
+                        modseq: data.modseq
+                    });
+
+                    let indexResponse = await esclient.index({
+                        id: messageData._id.toString(),
+                        index: config.elasticsearch.index,
+                        body: messageObj,
+                        refresh: false
+                    });
+
+                    log.verbose(
+                        'Indexing',
+                        'Document index result=%s message=%s',
+                        indexResponse.body && indexResponse.body.result,
+                        indexResponse.body && indexResponse.body._id
+                    );
+
+                    break;
+                }
+
+                case 'delete': {
+                    let deleteResponse;
+                    try {
+                        deleteResponse = await esclient.delete({
+                            id: data.message,
+                            index: config.elasticsearch.index,
+                            refresh: false
+                        });
+                    } catch (err) {
+                        if (err.meta && err.meta.body && err.meta.body.result === 'not_found') {
+                            // set tombstone to prevent indexing this message in case of race conditions
+                            await db.redis
+                                .multi()
+                                .sadd(tombstoneTdy, data.message)
+                                .expire(tombstoneTdy, 24 * 3600)
+                                .exec();
+                        }
+                        throw err;
+                    }
+
+                    log.verbose(
+                        'Indexing',
+                        'Document delete result=%s message=%s',
+                        deleteResponse.body && deleteResponse.body.result,
+                        deleteResponse.body && deleteResponse.body._id
+                    );
+                    break;
+                }
+
+                case 'update': {
+                    let updateRequest = {
+                        id: data.message,
+                        index: config.elasticsearch.index,
+                        refresh: false
+                    };
+
+                    if (data.modseq && typeof data.modseq === 'number') {
+                        updateRequest.body = {
+                            script: {
+                                lang: 'painless',
+                                source: `
+                                    if( ctx._source.modseq >= params.modseq) {
+                                        ctx.op = 'none';
+                                    } else {
+                                        ctx._source.draft = params.draft;
+                                        ctx._source.flagged = params.flagged;
+                                        ctx._source.flags = params.flags;
+                                        ctx._source.unseen = params.unseen;
+                                        ctx._source.modseq = params.modseq;
+                                    }
+                                `,
+                                params: {
+                                    modseq: data.modseq,
+                                    draft: data.flags.includes('\\Draft'),
+                                    flagged: data.flags.includes('\\Flagged'),
+                                    flags: data.flags || [],
+                                    unseen: !data.flags.includes('\\Seen')
+                                }
+                            }
+                        };
+                    } else {
+                        updateRequest.body = {
+                            doc: removeEmptyKeys({
+                                draft: data.flags ? data.flags.includes('\\Draft') : null,
+                                flagged: data.flags ? data.flags.includes('\\Flagged') : null,
+                                flags: data.flags || [],
+                                unseen: data.flags ? !data.flags.includes('\\Seen') : null
+                            })
+                        };
+                    }
+
+                    let updateResponse = await esclient.update(updateRequest);
+
+                    log.verbose(
+                        'Indexing',
+                        'Document update result=%s message=%s',
+                        updateResponse.body && updateResponse.body.result,
+                        updateResponse.body && updateResponse.body._id
+                    );
+                }
+            }
+
+            // loggelf({ _msg: 'hello world' });
+        } catch (err) {
+            if (err.meta && err.meta.body && err.meta.body.result === 'not_found') {
+                // missing document, ignore
+                log.error('Indexing', 'Failed to process indexing request, document not found message=%s', err.meta.body._id);
+                return;
+            }
+
+            log.error('Indexing', err);
+            throw err;
+        }
+    };
 }
 
 module.exports.start = callback => {
@@ -314,7 +551,7 @@ module.exports.start = callback => {
             return setTimeout(() => process.exit(1), 3000);
         }
 
-        indexingQueue = new Queue('indexing', db.queueConf);
+        liveIndexingQueue = new Queue('live_indexing', db.queueConf);
 
         processlock = counters(db.redis).processlock;
 
@@ -324,244 +561,21 @@ module.exports.start = callback => {
         });
 
         const esclient = getClient();
-        queueWorkers.indexing = new Worker(
-            'indexing',
-            async job => {
-                try {
-                    if (!job || !job.data) {
-                        return false;
-                    }
-                    const data = job.data;
 
-                    const dateKeyTdy = new Date().toISOString().substring(0, 10).replace(/-/g, '');
-                    const dateKeyYdy = new Date(Date.now() - 24 * 3600 * 1000).toISOString().substring(0, 10).replace(/-/g, '');
-                    const tombstoneTdy = `indexer:tomb:${dateKeyTdy}`;
-                    const tombstoneYdy = `indexer:tomb:${dateKeyYdy}`;
+        queueWorkers.liveIndexing = new Worker(
+            'live_indexing',
+            indexingJob(esclient),
+            Object.assign(
+                {
+                    concurrency: 1
+                },
+                db.queueConf
+            )
+        );
 
-                    switch (data.action) {
-                        case 'new': {
-                            // check tombstone for race conditions (might be already deleted)
-
-                            let [[err1, isDeleted1], [err2, isDeleted2]] = await db.redis
-                                .multi()
-                                .sismember(tombstoneTdy, data.message)
-                                .sismember(tombstoneYdy, data.message)
-                                .exec();
-
-                            if (err1) {
-                                log.verbose('Indexing', 'Failed checking tombstone key=%s erro=%s', tombstoneTdy, err1.message);
-                            }
-
-                            if (err2) {
-                                log.verbose('Indexing', 'Failed checking tombstone key=%s erro=%s', tombstoneYdy, err2.message);
-                            }
-
-                            if (isDeleted1 || isDeleted2) {
-                                log.info('Indexing', 'Document tombstone found, skip index message=%s', data.message);
-                                break;
-                            }
-
-                            // fetch message from DB
-                            let messageData = await db.database.collection('messages').findOne(
-                                {
-                                    _id: new ObjectId(data.message),
-                                    // shard key
-                                    mailbox: new ObjectId(data.mailbox),
-                                    uid: data.uid
-                                },
-                                {
-                                    projection: {
-                                        bodystructure: false,
-                                        envelope: false,
-                                        'mimeTree.childNodes': false,
-                                        'mimeTree.header': false
-                                    }
-                                }
-                            );
-
-                            const now = new Date();
-
-                            let messageObj = removeEmptyKeys({
-                                user: messageData.user.toString(),
-                                mailbox: messageData.mailbox.toString(),
-
-                                thread: messageData.thread ? messageData.thread.toString() : null,
-                                uid: messageData.uid,
-                                answered: messageData.flags ? messageData.flags.includes('\\Answered') : null,
-
-                                attachments:
-                                    (messageData.attachments &&
-                                        messageData.attachments.map(attachment =>
-                                            removeEmptyKeys({
-                                                cid: attachment.cid || null,
-                                                contentType: attachment.contentType || null,
-                                                size: attachment.size,
-                                                filename: attachment.filename,
-                                                id: attachment.id,
-                                                disposition: attachment.disposition
-                                            })
-                                        )) ||
-                                    null,
-
-                                bcc: formatAddresses(messageData.mimeTree && messageData.mimeTree.parsedHeader && messageData.mimeTree.parsedHeader.bcc),
-                                cc: formatAddresses(messageData.mimeTree && messageData.mimeTree.parsedHeader && messageData.mimeTree.parsedHeader.cc),
-
-                                // Time when stored
-                                created: now.toISOString(),
-
-                                // Internal Date
-                                idate: (messageData.idate && messageData.idate.toISOString()) || now.toISOString(),
-
-                                // Header Date
-                                hdate: (messageData.hdate && messageData.hdate.toISOString()) || now.toISOString(),
-
-                                draft: messageData.flags ? messageData.flags.includes('\\Draft') : null,
-
-                                flagged: messageData.flags ? messageData.flags.includes('\\Flagged') : null,
-
-                                flags: messageData.flags || [],
-
-                                from: formatAddresses(messageData.mimeTree && messageData.mimeTree.parsedHeader && messageData.mimeTree.parsedHeader.from),
-
-                                // do not index authentication and transport headers
-                                headers: messageData.headers
-                                    ? messageData.headers.filter(header => !/^x|^received|^arc|^dkim|^authentication/gi.test(header.key))
-                                    : null,
-
-                                inReplyTo: messageData.inReplyTo || null,
-
-                                msgid: messageData.msgid || null,
-
-                                replyTo: formatAddresses(
-                                    messageData.mimeTree && messageData.mimeTree.parsedHeader && messageData.mimeTree.parsedHeader['reply-to']
-                                ),
-
-                                size: messageData.size || null,
-
-                                subject: messageData.subject || '',
-
-                                to: formatAddresses(messageData.mimeTree && messageData.mimeTree.parsedHeader && messageData.mimeTree.parsedHeader.to),
-
-                                unseen: messageData.flags ? !messageData.flags.includes('\\Seen') : null,
-
-                                html: (messageData.html && messageData.html.join('\n')) || null,
-
-                                text: messageData.text || null,
-
-                                modseq: data.modseq
-                            });
-
-                            let indexResponse = await esclient.index({
-                                id: messageData._id.toString(),
-                                index: config.elasticsearch.index,
-                                body: messageObj,
-                                refresh: false
-                            });
-
-                            log.verbose(
-                                'Indexing',
-                                'Document index result=%s message=%s',
-                                indexResponse.body && indexResponse.body.result,
-                                indexResponse.body && indexResponse.body._id
-                            );
-
-                            break;
-                        }
-
-                        case 'delete': {
-                            let deleteResponse;
-                            try {
-                                deleteResponse = await esclient.delete({
-                                    id: data.message,
-                                    index: config.elasticsearch.index,
-                                    refresh: false
-                                });
-                            } catch (err) {
-                                if (err.meta && err.meta.body && err.meta.body.result === 'not_found') {
-                                    // set tombstone to prevent indexing this message in case of race conditions
-                                    await db.redis
-                                        .multi()
-                                        .sadd(tombstoneTdy, data.message)
-                                        .expire(tombstoneTdy, 24 * 3600)
-                                        .exec();
-                                }
-                                throw err;
-                            }
-
-                            log.verbose(
-                                'Indexing',
-                                'Document delete result=%s message=%s',
-                                deleteResponse.body && deleteResponse.body.result,
-                                deleteResponse.body && deleteResponse.body._id
-                            );
-                            break;
-                        }
-
-                        case 'update': {
-                            let updateRequest = {
-                                id: data.message,
-                                index: config.elasticsearch.index,
-                                refresh: false
-                            };
-
-                            if (data.modseq && typeof data.modseq === 'number') {
-                                updateRequest.body = {
-                                    script: {
-                                        lang: 'painless',
-                                        source: `
-                                    if( ctx._source.modseq >= params.modseq) {
-                                        ctx.op = 'none';
-                                    } else {
-                                        ctx._source.draft = params.draft;
-                                        ctx._source.flagged = params.flagged;
-                                        ctx._source.flags = params.flags;
-                                        ctx._source.unseen = params.unseen;
-                                        ctx._source.modseq = params.modseq;
-                                    }
-                                `,
-                                        params: {
-                                            modseq: data.modseq,
-                                            draft: data.flags.includes('\\Draft'),
-                                            flagged: data.flags.includes('\\Flagged'),
-                                            flags: data.flags || [],
-                                            unseen: !data.flags.includes('\\Seen')
-                                        }
-                                    }
-                                };
-                            } else {
-                                updateRequest.body = {
-                                    doc: removeEmptyKeys({
-                                        draft: data.flags ? data.flags.includes('\\Draft') : null,
-                                        flagged: data.flags ? data.flags.includes('\\Flagged') : null,
-                                        flags: data.flags || [],
-                                        unseen: data.flags ? !data.flags.includes('\\Seen') : null
-                                    })
-                                };
-                            }
-
-                            let updateResponse = await esclient.update(updateRequest);
-
-                            log.verbose(
-                                'Indexing',
-                                'Document update result=%s message=%s',
-                                updateResponse.body && updateResponse.body.result,
-                                updateResponse.body && updateResponse.body._id
-                            );
-                        }
-                    }
-
-                    // loggelf({ _msg: 'hello world' });
-                } catch (err) {
-                    if (err.meta && err.meta.body && err.meta.body.result === 'not_found') {
-                        // missing document, ignore
-                        log.error('Indexing', 'Failed to process indexing request, document not found message=%s', err.meta.body._id);
-                        return;
-                    }
-
-                    log.error('Indexing', err);
-                    throw err;
-                }
-            },
+        queueWorkers.backlogIndexing = new Worker(
+            'backlog_indexing',
+            indexingJob(esclient),
             Object.assign(
                 {
                     concurrency: 1
