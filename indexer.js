@@ -320,6 +320,11 @@ function indexingJob(esclient) {
                         }
                     );
 
+                    if (!messageData) {
+                        log.info('Indexing', 'Message not found from DB, skip index message=%s', data.message);
+                        break;
+                    }
+
                     const now = messageData._id.getTimestamp();
 
                     const messageObj = removeEmptyKeys({
