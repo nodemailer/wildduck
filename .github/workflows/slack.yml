@@ -20,7 +20,7 @@ jobs:
               env:
                   webhook_url: ${{ secrets.ZONE_WEBHOOK_URL }}
                   curl_options: '--fail -s'
-                  data: '{"channel":"wildduck-changelog", "text": "**${{ github.actor }}** pushed <https://github.com/${{ github.repository }}/commit/${{ github.sha }}|${{ github.sha }}> to **${{ github.ref_name }}**"}'
+                  data: '{"channel":"wildduck-changelog", "text": "*${{ github.actor }}* pushed <https://github.com/${{ github.repository }}/commit/${{ github.sha }}|${{ github.sha }}> to *${{ github.ref_name }}*: ${{ github.event.head_commit.message }}"}'
               run: |
                   curl $curl_options \
                   -H "Content-Type: application/json" \
