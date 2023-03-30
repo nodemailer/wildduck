@@ -1,4 +1,4 @@
-FROM node:lts-alpine
+FROM --platform=$BUILDPLATFORM node:lts-alpine
 
 RUN apk --no-cache add make git dumb-init openssl
 
