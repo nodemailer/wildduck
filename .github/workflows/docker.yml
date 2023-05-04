@@ -1,9 +1,6 @@
 name: Build and publish a Docker image to Docker hub and ghcr.io
 on:
     push:
-        branches:
-            - master
-            - docker
         tags:
             - 'v*.*.*'
 
@@ -13,40 +10,37 @@ jobs:
         steps:
             - name: Checkout
               uses: actions/checkout@v3
+
             - name: Docker meta
               id: meta
               uses: docker/metadata-action@v3
               with:
-                  # list of Docker images to use as base name for tags
                   images: |
-                      nodemailer/wildduck
-                      ghcr.io/nodemailer/wildduck
-                  # generate Docker tags based on the following events/attributes
+                      ${{ github.repository }}
+                      ghcr.io/${{ github.repository }}
                   tags: |
                       type=semver,pattern={{version}}
                       type=semver,pattern={{major}}.{{minor}}
                       type=semver,pattern={{major}}
-                      type=sha
 
             - name: Set up QEMU
               uses: docker/setup-qemu-action@v2
               with:
-                  platforms: 'amd64,arm64,arm'
+                  platforms: 'arm64,arm'
 
             - name: Set up Docker Buildx
+              id: buildx
               uses: docker/setup-buildx-action@v2
               with:
                 platforms: linux/arm64,linux/amd64,linux/arm/v7
 
             - name: Login to DockerHub
-              if: github.event_name != 'pull_request'
               uses: docker/login-action@v2
               with:
                   username: ${{ secrets.DOCKERHUB_USERNAME }}
                   password: ${{ secrets.DOCKERHUB_TOKEN }}
 
             - name: Login to GHCR
-              if: github.event_name != 'pull_request'
               uses: docker/login-action@v2
               with:
                   registry: ghcr.io
@@ -57,7 +51,7 @@ jobs:
               uses: docker/build-push-action@v3
               with:
                   context: .
-                  platforms: linux/arm64,linux/amd64,linux/arm/v7
-                  push: ${{ github.event_name != 'pull_request' }}
+                  platforms: ${{ steps.buildx.outputs.platforms }}
+                  push: true
                   tags: ${{ steps.meta.outputs.tags }}
                   labels: ${{ steps.meta.outputs.labels }}
