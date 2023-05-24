@@ -9,7 +9,7 @@ const expect = chai.expect;
 chai.config.includeStack = true;
 
 describe('#parseValueParams', function () {
-    it.only('should return as is', function () {
+    it('should return as is', function () {
         let parser = new MIMEParser();
         const parsed = parser.parseValueParams(
             'text/plain;\n' +
@@ -18,8 +18,7 @@ describe('#parseValueParams', function () {
                 '\tx-apple-part-url=99AFDE83-8953-43B4-BE59-F59D6160AFAB'
         );
 
-        console.log('PARSED', parsed);
-        expect(parsed).to.equal({
+        expect(parsed).to.deep.equal({
             value: 'text/plain',
             type: 'text',
             subtype: 'plain',

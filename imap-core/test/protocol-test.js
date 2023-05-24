@@ -1237,7 +1237,7 @@ describe('IMAP Protocol integration tests', function () {
 
         describe('BODY[] marks message as seen', function () {
             it('should list raw message', function (done) {
-                let cmds = ['T1 LOGIN testuser pass', 'T2 SELECT INBOX', 'T3 FETCH 3 BODY[2.HEADER]', 'T4 LOGOUT'];
+                let cmds = ['T1 LOGIN testuser pass', 'T2 SELECT INBOX', 'T3 FETCH 3 BODY[2.HEADER]', 'TX FETCH 1:* BODY[2.HEADER]', 'T4 LOGOUT'];
 
                 testClient(
                     {
@@ -1247,7 +1247,7 @@ describe('IMAP Protocol integration tests', function () {
                     },
                     function (resp) {
                         resp = resp.toString();
-
+                        console.log('RESP 1 ', resp);
                         expect(
                             resp.indexOf(
                                 '\n* 3 FETCH (BODY[2.HEADER] {71}\r\n' +
