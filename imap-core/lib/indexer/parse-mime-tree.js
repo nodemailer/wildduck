@@ -1,7 +1,6 @@
 'use strict';
 
 const addressparser = require('nodemailer/lib/addressparser');
-const libmime = require('libmime');
 
 /**
  * Parses a RFC822 message into a structured object (JSON compatible)
@@ -255,19 +254,81 @@ class MIMEParser {
      * @return {Object} Parsed value
      */
     parseValueParams(headerValue) {
-        let parsed = libmime.parseHeaderValue(headerValue) || {};
-
-        let subtype = (parsed.value || '').split('/');
-        let type = (subtype.shift() || '').toLowerCase();
-        subtype = subtype.join('/');
-
-        return {
-            value: parsed.value || '',
-            type,
-            subtype,
-            params: parsed.params || {},
-            hasParams: !!Object.keys(parsed.params || {}).length
+        let data = {
+            value: '',
+            type: '',
+            subtype: '',
+            params: {}
         };
+        let match;
+        let processEncodedWords = {};
+
+        let charsetRequired = new WeakSet();
+
+        (headerValue || '').split(';').forEach((part, i) => {
+            let key, value;
+            if (!i) {
+                data.value = part.trim();
+                data.subtype = data.value.split('/');
+                data.type = (data.subtype.shift() || '').toLowerCase();
+                data.subtype = data.subtype.join('/');
+                return;
+            }
+            value = part.split('=');
+            key = (value.shift() || '').trim().toLowerCase();
+            value = value.join('=').replace(/^['"\s]*|['"\s]*$/g, '');
+
+            // Do not touch headers that have strange looking keys, keep these
+            // only in the unparsed array
+            if (/[^a-zA-Z0-9\-*]/.test(key) || key.length >= 100) {
+                return;
+            }
+
+            // This regex allows for an optional trailing asterisk, for headers
+            // which are encoded with lang/charset info as well as a continuation.
+            // See https://tools.ietf.org/html/rfc2231 section 4.1.
+
+            if ((match = key.match(/^([^*]+)\*(\d)?\*?$/))) {
+                if (!processEncodedWords[match[1]]) {
+                    processEncodedWords[match[1]] = [];
+
+                    if (key.match(/^([^*]+)\*(\d)?\*$/)) {
+                        // must have charset
+                        charsetRequired.add(processEncodedWords[match[1]]);
+                    }
+                }
+                processEncodedWords[match[1]][Number(match[2]) || 0] = value;
+            } else {
+                data.params[key] = value;
+            }
+            data.hasParams = true;
+        });
+
+        // convert extended mime word into a regular one
+        Object.keys(processEncodedWords).forEach(key => {
+            let charset = '';
+            let value = '';
+
+            let isCharsetRequired = charsetRequired.has(processEncodedWords[key]);
+            if (!isCharsetRequired) {
+                charset = 'utf-8';
+                value = processEncodedWords[key].join('').replace(/%/g, '=');
+            } else {
+                processEncodedWords[key].forEach((val, i) => {
+                    if (!i) {
+                        let parts = val.split("'"); // eslint-disable-line quotes
+                        charset = parts.shift();
+                        parts.shift(); // lang argument, ignored
+                        val = parts.join("'"); // eslint-disable-line quotes
+                    }
+                    value += val.replace(/%/g, '=');
+                });
+            }
+
+            data.params[key] = '=?' + (charset || 'ISO-8859-1').toUpperCase() + '?Q?' + value + '?=';
+        });
+
+        return data;
     }
 
     /**
