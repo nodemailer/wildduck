@@ -335,6 +335,8 @@ function indexingJob(esclient) {
                         uid: messageData.uid,
                         answered: messageData.flags ? messageData.flags.includes('\\Answered') : null,
 
+                        ha: (messageData.attachments && messageData.attachments.length > 0) || false,
+
                         attachments:
                             (messageData.attachments &&
                                 messageData.attachments.map(attachment =>
