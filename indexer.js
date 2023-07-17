@@ -56,7 +56,7 @@ class Indexer {
         this.running = false;
         log.info('Indexer', 'Stopping indexer');
         try {
-            if (this.changeStream && !this.changeStream.isClosed()) {
+            if (this.changeStream && !this.changeStream.closed) {
                 await this.changeStream.close();
             }
         } catch (err) {
@@ -188,7 +188,14 @@ class Indexer {
                 return;
             }
 
-            if (this.changeStream.isClosed()) {
+            if (error.errorLabels && error.errorLabels.includes('NonResumableChangeStreamError')) {
+                // can't resume previous cursor
+                await db.redis.del('indexer:last');
+                log.info('Indexer', 'Can not resume existing cursor');
+                return;
+            }
+
+            if (this.changeStream && this.changeStream.closed) {
                 log.info('Indexer', 'The change stream is closed. Will not wait on any more changes.');
                 return;
             } else {
