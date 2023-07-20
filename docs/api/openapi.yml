@@ -1711,6 +1711,12 @@ paths:
                   description: Ordering of the records by insert date
                   schema:
                       $ref: '#/components/schemas/Order'
+                - name: includeHeaders
+                  in: query
+                  description: 'Comma separated list of header keys to include in the response'
+                  schema:
+                      type: string
+                      example: 'List-ID, MIME-version'
                 - name: next
                   in: query
                   description: 'Cursor value for next page, retrieved from nextCursor response value'
@@ -2037,6 +2043,12 @@ paths:
                   description: Ordering of the records by insert date. If no order is supplied, results are sorted by heir mongoDB ObjectId.
                   schema:
                       $ref: '#/components/schemas/Order'
+                - name: includeHeaders
+                  in: query
+                  description: 'Comma separated list of header keys to include in the response'
+                  schema:
+                      type: string
+                      example: 'List-ID, MIME-version'
                 - name: page
                   in: query
                   description: 'Current page number. Informational only, page numbers start from 1'
@@ -6918,6 +6930,9 @@ components:
                 metaData:
                     type: object
                     description: Custom metadata value. Included if metaData query argument was true
+                headers:
+                    type: object
+                    description: Header object keys requested with the includeHeaders argument
         GetFilesResult:
             required:
                 - id
