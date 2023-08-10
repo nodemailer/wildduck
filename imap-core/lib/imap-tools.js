@@ -783,3 +783,23 @@ module.exports.validateSearchDate = internaldate => {
     }
     return /^\d{1,2}-(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)-\d{4}$/i.test(internaldate);
 };
+
+module.exports.logClientId = connection => {
+    if (!connection.session.clientId) {
+        return false;
+    }
+
+    let logdata = {
+        short_message: '[CLIENT ID]',
+        _mail_action: 'client_id',
+        _authenticated: !!connection.session && connection.session.user && connection.session.user.id ? 'yes' : 'no',
+        _user: connection.session && connection.session.user && connection.session.user.id && connection.session.user.id.toString(),
+        _sess: connection.id
+    };
+
+    Object.keys(connection.session.clientId || {}).forEach(key => {
+        logdata[`_client_id_${key}`] = connection.session.clientId[key];
+    });
+
+    connection._server.loggelf(logdata);
+};
