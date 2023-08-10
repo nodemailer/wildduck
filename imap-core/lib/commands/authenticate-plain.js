@@ -49,9 +49,7 @@ module.exports = {
 };
 
 function authenticate(connection, token, requireClientToken, callback) {
-    let data = Buffer.from(token, 'base64')
-        .toString()
-        .split('\x00');
+    let data = Buffer.from(token, 'base64').toString().split('\x00');
 
     if ((!requireClientToken && data.length !== 3) || (requireClientToken && data.length !== 4)) {
         return callback(null, {
@@ -134,7 +132,9 @@ function authenticate(connection, token, requireClientToken, callback) {
             connection.setUser(response.user);
             connection.state = 'Authenticated';
             connection.setupNotificationListener();
+
             imapTools.sendCapabilityResponse(connection);
+            imapTools.logClientId(connection);
 
             callback(null, {
                 response: 'OK',
