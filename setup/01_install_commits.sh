@@ -2,8 +2,11 @@
 
 OURNAME=01_install_commits.sh
 
+apt-get update
+apt-get install -y lsb-release curl gnupg
+
 NODEREPO="node_20.x"
-MONGODB="4.4"
+MONGODB="7.0"
 CODENAME=`lsb_release -c -s`
 
 WILDDUCK_COMMIT="35f3c111afca59e3d56dd1724e420b44d68606e0"

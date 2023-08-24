@@ -20,30 +20,29 @@ echo "# Add your public key here
 chown -R deploy:deploy /home/deploy
 
 export DEBIAN_FRONTEND=noninteractive
+keyring="/usr/share/keyrings"
 
 # nodejs
-wget -qO- https://deb.nodesource.com/gpgkey/nodesource.gpg.key | apt-key add -
+node_key_url="https://deb.nodesource.com/gpgkey/nodesource.gpg.key"
+curl -s $node_key_url | gpg --dearmor | tee ${keyring}/nodesource.gpg >/dev/null
+
 echo "deb https://deb.nodesource.com/$NODEREPO $CODENAME main" > /etc/apt/sources.list.d/nodesource.list
 echo "deb-src https://deb.nodesource.com/$NODEREPO $CODENAME main" >> /etc/apt/sources.list.d/nodesource.list
 
-# mongo keys
-# ubuntu focal is supported as of 2021-06-14!
-MONGORELEASE=$CODENAME
-# if [ "$MONGORELEASE" = "focal" ]; then
-  # Ubuntu 20 is not yet supported (as of 2020-07-01), fallback to 18
-  # MONGORELEASE="bionic"
-# fi
-
-wget -qO- https://www.mongodb.org/static/pgp/server-${MONGODB}.asc | apt-key add
-echo "deb [ arch=amd64 ] http://repo.mongodb.org/apt/ubuntu $MONGORELEASE/mongodb-org/$MONGODB multiverse" > /etc/apt/sources.list.d/mongodb-org.list
+# mongodb
+mongo_key_url="https://pgp.mongodb.com/server-${MONGODB}.asc"
+curl -s $mongo_key_url | gpg --dearmor | tee ${keyring}/mongodb-server-${MONGODB}.gpg >/dev/null
+echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu ${CODENAME}/mongodb-org/${MONGODB} multiverse" | tee /etc/apt/sources.list.d/mongodb-org-${MONGODB}.list
 
 # rspamd
-wget -O- https://rspamd.com/apt-stable/gpg.key | apt-key add -
+rspamd_key_url="https://rspamd.com/apt-stable/gpg.key"
+curl -s $rspamd_key_url | gpg --dearmor | tee ${keyring}/rspamd.gpg >/dev/null
+
 echo "deb http://rspamd.com/apt-stable/ $CODENAME main" > /etc/apt/sources.list.d/rspamd.list
 echo "deb-src http://rspamd.com/apt-stable/ $CODENAME main" >> /etc/apt/sources.list.d/rspamd.list
-apt-get update
 
 # redis
-# use redis team repo
-add-apt-repository -y ppa:redislabs/redis
-# apt-add-repository -y ppa:chris-lea/redis-server
+curl -fsSL https://packages.redis.io/gpg | gpg --dearmor -o ${keyring}/redis-archive-keyring.gpg
+echo "deb [signed-by=${keyring}/redis-archive-keyring.gpg] https://packages.redis.io/deb $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/redis.list
+
+apt-get update
