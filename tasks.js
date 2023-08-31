@@ -486,7 +486,7 @@ async function runTasks() {
             try {
                 await new Promise((resolve, reject) => {
                     // run pseudo task
-                    processTask({ type: 'acme-update', _id: 'acme-update-id', lock: 'acme-update-lock' }, {}, err => {
+                    processTask({ type: 'acme-update', _id: 'acme-update-id', lock: 'acme-update-lock', silent: true }, {}, err => {
                         if (err) {
                             return reject(err);
                         } else {
@@ -535,7 +535,9 @@ async function runTasks() {
 }
 
 function processTask(task, data, callback) {
-    log.verbose('Tasks', 'type=%s id=%s data=%s', task.type, task._id, JSON.stringify(data));
+    if (!data.silent) {
+        log.verbose('Tasks', 'type=%s id=%s data=%s', task.type, task._id, JSON.stringify(data));
+    }
 
     switch (task.type) {
         case 'restore':
