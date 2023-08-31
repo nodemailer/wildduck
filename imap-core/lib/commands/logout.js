@@ -1,7 +1,5 @@
 'use strict';
 
-const config = require('wild-config');
-
 const DEFAULT_QUOTES = [
     'All dreams are but another reality. Never forget...',
     'Oh boy, oh boy, oh boy...',
