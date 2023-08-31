@@ -497,15 +497,14 @@ indexes:
               metadata.c: 1
               metadata.m: 1
 
-# TODO
-#    - collection: attachments.files
-#      type: gridfs # index applies to gridfs database
-#      index:
-#          name: related_attachments_cu
-#          key:
-#              metadata.c: 1
-#              metadata.m: 1
-#              metadata.cu: 1
+    - collection: attachments.files
+      type: gridfs # index applies to gridfs database
+      index:
+          name: related_attachments_cu
+          key:
+              metadata.c: 1
+              metadata.m: 1
+              metadata.cu: 1
 
     - collection: attachments.chunks
       type: gridfs # index applies to gridfs database
