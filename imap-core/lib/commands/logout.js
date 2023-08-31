@@ -2,7 +2,7 @@
 
 const config = require('wild-config');
 
-const quotes = config.imap.quotes || [
+const DEFAULT_QUOTES = [
     'All dreams are but another reality. Never forget...',
     'Oh boy, oh boy, oh boy...',
     'Cut the dramatics, would yeh, and follow me!',
@@ -34,7 +34,13 @@ module.exports = {
 
         this.clearNotificationListener();
         this.send('* BYE Logout requested');
-        this.send(command.tag + ' OK ' + quotes[Math.floor(Math.random() * quotes.length)]);
+
+        let logoutMessages = [].concat(this._server.options.logoutMessages || []).filter(msg => typeof msg === 'string');
+        if (!logoutMessages || !logoutMessages.length) {
+            logoutMessages = DEFAULT_QUOTES;
+        }
+
+        this.send(command.tag + ' OK ' + logoutMessages[Math.floor(Math.random() * logoutMessages.length)]);
         setImmediate(() => this.close());
     }
 };
