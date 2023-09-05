@@ -1,6 +1,6 @@
 #! /bin/bash
 
-OURNAME=06_install_wildduck.sh
+OURNAME=07_install_wildduck.sh
 
 echo -e "\n-- Executing ${ORANGE}${OURNAME}${NC} subscript --"
 
