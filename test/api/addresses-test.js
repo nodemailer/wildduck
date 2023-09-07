@@ -58,6 +58,11 @@ describe('API Users', function () {
         expect(response.body.success).to.be.true;
 
         user = false;
+
+        const response2 = await server.delete(`/users/${user2}`).expect(200);
+        expect(response2.body.success).to.be.true;
+
+        user2 = false;
     });
 
     it('should POST /users/{user}/addresses', async () => {
