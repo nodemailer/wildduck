@@ -31,20 +31,20 @@ describe('API DomainAliases', function () {
         domainalias = response.body.id;
     });
 
-    it('should GET /domainaliases/:domainalias', async () => {
+    it('should GET /domainaliases/:domainalias expect success', async () => {
         const response = await server.get(`/domainaliases/${domainalias}`).expect(200);
 
         expect(response.body.success).to.be.true;
         expect(response.body.id).to.equal(domainalias);
     });
 
-    it('should GET /domainaliases/resolve/:domain', async () => {
+    it('should GET /domainaliases/resolve/:domain expect success', async () => {
         const response = await server.get(`/domainaliases/resolve/alias.example.com`).expect(200);
         expect(response.body.success).to.be.true;
         expect(response.body.id).to.equal(domainalias);
     });
 
-    it('should GET /domainaliases', async () => {
+    it('should GET /domainaliases expect success', async () => {
         const response = await server.get(`/domainaliases?query=alias.example.com`).expect(200);
 
         expect(response.body.success).to.be.true;
@@ -52,7 +52,7 @@ describe('API DomainAliases', function () {
         expect(response.body.results.find(entry => entry.id === domainalias)).to.exist;
     });
 
-    it('should DELETE /domainaliases/:domainalias', async () => {
+    it('should DELETE /domainaliases/:domainalias expect success', async () => {
         const response = await server.delete(`/domainaliases/${domainalias}`).expect(200);
 
         expect(response.body.success).to.be.true;
