@@ -16,7 +16,7 @@ describe('API DKIM', function () {
 
     this.timeout(10000); // eslint-disable-line no-invalid-this
 
-    it('should POST /dkim', async () => {
+    it('should POST /dkim expect success', async () => {
         const response = await server
             .post('/dkim')
             .send({

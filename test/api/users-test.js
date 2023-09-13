@@ -16,7 +16,7 @@ describe('API Users', function () {
 
     let user, user2, token;
 
-    it('should POST /users', async () => {
+    it('should POST /users expect success', async () => {
         const response = await server
             .post('/users')
             .send({
@@ -69,7 +69,7 @@ describe('API Users', function () {
         user = response.body.id;
     });
 
-    it('should POST /authenticate', async () => {
+    it('should POST /authenticate expect success', async () => {
         const authResponse = await server
             .post('/authenticate')
             .send({
@@ -89,7 +89,7 @@ describe('API Users', function () {
         });
     });
 
-    it('should POST /authenticate and fail', async () => {
+    it('should POST /authenticate expect failure', async () => {
         const authResponse = await server
             .post('/authenticate')
             .send({
@@ -100,7 +100,7 @@ describe('API Users', function () {
         expect(authResponse.body.code).to.equal('AuthFailed');
     });
 
-    it('should POST /users and fail - invalid username', async () => {
+    it('should POST /users expect failure / invalid username', async () => {
         const response = await server
             .post('/users')
             .send({
@@ -113,7 +113,7 @@ describe('API Users', function () {
         expect(response.body.details.username).to.exist;
     });
 
-    it('should POST /authenticate and request a token', async () => {
+    it('should POST /authenticate expect success / request a token', async () => {
         const authResponse = await server
             .post('/authenticate')
             .send({
@@ -129,7 +129,7 @@ describe('API Users', function () {
         token = authResponse.body.token;
     });
 
-    it('should POST /users with hashed password', async () => {
+    it('should POST /users expect success / with hashed password', async () => {
         const response = await server
             .post('/users')
             .send({
@@ -163,7 +163,7 @@ describe('API Users', function () {
         });
     });
 
-    it('should GET /users/resolve/{username}', async () => {
+    it('should GET /users/resolve/{username} expect success', async () => {
         const response = await server.get('/users/resolve/myuser2').expect(200);
 
         expect(response.body).to.deep.equal({
@@ -172,52 +172,52 @@ describe('API Users', function () {
         });
     });
 
-    it('should GET /users/resolve/{username} and fail', async () => {
+    it('should GET /users/resolve/{username} expect failure', async () => {
         const response = await server.get('/users/resolve/myuser2invalid').expect(404);
         expect(response.body.code).to.equal('UserNotFound');
     });
 
-    it('should GET /users', async () => {
+    it('should GET /users expect success', async () => {
         const response = await server.get('/users?query=myuser2').expect(200);
 
         expect(response.body.success).to.be.true;
         expect(response.body.results.find(entry => entry.id === user)).to.exist;
     });
 
-    it('should GET /users/{user}', async () => {
+    it('should GET /users/{user} expect success', async () => {
         let response = await server.get(`/users/${user}`).expect(200);
         expect(response.body.success).to.be.true;
         expect(response.body.id).to.equal(user);
     });
 
-    it('should GET /users/{user} using a token', async () => {
+    it('should GET /users/{user} expect success / using a token', async () => {
         let response = await server.get(`/users/${user}?accessToken=${token}`).expect(200);
         expect(response.body.success).to.be.true;
         expect(response.body.id).to.equal(user);
     });
 
-    it('should GET /users/me using a token', async () => {
+    it('should GET /users/me expect success / using a token', async () => {
         let response = await server.get(`/users/me?accessToken=${token}`).expect(200);
         expect(response.body.success).to.be.true;
         expect(response.body.id).to.equal(user);
     });
 
-    it('should GET /users/{user} using a token and fail against other user', async () => {
+    it('should GET /users/{user} expect failure / using a token and fail against other user', async () => {
         let response = await server.get(`/users/${user2}?accessToken=${token}`);
         expect(response.body.code).to.equal('MissingPrivileges');
     });
 
-    it('should DELETE /authenticate', async () => {
+    it('should DELETE /authenticate expect success', async () => {
         let response = await server.delete(`/authenticate?accessToken=${token}`).expect(200);
         expect(response.body.success).to.be.true;
     });
 
-    it('should DELETE /authenticate with false', async () => {
+    it('should DELETE /authenticate expect failure / with false', async () => {
         // token is not valid anymore
         await server.delete(`/authenticate?accessToken=${token}`).expect(403);
     });
 
-    it('should PUT /users/{user}', async () => {
+    it('should PUT /users/{user} expect success', async () => {
         const name = 'John Smith 2';
 
         // update user data
@@ -237,7 +237,7 @@ describe('API Users', function () {
         expect(getResponse.body.name).to.equal(name);
     });
 
-    it('should PUT /users/{user} and renew a token', async () => {
+    it('should PUT /users/{user} expect success / and renew a token', async () => {
         const authResponse1 = await server
             .post('/authenticate')
             .send({
@@ -295,13 +295,13 @@ describe('API Users', function () {
         await server.get(`/users/me?accessToken=${token2}`).expect(403);
     });
 
-    it('should PUT /users/{user}/logout', async () => {
+    it('should PUT /users/{user}/logout expect success', async () => {
         // request logout
         const response = await server.put(`/users/${user}/logout`).send({ reason: 'Just because' }).expect(200);
         expect(response.body.success).to.be.true;
     });
 
-    it('should POST /users/{user}/quota/reset', async () => {
+    it('should POST /users/{user}/quota/reset expect success', async () => {
         const response = await server.post(`/users/${user}/quota/reset`).send({}).expect(200);
         expect(response.body.success).to.be.true;
 
@@ -309,13 +309,13 @@ describe('API Users', function () {
         expect(response.body.previousStorageUsed).to.exist;
     });
 
-    it('should POST /quota/reset', async () => {
+    it('should POST /quota/reset expect success', async () => {
         const response = await server.post(`/quota/reset`).send({}).expect(200);
         expect(response.body.success).to.be.true;
         expect(response.body.task).to.exist;
     });
 
-    it('should POST /users/{user}/password/reset', async () => {
+    it('should POST /users/{user}/password/reset expect success', async () => {
         const response = await server.post(`/users/${user}/password/reset`).send({}).expect(200);
         expect(response.body.success).to.be.true;
 
@@ -341,7 +341,7 @@ describe('API Users', function () {
         });
     });
 
-    it('should POST /users/{user}/password/reset using a future date', async () => {
+    it('should POST /users/{user}/password/reset expect success / using a future date', async () => {
         const response = await server
             .post(`/users/${user}/password/reset`)
             .send({
@@ -362,7 +362,7 @@ describe('API Users', function () {
             .expect(403);
     });
 
-    it('should DELETE /users/{user}', async () => {
+    it('should DELETE /users/{user} expect success', async () => {
         // first set the user password
         const passwordUpdateResponse = await server
             .put(`/users/${user}`)
@@ -391,7 +391,7 @@ describe('API Users', function () {
             .expect(403);
     });
 
-    it('should GET /users/{user}/restore', async () => {
+    it('should GET /users/{user}/restore expect success', async () => {
         const response = await server.get(`/users/${user}/restore`).expect(200);
         expect(response.body.success).to.be.true;
 
@@ -399,7 +399,7 @@ describe('API Users', function () {
         expect(response.body.recoverableAddresses).to.deep.equal(['john@example.com']);
     });
 
-    it('should POST /users/{user}/restore', async () => {
+    it('should POST /users/{user}/restore expect success', async () => {
         const response = await server.post(`/users/${user}/restore`).send({}).expect(200);
         expect(response.body.success).to.be.true;
 
@@ -407,7 +407,7 @@ describe('API Users', function () {
         expect(response.body.addresses.main).to.equal('john@example.com');
     });
 
-    it('should POST /users with DES hash', async () => {
+    it('should POST /users expect success / with DES hash', async () => {
         const response = await server
             .post('/users')
             .send({

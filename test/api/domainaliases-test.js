@@ -16,7 +16,7 @@ describe('API DomainAliases', function () {
 
     this.timeout(10000); // eslint-disable-line no-invalid-this
 
-    it('should POST /domainaliases', async () => {
+    it('should POST /domainaliases expect success', async () => {
         const response = await server
             .post('/domainaliases')
             .send({
