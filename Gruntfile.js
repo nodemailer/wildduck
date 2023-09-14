@@ -10,12 +10,19 @@ module.exports = function (grunt) {
         },
 
         mochaTest: {
-            all: {
+            imap: {
                 options: {
                     reporter: 'spec'
                 },
-                // run imap-core tests first
-                src: ['imap-core/test/**/*-test.js', 'test/**/*-test.js']
+                // imap-core tests first
+                src: ['imap-core/test/**/*-test.js']
+            },
+            api: {
+                options: {
+                    reporter: 'spec'
+                },
+                // api tests
+                src: ['test/**/*-test.js']
             }
         },
 
