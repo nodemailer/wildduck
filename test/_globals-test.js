@@ -8,14 +8,16 @@ const config = require('wild-config');
 const server = supertest.agent(`http://127.0.0.1:${config.api.port}`);
 
 const titles = [];
+const unsupportedTitles = [];
 
 // global beforeEach to run before EVERY test
 beforeEach("Get test data before each test", async function () {
-    // console.log('GLOBAL ############################')
-    // console.log(this.test.ctx.currentTest.title); // eslint-disable-line no-invalid-this
-    // console.log(await server.get("/api-methods/args"));
-
-    titles.push(this.test.ctx.currentTest.title);     // eslint-disable-line no-invalid-this
+    const currentTestTitle = this.test.ctx.currentTest.title; // eslint-disable-line no-invalid-this
+    if (/POST|PUT|DELETE|GET|post|put|delete|get/.test(currentTestTitle) && /success|failure/.test(currentTestTitle)) {
+        titles.push(currentTestTitle);
+    } else {
+        unsupportedTitles.push(currentTestTitle);
+    }
 });
 
 // eslint-disable-next-line no-undef
@@ -26,8 +28,8 @@ after("Generate test overview table after all tests", async () => {
         const routes = data.body;
 
         const mapApiMethodToSpec = {};
-        let content = "| API path                       | API method | Test count | Has positive test? | Has Negative test? |\n";
-        content += "| ------------------------------ | :--------: | ---------- | ------------------ | ------------------ | \n"
+        let content = "| API path | API method | Test count | Has positive test? | Has Negative test? |\n";
+        content += "| --- | :---: | --- | --- | --- | \n"
 
         for (const routeName in routes) {
             const route = routes[routeName];
@@ -49,7 +51,6 @@ after("Generate test overview table after all tests", async () => {
             }
 
             const data = mapApiMethodToSpec[`${method.toLowerCase()}_${path.replace(/{/g, ":").replace(/}/g, "")}`];
-            // console.log(data, `${method.toLowerCase()}_${path.replace("{", ":").replace("}", "")}`);
 
             // wront path or wrong data etc. (no such route, can't construct route from test title)
             if (!data) {
@@ -87,11 +88,13 @@ after("Generate test overview table after all tests", async () => {
             content += `| \`${data.path}\` | \`${data.method}\` | ${data.testCount} | ${data.positiveTestCount > 0 ? "✅" : "❌"} (${data.positiveTestCount}) | ${data.negativeTestCount > 0 ? "✅" : "❌"} (${data.negativeTestCount}) |\n`;
         }
 
-        fs.writeFile("./test.md", content, (err) => {
+        fs.writeFile("./api-tests-overview.md", content, (err) => {
             if (err) {
                 console.log(err);
             }
         })
+
+        console.log("These titles were not included in the overview as they are wrong format:", unsupportedTitles);
     } catch (error) {
         console.log(error);
     }
