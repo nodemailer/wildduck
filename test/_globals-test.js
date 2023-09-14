@@ -13,7 +13,7 @@ const unsupportedTitles = [];
 // global beforeEach to run before EVERY test
 beforeEach('Get test data before each test', async function () {
     const currentTestTitle = this.test.ctx.currentTest.title; // eslint-disable-line no-invalid-this
-    if (/POST|PUT|DELETE|GET|post|put|delete|get/.test(currentTestTitle) && /success|failure/.test(currentTestTitle)) {
+    if (/\b(POST|PUT|DELETE|GET)\b/i.test(currentTestTitle) && /success|failure/.test(currentTestTitle)) {
         titles.push(currentTestTitle);
     } else {
         unsupportedTitles.push(currentTestTitle);
@@ -23,7 +23,7 @@ beforeEach('Get test data before each test', async function () {
 // eslint-disable-next-line no-undef
 after('Generate test overview table after all tests', async () => {
     try {
-        const data = await server.get('/api-methods/args');
+        const data = await server.get('/api-methods');
 
         const routes = data.body;
 
