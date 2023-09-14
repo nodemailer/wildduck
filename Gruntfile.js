@@ -49,7 +49,7 @@ module.exports = function (grunt) {
         }
     });
 
-    // Load the plugin(s) aa
+    // Load the plugin(s)
     grunt.loadNpmTasks('grunt-eslint');
     grunt.loadNpmTasks('grunt-mocha-test');
     grunt.loadNpmTasks('grunt-shell-spawn');
