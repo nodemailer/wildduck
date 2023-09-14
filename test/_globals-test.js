@@ -1,7 +1,7 @@
-'use strict'
+'use strict';
 
 const supertest = require('supertest');
-const fs = require("fs");
+const fs = require('fs');
 
 const config = require('wild-config');
 
@@ -11,7 +11,7 @@ const titles = [];
 const unsupportedTitles = [];
 
 // global beforeEach to run before EVERY test
-beforeEach("Get test data before each test", async function () {
+beforeEach('Get test data before each test', async function () {
     const currentTestTitle = this.test.ctx.currentTest.title; // eslint-disable-line no-invalid-this
     if (/POST|PUT|DELETE|GET|post|put|delete|get/.test(currentTestTitle) && /success|failure/.test(currentTestTitle)) {
         titles.push(currentTestTitle);
@@ -21,26 +21,33 @@ beforeEach("Get test data before each test", async function () {
 });
 
 // eslint-disable-next-line no-undef
-after("Generate test overview table after all tests", async () => {
+after('Generate test overview table after all tests', async () => {
     try {
-        const data = await server.get("/api-methods/args");
-        
+        const data = await server.get('/api-methods/args');
+
         const routes = data.body;
 
         const mapApiMethodToSpec = {};
-        let content = "| API path | API method | Test count | Has positive test? | Has Negative test? |\n";
-        content += "| --- | :---: | --- | --- | --- | \n"
+        let content = '| API path | API method | Test count | Has positive test? | Has Negative test? |\n';
+        content += '| --- | :---: | --- | --- | --- | \n';
 
         for (const routeName in routes) {
             const route = routes[routeName];
             const method = route.spec.method;
             const path = route.spec.path;
 
-            mapApiMethodToSpec[`${method.toLowerCase()}_${path}`] = {method, path, name: route.spec.name || route.name, testCount: 0, positiveTestCount: 0, negativeTestCount: 0};
+            mapApiMethodToSpec[`${method.toLowerCase()}_${path}`] = {
+                method,
+                path,
+                name: route.spec.name || route.name,
+                testCount: 0,
+                positiveTestCount: 0,
+                negativeTestCount: 0
+            };
         }
 
         for (const title of titles) {
-            const titleSplit = title.split(" ");
+            const titleSplit = title.split(' ');
             const method = titleSplit[1].toLowerCase();
             const path = titleSplit[2];
             const expectedResult = titleSplit[4];
@@ -50,7 +57,7 @@ after("Generate test overview table after all tests", async () => {
                 continue;
             }
 
-            const data = mapApiMethodToSpec[`${method.toLowerCase()}_${path.replace(/{/g, ":").replace(/}/g, "")}`];
+            const data = mapApiMethodToSpec[`${method.toLowerCase()}_${path.replace(/{/g, ':').replace(/}/g, '')}`];
 
             // wront path or wrong data etc. (no such route, can't construct route from test title)
             if (!data) {
@@ -59,9 +66,9 @@ after("Generate test overview table after all tests", async () => {
 
             data.testCount++;
             if (expectedResult) {
-                if (expectedResult === "success") {
+                if (expectedResult === 'success') {
                     data.positiveTestCount++;
-                } else if (expectedResult === "failure") {
+                } else if (expectedResult === 'failure') {
                     data.negativeTestCount++;
                 }
             }
@@ -85,17 +92,19 @@ after("Generate test overview table after all tests", async () => {
         });
 
         for (const data of sortedData) {
-            content += `| \`${data.path}\` | \`${data.method}\` | ${data.testCount} | ${data.positiveTestCount > 0 ? "✅" : "❌"} (${data.positiveTestCount}) | ${data.negativeTestCount > 0 ? "✅" : "❌"} (${data.negativeTestCount}) |\n`;
+            content += `| \`${data.path}\` | \`${data.method}\` | ${data.testCount} | ${data.positiveTestCount > 0 ? '✅' : '❌'} (${
+                data.positiveTestCount
+            }) | ${data.negativeTestCount > 0 ? '✅' : '❌'} (${data.negativeTestCount}) |\n`;
         }
 
-        fs.writeFile("./api-tests-overview.md", content, (err) => {
+        fs.writeFile('./api-tests-overview.md', content, err => {
             if (err) {
                 console.log(err);
             }
-        })
+        });
 
-        console.log("These titles were not included in the overview as they are wrong format:", unsupportedTitles);
+        console.log('These titles were not included in the overview as they are wrong format:', unsupportedTitles);
     } catch (error) {
         console.log(error);
     }
-})
+});
