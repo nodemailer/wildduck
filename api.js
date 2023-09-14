@@ -562,18 +562,13 @@ module.exports = done => {
     webhooksRoutes(db, server);
     settingsRoutes(db, server, settingsHandler);
 
-    if (process.env.NODE_ENV === "test") {
+    if (process.env.NODE_ENV === 'test') {
         server.get(
-            { name: 'api-methods', path: '/api-methods/:arg' /*, someKey: Joi.object({arg: Joi.string()})*/ },
+            { name: 'api-methods', path: '/api-methods' },
             tools.responseWrapper(async (req, res) => {
                 res.charSet('utf-8');
-    
-                // const obj = Object.assign({name: "initial name"}, server.router.getRoutes().getsettingskey.spec);
-    
-                // console.log(req);
+
                 return res.json(server.router.getRoutes());
-    
-                // return res.json({});
             })
         );
     }
