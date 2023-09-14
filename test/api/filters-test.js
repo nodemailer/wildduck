@@ -60,7 +60,7 @@ describe('API Filters', function () {
         user = false;
     });
 
-    it('should POST /users/{user}/filters', async () => {
+    it('should POST /users/{user}/filters expect success', async () => {
         const response = await server
             .post(`/users/${user}/filters`)
             .send({
@@ -105,13 +105,13 @@ describe('API Filters', function () {
         expect(response3.body.success).to.be.true;
     });
 
-    it('should GET /filters', async () => {
+    it('should GET /filters expect success', async () => {
         const filterListResponse = await server.get(`/filters`).expect(200);
         expect(filterListResponse.body.success).to.be.true;
         expect(filterListResponse.body.total).to.equal(3);
     });
 
-    it('should GET /filters with a user token', async () => {
+    it('should GET /filters expect success / with a user token', async () => {
         const authResponse = await server
             .post('/authenticate')
             .send({
@@ -132,14 +132,14 @@ describe('API Filters', function () {
         expect(userListResponse.body.total).to.equal(2);
     });
 
-    it('should GET /users/{user}/filters', async () => {
+    it('should GET /users/{user}/filters expect success', async () => {
         const filterListResponse = await server.get(`/users/${user}/filters`).expect(200);
         expect(filterListResponse.body.success).to.be.true;
 
         expect(filterListResponse.body.results.length).to.equal(2);
     });
 
-    it('should PUT /users/{user}/filters/{filter}', async () => {
+    it('should PUT /users/{user}/filters/{filter} expect success', async () => {
         let filterListResponse = await server.get(`/users/${user}/filters`).expect(200);
         expect(filterListResponse.body.success).to.be.true;
         let filters = filterListResponse.body.results;
@@ -163,7 +163,7 @@ describe('API Filters', function () {
         expect(filterListResponse.body.results.find(f => f.id === filter).disabled).to.equal(true);
     });
 
-    it('should DELETE /users/{user}/filters/{filter}', async () => {
+    it('should DELETE /users/{user}/filters/{filter} expect success', async () => {
         let filterListResponse = await server.get(`/users/${user}/filters`).expect(200);
         expect(filterListResponse.body.success).to.be.true;
         let filters = filterListResponse.body.results;
@@ -181,7 +181,7 @@ describe('API Filters', function () {
     describe('Filter metaData', function () {
         let metaDataFilter;
 
-        it('should POST /users/{user}/filters', async () => {
+        it('should POST /users/{user}/filters expect success', async () => {
             const response = await server
                 .post(`/users/${user}/filters`)
                 .send({
@@ -203,7 +203,7 @@ describe('API Filters', function () {
             expect(filterDataResponse.body.metaData.hello).to.equal('world');
         });
 
-        it('should POST /users/{user}/filters as object', async () => {
+        it('should POST /users/{user}/filters expect success / as object', async () => {
             const response = await server
                 .post(`/users/${user}/filters`)
                 .send({
@@ -224,7 +224,7 @@ describe('API Filters', function () {
             expect(filterDataResponse.body.metaData.hello).to.equal('palderjan');
         });
 
-        it('should PUT /users/{user}/filters/{filter}', async () => {
+        it('should PUT /users/{user}/filters/{filter} expect success', async () => {
             const response = await server
                 .put(`/users/${user}/filters/${metaDataFilter}`)
                 .send({
@@ -238,7 +238,7 @@ describe('API Filters', function () {
             expect(filterDataResponse.body.metaData.hello).to.equal('torbik');
         });
 
-        it('should PUT /users/{user}/filters/{filter} as object', async () => {
+        it('should PUT /users/{user}/filters/{filter} expect success / as object', async () => {
             const response = await server
                 .put(`/users/${user}/filters/${metaDataFilter}`)
                 .send({
@@ -252,7 +252,7 @@ describe('API Filters', function () {
             expect(filterDataResponse.body.metaData.hello).to.equal('kapsas');
         });
 
-        it('should PUT /users/{user}/filters/{filter}', async () => {
+        it('should PUT /users/{user}/filters/{filter} expect success', async () => {
             const response = await server
                 .put(`/users/${user}/filters/${metaDataFilter}`)
                 .send({
@@ -266,7 +266,7 @@ describe('API Filters', function () {
             expect(filterDataResponse.body.metaData.hello).to.equal('torbik');
         });
 
-        it('should GET /filters without metaData', async () => {
+        it('should GET /filters expect success / without metaData', async () => {
             const filterListResponse = await server.get(`/filters`).expect(200);
             expect(filterListResponse.body.success).to.be.true;
             let filterData = filterListResponse.body.results.find(f => f.id === metaDataFilter);
@@ -274,7 +274,7 @@ describe('API Filters', function () {
             expect(filterData.metaData).to.not.exist;
         });
 
-        it('should GET /filters with metaData', async () => {
+        it('should GET /filters expect success / with metaData', async () => {
             const filterListResponse = await server.get(`/filters?metaData=true`).expect(200);
             expect(filterListResponse.body.success).to.be.true;
             let filterData = filterListResponse.body.results.find(f => f.id === metaDataFilter);
@@ -282,7 +282,7 @@ describe('API Filters', function () {
             expect(filterData.metaData).to.exist;
         });
 
-        it('should GET /users/{user}/filters without metaData', async () => {
+        it('should GET /users/{user}/filters expect success / without metaData', async () => {
             const filterListResponse = await server.get(`/users/${user}/filters`).expect(200);
             expect(filterListResponse.body.success).to.be.true;
             let filterData = filterListResponse.body.results.find(f => f.id === metaDataFilter);
@@ -290,7 +290,7 @@ describe('API Filters', function () {
             expect(filterData.metaData).to.not.exist;
         });
 
-        it('should GET /users/{user}/filters with metaData', async () => {
+        it('should GET /users/{user}/filters expect success / with metaData', async () => {
             const filterListResponse = await server.get(`/users/${user}/filters?metaData=true`).expect(200);
             expect(filterListResponse.body.success).to.be.true;
             let filterData = filterListResponse.body.results.find(f => f.id === metaDataFilter);

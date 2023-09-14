@@ -46,7 +46,7 @@ describe('Storage tests', function () {
         user = false;
     });
 
-    it('should POST /users/{user}/storage', async () => {
+    it('should POST /users/{user}/storage expect success', async () => {
         const response = await server
             .post(`/users/${user}/storage`)
             .send({

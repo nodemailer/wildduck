@@ -562,6 +562,17 @@ module.exports = done => {
     webhooksRoutes(db, server);
     settingsRoutes(db, server, settingsHandler);
 
+    if (process.env.NODE_ENV === 'test') {
+        server.get(
+            { name: 'api-methods', path: '/api-methods' },
+            tools.responseWrapper(async (req, res) => {
+                res.charSet('utf-8');
+
+                return res.json(server.router.getRoutes());
+            })
+        );
+    }
+
     server.on('error', err => {
         if (!started) {
             started = true;
