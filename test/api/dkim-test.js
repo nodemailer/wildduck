@@ -16,7 +16,7 @@ describe('API DKIM', function () {
 
     this.timeout(10000); // eslint-disable-line no-invalid-this
 
-    it('should POST /dkim', async () => {
+    it('should POST /dkim expect success', async () => {
         const response = await server
             .post('/dkim')
             .send({
@@ -34,20 +34,20 @@ describe('API DKIM', function () {
         dkim = response.body.id;
     });
 
-    it('should GET /dkim/:dkim', async () => {
+    it('should GET /dkim/:dkim expect success', async () => {
         const response = await server.get(`/dkim/${dkim}`).expect(200);
 
         expect(response.body.success).to.be.true;
         expect(response.body.id).to.equal(dkim);
     });
 
-    it('should GET /dkim/resolve/:domain', async () => {
+    it('should GET /dkim/resolve/:domain expect success', async () => {
         const response = await server.get(`/dkim/resolve/example.com`).expect(200);
         expect(response.body.success).to.be.true;
         expect(response.body.id).to.equal(dkim);
     });
 
-    it('should GET /dkim', async () => {
+    it('should GET /dkim expect success', async () => {
         const response = await server.get(`/dkim`).expect(200);
 
         expect(response.body.success).to.be.true;
@@ -55,7 +55,7 @@ describe('API DKIM', function () {
         expect(response.body.results.find(entry => entry.id === dkim)).to.exist;
     });
 
-    it('should DELETE /dkim/:dkim', async () => {
+    it('should DELETE /dkim/:dkim expect success', async () => {
         const response = await server.delete(`/dkim/${dkim}`).expect(200);
 
         expect(response.body.success).to.be.true;
