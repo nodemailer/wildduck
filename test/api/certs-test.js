@@ -104,7 +104,7 @@ rp+tEw==
         expect(response.body.results.find(entry => entry.id === cert)).to.exist;
     });
 
-    it('should DELETE /certs/:cert expect success', async () => {
+    it('should DELETE /certs/:certs expect success', async () => {
         const response = await server.delete(`/certs/${cert}`).expect(200);
 
         expect(response.body.success).to.be.true;

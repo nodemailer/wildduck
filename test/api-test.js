@@ -252,7 +252,7 @@ describe('API tests', function () {
             expect(response.body.results[0].main).to.be.true;
         });
 
-        it('should POST users/:user/addresses expect success', async () => {
+        it('should POST /users/:user/addresses expect success', async () => {
             const response1 = await server
                 .post(`/users/${userId}/addresses`)
                 .send({
@@ -303,7 +303,7 @@ describe('API tests', function () {
             address = response.body.results[2];
         });
 
-        it('should DELETE users/:user/addresses/:address expect success', async () => {
+        it('should DELETE /users/:user/addresses/:address expect success', async () => {
             const response = await server.delete(`/users/${userId}/addresses/${address.id}`).expect(200);
             expect(response.body.success).to.be.true;
         });
@@ -321,7 +321,7 @@ describe('API tests', function () {
             address = response.body.results[1];
         });
 
-        it('should GET /users/:user/address/:address expect success', async () => {
+        it('should GET /users/:user/addresses/:address expect success', async () => {
             const response = await server.get(`/users/${userId}/addresses/${address.id}`).expect(200);
             expect(response.body.success).to.be.true;
             expect(response.body.metaData.tere).to.equal(123);
@@ -367,7 +367,7 @@ describe('API tests', function () {
                 expect(response.body.tags).to.deep.equal(['tere', 'vana']);
             });
 
-            it('should PUT /addresses/forwarded/:address expect success', async () => {
+            it('should PUT /addresses/forwarded/:id expect success', async () => {
                 const response = await server
                     .put(`/addresses/forwarded/${address}`)
                     .send({
@@ -485,7 +485,7 @@ describe('API tests', function () {
         let tag = 'account:123';
         let domain;
 
-        it('should POST domainaccess/:tag/block expect success', async () => {
+        it('should POST /domainaccess/:tag/:action expect success / action: block', async () => {
             const response1 = await server
                 .post(`/domainaccess/${tag}/block`)
                 .send({
@@ -503,7 +503,7 @@ describe('API tests', function () {
             expect(response2.body.success).to.be.true;
         });
 
-        it('should GET /domainaccess/:tag/block expect success', async () => {
+        it('should GET /domainaccess/:tag/:action expect success / action: block', async () => {
             const response = await server.get(`/domainaccess/${tag}/block`).expect(200);
             expect(response.body.success).to.be.true;
             expect(response.body.results.length).to.equal(2);
@@ -514,7 +514,7 @@ describe('API tests', function () {
             domain = response.body.results[1];
         });
 
-        it('should DELETE domainaccess/:domain expect success', async () => {
+        it('should DELETE /domainaccess/:domain expect success', async () => {
             const response = await server.delete(`/domainaccess/${domain.id}`).expect(200);
             expect(response.body.success).to.be.true;
         });

@@ -196,7 +196,7 @@ describe('API Users', function () {
         expect(response.body.id).to.equal(user);
     });
 
-    it('should GET /users/me expect success / using a token', async () => {
+    it('should GET /users/:user expect success / try /users/me using a token', async () => {
         let response = await server.get(`/users/me?accessToken=${token}`).expect(200);
         expect(response.body.success).to.be.true;
         expect(response.body.id).to.equal(user);

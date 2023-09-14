@@ -142,7 +142,7 @@ describe('API Users', function () {
         expect(addressListResponse.body.results.find(addr => addr.main).address).to.equal('addressuser.addrtest@example.com');
     });
 
-    it('should PUT /users/{user}/addresses/{address} expect success', async () => {
+    it('should PUT /users/{user}/addresses/{id} expect success', async () => {
         let addressListResponse = await server.get(`/users/${user}/addresses`).expect(200);
         expect(addressListResponse.body.success).to.be.true;
         let addresses = addressListResponse.body.results;
@@ -205,7 +205,7 @@ describe('API Users', function () {
         expect(forwarded).to.exist;
     });
 
-    it('should PUT /addresses/forwarded/{address} expect success', async () => {
+    it('should PUT /addresses/forwarded/{id} expect success', async () => {
         const response = await server
             .put(`/addresses/forwarded/${forwarded}`)
             .send({
