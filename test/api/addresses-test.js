@@ -100,6 +100,11 @@ describe('API Users', function () {
         expect(addressListResponse.body.total).to.gt(3);
     });
 
+    it('should GET /addresses expect failure / incorrect query params data', async () => {
+        const addressListResponse = await server.get(`/addresses?limit=-1&query=${'a'.repeat(256)}`).expect(400);
+        expect(addressListResponse.body.code).to.be.equal('InputValidationError');
+    });
+
     it('should GET /addresses expect success / with tags', async () => {
         const addressListResponse = await server.get(`/addresses?tags=tag2,tag3`).expect(200);
         expect(addressListResponse.body.success).to.be.true;
@@ -140,6 +145,17 @@ describe('API Users', function () {
         expect(addressListResponse.body.results.length).to.equal(3);
         expect(addressListResponse.body.results.filter(addr => addr.main).length).to.equal(1);
         expect(addressListResponse.body.results.find(addr => addr.main).address).to.equal('addressuser.addrtest@example.com');
+    });
+
+    it('should GET /users/{user}/addresses expect failure / incorrect user', async () => {
+        const addressListResponse = await server.get(`/users/${123}/addresses`).expect(400);
+        expect(addressListResponse.body.code).to.be.equal('InputValidationError');
+    });
+
+    it('should GET /users/{user}/addresses expect failure / user missing', async () => {
+        const addressListResponse = await server.get(`/users/${'a'.repeat(24)}/addresses`).expect(404);
+        expect(addressListResponse.body.code).to.be.equal('UserNotFound');
+        expect(addressListResponse.body.error).to.be.equal('This user does not exist');
     });
 
     it('should PUT /users/{user}/addresses/{id} expect success', async () => {
