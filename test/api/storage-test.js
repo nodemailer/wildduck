@@ -116,7 +116,7 @@ describe('Storage tests', function () {
 
     it('should POST /users/{user}/storage expect failure / user not found', async () => {
         const response = await server
-            .post(`/users/${Array.from(user).reverse().join('')}/storage`)
+            .post(`/users/${'0'.repeat(24)}/storage`)
             .send({
                 filename: 'image.gif',
                 contentType: 'image/gif',
@@ -146,7 +146,7 @@ describe('Storage tests', function () {
 
     it('should GET /users/{user}/storage expect failure / user not found', async () => {
         const response = await server
-            .get(`/users/${Array.from(user).reverse().join('')}/storage`)
+            .get(`/users/${'0'.repeat(24)}/storage`)
             .send({})
             .expect(404);
         expect(response.body.code).to.be.equal('UserNotFound');
@@ -188,10 +188,8 @@ describe('Storage tests', function () {
     });
 
     it('should GET /users/{user}/storage/{file} expect failure / file missing, incorrect file id', async () => {
-        const userFiles = await server.get(`/users/${user}/storage`).send({}).expect(200);
-
         const response = await server
-            .get(`/users/${user}/storage/${Array.from(userFiles.body.results[0].id).reverse().join('')}`)
+            .get(`/users/${user}/storage/${'0'.repeat(24)}`)
             .send({})
             .expect(404);
         expect(response.body.code).to.be.equal('FileNotFound');

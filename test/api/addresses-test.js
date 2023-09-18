@@ -153,7 +153,7 @@ describe('API Users', function () {
     });
 
     it('should GET /users/{user}/addresses expect failure / user missing', async () => {
-        const addressListResponse = await server.get(`/users/${'a'.repeat(24)}/addresses`).expect(404);
+        const addressListResponse = await server.get(`/users/${'0'.repeat(24)}/addresses`).expect(404);
         expect(addressListResponse.body.code).to.be.equal('UserNotFound');
         expect(addressListResponse.body.error).to.be.equal('This user does not exist');
     });
