@@ -136,4 +136,51 @@ describe('Storage tests', function () {
         expect(response.body.code).to.be.equal('InputValidationError');
         expect(response.body.error).to.not.be.empty;
     });
+
+    it.only('should GET /users/{user}/mailboxes expect success', async () => {
+        const response = await server.get(`/users/${user}/mailboxes`).send({}).expect(200);
+
+        expect(response.body.success).to.be.true;
+        expect(response.body.results).to.not.be.empty;
+        expect(response.body.results.length).to.be.equal(5);
+    });
+
+    it.only('should GET /users/{user}/mailboxes expect success / all params', async () => {
+        const response = await server.get(`/users/${user}/mailboxes`).send({ specialUse: true, showHidden: true, counters: true, sizes: true }).expect(200);
+
+        expect(response.body.success).to.be.true;
+        expect(response.body.results).to.not.be.empty;
+        expect(response.body.results.length).to.be.equal(5);
+    });
+
+    it.only('should GET /users/{user}/mailboxes expect success / some params', async () => {
+        const response = await server.get(`/users/${user}/mailboxes`).send({ specialUse: false, counters: true, sizes: true }).expect(200);
+
+        expect(response.body.success).to.be.true;
+    });
+
+    it.only('should GET /users/{user}/mailboxes expect success / params incorrect type', async () => {
+        const response = await server.get(`/users/${user}/mailboxes`).send({ specialUse: 'what', showHidden: 111, counters: -2, sizes: 'sizes' }).expect(200);
+
+        expect(response.body.success).to.be.true;
+        expect(response.body.results).to.not.be.empty;
+        expect(response.body.results.length).to.be.equal(5);
+    });
+
+    it.only('should GET /users/{user}/mailboxes expect failure / user wrong format', async () => {
+        const response = await server.get(`/users/${123}/mailboxes`).send({ specialUse: true, showHidden: true, counters: true, sizes: true }).expect(400);
+
+        expect(response.body.code).to.be.equal('InputValidationError');
+        expect(response.body.error).to.not.be.empty;
+    });
+
+    it.only('should GET /users/{user}/mailboxes expect failure / user not found', async () => {
+        const response = await server
+            .get(`/users/${'0'.repeat(24)}/mailboxes`)
+            .send({ specialUse: false, counters: true, sizes: true })
+            .expect(404);
+
+        expect(response.body.error).to.be.equal('This user does not exist');
+        expect(response.body.code).to.be.equal('UserNotFound');
+    });
 });
