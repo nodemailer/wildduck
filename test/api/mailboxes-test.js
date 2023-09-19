@@ -142,7 +142,7 @@ describe('Storage tests', function () {
 
         expect(response.body.success).to.be.true;
         expect(response.body.results).to.not.be.empty;
-        expect(response.body.results.length).to.be.equal(5);
+        expect(response.body.results.length).to.be.equal(8);
     });
 
     it('should GET /users/{user}/mailboxes expect success / all params', async () => {
@@ -150,7 +150,7 @@ describe('Storage tests', function () {
 
         expect(response.body.success).to.be.true;
         expect(response.body.results).to.not.be.empty;
-        expect(response.body.results.length).to.be.equal(5);
+        expect(response.body.results.length).to.be.equal(8);
     });
 
     it('should GET /users/{user}/mailboxes expect success / some params', async () => {
@@ -164,7 +164,7 @@ describe('Storage tests', function () {
 
         expect(response.body.success).to.be.true;
         expect(response.body.results).to.not.be.empty;
-        expect(response.body.results.length).to.be.equal(5);
+        expect(response.body.results.length).to.be.equal(8);
     });
 
     it('should GET /users/{user}/mailboxes expect failure / user wrong format', async () => {
