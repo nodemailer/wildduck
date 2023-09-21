@@ -146,29 +146,30 @@ describe('Mailboxes tests', function () {
     });
 
     it('should GET /users/{user}/mailboxes expect success / all params', async () => {
-        const response = await server.get(`/users/${user}/mailboxes`).send({ specialUse: true, showHidden: true, counters: true, sizes: true }).expect(200);
+        const response = await server.get(`/users/${user}/mailboxes?specialUse=true&showHidden=true&counters=true&sizes=true`).send({}).expect(200);
 
         expect(response.body.success).to.be.true;
         expect(response.body.results).to.not.be.empty;
-        expect(response.body.results.length).to.be.equal(8);
+        expect(response.body.results.length).to.be.equal(5);
     });
 
     it('should GET /users/{user}/mailboxes expect success / some params', async () => {
-        const response = await server.get(`/users/${user}/mailboxes`).send({ specialUse: false, counters: true, sizes: true }).expect(200);
-
-        expect(response.body.success).to.be.true;
-    });
-
-    it('should GET /users/{user}/mailboxes expect success / params incorrect type', async () => {
-        const response = await server.get(`/users/${user}/mailboxes`).send({ specialUse: 'what', showHidden: 111, counters: -2, sizes: 'sizes' }).expect(200);
+        const response = await server.get(`/users/${user}/mailboxes?specialUse=false&counters=true&sizes=true`).send({}).expect(200);
 
         expect(response.body.success).to.be.true;
         expect(response.body.results).to.not.be.empty;
         expect(response.body.results.length).to.be.equal(8);
     });
 
+    it('should GET /users/{user}/mailboxes expect failure / params incorrect type', async () => {
+        const response = await server.get(`/users/${user}/mailboxes?specialUse=what&showHidden=111&counters=-2&sizes=sizes`).send({}).expect(400);
+
+        expect(response.body.code).to.be.equal('InputValidationError');
+        expect(response.body.error).to.not.be.empty;
+    });
+
     it('should GET /users/{user}/mailboxes expect failure / user wrong format', async () => {
-        const response = await server.get(`/users/${123}/mailboxes`).send({ specialUse: true, showHidden: true, counters: true, sizes: true }).expect(400);
+        const response = await server.get(`/users/${123}/mailboxes?specialUse=true&showHidden=true&counters=true&sizes=true`).send({}).expect(400);
 
         expect(response.body.code).to.be.equal('InputValidationError');
         expect(response.body.error).to.not.be.empty;
@@ -176,55 +177,83 @@ describe('Mailboxes tests', function () {
 
     it('should GET /users/{user}/mailboxes expect failure / user not found', async () => {
         const response = await server
-            .get(`/users/${'0'.repeat(24)}/mailboxes`)
-            .send({ specialUse: false, counters: true, sizes: true })
+            .get(`/users/${'0'.repeat(24)}/mailboxes?specialUse=false&counters=true&sizes=true`)
+            .send({})
             .expect(404);
 
         expect(response.body.error).to.be.equal('This user does not exist');
         expect(response.body.code).to.be.equal('UserNotFound');
     });
 
-    it.only('should GET /users/{user}/mailboxes expect success', async () => {
-        const response = await server.get(`/users/${user}/mailboxes`).send({}).expect(200);
+    it('should GET /users/{user}/mailboxes/{mailbox} expect success', async () => {
+        const mailboxes = await server.get(`/users/${user}/mailboxes`).send({}).expect(200);
+
+        const response = await server.get(`/users/${user}/mailboxes/${mailboxes.body.results[0].id}`).send({}).expect(200);
 
         expect(response.body.success).to.be.true;
-        expect(response.body.results).to.not.be.empty;
-        expect(response.body.results.length).to.be.equal(8);
+        expect(response.body.id).to.not.be.empty;
+        expect(response.body.name).to.be.equal('INBOX');
     });
 
-    it.only('should GET /users/{user}/mailboxes expect success / all params', async () => {
-        const response = await server.get(`/users/${user}/mailboxes`).send({ specialUse: true, showHidden: true, counters: true, sizes: true }).expect(200);
+    it('should GET /users/{user}/mailboxes/{mailbox} expect success / path specified', async () => {
+        // const mailboxes = await server.get(`/users/${user}/mailboxes`).send({}).expect(200);
+
+        const response = await server.get(`/users/${user}/mailboxes/${'resolve'}?path=coolpath/abcda`).send({}).expect(200);
 
         expect(response.body.success).to.be.true;
-        expect(response.body.results).to.not.be.empty;
-        expect(response.body.results.length).to.be.equal(8);
+        expect(response.body.id).to.not.be.empty;
+        expect(response.body.name).to.be.equal('abcda');
+        expect(response.body.path).to.be.equal('coolpath/abcda');
     });
 
-    it.only('should GET /users/{user}/mailboxes expect success / some params', async () => {
-        const response = await server.get(`/users/${user}/mailboxes`).send({ specialUse: false, counters: true, sizes: true }).expect(200);
+    it('should GET /users/{user}/mailboxes/{mailbox} expect success / path inbox specified', async () => {
+        const response = await server.get(`/users/${user}/mailboxes/resolve?path=INBOX`).send({}).expect(200);
 
         expect(response.body.success).to.be.true;
+        expect(response.body.id).to.not.be.empty;
+        expect(response.body.name).to.be.equal('INBOX');
+        expect(response.body.path).to.be.equal('INBOX');
     });
 
-    it.only('should GET /users/{user}/mailboxes expect success / params incorrect type', async () => {
-        const response = await server.get(`/users/${user}/mailboxes`).send({ specialUse: 'what', showHidden: 111, counters: -2, sizes: 'sizes' }).expect(200);
-
-        expect(response.body.success).to.be.true;
-        expect(response.body.results).to.not.be.empty;
-        expect(response.body.results.length).to.be.equal(8);
-    });
-
-    it.only('should GET /users/{user}/mailboxes expect failure / user wrong format', async () => {
-        const response = await server.get(`/users/${123}/mailboxes`).send({ specialUse: true, showHidden: true, counters: true, sizes: true }).expect(400);
+    it('should GET /users/{user}/mailboxes/{mailbox} expect failure / incorrect params', async () => {
+        const response = await server.get(`/users/${user}/mailboxes/resolve?path=//INBOX`).send({}).expect(400);
 
         expect(response.body.code).to.be.equal('InputValidationError');
-        expect(response.body.error).to.not.be.empty;
+        expect(response.body.error).to.be.not.empty;
+
+        const response2 = await server.get(`/users/${user}/mailboxes/resolve?path=`).send({}).expect(400);
+
+        expect(response2.body.code).to.be.equal('InputValidationError');
+        expect(response2.body.error).to.be.not.empty;
+
+        const response3 = await server.get(`/users/${user}/mailboxes/${123}`).send({}).expect(400);
+
+        expect(response3.body.code).to.be.equal('InputValidationError');
+        expect(response3.body.error).to.be.not.empty;
+
+        const response4 = await server
+            .get(`/users/${user}/mailboxes/${'-'.repeat(24)}`)
+            .send({})
+            .expect(400);
+
+        expect(response4.body.code).to.be.equal('InputValidationError');
+        expect(response4.body.error).to.be.not.empty;
     });
 
-    it.only('should GET /users/{user}/mailboxes expect failure / user not found', async () => {
+    it('should GET /users/{user}/mailboxes/{mailbox} expect failure / mailbox not found', async () => {
+        const response = await server
+            .get(`/users/${user}/mailboxes/${'0'.repeat(24)}`)
+            .send({})
+            .expect(404);
+
+        expect(response.body.code).to.be.equal('NoSuchMailbox');
+        expect(response.body.error).to.be.equal('This mailbox does not exist');
+    });
+
+    it('should GET /users/{user}/mailboxes/{mailbox} expect failure / user not found', async () => {
         const response = await server
             .get(`/users/${'0'.repeat(24)}/mailboxes`)
-            .send({ specialUse: false, counters: true, sizes: true })
+            .send({})
             .expect(404);
 
         expect(response.body.error).to.be.equal('This user does not exist');
