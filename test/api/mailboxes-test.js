@@ -259,4 +259,109 @@ describe('Mailboxes tests', function () {
         expect(response.body.error).to.be.equal('This user does not exist');
         expect(response.body.code).to.be.equal('UserNotFound');
     });
+
+    it('should PUT /users/{user}/mailboxes/{mailbox} expect success', async () => {
+        const mailboxes = await server.get(`/users/${user}/mailboxes`).send({}).expect(200);
+
+        const response = await server.put(`/users/${user}/mailboxes/${mailboxes.body.results[0].id}`).send({ retention: 10 }).expect(200);
+
+        expect(response.body.success).to.be.true;
+    });
+
+    it('should PUT /users/{user}/mailboxes/{mailbox} expect success / path specified', async () => {
+        const mailboxes = await server.get(`/users/${user}/mailboxes`).send({}).expect(200);
+
+        const response = await server.put(`/users/${user}/mailboxes/${mailboxes.body.results[1].id}`).send({ path: 'newPath/folder1' });
+
+        expect(response.body.success).to.be.true;
+    });
+
+    it('should PUT /users/{user}/mailboxes/{mailbox} expect success / all params specified', async () => {
+        const mailboxes = await server.get(`/users/${user}/mailboxes`).send({}).expect(200);
+
+        const response = await server
+            .put(`/users/${user}/mailboxes/${mailboxes.body.results.at(-1).id}`)
+            .send({ path: 'newPath/folder2', retention: 100, subscribed: true, hidden: true })
+            .expect(200);
+
+        expect(response.body.success).to.be.true;
+    });
+
+    it('should PUT /users/{user}/mailboxes/{mailbox} expect failure / incorrect params', async () => {
+        const mailboxes = await server.get(`/users/${user}/mailboxes`).send({}).expect(200);
+
+        const response = await server.put(`/users/${user}/mailboxes/${mailboxes.body.results[0].id}`).send({ path: '//newpath/path2' }).expect(400);
+
+        expect(response.body.code).to.be.equal('InputValidationError');
+        expect(response.body.error).to.be.not.empty;
+
+        const response2 = await server.put(`/users/${user}/mailboxes/${mailboxes.body.results[0].id}`).send({ path: 123123 }).expect(400);
+
+        expect(response2.body.code).to.be.equal('InputValidationError');
+        expect(response2.body.error).to.be.not.empty;
+
+        const response3 = await server.put(`/users/${user}/mailboxes/${123}`).send({}).expect(400);
+
+        expect(response3.body.code).to.be.equal('InputValidationError');
+        expect(response3.body.error).to.be.not.empty;
+
+        const response4 = await server
+            .put(`/users/${user}/mailboxes/${'-'.repeat(24)}`)
+            .send({})
+            .expect(400);
+
+        expect(response4.body.code).to.be.equal('InputValidationError');
+        expect(response4.body.error).to.be.not.empty;
+
+        const response5 = await server.put(`/users/${user}/mailboxes/${mailboxes.body.results[0].id}`).send({ retention: 'notanumber' }).expect(400);
+
+        expect(response5.body.code).to.be.equal('InputValidationError');
+        expect(response5.body.error).to.be.not.empty;
+
+        const response6 = await server.put(`/users/${user}/mailboxes/${mailboxes.body.results[0].id}`).send({ hidden: 'notabool' }).expect(400);
+
+        expect(response6.body.code).to.be.equal('InputValidationError');
+        expect(response6.body.error).to.be.not.empty;
+
+        const response7 = await server.put(`/users/${user}/mailboxes/${mailboxes.body.results[0].id}`).send({ subscribed: 12345 }).expect(400);
+
+        expect(response7.body.code).to.be.equal('InputValidationError');
+        expect(response7.body.error).to.be.not.empty;
+
+        const response8 = await server.put(`/users/${123}/mailboxes/${mailboxes.body.results[0].id}`).send({}).expect(400);
+
+        expect(response8.body.code).to.be.equal('InputValidationError');
+        expect(response8.body.error).to.be.not.empty;
+    });
+
+    it('should PUT /users/{user}/mailboxes/{mailbox} expect failure / mailbox not found', async () => {
+        const response = await server
+            .put(`/users/${user}/mailboxes/${'0'.repeat(24)}`)
+            .send({ path: 'newPath' })
+            .expect(500);
+
+        expect(response.body.error).to.be.equal('Mailbox update failed with code NONEXISTENT');
+    });
+
+    it('should PUT /users/{user}/mailboxes/{mailbox} expect failure / user not found', async () => {
+        const mailboxes = await server.get(`/users/${user}/mailboxes`).send({}).expect(200);
+
+        const response = await server
+            .put(`/users/${'0'.repeat(24)}/mailboxes/${mailboxes.body.results.at(-1).id}`)
+            .send({ path: 'newPath' })
+            .expect(500);
+
+        expect(response.body.error).to.be.equal('Mailbox update failed with code NONEXISTENT');
+    });
+
+    it('should PUT /users/{user}/mailboxes/{mailbox} expect failure / nothing was changed', async () => {
+        const mailboxes = await server.get(`/users/${user}/mailboxes`).send({}).expect(200);
+
+        const response = await server
+            .put(`/users/${user}/mailboxes/${mailboxes.body.results.at(-1).id}`)
+            .send({})
+            .expect(400);
+
+        expect(response.body.error).to.be.equal('Nothing was changed');
+    });
 });
