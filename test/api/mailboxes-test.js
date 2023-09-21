@@ -23,10 +23,10 @@ describe('Mailboxes tests', function () {
         const response = await server
             .post('/users')
             .send({
-                username: 'storageuser',
+                username: 'mailboxesuser',
                 password: 'secretvalue',
-                address: 'storageuser.addrtest@example.com',
-                name: 'storage user'
+                address: 'mailboxesuser.addrtest@example.com',
+                name: 'mailboxes user'
             })
             .expect(200);
         expect(response.body.success).to.be.true;
@@ -363,5 +363,98 @@ describe('Mailboxes tests', function () {
             .expect(400);
 
         expect(response.body.error).to.be.equal('Nothing was changed');
+    });
+
+    it('should PUT /users/{user}/mailboxes/{mailbox} expect failure / cannot update protected path', async () => {
+        const mailboxes = await server.get(`/users/${user}/mailboxes`).send({}).expect(200);
+
+        const inboxMailbox = mailboxes.body.results.find(el => el.path === 'INBOX');
+
+        const response = await server.put(`/users/${user}/mailboxes/${inboxMailbox.id}`).send({ path: 'newPath/folder123' }).expect(500);
+
+        expect(response.body.error).to.be.equal('Mailbox update failed with code CANNOT');
+    });
+
+    it('should DELETE /users/{user}/mailboxes/{mailbox} expect success', async () => {
+        const mailboxes = await server.get(`/users/${user}/mailboxes`).send({}).expect(200);
+
+        const validMailbox = mailboxes.body.results.find(el => !el.specialUse && el.path !== 'INBOX');
+
+        const response = await server.del(`/users/${user}/mailboxes/${validMailbox.id}`).send({}).expect(200);
+
+        expect(response.body.success).to.be.true;
+    });
+
+    it('should DELETE /users/{user}/mailboxes/{mailbox} expect failure / protected path', async () => {
+        const mailboxes = await server.get(`/users/${user}/mailboxes`).send({}).expect(200);
+
+        const response = await server.del(`/users/${user}/mailboxes/${mailboxes.body.results[0].id}`).send({}).expect(500);
+
+        expect(response.body.error).to.be.equal('Mailbox deletion failed with code CANNOT');
+        expect(response.body.code).to.be.equal('CANNOT');
+    });
+
+    it('should DELETE /users/{user}/mailboxes/{mailbox} expect failure / incorrect params', async () => {
+        const mailboxes = await server.get(`/users/${user}/mailboxes`).send({}).expect(200);
+
+        const response1 = await server.del(`/users/${user}/mailboxes/${123}`).send({}).expect(400);
+
+        expect(response1.body.code).to.be.equal('InputValidationError');
+        expect(response1.body.error).to.be.not.empty;
+
+        const response2 = await server
+            .del(`/users/${user}/mailboxes/${'-'.repeat(24)}`)
+            .send({})
+            .expect(400);
+
+        expect(response2.body.code).to.be.equal('InputValidationError');
+        expect(response2.body.error).to.be.not.empty;
+
+        const response3 = await server.del(`/users/${123}/mailboxes/${mailboxes.body.results[0].id}`).send({}).expect(400);
+
+        expect(response3.body.code).to.be.equal('InputValidationError');
+        expect(response3.body.error).to.be.not.empty;
+
+        const response4 = await server
+            .del(`/users/${'-'.repeat(24)}/mailboxes/${mailboxes.body.results[0].id}`)
+            .send({})
+            .expect(400);
+
+        expect(response4.body.code).to.be.equal('InputValidationError');
+        expect(response4.body.error).to.be.not.empty;
+    });
+
+    it('should DELETE /users/{user}/mailboxes/{mailbox} expect failure / mailbox not found', async () => {
+        const response = await server
+            .del(`/users/${user}/mailboxes/${'0'.repeat(24)}`)
+            .send({})
+            .expect(500);
+
+        console.log(response.body);
+
+        expect(response.body.error).to.be.equal('Mailbox deletion failed with code NONEXISTENT');
+        expect(response.body.code).to.be.equal('NONEXISTENT');
+    });
+
+    it('should DELETE /users/{user}/mailboxes/{mailbox} expect failure / user not found', async () => {
+        const mailboxes = await server.get(`/users/${user}/mailboxes`).send({}).expect(200);
+
+        const response = await server
+            .del(`/users/${'0'.repeat(24)}/mailboxes/${mailboxes.body.results[0].id}`)
+            .send({})
+            .expect(500);
+
+        expect(response.body.error).to.be.equal('Mailbox deletion failed with code NONEXISTENT');
+    });
+
+    it('should DELETE /users/{user}/mailboxes/{mailbox} expect failure / cannot delete inbox', async () => {
+        const mailboxes = await server.get(`/users/${user}/mailboxes`).send({}).expect(200);
+
+        const inboxMailbox = mailboxes.body.results.find(el => el.path === 'INBOX');
+
+        const response = await server.del(`/users/${user}/mailboxes/${inboxMailbox.id}`).send({}).expect(500);
+
+        expect(response.body.error).to.be.equal('Mailbox deletion failed with code CANNOT');
+        expect(response.body.code).to.be.equal('CANNOT');
     });
 });
