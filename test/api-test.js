@@ -591,7 +591,8 @@ describe('API tests', function () {
                     related: true,
                     size: 118,
                     sizeKb: 1,
-                    transferEncoding: 'base64'
+                    transferEncoding: 'base64',
+                    cid: messageData.attachments[0].cid
                 }
             ]);
         });
