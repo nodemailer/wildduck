@@ -138,7 +138,7 @@ describe('Mailboxes tests', function () {
     });
 
     it('should GET /users/{user}/mailboxes expect success', async () => {
-        const response = await server.get(`/users/${user}/mailboxes`).send({}).expect(200);
+        const response = await server.get(`/users/${user}/mailboxes`).expect(200);
 
         expect(response.body.success).to.be.true;
         expect(response.body.results).to.not.be.empty;
@@ -146,7 +146,7 @@ describe('Mailboxes tests', function () {
     });
 
     it('should GET /users/{user}/mailboxes expect success / all params', async () => {
-        const response = await server.get(`/users/${user}/mailboxes?specialUse=true&showHidden=true&counters=true&sizes=true`).send({}).expect(200);
+        const response = await server.get(`/users/${user}/mailboxes?specialUse=true&showHidden=true&counters=true&sizes=true`).expect(200);
 
         expect(response.body.success).to.be.true;
         expect(response.body.results).to.not.be.empty;
@@ -154,7 +154,7 @@ describe('Mailboxes tests', function () {
     });
 
     it('should GET /users/{user}/mailboxes expect success / some params', async () => {
-        const response = await server.get(`/users/${user}/mailboxes?specialUse=false&counters=true&sizes=true`).send({}).expect(200);
+        const response = await server.get(`/users/${user}/mailboxes?specialUse=false&counters=true&sizes=true`).expect(200);
 
         expect(response.body.success).to.be.true;
         expect(response.body.results).to.not.be.empty;
@@ -162,33 +162,30 @@ describe('Mailboxes tests', function () {
     });
 
     it('should GET /users/{user}/mailboxes expect failure / params incorrect type', async () => {
-        const response = await server.get(`/users/${user}/mailboxes?specialUse=what&showHidden=111&counters=-2&sizes=sizes`).send({}).expect(400);
+        const response = await server.get(`/users/${user}/mailboxes?specialUse=what&showHidden=111&counters=-2&sizes=sizes`).expect(400);
 
         expect(response.body.code).to.be.equal('InputValidationError');
         expect(response.body.error).to.not.be.empty;
     });
 
     it('should GET /users/{user}/mailboxes expect failure / user wrong format', async () => {
-        const response = await server.get(`/users/${123}/mailboxes?specialUse=true&showHidden=true&counters=true&sizes=true`).send({}).expect(400);
+        const response = await server.get(`/users/${123}/mailboxes?specialUse=true&showHidden=true&counters=true&sizes=true`).expect(400);
 
         expect(response.body.code).to.be.equal('InputValidationError');
         expect(response.body.error).to.not.be.empty;
     });
 
     it('should GET /users/{user}/mailboxes expect failure / user not found', async () => {
-        const response = await server
-            .get(`/users/${'0'.repeat(24)}/mailboxes?specialUse=false&counters=true&sizes=true`)
-            .send({})
-            .expect(404);
+        const response = await server.get(`/users/${'0'.repeat(24)}/mailboxes?specialUse=false&counters=true&sizes=true`).expect(404);
 
         expect(response.body.error).to.be.equal('This user does not exist');
         expect(response.body.code).to.be.equal('UserNotFound');
     });
 
     it('should GET /users/{user}/mailboxes/{mailbox} expect success', async () => {
-        const mailboxes = await server.get(`/users/${user}/mailboxes`).send({}).expect(200);
+        const mailboxes = await server.get(`/users/${user}/mailboxes`).expect(200);
 
-        const response = await server.get(`/users/${user}/mailboxes/${mailboxes.body.results[0].id}`).send({}).expect(200);
+        const response = await server.get(`/users/${user}/mailboxes/${mailboxes.body.results[0].id}`).expect(200);
 
         expect(response.body.success).to.be.true;
         expect(response.body.id).to.not.be.empty;
@@ -196,9 +193,9 @@ describe('Mailboxes tests', function () {
     });
 
     it('should GET /users/{user}/mailboxes/{mailbox} expect success / path specified', async () => {
-        // const mailboxes = await server.get(`/users/${user}/mailboxes`).send({}).expect(200);
+        // const mailboxes = await server.get(`/users/${user}/mailboxes`).expect(200);
 
-        const response = await server.get(`/users/${user}/mailboxes/${'resolve'}?path=coolpath/abcda`).send({}).expect(200);
+        const response = await server.get(`/users/${user}/mailboxes/${'resolve'}?path=coolpath/abcda`).expect(200);
 
         expect(response.body.success).to.be.true;
         expect(response.body.id).to.not.be.empty;
@@ -207,7 +204,7 @@ describe('Mailboxes tests', function () {
     });
 
     it('should GET /users/{user}/mailboxes/{mailbox} expect success / path inbox specified', async () => {
-        const response = await server.get(`/users/${user}/mailboxes/resolve?path=INBOX`).send({}).expect(200);
+        const response = await server.get(`/users/${user}/mailboxes/resolve?path=INBOX`).expect(200);
 
         expect(response.body.success).to.be.true;
         expect(response.body.id).to.not.be.empty;
@@ -216,24 +213,24 @@ describe('Mailboxes tests', function () {
     });
 
     it('should GET /users/{user}/mailboxes/{mailbox} expect failure / incorrect params', async () => {
-        const response = await server.get(`/users/${user}/mailboxes/resolve?path=//INBOX`).send({}).expect(400);
+        const response = await server.get(`/users/${user}/mailboxes/resolve?path=//INBOX`).expect(400);
 
         expect(response.body.code).to.be.equal('InputValidationError');
         expect(response.body.error).to.be.not.empty;
 
-        const response2 = await server.get(`/users/${user}/mailboxes/resolve?path=`).send({}).expect(400);
+        const response2 = await server.get(`/users/${user}/mailboxes/resolve?path=`).expect(400);
 
         expect(response2.body.code).to.be.equal('InputValidationError');
         expect(response2.body.error).to.be.not.empty;
 
-        const response3 = await server.get(`/users/${user}/mailboxes/${123}`).send({}).expect(400);
+        const response3 = await server.get(`/users/${user}/mailboxes/${123}`).expect(400);
 
         expect(response3.body.code).to.be.equal('InputValidationError');
         expect(response3.body.error).to.be.not.empty;
 
         const response4 = await server
             .get(`/users/${user}/mailboxes/${'-'.repeat(24)}`)
-            .send({})
+
             .expect(400);
 
         expect(response4.body.code).to.be.equal('InputValidationError');
@@ -243,7 +240,7 @@ describe('Mailboxes tests', function () {
     it('should GET /users/{user}/mailboxes/{mailbox} expect failure / mailbox not found', async () => {
         const response = await server
             .get(`/users/${user}/mailboxes/${'0'.repeat(24)}`)
-            .send({})
+
             .expect(404);
 
         expect(response.body.code).to.be.equal('NoSuchMailbox');
@@ -253,7 +250,7 @@ describe('Mailboxes tests', function () {
     it('should GET /users/{user}/mailboxes/{mailbox} expect failure / user not found', async () => {
         const response = await server
             .get(`/users/${'0'.repeat(24)}/mailboxes`)
-            .send({})
+
             .expect(404);
 
         expect(response.body.error).to.be.equal('This user does not exist');
@@ -261,7 +258,7 @@ describe('Mailboxes tests', function () {
     });
 
     it('should PUT /users/{user}/mailboxes/{mailbox} expect success', async () => {
-        const mailboxes = await server.get(`/users/${user}/mailboxes`).send({}).expect(200);
+        const mailboxes = await server.get(`/users/${user}/mailboxes`).expect(200);
 
         const response = await server.put(`/users/${user}/mailboxes/${mailboxes.body.results[0].id}`).send({ retention: 10 }).expect(200);
 
@@ -269,7 +266,7 @@ describe('Mailboxes tests', function () {
     });
 
     it('should PUT /users/{user}/mailboxes/{mailbox} expect success / path specified', async () => {
-        const mailboxes = await server.get(`/users/${user}/mailboxes`).send({}).expect(200);
+        const mailboxes = await server.get(`/users/${user}/mailboxes`).expect(200);
 
         const response = await server.put(`/users/${user}/mailboxes/${mailboxes.body.results[1].id}`).send({ path: 'newPath/folder1' });
 
@@ -277,7 +274,7 @@ describe('Mailboxes tests', function () {
     });
 
     it('should PUT /users/{user}/mailboxes/{mailbox} expect success / all params specified', async () => {
-        const mailboxes = await server.get(`/users/${user}/mailboxes`).send({}).expect(200);
+        const mailboxes = await server.get(`/users/${user}/mailboxes`).expect(200);
 
         const response = await server
             .put(`/users/${user}/mailboxes/${mailboxes.body.results.at(-1).id}`)
@@ -288,7 +285,7 @@ describe('Mailboxes tests', function () {
     });
 
     it('should PUT /users/{user}/mailboxes/{mailbox} expect failure / incorrect params', async () => {
-        const mailboxes = await server.get(`/users/${user}/mailboxes`).send({}).expect(200);
+        const mailboxes = await server.get(`/users/${user}/mailboxes`).expect(200);
 
         const response = await server.put(`/users/${user}/mailboxes/${mailboxes.body.results[0].id}`).send({ path: '//newpath/path2' }).expect(400);
 
@@ -300,14 +297,14 @@ describe('Mailboxes tests', function () {
         expect(response2.body.code).to.be.equal('InputValidationError');
         expect(response2.body.error).to.be.not.empty;
 
-        const response3 = await server.put(`/users/${user}/mailboxes/${123}`).send({}).expect(400);
+        const response3 = await server.put(`/users/${user}/mailboxes/${123}`).expect(400);
 
         expect(response3.body.code).to.be.equal('InputValidationError');
         expect(response3.body.error).to.be.not.empty;
 
         const response4 = await server
             .put(`/users/${user}/mailboxes/${'-'.repeat(24)}`)
-            .send({})
+
             .expect(400);
 
         expect(response4.body.code).to.be.equal('InputValidationError');
@@ -328,7 +325,7 @@ describe('Mailboxes tests', function () {
         expect(response7.body.code).to.be.equal('InputValidationError');
         expect(response7.body.error).to.be.not.empty;
 
-        const response8 = await server.put(`/users/${123}/mailboxes/${mailboxes.body.results[0].id}`).send({}).expect(400);
+        const response8 = await server.put(`/users/${123}/mailboxes/${mailboxes.body.results[0].id}`).expect(400);
 
         expect(response8.body.code).to.be.equal('InputValidationError');
         expect(response8.body.error).to.be.not.empty;
@@ -344,7 +341,7 @@ describe('Mailboxes tests', function () {
     });
 
     it('should PUT /users/{user}/mailboxes/{mailbox} expect failure / user not found', async () => {
-        const mailboxes = await server.get(`/users/${user}/mailboxes`).send({}).expect(200);
+        const mailboxes = await server.get(`/users/${user}/mailboxes`).expect(200);
 
         const response = await server
             .put(`/users/${'0'.repeat(24)}/mailboxes/${mailboxes.body.results.at(-1).id}`)
@@ -355,18 +352,18 @@ describe('Mailboxes tests', function () {
     });
 
     it('should PUT /users/{user}/mailboxes/{mailbox} expect failure / nothing was changed', async () => {
-        const mailboxes = await server.get(`/users/${user}/mailboxes`).send({}).expect(200);
+        const mailboxes = await server.get(`/users/${user}/mailboxes`).expect(200);
 
         const response = await server
             .put(`/users/${user}/mailboxes/${mailboxes.body.results.at(-1).id}`)
-            .send({})
+
             .expect(400);
 
         expect(response.body.error).to.be.equal('Nothing was changed');
     });
 
     it('should PUT /users/{user}/mailboxes/{mailbox} expect failure / cannot update protected path', async () => {
-        const mailboxes = await server.get(`/users/${user}/mailboxes`).send({}).expect(200);
+        const mailboxes = await server.get(`/users/${user}/mailboxes`).expect(200);
 
         const inboxMailbox = mailboxes.body.results.find(el => el.path === 'INBOX');
 
@@ -376,48 +373,48 @@ describe('Mailboxes tests', function () {
     });
 
     it('should DELETE /users/{user}/mailboxes/{mailbox} expect success', async () => {
-        const mailboxes = await server.get(`/users/${user}/mailboxes`).send({}).expect(200);
+        const mailboxes = await server.get(`/users/${user}/mailboxes`).expect(200);
 
         const validMailbox = mailboxes.body.results.find(el => !el.specialUse && el.path !== 'INBOX');
 
-        const response = await server.del(`/users/${user}/mailboxes/${validMailbox.id}`).send({}).expect(200);
+        const response = await server.del(`/users/${user}/mailboxes/${validMailbox.id}`).expect(200);
 
         expect(response.body.success).to.be.true;
     });
 
     it('should DELETE /users/{user}/mailboxes/{mailbox} expect failure / protected path', async () => {
-        const mailboxes = await server.get(`/users/${user}/mailboxes`).send({}).expect(200);
+        const mailboxes = await server.get(`/users/${user}/mailboxes`).expect(200);
 
-        const response = await server.del(`/users/${user}/mailboxes/${mailboxes.body.results[0].id}`).send({}).expect(500);
+        const response = await server.del(`/users/${user}/mailboxes/${mailboxes.body.results[0].id}`).expect(500);
 
         expect(response.body.error).to.be.equal('Mailbox deletion failed with code CANNOT');
         expect(response.body.code).to.be.equal('CANNOT');
     });
 
     it('should DELETE /users/{user}/mailboxes/{mailbox} expect failure / incorrect params', async () => {
-        const mailboxes = await server.get(`/users/${user}/mailboxes`).send({}).expect(200);
+        const mailboxes = await server.get(`/users/${user}/mailboxes`).expect(200);
 
-        const response1 = await server.del(`/users/${user}/mailboxes/${123}`).send({}).expect(400);
+        const response1 = await server.del(`/users/${user}/mailboxes/${123}`).expect(400);
 
         expect(response1.body.code).to.be.equal('InputValidationError');
         expect(response1.body.error).to.be.not.empty;
 
         const response2 = await server
             .del(`/users/${user}/mailboxes/${'-'.repeat(24)}`)
-            .send({})
+
             .expect(400);
 
         expect(response2.body.code).to.be.equal('InputValidationError');
         expect(response2.body.error).to.be.not.empty;
 
-        const response3 = await server.del(`/users/${123}/mailboxes/${mailboxes.body.results[0].id}`).send({}).expect(400);
+        const response3 = await server.del(`/users/${123}/mailboxes/${mailboxes.body.results[0].id}`).expect(400);
 
         expect(response3.body.code).to.be.equal('InputValidationError');
         expect(response3.body.error).to.be.not.empty;
 
         const response4 = await server
             .del(`/users/${'-'.repeat(24)}/mailboxes/${mailboxes.body.results[0].id}`)
-            .send({})
+
             .expect(400);
 
         expect(response4.body.code).to.be.equal('InputValidationError');
@@ -427,7 +424,7 @@ describe('Mailboxes tests', function () {
     it('should DELETE /users/{user}/mailboxes/{mailbox} expect failure / mailbox not found', async () => {
         const response = await server
             .del(`/users/${user}/mailboxes/${'0'.repeat(24)}`)
-            .send({})
+
             .expect(500);
 
         console.log(response.body);
@@ -437,22 +434,22 @@ describe('Mailboxes tests', function () {
     });
 
     it('should DELETE /users/{user}/mailboxes/{mailbox} expect failure / user not found', async () => {
-        const mailboxes = await server.get(`/users/${user}/mailboxes`).send({}).expect(200);
+        const mailboxes = await server.get(`/users/${user}/mailboxes`).expect(200);
 
         const response = await server
             .del(`/users/${'0'.repeat(24)}/mailboxes/${mailboxes.body.results[0].id}`)
-            .send({})
+
             .expect(500);
 
         expect(response.body.error).to.be.equal('Mailbox deletion failed with code NONEXISTENT');
     });
 
     it('should DELETE /users/{user}/mailboxes/{mailbox} expect failure / cannot delete inbox', async () => {
-        const mailboxes = await server.get(`/users/${user}/mailboxes`).send({}).expect(200);
+        const mailboxes = await server.get(`/users/${user}/mailboxes`).expect(200);
 
         const inboxMailbox = mailboxes.body.results.find(el => el.path === 'INBOX');
 
-        const response = await server.del(`/users/${user}/mailboxes/${inboxMailbox.id}`).send({}).expect(500);
+        const response = await server.del(`/users/${user}/mailboxes/${inboxMailbox.id}`).expect(500);
 
         expect(response.body.error).to.be.equal('Mailbox deletion failed with code CANNOT');
         expect(response.body.code).to.be.equal('CANNOT');
