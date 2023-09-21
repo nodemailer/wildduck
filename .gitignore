@@ -7,3 +7,4 @@ config/development.*
 certs/test-*
 zmta-milter
 zmta-milter.toml
+api-tests-overview.md
