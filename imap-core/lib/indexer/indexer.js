@@ -561,6 +561,7 @@ class Indexer {
                         contentType,
                         disposition,
                         transferEncoding,
+                        cid: contentId ? `<${contentId}>` : null,
                         related,
                         // approximite size in kilobytes
                         sizeKb: Math.ceil((transferEncoding === 'base64' ? this.expectedB64Size(node.size) : node.size) / 1024)

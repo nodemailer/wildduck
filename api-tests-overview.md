@@ -8,7 +8,6 @@
 | `/filters` | `GET` | 4 | ✅ (4) | ❌ (0) |
 | `/users` | `POST` | 4 | ✅ (3) | ✅ (1) |
 | `/users/:user/filters/:filter` | `PUT` | 4 | ✅ (4) | ❌ (0) |
-| `/users/:user/mailboxes` | `POST` | 4 | ✅ (3) | ✅ (1) |
 | `/users/:user/storage` | `GET` | 4 | ✅ (2) | ✅ (2) |
 | `/users/:user` | `PUT` | 3 | ✅ (3) | ❌ (0) |
 | `/users/:user/addresses/:address` | `DELETE` | 3 | ✅ (2) | ✅ (1) |
@@ -96,6 +95,7 @@
 | `/users/:user/autoreply` | `GET` | 0 | ❌ (0) | ❌ (0) |
 | `/users/:user/autoreply` | `DELETE` | 0 | ❌ (0) | ❌ (0) |
 | `/users/:user/filters/:filter` | `GET` | 0 | ❌ (0) | ❌ (0) |
+| `/users/:user/mailboxes` | `POST` | 0 | ❌ (0) | ❌ (0) |
 | `/users/:user/mailboxes/:mailbox` | `GET` | 0 | ❌ (0) | ❌ (0) |
 | `/users/:user/mailboxes/:mailbox` | `PUT` | 0 | ❌ (0) | ❌ (0) |
 | `/users/:user/mailboxes/:mailbox` | `DELETE` | 0 | ❌ (0) | ❌ (0) |
