@@ -425,9 +425,7 @@ describe('Mailboxes tests', function () {
         const response = await server
             .del(`/users/${user}/mailboxes/${'0'.repeat(24)}`)
 
-            .expect(500);
-
-        console.log(response.body);
+            .expect(404);
 
         expect(response.body.error).to.be.equal('Mailbox deletion failed with code NONEXISTENT');
         expect(response.body.code).to.be.equal('NONEXISTENT');
@@ -439,7 +437,7 @@ describe('Mailboxes tests', function () {
         const response = await server
             .del(`/users/${'0'.repeat(24)}/mailboxes/${mailboxes.body.results[0].id}`)
 
-            .expect(500);
+            .expect(404);
 
         expect(response.body.error).to.be.equal('Mailbox deletion failed with code NONEXISTENT');
     });
