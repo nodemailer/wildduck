@@ -120,14 +120,14 @@ describe('Mailboxes tests', function () {
         expect(response.body.error).to.not.be.empty;
     });
 
-    // TODO: rewrite when mailboxes.js gets updated status codes
     it('should POST /users/{user}/mailboxes expect failure / user not found', async () => {
         const response = await server
             .post(`/users/${'0'.repeat(24)}/mailboxes`)
             .send({ path: '/cool2/path2/whatisthis346/cool-drink', hidden: false, retention: 0 })
-            .expect(500);
+            .expect(404);
 
-        expect(response.body.error).to.be.equal('User not found');
+        expect(response.body.error).to.be.equal('This user does not exist');
+        expect(response.body.code).to.be.equal('UserNotFound');
     });
 
     it('should POST /users/{user}/mailboxes expect failure / path is missing', async () => {
