@@ -387,8 +387,8 @@ describe('Mailboxes tests', function () {
 
         const response = await server.del(`/users/${user}/mailboxes/${mailboxes.body.results[0].id}`).expect(500);
 
-        expect(response.body.error).to.be.equal('Mailbox deletion failed with code CANNOT');
-        expect(response.body.code).to.be.equal('CANNOT');
+        expect(response.body.error).to.be.equal('Mailbox deletion failed with code DisallowedMailboxMethod');
+        expect(response.body.code).to.be.equal('DisallowedMailboxMethod');
     });
 
     it('should DELETE /users/{user}/mailboxes/{mailbox} expect failure / incorrect params', async () => {
@@ -427,8 +427,8 @@ describe('Mailboxes tests', function () {
 
             .expect(404);
 
-        expect(response.body.error).to.be.equal('Mailbox deletion failed with code NONEXISTENT');
-        expect(response.body.code).to.be.equal('NONEXISTENT');
+        expect(response.body.error).to.be.equal('Mailbox deletion failed with code NoSuchMailbox');
+        expect(response.body.code).to.be.equal('NoSuchMailbox');
     });
 
     it('should DELETE /users/{user}/mailboxes/{mailbox} expect failure / user not found', async () => {
@@ -439,7 +439,7 @@ describe('Mailboxes tests', function () {
 
             .expect(404);
 
-        expect(response.body.error).to.be.equal('Mailbox deletion failed with code NONEXISTENT');
+        expect(response.body.error).to.be.equal('Mailbox deletion failed with code NoSuchMailbox');
     });
 
     it('should DELETE /users/{user}/mailboxes/{mailbox} expect failure / cannot delete inbox', async () => {
@@ -449,7 +449,7 @@ describe('Mailboxes tests', function () {
 
         const response = await server.del(`/users/${user}/mailboxes/${inboxMailbox.id}`).expect(500);
 
-        expect(response.body.error).to.be.equal('Mailbox deletion failed with code CANNOT');
-        expect(response.body.code).to.be.equal('CANNOT');
+        expect(response.body.error).to.be.equal('Mailbox deletion failed with code DisallowedMailboxMethod');
+        expect(response.body.code).to.be.equal('DisallowedMailboxMethod');
     });
 });
