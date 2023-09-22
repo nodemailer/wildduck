@@ -337,7 +337,7 @@ describe('Mailboxes tests', function () {
             .send({ path: 'newPath' })
             .expect(500);
 
-        expect(response.body.error).to.be.equal('Mailbox update failed with code NONEXISTENT');
+        expect(response.body.error).to.be.equal('Mailbox update failed with code NoSuchMailbox');
     });
 
     it('should PUT /users/{user}/mailboxes/{mailbox} expect failure / user not found', async () => {
@@ -348,7 +348,7 @@ describe('Mailboxes tests', function () {
             .send({ path: 'newPath' })
             .expect(500);
 
-        expect(response.body.error).to.be.equal('Mailbox update failed with code NONEXISTENT');
+        expect(response.body.error).to.be.equal('Mailbox update failed with code NoSuchMailbox');
     });
 
     it('should PUT /users/{user}/mailboxes/{mailbox} expect failure / nothing was changed', async () => {
@@ -369,7 +369,7 @@ describe('Mailboxes tests', function () {
 
         const response = await server.put(`/users/${user}/mailboxes/${inboxMailbox.id}`).send({ path: 'newPath/folder123' }).expect(500);
 
-        expect(response.body.error).to.be.equal('Mailbox update failed with code CANNOT');
+        expect(response.body.error).to.be.equal('Mailbox update failed with code DisallowedMailboxMethod');
     });
 
     it('should DELETE /users/{user}/mailboxes/{mailbox} expect success', async () => {
