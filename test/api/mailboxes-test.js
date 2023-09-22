@@ -335,7 +335,7 @@ describe('Mailboxes tests', function () {
         const response = await server
             .put(`/users/${user}/mailboxes/${'0'.repeat(24)}`)
             .send({ path: 'newPath' })
-            .expect(500);
+            .expect(404);
 
         expect(response.body.error).to.be.equal('Mailbox update failed with code NoSuchMailbox');
     });
@@ -346,7 +346,7 @@ describe('Mailboxes tests', function () {
         const response = await server
             .put(`/users/${'0'.repeat(24)}/mailboxes/${mailboxes.body.results.at(-1).id}`)
             .send({ path: 'newPath' })
-            .expect(500);
+            .expect(404);
 
         expect(response.body.error).to.be.equal('Mailbox update failed with code NoSuchMailbox');
     });
