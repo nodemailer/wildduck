@@ -228,30 +228,21 @@ describe('Mailboxes tests', function () {
         expect(response3.body.code).to.be.equal('InputValidationError');
         expect(response3.body.error).to.be.not.empty;
 
-        const response4 = await server
-            .get(`/users/${user}/mailboxes/${'-'.repeat(24)}`)
-
-            .expect(400);
+        const response4 = await server.get(`/users/${user}/mailboxes/${'-'.repeat(24)}`).expect(400);
 
         expect(response4.body.code).to.be.equal('InputValidationError');
         expect(response4.body.error).to.be.not.empty;
     });
 
     it('should GET /users/{user}/mailboxes/{mailbox} expect failure / mailbox not found', async () => {
-        const response = await server
-            .get(`/users/${user}/mailboxes/${'0'.repeat(24)}`)
-
-            .expect(404);
+        const response = await server.get(`/users/${user}/mailboxes/${'0'.repeat(24)}`).expect(404);
 
         expect(response.body.code).to.be.equal('NoSuchMailbox');
         expect(response.body.error).to.be.equal('This mailbox does not exist');
     });
 
     it('should GET /users/{user}/mailboxes/{mailbox} expect failure / user not found', async () => {
-        const response = await server
-            .get(`/users/${'0'.repeat(24)}/mailboxes`)
-
-            .expect(404);
+        const response = await server.get(`/users/${'0'.repeat(24)}/mailboxes`).expect(404);
 
         expect(response.body.error).to.be.equal('This user does not exist');
         expect(response.body.code).to.be.equal('UserNotFound');
@@ -354,10 +345,7 @@ describe('Mailboxes tests', function () {
     it('should PUT /users/{user}/mailboxes/{mailbox} expect failure / nothing was changed', async () => {
         const mailboxes = await server.get(`/users/${user}/mailboxes`).expect(200);
 
-        const response = await server
-            .put(`/users/${user}/mailboxes/${mailboxes.body.results.at(-1).id}`)
-
-            .expect(400);
+        const response = await server.put(`/users/${user}/mailboxes/${mailboxes.body.results.at(-1).id}`).expect(400);
 
         expect(response.body.error).to.be.equal('Nothing was changed');
     });
@@ -367,7 +355,7 @@ describe('Mailboxes tests', function () {
 
         const inboxMailbox = mailboxes.body.results.find(el => el.path === 'INBOX');
 
-        const response = await server.put(`/users/${user}/mailboxes/${inboxMailbox.id}`).send({ path: 'newPath/folder123' }).expect(500);
+        const response = await server.put(`/users/${user}/mailboxes/${inboxMailbox.id}`).send({ path: 'newPath/folder123' }).expect(405);
 
         expect(response.body.error).to.be.equal('Mailbox update failed with code DisallowedMailboxMethod');
     });
@@ -385,7 +373,7 @@ describe('Mailboxes tests', function () {
     it('should DELETE /users/{user}/mailboxes/{mailbox} expect failure / protected path', async () => {
         const mailboxes = await server.get(`/users/${user}/mailboxes`).expect(200);
 
-        const response = await server.del(`/users/${user}/mailboxes/${mailboxes.body.results[0].id}`).expect(500);
+        const response = await server.del(`/users/${user}/mailboxes/${mailboxes.body.results[0].id}`).expect(405);
 
         expect(response.body.error).to.be.equal('Mailbox deletion failed with code DisallowedMailboxMethod');
         expect(response.body.code).to.be.equal('DisallowedMailboxMethod');
@@ -422,10 +410,7 @@ describe('Mailboxes tests', function () {
     });
 
     it('should DELETE /users/{user}/mailboxes/{mailbox} expect failure / mailbox not found', async () => {
-        const response = await server
-            .del(`/users/${user}/mailboxes/${'0'.repeat(24)}`)
-
-            .expect(404);
+        const response = await server.del(`/users/${user}/mailboxes/${'0'.repeat(24)}`).expect(404);
 
         expect(response.body.error).to.be.equal('Mailbox deletion failed with code NoSuchMailbox');
         expect(response.body.code).to.be.equal('NoSuchMailbox');
@@ -434,10 +419,7 @@ describe('Mailboxes tests', function () {
     it('should DELETE /users/{user}/mailboxes/{mailbox} expect failure / user not found', async () => {
         const mailboxes = await server.get(`/users/${user}/mailboxes`).expect(200);
 
-        const response = await server
-            .del(`/users/${'0'.repeat(24)}/mailboxes/${mailboxes.body.results[0].id}`)
-
-            .expect(404);
+        const response = await server.del(`/users/${'0'.repeat(24)}/mailboxes/${mailboxes.body.results[0].id}`).expect(404);
 
         expect(response.body.error).to.be.equal('Mailbox deletion failed with code NoSuchMailbox');
     });
@@ -447,7 +429,7 @@ describe('Mailboxes tests', function () {
 
         const inboxMailbox = mailboxes.body.results.find(el => el.path === 'INBOX');
 
-        const response = await server.del(`/users/${user}/mailboxes/${inboxMailbox.id}`).expect(500);
+        const response = await server.del(`/users/${user}/mailboxes/${inboxMailbox.id}`).expect(405);
 
         expect(response.body.error).to.be.equal('Mailbox deletion failed with code DisallowedMailboxMethod');
         expect(response.body.code).to.be.equal('DisallowedMailboxMethod');
