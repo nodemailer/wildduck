@@ -76,7 +76,7 @@ module.exports = {
                 // do not return actual error to user
                 return callback(null, {
                     response: 'NO',
-                    code: 'TEMPFAIL'
+                    code: err.code || 'TEMPFAIL'
                 });
             }
 
