@@ -580,9 +580,9 @@ module.exports = done => {
 
             const testRoute = server.router.getRoutes().postusersusermailboxesmailboxmessages;
 
-            console.log(testRoute.spec.pathParams);
-            console.log(testRoute.spec.requestBody);
-            console.log(testRoute.spec.queryParams);
+            // console.log(testRoute.spec.pathParams);
+            // console.log(testRoute.spec.requestBody.bimi);
+            // console.log(testRoute.spec.queryParams);
 
             // const docs = `
             // openapi: 3.0.0
@@ -631,7 +631,8 @@ module.exports = done => {
 
             /**
              * tags: tags
-             * summary: description
+             * summary: summary
+             * descriptiom: description
              * operationId: name?
              * method: spec.method
              * url: spec.path
@@ -654,9 +655,97 @@ module.exports = done => {
              *                          <actual fields and type + descriptions. If multiple type then use oneOf>
              *                          <if array check array elems types. Also if special format add it>
              * responses:
-             *      <if given construct reponse as well>
+             *      <if given construct response as well>
+             *
+             *
+             * <If object then recursively build the tree>
              */
 
+            // const { spec } = testRoute;
+            // let docStringForPath = ``;
+
+            // // 1) add tags
+            // docStringForPath += 'tags:\n';
+            // for (const tag of spec.tags) {
+            //     docStringForPath += `\t- ${tag}\n`;
+            // }
+            // // 2) add summary
+            // docStringForPath += `summary: ${spec.summary || ''}\n`;
+
+            // // 3) add description
+            // docStringForPath += `description: ${spec.description || ''}\n`;
+
+            // // 4) add operationId
+            // docStringForPath += `operationId: ${spec.name || testRoute.name}\n`;
+
+            // // 5) add requestBody
+            // docStringForPath += `requestBody:\n\tcontent:\n\tapplication/json:\n\tschema:\n\t<data here>\n`;
+            // docStringForPath += 'required: true\n';
+            // console.log(docStringForPath);
+
+            const mapPathToMethods = {}; // map -> {post, put, delete, get}
+
+            const { spec } = testRoute;
+
+            if (!mapPathToMethods[spec.path]) {
+                mapPathToMethods[spec.path] = {};
+            }
+
+            mapPathToMethods[spec.path][spec.method.toLowerCase()] = {};
+            const methodObj = mapPathToMethods[spec.path][spec.method.toLowerCase()];
+            // 1) add tags
+            methodObj.tags = spec.tags;
+
+            // 2) add summary
+            methodObj.summary = spec.summary || '';
+
+            // 3) add description
+            methodObj.description = spec.description || '';
+
+            // 4) add operationId
+            methodObj.operationId = spec.name || testRoute.name;
+
+            // 5) add requestBody, if object use recursion
+            // if object then fields are in _ids._byKey.get(<key>)
+            methodObj.requestBody = {};
+            for (const reqBodyKey in spec.requestBody) {
+                const reqBodyKeyData = spec.requestBody[reqBodyKey];
+
+                if (reqBodyKey === 'reference') {
+                    console.log(reqBodyKeyData._ids._byKey.get('attachments'));
+                }
+            }
+
+            // 6) add parameters (queryParams + pathParams). TODO: ADD FORMAT key in schema BASED ON FIELD ADDITIONAL RULES IN JOI
+            methodObj.parameters = {};
+            for (const paramKey in spec.pathParams) {
+                const paramKeyData = spec.pathParams[paramKey];
+
+                methodObj.parameters[paramKey] = {};
+                const obj = methodObj.parameters[paramKey];
+                obj.in = 'path';
+                obj.description = paramKeyData._flags.description || '';
+                obj.required = paramKeyData._flags.presence === 'required';
+                obj.schema = { type: paramKeyData.type };
+
+                // console.log(paramKeyData);
+            }
+
+            for (const paramKey in spec.queryParams) {
+                const paramKeyData = spec.pathParams[paramKey];
+
+                methodObj.parameters[paramKey] = {};
+                const obj = methodObj.parameters[paramKey];
+                obj.in = 'query';
+                obj.description = paramKeyData._flags.description || '';
+                obj.required = paramKeyData._flags.presence === 'required';
+                obj.schema = { type: paramKeyData.type };
+            }
+
+            // 7) add responses
+            methodObj.responses = {};
+
+            // console.log(mapPathToMethods['/users/:user/mailboxes/:mailbox/messages'].post.parameters);
             // console.log(
             //     isRequired,
             //     description,
