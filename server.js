@@ -160,7 +160,7 @@ process.on('SIGPIPE', () => {
     if (stream) {
         const path = Path.join(
             os.tmpdir(),
-            `Heap-${new Date()
+            `Heap-${process.pid}-${new Date()
                 .toISOString()
                 .substring(0, 19)
                 .replace(/[^0-9T]+/g, '')}.heapsnapshot`
