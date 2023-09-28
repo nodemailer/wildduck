@@ -4,6 +4,9 @@
 
 process.env.UV_THREADPOOL_SIZE = 16;
 
+const v8 = require('node:v8');
+const Path = require('path');
+const os = require('os');
 const config = require('wild-config');
 
 if (process.env.NODE_CONFIG_ONLY === 'true') {
@@ -13,7 +16,6 @@ if (process.env.NODE_CONFIG_ONLY === 'true') {
 
 const errors = require('./lib/errors');
 const fs = require('fs');
-const os = require('os');
 const log = require('npmlog');
 const packageData = require('./package.json');
 const { init: initElasticSearch } = require('./lib/elasticsearch');
@@ -139,6 +141,48 @@ if (!processCount || processCount <= 1) {
 }
 
 process.on('unhandledRejection', err => {
-    log.error('App', 'Unhandled rejection: %s' + ((err && err.stack) || err));
+    log.error('App', 'Unhandled rejection: %s', (err && err.stack) || err);
     errors.notify(err);
+});
+
+process.on('SIGPIPE', () => {
+    // generate memory dump
+    log.info('Process', 'PID=%s Generating heap snapshot...', process.pid);
+    let stream;
+
+    try {
+        stream = v8.getHeapSnapshot();
+    } catch (err) {
+        log.error('Process', 'PID=%s Failed to generate heap snapshot: %s', process.pid, err.stack || err);
+        return;
+    }
+
+    if (stream) {
+        const path = Path.join(
+            os.tmpdir(),
+            `Heap-${new Date()
+                .toISOString()
+                .substring(0, 19)
+                .replace(/[^0-9T]+/g, '')}.heapsnapshot`
+        );
+
+        let f;
+        try {
+            f = fs.createWriteStream(path);
+        } catch (err) {
+            log.error('Process', 'PID=%s Failed to generate heap snapshot: %s', process.pid, err.stack || err);
+            return;
+        }
+
+        f.once('error', err => {
+            log.error('Process', 'PID=%s Failed to generate heap snapshot: %s', process.pid, err.stack || err);
+        });
+        stream.once('error', err => {
+            log.error('Process', 'PID=%s Failed to generate heap snapshot: %s', process.pid, err.stack || err);
+        });
+        stream.pipe(f);
+        f.once('finish', () => {
+            log.info('Process', 'PID=%s Generated heap snapshot: %s', process.pid, path);
+        });
+    }
 });
