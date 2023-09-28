@@ -573,6 +573,102 @@ module.exports = done => {
         );
     }
 
+    server.get(
+        { path: '/openapi', name: 'openapi-docs-generation' },
+        tools.responseWrapper(async (req, res) => {
+            res.charSet('utf-8');
+
+            const testRoute = server.router.getRoutes().postusersusermailboxesmailboxmessages;
+
+            console.log(testRoute.spec.pathParams);
+            console.log(testRoute.spec.requestBody);
+            console.log(testRoute.spec.queryParams);
+
+            // const docs = `
+            // openapi: 3.0.0
+            // info:
+            //     title: WildDuck API
+            //     description: WildDuck API docs
+            //     version: 1.0.0
+            //     contact:
+            //         url: 'https://github.com/nodemailer/wildduck'
+
+            // servers:
+            //     - url: 'https://api.wildduck.email'
+
+            // tags:
+            //     - name: Addresses
+            //     - name: ApplicationPasswords
+            //     - name: Archive
+            //       description: Archive includes all deleted messages. Once messages are old enough then these are permanenetly deleted from the archive as well. Until then you can restore the deleted messages.
+            //     - name: Audit
+            //       description: 'Auditing allows to monitor an email account. All existing, deleted and new emails are copied to the auditing system. See also https://github.com/nodemailer/wildduck-audit-manager'
+            //     - name: Authentication
+            //     - name: Autoreplies
+            //     - name: Certs
+            //       description: WildDuck allows to register TLS certificates to be used with SNI connections. These certificates are used by IMAP, POP3, API and SMTP servers when a SNI capable client establishes a TLS connection. This does not apply for MX servers.
+            //     - name: DKIM
+            //       description: Whenever an email is sent WildDuck checks if there is a DKIM key registered for the domain name of the sender address and uses it to sign the message.
+            //     - name: DomainAccess
+            //       description: Add sender domain names to allowlist (messages are all accepted) or blocklist (messages are sent to Spam folder)
+            //     - name: DomainAliases
+            //     - name: Filters
+            //     - name: Mailboxes
+            //     - name: Messages
+            //     - name: Settings
+            //     - name: Storage
+            //       description: Storage allows easier attachment handling when composing Draft messages. Instead of uploading the attachmnent with every draft update, you store the attachment to the Storage and then link stored file for the Draft.
+            //     - name: Submission
+            //     - name: TwoFactorAuth
+            //     - name: Users
+            //     - name: Webhooks`;
+            // console.log(docs);
+
+            // console.info(testRoute.spec.pathParams.user._flags, testRoute.spec.pathParams.user._singleRules);
+            // const isRequired = testRoute.spec.pathParams.user._flags.presence === 'required';
+            // const description = testRoute.spec.pathParams.user._flags.description || null;
+            // const originalType = testRoute.spec.pathParams.user.type;
+
+            /**
+             * tags: tags
+             * summary: description
+             * operationId: name?
+             * method: spec.method
+             * url: spec.path
+             * parameters: if query then in: query, if path then in: path
+             *      name: name of key
+             *      description: joi description
+             *      schema:
+             *          type: joi type
+             *          default: get from joi
+             *          <if object recursively build this tree>
+             * requestBody: spec.requestBody
+             *      content:
+             *          application/json:
+             *              schema:
+             *                  <build from given joi object, if field is type object recursively build>
+             *                  required:
+             *                      <go through fields and if required add>
+             *                      type: joi type <if object check above sentence>
+             *                      properties:
+             *                          <actual fields and type + descriptions. If multiple type then use oneOf>
+             *                          <if array check array elems types. Also if special format add it>
+             * responses:
+             *      <if given construct reponse as well>
+             */
+
+            // console.log(
+            //     isRequired,
+            //     description,
+            //     originalType,
+            //     testRoute.spec.description,
+            //     testRoute.spec.method.toLowerCase(),
+            //     testRoute.spec.path,
+            //     testRoute.spec.tags
+            // );
+        })
+    );
+
     server.on('error', err => {
         if (!started) {
             started = true;
