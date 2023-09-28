@@ -355,7 +355,7 @@ describe('Mailboxes tests', function () {
 
         const inboxMailbox = mailboxes.body.results.find(el => el.path === 'INBOX');
 
-        const response = await server.put(`/users/${user}/mailboxes/${inboxMailbox.id}`).send({ path: 'newPath/folder123' }).expect(405);
+        const response = await server.put(`/users/${user}/mailboxes/${inboxMailbox.id}`).send({ path: 'newPath/folder123' }).expect(400);
 
         expect(response.body.error).to.be.equal('Mailbox update failed with code DisallowedMailboxMethod');
     });
@@ -373,7 +373,7 @@ describe('Mailboxes tests', function () {
     it('should DELETE /users/{user}/mailboxes/{mailbox} expect failure / protected path', async () => {
         const mailboxes = await server.get(`/users/${user}/mailboxes`).expect(200);
 
-        const response = await server.del(`/users/${user}/mailboxes/${mailboxes.body.results[0].id}`).expect(405);
+        const response = await server.del(`/users/${user}/mailboxes/${mailboxes.body.results[0].id}`).expect(400);
 
         expect(response.body.error).to.be.equal('Mailbox deletion failed with code DisallowedMailboxMethod');
         expect(response.body.code).to.be.equal('DisallowedMailboxMethod');
@@ -429,7 +429,7 @@ describe('Mailboxes tests', function () {
 
         const inboxMailbox = mailboxes.body.results.find(el => el.path === 'INBOX');
 
-        const response = await server.del(`/users/${user}/mailboxes/${inboxMailbox.id}`).expect(405);
+        const response = await server.del(`/users/${user}/mailboxes/${inboxMailbox.id}`).expect(400);
 
         expect(response.body.error).to.be.equal('Mailbox deletion failed with code DisallowedMailboxMethod');
         expect(response.body.code).to.be.equal('DisallowedMailboxMethod');
