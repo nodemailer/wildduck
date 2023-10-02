@@ -707,14 +707,32 @@ module.exports = done => {
 
             // 5) add requestBody, if object use recursion
             // if object then fields are in _ids._byKey.get(<key>)
-            methodObj.requestBody = {};
+            methodObj.requestBody = {
+                content: {
+                    'application/json': {
+                        schema: {
+                            type: 'object',
+                            properties: {}
+                        }
+                    }
+                },
+                required: true
+            };
             for (const reqBodyKey in spec.requestBody) {
                 const reqBodyKeyData = spec.requestBody[reqBodyKey];
 
-                if (reqBodyKey === 'reference') {
-                    console.log(reqBodyKeyData._ids._byKey.get('attachments'));
-                }
+                // if (reqBodyKey === 'reference') {
+                //     console.log(reqBodyKeyData._ids._byKey.get('attachments').schema.$_terms.matches[0].schema);
+                // }
+                // if (reqBodyKeyData.type === 'array') {
+                //     console.log(reqBodyKeyData.$_terms.items[0]._ids);
+                //     break;
+                // }
+
+                parseJoiObject(reqBodyKey, reqBodyKeyData, methodObj.requestBody.content['application/json'].schema.properties);
             }
+
+            console.log(methodObj.requestBody.content['application/json'].schema.properties.reference);
 
             // 6) add parameters (queryParams + pathParams). TODO: ADD FORMAT key in schema BASED ON FIELD ADDITIONAL RULES IN JOI
             methodObj.parameters = {};
@@ -757,6 +775,111 @@ module.exports = done => {
             // );
         })
     );
+
+    // TODO: ignore function and symbol types for now
+    const joiTypeToOpenApiTypeMap = {
+        any: 'object',
+        number: 'number',
+        link: 'string',
+        boolean: 'boolean',
+        date: 'string',
+        string: 'string',
+        binary: 'string'
+    };
+
+    function parseJoiObject(path, joiObject, requestBodyProperties) {
+        // console.log(path, joiObject, requestBody);
+        if (joiObject.type === 'object') {
+            // recursion
+            const fieldsMap = joiObject._ids._byKey;
+
+            const data = {
+                type: joiObject.type,
+                descrption: joiObject._flags.description || 'OBJECT DESCRIPTION',
+                properties: {},
+                required: []
+            };
+            if (path) {
+                requestBodyProperties[path] = data;
+            } else {
+                requestBodyProperties.push(data);
+            }
+            for (const [key, value] of fieldsMap) {
+                // console.log(key, value);
+                if (value.schema._flags.presence === 'required') {
+                    data.required.push(key);
+                }
+                parseJoiObject(key, value.schema, data.properties);
+            }
+        } else if (joiObject.type === 'alternatives') {
+            const matches = joiObject.$_terms.matches;
+
+            const data = {
+                oneOf: [],
+                description: joiObject._flags.description || 'ALTERNATIVES DESCRIPTION'
+            };
+
+            if (path) {
+                requestBodyProperties[path] = data;
+            } else {
+                requestBodyProperties.push(data);
+            }
+
+            // handle alternatives + recursion if needed
+
+            for (const alternative of matches) {
+                parseJoiObject(null, alternative.schema, data.oneOf);
+            }
+        } else if (joiObject.type === 'array') {
+            const elems = joiObject?.$_terms.items;
+
+            const data = {
+                type: 'array',
+                items: [],
+                description: joiObject._flags.description || 'ARRAY DESCRIPTION'
+            };
+
+            if (path) {
+                requestBodyProperties[path] = data;
+            } else {
+                requestBodyProperties.push(data);
+            }
+            parseJoiObject(null, elems[0], data.items);
+            // handle array
+        } else {
+            const openApiType = joiTypeToOpenApiTypeMap[joiObject.type]; // even if object here then ignore and do not go recursive
+            const isRequired = joiObject._flags.presence === 'required';
+            const description = joiObject._flags.description || '';
+            let format = undefined;
+
+            if (!openApiType) {
+                throw new Error('Unsupported type! Check API endpoint!');
+            }
+
+            if (joiObject.type !== openApiType) {
+                // type has changed, so probably string, acquire format
+                format = joiObject.type;
+            }
+            // TODO: if type before and after is string, add additional checks
+
+            const data = { type: openApiType, description, format, required: isRequired };
+            if (path) {
+                requestBodyProperties[path] = data;
+            } else {
+                // no path given, expect requestBodyProperties to be an array to append to
+                requestBodyProperties.push(data);
+            }
+
+            // console.log(openApiType, isRequired, description, format);
+
+            // all other types
+            // 1) get type
+            // 2) get if required
+            // 3) if not in openapi types -> check if can be string -> openapi type: string + forrmat: check format
+            // if string check if it has additional check, e.g hex string, base64 etc, email, etc.
+            // 4) update requestBody at the path
+        }
+    }
 
     server.on('error', err => {
         if (!started) {
