@@ -578,8 +578,6 @@ module.exports = done => {
         tools.responseWrapper(async (req, res) => {
             res.charSet('utf-8');
 
-            const testRoute = server.router.getRoutes().postusersusermailboxesmailboxmessages;
-
             // console.log(testRoute.spec.pathParams);
             // console.log(testRoute.spec.requestBody.bimi);
             // console.log(testRoute.spec.queryParams);
@@ -622,6 +620,22 @@ module.exports = done => {
             //     - name: TwoFactorAuth
             //     - name: Users
             //     - name: Webhooks`;
+
+            //         securitySchemes:
+            //         AccessTokenAuth:
+            //             name: X-Access-Token
+            //             type: apiKey
+            //             in: header
+            //             description: |-
+            //                 If authentication is enabled in the WildDuck configuration, you will need to supply an access token in the `X-Access-Token` header.
+
+            //                 ```json
+            //                 {
+            //                   "X-Access-Token": "59fc66a03e54454869460e45"
+            //                 }
+            //                 ```
+            // security:
+            //     - AccessTokenAuth: []
             // console.log(docs);
 
             // console.info(testRoute.spec.pathParams.user._flags, testRoute.spec.pathParams.user._singleRules);
@@ -685,94 +699,82 @@ module.exports = done => {
 
             const mapPathToMethods = {}; // map -> {post, put, delete, get}
 
-            const { spec } = testRoute;
+            // const testRoute = server.router.getRoutes().postusersusermailboxesmailboxmessages;
 
-            if (!mapPathToMethods[spec.path]) {
-                mapPathToMethods[spec.path] = {};
-            }
+            const routes = server.router.getRoutes();
+            for (const routePath in routes) {
+                const route = routes[routePath];
+                const { spec } = route;
 
-            mapPathToMethods[spec.path][spec.method.toLowerCase()] = {};
-            const methodObj = mapPathToMethods[spec.path][spec.method.toLowerCase()];
-            // 1) add tags
-            methodObj.tags = spec.tags;
+                if (!mapPathToMethods[spec.path]) {
+                    mapPathToMethods[spec.path] = {};
+                }
 
-            // 2) add summary
-            methodObj.summary = spec.summary || '';
+                mapPathToMethods[spec.path][spec.method.toLowerCase()] = {};
+                const methodObj = mapPathToMethods[spec.path][spec.method.toLowerCase()];
+                // 1) add tags
+                methodObj.tags = spec.tags;
 
-            // 3) add description
-            methodObj.description = spec.description || '';
+                // 2) add summary
+                methodObj.summary = spec.summary || '';
 
-            // 4) add operationId
-            methodObj.operationId = spec.name || testRoute.name;
+                // 3) add description
+                methodObj.description = spec.description || '';
 
-            // 5) add requestBody, if object use recursion
-            // if object then fields are in _ids._byKey.get(<key>)
-            methodObj.requestBody = {
-                content: {
-                    'application/json': {
-                        schema: {
-                            type: 'object',
-                            properties: {}
+                // 4) add operationId
+                methodObj.operationId = spec.name || route.name;
+
+                // 5) add requestBody, if object use recursion
+                // if object then fields are in _ids._byKey.get(<key>)
+                methodObj.requestBody = {
+                    content: {
+                        'application/json': {
+                            schema: {
+                                type: 'object',
+                                properties: {}
+                            }
                         }
-                    }
-                },
-                required: true
-            };
-            for (const reqBodyKey in spec.requestBody) {
-                const reqBodyKeyData = spec.requestBody[reqBodyKey];
+                    },
+                    required: true
+                };
+                for (const reqBodyKey in spec.requestBody) {
+                    const reqBodyKeyData = spec.requestBody[reqBodyKey];
 
-                // if (reqBodyKey === 'reference') {
-                //     console.log(reqBodyKeyData._ids._byKey.get('attachments').schema.$_terms.matches[0].schema);
-                // }
-                // if (reqBodyKeyData.type === 'array') {
-                //     console.log(reqBodyKeyData.$_terms.items[0]._ids);
-                //     break;
-                // }
+                    parseJoiObject(reqBodyKey, reqBodyKeyData, methodObj.requestBody.content['application/json'].schema.properties);
+                }
 
-                parseJoiObject(reqBodyKey, reqBodyKeyData, methodObj.requestBody.content['application/json'].schema.properties);
+                console.log(methodObj.requestBody.content['application/json'].schema /*.properties.reference*/);
+
+                // 6) add parameters (queryParams + pathParams).
+                // TODO: ADD FORMAT key in schema BASED ON FIELD ADDITIONAL RULES IN JOI
+                methodObj.parameters = {};
+                for (const paramKey in spec.pathParams) {
+                    const paramKeyData = spec.pathParams[paramKey];
+
+                    methodObj.parameters[paramKey] = {};
+                    const obj = methodObj.parameters[paramKey];
+                    obj.in = 'path';
+                    obj.description = paramKeyData._flags.description || '';
+                    obj.required = paramKeyData._flags.presence === 'required';
+                    obj.schema = { type: paramKeyData.type };
+
+                    // console.log(paramKeyData);
+                }
+
+                for (const paramKey in spec.queryParams) {
+                    const paramKeyData = spec.queryParams[paramKey];
+
+                    methodObj.parameters[paramKey] = {};
+                    const obj = methodObj.parameters[paramKey];
+                    obj.in = 'query';
+                    obj.description = paramKeyData._flags.description || '';
+                    obj.required = paramKeyData._flags.presence === 'required';
+                    obj.schema = { type: paramKeyData.type };
+                }
+
+                // 7) add responses
+                methodObj.responses = {};
             }
-
-            console.log(methodObj.requestBody.content['application/json'].schema.properties.reference);
-
-            // 6) add parameters (queryParams + pathParams). TODO: ADD FORMAT key in schema BASED ON FIELD ADDITIONAL RULES IN JOI
-            methodObj.parameters = {};
-            for (const paramKey in spec.pathParams) {
-                const paramKeyData = spec.pathParams[paramKey];
-
-                methodObj.parameters[paramKey] = {};
-                const obj = methodObj.parameters[paramKey];
-                obj.in = 'path';
-                obj.description = paramKeyData._flags.description || '';
-                obj.required = paramKeyData._flags.presence === 'required';
-                obj.schema = { type: paramKeyData.type };
-
-                // console.log(paramKeyData);
-            }
-
-            for (const paramKey in spec.queryParams) {
-                const paramKeyData = spec.pathParams[paramKey];
-
-                methodObj.parameters[paramKey] = {};
-                const obj = methodObj.parameters[paramKey];
-                obj.in = 'query';
-                obj.description = paramKeyData._flags.description || '';
-                obj.required = paramKeyData._flags.presence === 'required';
-                obj.schema = { type: paramKeyData.type };
-            }
-
-            // 7) add responses
-            methodObj.responses = {};
-
-            // console.log(mapPathToMethods['/users/:user/mailboxes/:mailbox/messages'].post.parameters);
-            // console.log(
-            //     isRequired,
-            //     description,
-            //     originalType,
-            //     testRoute.spec.description,
-            //     testRoute.spec.method.toLowerCase(),
-            //     testRoute.spec.path,
-            //     testRoute.spec.tags
-            // );
         })
     );
 
@@ -795,7 +797,7 @@ module.exports = done => {
 
             const data = {
                 type: joiObject.type,
-                descrption: joiObject._flags.description || 'OBJECT DESCRIPTION',
+                descrption: joiObject._flags.description || '',
                 properties: {},
                 required: []
             };
@@ -805,7 +807,6 @@ module.exports = done => {
                 requestBodyProperties.push(data);
             }
             for (const [key, value] of fieldsMap) {
-                // console.log(key, value);
                 if (value.schema._flags.presence === 'required') {
                     data.required.push(key);
                 }
@@ -816,7 +817,7 @@ module.exports = done => {
 
             const data = {
                 oneOf: [],
-                description: joiObject._flags.description || 'ALTERNATIVES DESCRIPTION'
+                description: joiObject._flags.description || ''
             };
 
             if (path) {
@@ -836,7 +837,7 @@ module.exports = done => {
             const data = {
                 type: 'array',
                 items: [],
-                description: joiObject._flags.description || 'ARRAY DESCRIPTION'
+                description: joiObject._flags.description || ''
             };
 
             if (path) {
@@ -862,15 +863,20 @@ module.exports = done => {
             }
             // TODO: if type before and after is string, add additional checks
 
-            const data = { type: openApiType, description, format, required: isRequired };
+            if (openApiType === 'string') {
+                console.log(joiObject._rules);
+            }
+
+            const data = { type: openApiType, description, required: isRequired };
+            if (format) {
+                data.format = format;
+            }
             if (path) {
                 requestBodyProperties[path] = data;
             } else {
                 // no path given, expect requestBodyProperties to be an array to append to
                 requestBodyProperties.push(data);
             }
-
-            // console.log(openApiType, isRequired, description, format);
 
             // all other types
             // 1) get type
