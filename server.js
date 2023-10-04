@@ -145,7 +145,7 @@ process.on('unhandledRejection', err => {
     errors.notify(err);
 });
 
-process.on('SIGPIPE', () => {
+process.on('SIGHUP', () => {
     // generate memory dump
     log.info('Process', 'PID=%s Generating heap snapshot...', process.pid);
     let stream;
