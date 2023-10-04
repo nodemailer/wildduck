@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.40.1](https://github.com/nodemailer/wildduck/compare/v1.40.0...v1.40.1) (2023-10-04)
+
+
+### Bug Fixes
+
+* **debug:** replaced SIGPIPE with SIGHUP to generate snapshots ([7a30ed7](https://github.com/nodemailer/wildduck/commit/7a30ed7861166e92f63e9157f3b1719957cd8520))
+* **sending:** Do not count sending limits twice ([#505](https://github.com/nodemailer/wildduck/issues/505)) ([b9349f6](https://github.com/nodemailer/wildduck/commit/b9349f6e8315873668d605e6567ced2d7b1c0c80))
+
 ## [1.40.0](https://github.com/nodemailer/wildduck/compare/v1.39.15...v1.40.0) (2023-09-28)
 
 
