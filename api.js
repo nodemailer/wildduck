@@ -737,6 +737,7 @@ module.exports = done => {
                     },
                     required: true
                 };
+
                 for (const reqBodyKey in spec.requestBody) {
                     const reqBodyKeyData = spec.requestBody[reqBodyKey];
 
@@ -757,8 +758,6 @@ module.exports = done => {
                     obj.description = paramKeyData._flags.description || '';
                     obj.required = paramKeyData._flags.presence === 'required';
                     obj.schema = { type: paramKeyData.type };
-
-                    // console.log(paramKeyData);
                 }
 
                 for (const paramKey in spec.queryParams) {
@@ -774,6 +773,14 @@ module.exports = done => {
 
                 // 7) add responses
                 methodObj.responses = {};
+
+                for (const resHttpCode in spec.response) {
+                    const restBodyData = spec.response[resHttpCode];
+
+                    parseJoiObject(resHttpCode, restBodyData, methodObj.responses);
+                }
+
+                console.log(methodObj.responses);
             }
         })
     );
@@ -789,18 +796,25 @@ module.exports = done => {
         binary: 'string'
     };
 
+    /**
+     * Parse Joi Objects
+     */
     function parseJoiObject(path, joiObject, requestBodyProperties) {
-        // console.log(path, joiObject, requestBody);
         if (joiObject.type === 'object') {
             // recursion
             const fieldsMap = joiObject._ids._byKey;
 
             const data = {
                 type: joiObject.type,
-                descrption: joiObject._flags.description || '',
+                description: joiObject._flags.description || '',
                 properties: {},
                 required: []
             };
+
+            if (joiObject._flags.objectName) {
+                data.objectName = joiObject._flags.objectName;
+            }
+
             if (path) {
                 requestBodyProperties[path] = data;
             } else {
@@ -863,9 +877,9 @@ module.exports = done => {
             }
             // TODO: if type before and after is string, add additional checks
 
-            if (openApiType === 'string') {
-                console.log(joiObject._rules);
-            }
+            // if (openApiType === 'string') {
+            //     console.log(joiObject._rules);
+            // }
 
             const data = { type: openApiType, description, required: isRequired };
             if (format) {
