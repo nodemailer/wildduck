@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.40.4](https://github.com/nodemailer/wildduck/compare/v1.40.3...v1.40.4) (2023-10-05)
+
+
+### Bug Fixes
+
+* **package:** fixed breaking package lock file ([c008191](https://github.com/nodemailer/wildduck/commit/c0081919fe09dc88617bd80be85c6fe5dcfa05b7))
+
 ## [1.40.3](https://github.com/nodemailer/wildduck/compare/v1.40.2...v1.40.3) (2023-10-05)
 
 
