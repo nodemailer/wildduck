@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.40.2](https://github.com/nodemailer/wildduck/compare/v1.40.1...v1.40.2) (2023-10-05)
+
+
+### Bug Fixes
+
+* fixed typo validateSequnce &gt; validateSequence (closes [#518](https://github.com/nodemailer/wildduck/issues/518)) ([#520](https://github.com/nodemailer/wildduck/issues/520)) ([8766ab9](https://github.com/nodemailer/wildduck/commit/8766ab9cf50c624d7f1f94ed7136d71387762449))
+* **pop3:** run socket.destroy() if pop3 socket is not closed in 1.5s ([2de6c0b](https://github.com/nodemailer/wildduck/commit/2de6c0bc128424e97b53d98239738c9c1c362e0c))
+
 ## [1.40.1](https://github.com/nodemailer/wildduck/compare/v1.40.0...v1.40.1) (2023-10-04)
 
 
