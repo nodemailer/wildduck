@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.40.3](https://github.com/nodemailer/wildduck/compare/v1.40.2...v1.40.3) (2023-10-05)
+
+
+### Bug Fixes
+
+* **docker:** trying to get release building working ([761f5fa](https://github.com/nodemailer/wildduck/commit/761f5fa18d1260f8dcf5dbb2dcaab078c4d90aab))
+
 ## [1.40.2](https://github.com/nodemailer/wildduck/compare/v1.40.1...v1.40.2) (2023-10-05)
 
 
