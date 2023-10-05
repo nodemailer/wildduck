@@ -75,7 +75,7 @@ module.exports = {
             silent = true;
         }
 
-        if (!imapTools.validateSequnce(range)) {
+        if (!imapTools.validateSequence(range)) {
             return callback(new Error('Invalid sequence set for STORE'));
         }
 
