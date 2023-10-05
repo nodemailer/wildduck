@@ -46,9 +46,8 @@ jobs:
         needs: release_please
         if: ${{needs.release_please.outputs.release_created}}
         steps:
-            - run: echo major ${{needs.release_please.outputs.major}}
-            - run: echo minor ${{needs.release_please.outputs.minor}}
-            - run: echo patch ${{needs.release_please.outputs.patch}}
+            - run: echo version v${{needs.release_please.outputs.major}}.${{needs.release_please.outputs.minor}}.${{needs.release_please.outputs.patch}}
+
             - name: Set up QEMU
               uses: docker/setup-qemu-action@v3
               with:
@@ -80,6 +79,6 @@ jobs:
                   platforms: ${{ steps.buildx.outputs.platforms }}
                   push: true
                   tags: |
-                      ${{ github.repository }}:{{steps.release.outputs.major}}.{{steps.release.outputs.minor}}.{{steps.release.outputs.patch}}
-                      ${{ github.repository }}:{{steps.release.outputs.major}}.{{steps.release.outputs.minor}}
-                      ${{ github.repository }}:{{steps.release.outputs.major}}
+                      ${{ github.repository }}:${{needs.release_please.outputs.major}}.${{needs.release_please.outputs.minor}}.${{needs.release_please.outputs.patch}}
+                      ${{ github.repository }}:${{needs.release_please.outputs.major}}.${{needs.release_please.outputs.minor}}
+                      ${{ github.repository }}:${{needs.release_please.outputs.major}}
