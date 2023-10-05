@@ -48,6 +48,8 @@ jobs:
         steps:
             - run: echo version v${{needs.release_please.outputs.major}}.${{needs.release_please.outputs.minor}}.${{needs.release_please.outputs.patch}}
 
+            - uses: actions/checkout@v3
+
             - name: Set up QEMU
               uses: docker/setup-qemu-action@v3
               with:
