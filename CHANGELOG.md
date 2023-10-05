@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.40.7](https://github.com/nodemailer/wildduck/compare/v1.40.6...v1.40.7) (2023-10-05)
+
+
+### Bug Fixes
+
+* **docker:** moved docker release workflow under release workflow ([64be636](https://github.com/nodemailer/wildduck/commit/64be63686fa5a7fe291589b15121c2967801acd6))
+
 ## [1.40.6](https://github.com/nodemailer/wildduck/compare/v1.40.5...v1.40.6) (2023-10-05)
 
 
