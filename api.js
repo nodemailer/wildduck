@@ -48,6 +48,7 @@ const certsRoutes = require('./lib/api/certs');
 const webhooksRoutes = require('./lib/api/webhooks');
 const settingsRoutes = require('./lib/api/settings');
 const { SettingsHandler } = require('./lib/settings-handler');
+const fs = require('fs');
 
 let userHandler;
 let mailboxHandler;
@@ -578,64 +579,44 @@ module.exports = done => {
         tools.responseWrapper(async (req, res) => {
             res.charSet('utf-8');
 
-            // console.log(testRoute.spec.pathParams);
-            // console.log(testRoute.spec.requestBody.bimi);
-            // console.log(testRoute.spec.queryParams);
+            let docs = `
+openapi: 3.0.0
+info:
+    title: WildDuck API
+    description: WildDuck API docs
+    version: 1.0.0
+    contact:
+        url: 'https://github.com/nodemailer/wildduck'
 
-            // const docs = `
-            // openapi: 3.0.0
-            // info:
-            //     title: WildDuck API
-            //     description: WildDuck API docs
-            //     version: 1.0.0
-            //     contact:
-            //         url: 'https://github.com/nodemailer/wildduck'
+servers:
+    - url: 'https://api.wildduck.email'
 
-            // servers:
-            //     - url: 'https://api.wildduck.email'
-
-            // tags:
-            //     - name: Addresses
-            //     - name: ApplicationPasswords
-            //     - name: Archive
-            //       description: Archive includes all deleted messages. Once messages are old enough then these are permanenetly deleted from the archive as well. Until then you can restore the deleted messages.
-            //     - name: Audit
-            //       description: 'Auditing allows to monitor an email account. All existing, deleted and new emails are copied to the auditing system. See also https://github.com/nodemailer/wildduck-audit-manager'
-            //     - name: Authentication
-            //     - name: Autoreplies
-            //     - name: Certs
-            //       description: WildDuck allows to register TLS certificates to be used with SNI connections. These certificates are used by IMAP, POP3, API and SMTP servers when a SNI capable client establishes a TLS connection. This does not apply for MX servers.
-            //     - name: DKIM
-            //       description: Whenever an email is sent WildDuck checks if there is a DKIM key registered for the domain name of the sender address and uses it to sign the message.
-            //     - name: DomainAccess
-            //       description: Add sender domain names to allowlist (messages are all accepted) or blocklist (messages are sent to Spam folder)
-            //     - name: DomainAliases
-            //     - name: Filters
-            //     - name: Mailboxes
-            //     - name: Messages
-            //     - name: Settings
-            //     - name: Storage
-            //       description: Storage allows easier attachment handling when composing Draft messages. Instead of uploading the attachmnent with every draft update, you store the attachment to the Storage and then link stored file for the Draft.
-            //     - name: Submission
-            //     - name: TwoFactorAuth
-            //     - name: Users
-            //     - name: Webhooks`;
-
-            //         securitySchemes:
-            //         AccessTokenAuth:
-            //             name: X-Access-Token
-            //             type: apiKey
-            //             in: header
-            //             description: |-
-            //                 If authentication is enabled in the WildDuck configuration, you will need to supply an access token in the `X-Access-Token` header.
-
-            //                 ```json
-            //                 {
-            //                   "X-Access-Token": "59fc66a03e54454869460e45"
-            //                 }
-            //                 ```
-            // security:
-            //     - AccessTokenAuth: []
+tags:
+    - name: Addresses
+    - name: ApplicationPasswords
+    - name: Archive
+      description: Archive includes all deleted messages. Once messages are old enough then these are permanenetly deleted from the archive as well. Until then you can restore the deleted messages.
+    - name: Audit
+      description: 'Auditing allows to monitor an email account. All existing, deleted and new emails are copied to the auditing system. See also https://github.com/nodemailer/wildduck-audit-manager'
+    - name: Authentication
+    - name: Autoreplies
+    - name: Certs
+      description: WildDuck allows to register TLS certificates to be used with SNI connections. These certificates are used by IMAP, POP3, API and SMTP servers when a SNI capable client establishes a TLS connection. This does not apply for MX servers.
+    - name: DKIM
+      description: Whenever an email is sent WildDuck checks if there is a DKIM key registered for the domain name of the sender address and uses it to sign the message.
+    - name: DomainAccess
+      description: Add sender domain names to allowlist (messages are all accepted) or blocklist (messages are sent to Spam folder)
+    - name: DomainAliases
+    - name: Filters
+    - name: Mailboxes
+    - name: Messages
+    - name: Settings
+    - name: Storage
+      description: Storage allows easier attachment handling when composing Draft messages. Instead of uploading the attachmnent with every draft update, you store the attachment to the Storage and then link stored file for the Draft.
+    - name: Submission
+    - name: TwoFactorAuth
+    - name: Users
+    - name: Webhooks`;
             // console.log(docs);
 
             // console.info(testRoute.spec.pathParams.user._flags, testRoute.spec.pathParams.user._singleRules);
@@ -744,7 +725,7 @@ module.exports = done => {
                     parseJoiObject(reqBodyKey, reqBodyKeyData, methodObj.requestBody.content['application/json'].schema.properties);
                 }
 
-                console.log(methodObj.requestBody.content['application/json'].schema /*.properties.reference*/);
+                // console.log(methodObj.requestBody.content['application/json'].schema /*.properties.reference*/);
 
                 // 6) add parameters (queryParams + pathParams).
                 // TODO: ADD FORMAT key in schema BASED ON FIELD ADDITIONAL RULES IN JOI
@@ -780,8 +761,68 @@ module.exports = done => {
                     parseJoiObject(resHttpCode, restBodyData, methodObj.responses);
                 }
 
-                console.log(methodObj.responses);
+                // console.log(methodObj.responses);
             }
+
+            docs += `\npaths:\n`;
+
+            let tabLevel;
+            const tab = '\t\t';
+            for (const path in mapPathToMethods) {
+                tabLevel = 1;
+
+                const data = mapPathToMethods[path];
+
+                docs += `${tab.repeat(tabLevel)}'${path}':\n`;
+
+                for (const httpMethod in data) {
+                    tabLevel = 2;
+                    docs += `${tab.repeat(tabLevel)}${httpMethod}:\n`;
+                    const innerData = data[httpMethod];
+                    tabLevel = 3;
+
+                    const { tags, summary, description, operationId, requestBody, parameters, responses } = innerData;
+                    docs += `${tab.repeat(tabLevel)}tags:\n`;
+                    for (const tag of tags || []) {
+                        tabLevel = 4;
+                        docs += `${tab.repeat(tabLevel)}- ${tag}\n`;
+                    }
+                    tabLevel = 3;
+                    docs += `${tab.repeat(tabLevel)}summary: ${summary}\n`;
+
+                    docs += `${tab.repeat(tabLevel)}operationId: ${operationId}\n`;
+
+                    docs += `${tab.repeat(tabLevel)}description: ${description}\n`;
+
+                    docs += `${tab.repeat(tabLevel)}requestBody:\n`;
+
+                    docs += `${tab.repeat(tabLevel)}parameters:\n`;
+
+                    docs += `${tab.repeat(tabLevel)}responses:\n`;
+                    console.log(requestBody, parameters, responses);
+                }
+            }
+
+            docs += `
+    securitySchemes:
+        AccessTokenAuth:
+            name: X-Access-Token
+            type: apiKey
+            in: header
+            description: |-
+                If authentication is enabled in the WildDuck configuration, you will need to supply an access token in the \`X-Access-Token\` header.
+
+                \`\`\`json
+                {
+                    "X-Access-Token": "59fc66a03e54454869460e45"
+                }
+                \`\`\`
+security:
+    - AccessTokenAuth: []
+`;
+
+            console.log(__dirname);
+            await fs.promises.writeFile(__dirname + '/openapidocs.yml', docs);
         })
     );
 
