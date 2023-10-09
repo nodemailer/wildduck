@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.40.9](https://github.com/nodemailer/wildduck/compare/v1.40.8...v1.40.9) (2023-10-09)
+
+
+### Bug Fixes
+
+* **deps:** Bumped nodemailer to force embedded images to content-disposition:inline ([1fee80e](https://github.com/nodemailer/wildduck/commit/1fee80eb30411e9dff73ee762f3528c1c61f9b96))
+
 ## [1.40.8](https://github.com/nodemailer/wildduck/compare/v1.40.7...v1.40.8) (2023-10-05)
 
 
