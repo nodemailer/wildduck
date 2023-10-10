@@ -49,6 +49,7 @@ const webhooksRoutes = require('./lib/api/webhooks');
 const settingsRoutes = require('./lib/api/settings');
 const { SettingsHandler } = require('./lib/settings-handler');
 const fs = require('fs');
+const yaml = require('js-yaml');
 
 let userHandler;
 let mailboxHandler;
@@ -616,76 +617,17 @@ tags:
     - name: Submission
     - name: TwoFactorAuth
     - name: Users
-    - name: Webhooks`;
-            // console.log(docs);
-
-            // console.info(testRoute.spec.pathParams.user._flags, testRoute.spec.pathParams.user._singleRules);
-            // const isRequired = testRoute.spec.pathParams.user._flags.presence === 'required';
-            // const description = testRoute.spec.pathParams.user._flags.description || null;
-            // const originalType = testRoute.spec.pathParams.user.type;
-
-            /**
-             * tags: tags
-             * summary: summary
-             * descriptiom: description
-             * operationId: name?
-             * method: spec.method
-             * url: spec.path
-             * parameters: if query then in: query, if path then in: path
-             *      name: name of key
-             *      description: joi description
-             *      schema:
-             *          type: joi type
-             *          default: get from joi
-             *          <if object recursively build this tree>
-             * requestBody: spec.requestBody
-             *      content:
-             *          application/json:
-             *              schema:
-             *                  <build from given joi object, if field is type object recursively build>
-             *                  required:
-             *                      <go through fields and if required add>
-             *                      type: joi type <if object check above sentence>
-             *                      properties:
-             *                          <actual fields and type + descriptions. If multiple type then use oneOf>
-             *                          <if array check array elems types. Also if special format add it>
-             * responses:
-             *      <if given construct response as well>
-             *
-             *
-             * <If object then recursively build the tree>
-             */
-
-            // const { spec } = testRoute;
-            // let docStringForPath = ``;
-
-            // // 1) add tags
-            // docStringForPath += 'tags:\n';
-            // for (const tag of spec.tags) {
-            //     docStringForPath += `\t- ${tag}\n`;
-            // }
-            // // 2) add summary
-            // docStringForPath += `summary: ${spec.summary || ''}\n`;
-
-            // // 3) add description
-            // docStringForPath += `description: ${spec.description || ''}\n`;
-
-            // // 4) add operationId
-            // docStringForPath += `operationId: ${spec.name || testRoute.name}\n`;
-
-            // // 5) add requestBody
-            // docStringForPath += `requestBody:\n\tcontent:\n\tapplication/json:\n\tschema:\n\t<data here>\n`;
-            // docStringForPath += 'required: true\n';
-            // console.log(docStringForPath);
-
-            const mapPathToMethods = {}; // map -> {post, put, delete, get}
-
-            // const testRoute = server.router.getRoutes().postusersusermailboxesmailboxmessages;
+    - name: Webhooks\n`;
+            const mapPathToMethods = {}; // map -> {path -> {post, put, delete, get}}
 
             const routes = server.router.getRoutes();
             for (const routePath in routes) {
                 const route = routes[routePath];
                 const { spec } = route;
+
+                if (!spec.include) {
+                    continue;
+                }
 
                 if (!mapPathToMethods[spec.path]) {
                     mapPathToMethods[spec.path] = {};
@@ -706,10 +648,10 @@ tags:
                 methodObj.operationId = spec.name || route.name;
 
                 // 5) add requestBody, if object use recursion
-                // if object then fields are in _ids._byKey.get(<key>)
+                const applicationType = spec.applicationType || 'application/json';
                 methodObj.requestBody = {
                     content: {
-                        'application/json': {
+                        [applicationType]: {
                             schema: {
                                 type: 'object',
                                 properties: {}
@@ -722,10 +664,8 @@ tags:
                 for (const reqBodyKey in spec.requestBody) {
                     const reqBodyKeyData = spec.requestBody[reqBodyKey];
 
-                    parseJoiObject(reqBodyKey, reqBodyKeyData, methodObj.requestBody.content['application/json'].schema.properties);
+                    parseJoiObject(reqBodyKey, reqBodyKeyData, methodObj.requestBody.content[applicationType].schema.properties);
                 }
-
-                // console.log(methodObj.requestBody.content['application/json'].schema /*.properties.reference*/);
 
                 // 6) add parameters (queryParams + pathParams).
                 // TODO: ADD FORMAT key in schema BASED ON FIELD ADDITIONAL RULES IN JOI
@@ -764,44 +704,34 @@ tags:
                 // console.log(methodObj.responses);
             }
 
-            docs += `\npaths:\n`;
+            const components = { components: { schemas: {} } };
 
-            let tabLevel;
-            const tab = '\t\t';
             for (const path in mapPathToMethods) {
-                tabLevel = 1;
+                const pathData = mapPathToMethods[path];
 
-                const data = mapPathToMethods[path];
+                for (const httpMethod in pathData) {
+                    const innerData = pathData[httpMethod];
 
-                docs += `${tab.repeat(tabLevel)}'${path}':\n`;
+                    for (const key in innerData.requestBody.content[Object.keys(innerData.requestBody.content)[0]].schema.properties) {
+                        const reqBodyData = innerData.requestBody.content[Object.keys(innerData.requestBody.content)[0]].schema.properties[key];
 
-                for (const httpMethod in data) {
-                    tabLevel = 2;
-                    docs += `${tab.repeat(tabLevel)}${httpMethod}:\n`;
-                    const innerData = data[httpMethod];
-                    tabLevel = 3;
-
-                    const { tags, summary, description, operationId, requestBody, parameters, responses } = innerData;
-                    docs += `${tab.repeat(tabLevel)}tags:\n`;
-                    for (const tag of tags || []) {
-                        tabLevel = 4;
-                        docs += `${tab.repeat(tabLevel)}- ${tag}\n`;
+                        parseComponetsDecoupled(reqBodyData, components.components.schemas);
+                        replaceWithRefs(reqBodyData);
+                        console.log(reqBodyData);
                     }
-                    tabLevel = 3;
-                    docs += `${tab.repeat(tabLevel)}summary: ${summary}\n`;
-
-                    docs += `${tab.repeat(tabLevel)}operationId: ${operationId}\n`;
-
-                    docs += `${tab.repeat(tabLevel)}description: ${description}\n`;
-
-                    docs += `${tab.repeat(tabLevel)}requestBody:\n`;
-
-                    docs += `${tab.repeat(tabLevel)}parameters:\n`;
-
-                    docs += `${tab.repeat(tabLevel)}responses:\n`;
-                    console.log(requestBody, parameters, responses);
                 }
             }
+
+            // console.log(components.components.schemas);
+            // console.log(yaml.dump(components));
+
+            const finalObj = { paths: mapPathToMethods };
+
+            const mapPathToMethodsYaml = yaml.dump(finalObj, { indent: 4, lineWidth: -1 });
+            const componentsYaml = yaml.dump(components, { indent: 4, lineWidth: -1 });
+
+            docs += mapPathToMethodsYaml;
+            docs += componentsYaml;
 
             docs += `
     securitySchemes:
@@ -821,7 +751,6 @@ security:
     - AccessTokenAuth: []
 `;
 
-            console.log(__dirname);
             await fs.promises.writeFile(__dirname + '/openapidocs.yml', docs);
         })
     );
@@ -837,12 +766,86 @@ security:
         binary: 'string'
     };
 
+    function replaceWithRefs(reqBodyData) {
+        if (reqBodyData.type === 'array') {
+            const obj = reqBodyData.items[0];
+
+            replaceWithRefs(obj);
+        } else if (reqBodyData.type === 'object') {
+            if (reqBodyData.objectName) {
+                const objectName = reqBodyData.objectName;
+                Object.keys(reqBodyData).forEach(key => {
+                    if (key !== '$ref') {
+                        delete reqBodyData[key];
+                    }
+                });
+                reqBodyData.$ref = `#/components/schemas/${objectName}`;
+            } else {
+                for (const key in reqBodyData.properties) {
+                    replaceWithRefs(reqBodyData.properties[key]);
+                }
+            }
+        } else if (reqBodyData.type === 'alternatives') {
+            for (const obj in reqBodyData.oneOf) {
+                replaceWithRefs(obj);
+            }
+        }
+    }
+
+    function parseComponetsDecoupled(component, components, level = 0) {
+        if (component.type === 'array') {
+            const obj = { ...component.items[0] }; // copy
+
+            if (obj.objectName) {
+                for (const key in obj.properties) {
+                    parseComponetsDecoupled(obj.properties[key], components, level + 1);
+                }
+
+                const objectName = obj.objectName;
+                components[objectName] = obj;
+                delete components[objectName].objectName;
+
+                if (level > 0) {
+                    Object.keys(obj).forEach(key => {
+                        if (key !== '$ref') {
+                            delete obj[key];
+                        }
+                    });
+                    obj.$ref = `#/components/schemas/${objectName}`;
+                }
+            }
+        } else if (component.type === 'object' && component.objectName) {
+            const obj = { ...component }; // copy
+            const objectName = component.objectName;
+
+            for (const key in obj.properties) {
+                parseComponetsDecoupled(obj.properties[key], components, level + 1);
+            }
+
+            components[objectName] = obj;
+            delete components[objectName].objectName;
+
+            if (level > 0) {
+                Object.keys(obj).forEach(key => {
+                    if (key !== '$ref') {
+                        delete obj[key];
+                    }
+                });
+                obj.$ref = `#/components/schemas/${objectName}`;
+            }
+        } else if (component.oneOf) {
+            // alternatives
+            for (const obj in component.oneOf) {
+                parseComponetsDecoupled({ ...obj }, components, level);
+            }
+        }
+    }
+
     /**
      * Parse Joi Objects
      */
     function parseJoiObject(path, joiObject, requestBodyProperties) {
         if (joiObject.type === 'object') {
-            // recursion
             const fieldsMap = joiObject._ids._byKey;
 
             const data = {
@@ -881,8 +884,6 @@ security:
                 requestBodyProperties.push(data);
             }
 
-            // handle alternatives + recursion if needed
-
             for (const alternative of matches) {
                 parseJoiObject(null, alternative.schema, data.oneOf);
             }
@@ -901,7 +902,6 @@ security:
                 requestBodyProperties.push(data);
             }
             parseJoiObject(null, elems[0], data.items);
-            // handle array
         } else {
             const openApiType = joiTypeToOpenApiTypeMap[joiObject.type]; // even if object here then ignore and do not go recursive
             const isRequired = joiObject._flags.presence === 'required';
@@ -917,7 +917,6 @@ security:
                 format = joiObject.type;
             }
             // TODO: if type before and after is string, add additional checks
-
             // if (openApiType === 'string') {
             //     console.log(joiObject._rules);
             // }
@@ -932,13 +931,6 @@ security:
                 // no path given, expect requestBodyProperties to be an array to append to
                 requestBodyProperties.push(data);
             }
-
-            // all other types
-            // 1) get type
-            // 2) get if required
-            // 3) if not in openapi types -> check if can be string -> openapi type: string + forrmat: check format
-            // if string check if it has additional check, e.g hex string, base64 etc, email, etc.
-            // 4) update requestBody at the path
         }
     }
 
