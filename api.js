@@ -618,7 +618,7 @@ tags:
     - name: TwoFactorAuth
     - name: Users
     - name: Webhooks\n`;
-            const mapPathToMethods = {}; // map -> {path -> {post, put, delete, get}}
+            const mapPathToMethods = {}; // map -> {path -> {post -> {}, put -> {}, delete -> {}, get -> {}}}
 
             const routes = server.router.getRoutes();
             for (const routePath in routes) {
@@ -647,7 +647,7 @@ tags:
                 // 4) add operationId
                 methodObj.operationId = spec.name || route.name;
 
-                // 5) add requestBody, if object use recursion
+                // 5) add requestBody
                 const applicationType = spec.applicationType || 'application/json';
                 methodObj.requestBody = {
                     content: {
@@ -668,7 +668,6 @@ tags:
                 }
 
                 // 6) add parameters (queryParams + pathParams).
-                // TODO: ADD FORMAT key in schema BASED ON FIELD ADDITIONAL RULES IN JOI
                 methodObj.parameters = {};
                 for (const paramKey in spec.pathParams) {
                     const paramKeyData = spec.pathParams[paramKey];
@@ -700,35 +699,45 @@ tags:
 
                     parseJoiObject(resHttpCode, restBodyData, methodObj.responses);
                 }
-
-                // console.log(methodObj.responses);
             }
 
             const components = { components: { schemas: {} } };
 
             for (const path in mapPathToMethods) {
+                // for every path
                 const pathData = mapPathToMethods[path];
 
                 for (const httpMethod in pathData) {
+                    // for every http method (post, put, get, delete)
                     const innerData = pathData[httpMethod];
 
+                    // for every requestBody obj
                     for (const key in innerData.requestBody.content[Object.keys(innerData.requestBody.content)[0]].schema.properties) {
                         const reqBodyData = innerData.requestBody.content[Object.keys(innerData.requestBody.content)[0]].schema.properties[key];
 
                         parseComponetsDecoupled(reqBodyData, components.components.schemas);
                         replaceWithRefs(reqBodyData);
-                        console.log(reqBodyData);
+                    }
+
+                    // for every response object
+                    for (const key in innerData.responses) {
+                        // key here is http method (2xx, 4xx, 5xx)
+                        const obj = innerData.responses[key];
+                        parseComponetsDecoupled(obj, components.components.schemas);
+                        replaceWithRefs(obj);
                     }
                 }
             }
 
-            // console.log(components.components.schemas);
-            // console.log(yaml.dump(components));
+            // refify components that use other components
+            for (const obj of Object.values(components.components.schemas)) {
+                replaceWithRefs(obj);
+            }
 
             const finalObj = { paths: mapPathToMethods };
 
-            const mapPathToMethodsYaml = yaml.dump(finalObj, { indent: 4, lineWidth: -1 });
-            const componentsYaml = yaml.dump(components, { indent: 4, lineWidth: -1 });
+            const mapPathToMethodsYaml = yaml.dump(finalObj, { indent: 4, lineWidth: -1, noRefs: true });
+            const componentsYaml = yaml.dump(components, { indent: 4, lineWidth: -1, noRefs: true });
 
             docs += mapPathToMethodsYaml;
             docs += componentsYaml;
@@ -755,7 +764,7 @@ security:
         })
     );
 
-    // TODO: ignore function and symbol types for now
+    // ignore function and symbol types
     const joiTypeToOpenApiTypeMap = {
         any: 'object',
         number: 'number',
@@ -792,51 +801,37 @@ security:
         }
     }
 
-    function parseComponetsDecoupled(component, components, level = 0) {
+    function parseComponetsDecoupled(component, components) {
         if (component.type === 'array') {
-            const obj = { ...component.items[0] }; // copy
+            const obj = structuredClone(component.items[0]); // copy
 
             if (obj.objectName) {
                 for (const key in obj.properties) {
-                    parseComponetsDecoupled(obj.properties[key], components, level + 1);
+                    parseComponetsDecoupled(obj.properties[key], components);
                 }
 
+                // in case the Array itself is marked as a separate object >
                 const objectName = obj.objectName;
                 components[objectName] = obj;
                 delete components[objectName].objectName;
-
-                if (level > 0) {
-                    Object.keys(obj).forEach(key => {
-                        if (key !== '$ref') {
-                            delete obj[key];
-                        }
-                    });
-                    obj.$ref = `#/components/schemas/${objectName}`;
-                }
+                // ^
             }
-        } else if (component.type === 'object' && component.objectName) {
-            const obj = { ...component }; // copy
-            const objectName = component.objectName;
+        } else if (component.type === 'object') {
+            const obj = structuredClone(component); // copy
+            const objectName = obj.objectName;
 
             for (const key in obj.properties) {
-                parseComponetsDecoupled(obj.properties[key], components, level + 1);
+                parseComponetsDecoupled(obj.properties[key], components);
             }
 
-            components[objectName] = obj;
-            delete components[objectName].objectName;
-
-            if (level > 0) {
-                Object.keys(obj).forEach(key => {
-                    if (key !== '$ref') {
-                        delete obj[key];
-                    }
-                });
-                obj.$ref = `#/components/schemas/${objectName}`;
+            if (objectName) {
+                components[objectName] = obj;
+                delete components[objectName].objectName;
             }
         } else if (component.oneOf) {
-            // alternatives
+            // Joi object is of 'alternatives' types
             for (const obj in component.oneOf) {
-                parseComponetsDecoupled({ ...obj }, components, level);
+                parseComponetsDecoupled({ ...obj }, components);
             }
         }
     }
@@ -864,6 +859,7 @@ security:
             } else {
                 requestBodyProperties.push(data);
             }
+
             for (const [key, value] of fieldsMap) {
                 if (value.schema._flags.presence === 'required') {
                     data.required.push(key);
@@ -903,7 +899,7 @@ security:
             }
             parseJoiObject(null, elems[0], data.items);
         } else {
-            const openApiType = joiTypeToOpenApiTypeMap[joiObject.type]; // even if object here then ignore and do not go recursive
+            const openApiType = joiTypeToOpenApiTypeMap[joiObject.type]; // even if type is object here then ignore and do not go recursive
             const isRequired = joiObject._flags.presence === 'required';
             const description = joiObject._flags.description || '';
             let format = undefined;
@@ -916,10 +912,6 @@ security:
                 // type has changed, so probably string, acquire format
                 format = joiObject.type;
             }
-            // TODO: if type before and after is string, add additional checks
-            // if (openApiType === 'string') {
-            //     console.log(joiObject._rules);
-            // }
 
             const data = { type: openApiType, description, required: isRequired };
             if (format) {
@@ -928,7 +920,6 @@ security:
             if (path) {
                 requestBodyProperties[path] = data;
             } else {
-                // no path given, expect requestBodyProperties to be an array to append to
                 requestBodyProperties.push(data);
             }
         }
