@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.40.10](https://github.com/nodemailer/wildduck/compare/v1.40.9...v1.40.10) (2023-10-16)
+
+
+### Bug Fixes
+
+* **api-filters:** Return valid action.mailbox value for a filter object ([c00cc02](https://github.com/nodemailer/wildduck/commit/c00cc026586fb20eb4509f0d9cc66174bb792c5d))
+* **attachments:** Added contentDisposition property for attachments ([292bbc2](https://github.com/nodemailer/wildduck/commit/292bbc28217f6ad271edbcea8416d2bab719726f))
+* **imapconnection:** inherit logger and loggelf from server for IMAPConnection ([#533](https://github.com/nodemailer/wildduck/issues/533)) ([667f992](https://github.com/nodemailer/wildduck/commit/667f992ca4bb9f7b50e6f8102ce08f1d3bc0b962))
+
 ## [1.40.9](https://github.com/nodemailer/wildduck/compare/v1.40.8...v1.40.9) (2023-10-09)
 
 
