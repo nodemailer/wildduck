@@ -178,6 +178,35 @@ describe('API Filters', function () {
         expect(filterListResponse.body.results.length).to.equal(1);
     });
 
+    it('should GET /users/{user}/filters expect success / with mailbox action', async () => {
+        // get list of user mailboxes
+        const responseMailboxes = await server.get(`/users/${user}/mailboxes`).expect(200);
+        expect(responseMailboxes.body.success).to.be.true;
+
+        const inbox = responseMailboxes.body.results.find(entry => entry.path === 'INBOX').id;
+
+        const responsePost = await server
+            .post(`/users/${user}/filters`)
+            .send({
+                name: 'mailbox test filter',
+                query: {
+                    from: 'andris1'
+                },
+                action: {
+                    mailbox: inbox
+                }
+            })
+            .expect(200);
+        expect(responsePost.body.success).to.be.true;
+
+        const filter = responsePost.body.id;
+
+        const responseGet = await server.get(`/users/${user}/filters/${filter}`).expect(200);
+
+        expect(responseGet.body.success).to.be.true;
+        expect(responseGet.body.action.mailbox).to.be.equal(inbox);
+    });
+
     describe('Filter metaData', function () {
         let metaDataFilter;
 
