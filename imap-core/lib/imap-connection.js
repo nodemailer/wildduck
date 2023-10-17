@@ -93,6 +93,8 @@ class IMAPConnection extends EventEmitter {
         this._closing = false;
         this._closed = false;
 
+        this._closingTimeout = null;
+
         this.logger = {};
         ['info', 'debug', 'error'].forEach(level => {
             this.logger[level] = (...args) => {
@@ -286,6 +288,7 @@ class IMAPConnection extends EventEmitter {
 
                 setImmediate(() => this._onClose());
             }, 1500);
+            this._closingTimeout.unref();
         }
 
         this._closing = true;

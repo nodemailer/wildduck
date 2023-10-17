@@ -35,7 +35,7 @@ module.exports = {
             return callback(new Error('Invalid mailbox argument for ' + cmd));
         }
 
-        if (!imapTools.validateSequnce(range)) {
+        if (!imapTools.validateSequence(range)) {
             return callback(new Error('Invalid sequence set for ' + cmd));
         }
 

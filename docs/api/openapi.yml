@@ -3452,6 +3452,14 @@ components:
                 contentType:
                     type: string
                     description: MIME type for the attachment file
+                contentDisposition:
+                    type: string
+                    description: Which Content-Disposition value to use
+                    enum:
+                        - inline
+                        - attachment
+                    example: attachment
+                    default: null
                 cid:
                     type: string
                     description: Content-ID value if you want to reference to this attachment from HTML formatted message
