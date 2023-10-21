@@ -6,6 +6,9 @@ echo -e "\n-- Executing ${ORANGE}${OURNAME}${NC} subscript --"
 
 ####### WILD DUCK #######
 
+# Check if WILD_DUCK_REPO variable is set, otherwise use "nodemailer"
+WILD_DUCK_REPO=${WILD_DUCK_REPO:-"https://github.com/nodemailer/wildduck.git"}
+
 # clear previous install
 if [ -f "/etc/systemd/system/wildduck.service" ]
 then
@@ -19,7 +22,7 @@ rm -rf /etc/wildduck
 
 # fresh install
 cd /var/opt
-git clone --bare https://github.com/osindero/wildduck.git
+git clone --bare $WILD_DUCK_REPO
 
 # create update hook so we can later deploy to this location
 hook_script wildduck
