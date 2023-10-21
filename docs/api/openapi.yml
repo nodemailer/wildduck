@@ -1413,6 +1413,11 @@ paths:
                   description: Partial match of a forward email address or URL
                   schema:
                       type: string
+                - name: metaData
+                  in: query
+                  description: 'If true, then includes metaData in the response'
+                  schema:
+                      type: boolean
                 - name: limit
                   in: query
                   description: How many records to return
@@ -1447,6 +1452,12 @@ paths:
                 - Filters
             summary: List Filters for a User
             operationId: getFilters
+            parameters:
+                - name: metaData
+                  in: query
+                  description: 'If true, then includes metaData in the response'
+                  schema:
+                      type: boolean
             responses:
                 '200':
                     description: Success
@@ -1700,6 +1711,12 @@ paths:
                   description: Ordering of the records by insert date
                   schema:
                       $ref: '#/components/schemas/Order'
+                - name: includeHeaders
+                  in: query
+                  description: 'Comma separated list of header keys to include in the response'
+                  schema:
+                      type: string
+                      example: 'List-ID, MIME-version'
                 - name: next
                   in: query
                   description: 'Cursor value for next page, retrieved from nextCursor response value'
@@ -2026,6 +2043,12 @@ paths:
                   description: Ordering of the records by insert date. If no order is supplied, results are sorted by heir mongoDB ObjectId.
                   schema:
                       $ref: '#/components/schemas/Order'
+                - name: includeHeaders
+                  in: query
+                  description: 'Comma separated list of header keys to include in the response'
+                  schema:
+                      type: string
+                      example: 'List-ID, MIME-version'
                 - name: page
                   in: query
                   description: 'Current page number. Informational only, page numbers start from 1'
@@ -3429,6 +3452,14 @@ components:
                 contentType:
                     type: string
                     description: MIME type for the attachment file
+                contentDisposition:
+                    type: string
+                    description: Which Content-Disposition value to use
+                    enum:
+                        - inline
+                        - attachment
+                    example: attachment
+                    default: null
                 cid:
                     type: string
                     description: Content-ID value if you want to reference to this attachment from HTML formatted message
@@ -4781,6 +4812,9 @@ components:
                 disabled:
                     type: boolean
                     description: 'If true, then this filter is ignored'
+                metaData:
+                    type: object
+                    description: Custom metadata value
         UpdateFilterResponse:
             required:
                 - success
@@ -4934,7 +4968,6 @@ components:
                 - flagged
                 - draft
                 - contentType
-                - metaData
             type: object
             properties:
                 success:
@@ -5842,6 +5875,11 @@ components:
                 disabled:
                     type: boolean
                     description: If true then this filter is ignored
+                metaData:
+                    description: 'Optional metadata, must be an object or JSON formatted string'
+                    oneOf:
+                        - type: object
+                        - type: string
         CreateFilterRequest:
             required:
                 - query
@@ -5858,6 +5896,11 @@ components:
                 disabled:
                     type: boolean
                     description: If true then this filter is ignored
+                metaData:
+                    description: 'Optional metadata, must be an object or JSON formatted string'
+                    oneOf:
+                        - type: object
+                        - type: string
         UpdateMailboxRequest:
             type: object
             properties:
@@ -6714,6 +6757,9 @@ components:
                 disabled:
                     type: boolean
                     description: 'If true, then this filter is ignored'
+                metaData:
+                    type: object
+                    description: Custom metadata value. Included if metaData query argument was true
                 targets:
                     type: array
                     items:
@@ -6752,6 +6798,9 @@ components:
                         type: array
                         items:
                             type: string
+                metaData:
+                    type: object
+                    description: Custom metadata value. Included if metaData query argument was true
                 disabled:
                     type: boolean
                     description: 'If true, then this filter is ignored'
@@ -6889,6 +6938,9 @@ components:
                 metaData:
                     type: object
                     description: Custom metadata value. Included if metaData query argument was true
+                headers:
+                    type: object
+                    description: Header object keys requested with the includeHeaders argument
         GetFilesResult:
             required:
                 - id

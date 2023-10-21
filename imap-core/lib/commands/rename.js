@@ -70,7 +70,7 @@ module.exports = {
 
         let logdata = {
             short_message: '[RENAME]',
-            _mail_action: 'create',
+            _mail_action: 'rename',
             _path: path,
             _destination: newname,
             _user: this.session.user.id.toString(),

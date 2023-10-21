@@ -93,16 +93,26 @@ class IMAPConnection extends EventEmitter {
         this._closing = false;
         this._closed = false;
 
-        this.logger = {};
-        ['info', 'debug', 'error'].forEach(level => {
-            this.logger[level] = (...args) => {
-                if (!this.ignore) {
-                    this._server.logger[level](...args);
-                }
-            };
-        });
+        this._closingTimeout = null;
 
-        this.loggelf = () => false;
+        if (server.logger) {
+            this.logger = server.logger;
+        } else {
+            this.logger = {};
+            ['info', 'debug', 'error'].forEach(level => {
+                this.logger[level] = (...args) => {
+                    if (!this.ignore) {
+                        this._server.logger[level](...args);
+                    }
+                };
+            });
+        }
+
+        if (server.loggelf) {
+            this.loggelf = server.loggelf;
+        } else {
+            this.loggelf = () => false;
+        }
     }
 
     /**
@@ -286,6 +296,7 @@ class IMAPConnection extends EventEmitter {
 
                 setImmediate(() => this._onClose());
             }, 1500);
+            this._closingTimeout.unref();
         }
 
         this._closing = true;

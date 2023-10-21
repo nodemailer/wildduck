@@ -2,6 +2,7 @@
 
 const packageInfo = require('../../../package');
 const imapHandler = require('../handler/imap-handler');
+const imapTools = require('../imap-tools');
 
 const allowedKeys = ['name', 'version', 'os', 'os-version', 'vendor', 'support-url', 'address', 'date', 'command', 'arguments', 'environment'];
 
@@ -33,10 +34,7 @@ module.exports = {
         if (Array.isArray(command.attributes[0])) {
             command.attributes[0].forEach(val => {
                 if (key === false) {
-                    key = (val.value || '')
-                        .toString()
-                        .toLowerCase()
-                        .trim();
+                    key = (val.value || '').toString().toLowerCase().trim();
                 } else {
                     if (allowedKeys.indexOf(key) >= 0) {
                         clientId[key] = (val.value || '').toString();
@@ -55,17 +53,9 @@ module.exports = {
                 this.id
             );
 
-            let logdata = {
-                short_message: '[CLIENT ID]',
-                _mail_action: 'client_id',
-                _user: this.session && this.session.user && this.session.user.id && this.session.user.id.toString(),
-                _sess: this.id
-            };
-
             Object.keys(clientId)
                 .sort((a, b) => allowedKeys.indexOf(a) - allowedKeys.indexOf(b))
                 .forEach(key => {
-                    logdata[`_client_id_${key}`] = clientId[key];
                     this._server.logger.info(
                         {
                             tnx: 'id',
@@ -79,7 +69,8 @@ module.exports = {
                     );
                 });
 
-            this._server.loggelf(logdata);
+            this.session.clientId = clientId;
+            imapTools.logClientId(this);
         }
 
         // Create response ID serverIdList

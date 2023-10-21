@@ -6,8 +6,14 @@ echo -e "\n-- Executing ${ORANGE}${OURNAME}${NC} subscript --"
 
 #### SSL CERTS ####
 
-curl https://get.acme.sh | sh
+# Install acme.sh
+# NOTE: the version 3.0.7 has a bug with Nginx certs, so version is pinned to 3.0.6
+ACME_VERSION="3.0.6"
+wget https://raw.githubusercontent.com/acmesh-official/acme.sh/${ACME_VERSION}/acme.sh
+sh acme.sh --install --auto-upgrade 0
+rm -rf acme.sh
 
+# WildDuck TLS config
 echo 'cert="/etc/wildduck/certs/fullchain.pem"
 key="/etc/wildduck/certs/privkey.pem"' > /etc/wildduck/tls.toml
 

@@ -263,6 +263,8 @@ class MIMEParser {
         let match;
         let processEncodedWords = {};
 
+        let charsetRequired = new WeakSet();
+
         (headerValue || '').split(';').forEach((part, i) => {
             let key, value;
             if (!i) {
@@ -285,9 +287,15 @@ class MIMEParser {
             // This regex allows for an optional trailing asterisk, for headers
             // which are encoded with lang/charset info as well as a continuation.
             // See https://tools.ietf.org/html/rfc2231 section 4.1.
+
             if ((match = key.match(/^([^*]+)\*(\d)?\*?$/))) {
                 if (!processEncodedWords[match[1]]) {
                     processEncodedWords[match[1]] = [];
+
+                    if (key.match(/^([^*]+)\*(\d)?\*$/)) {
+                        // must have charset
+                        charsetRequired.add(processEncodedWords[match[1]]);
+                    }
                 }
                 processEncodedWords[match[1]][Number(match[2]) || 0] = value;
             } else {
@@ -300,11 +308,23 @@ class MIMEParser {
         Object.keys(processEncodedWords).forEach(key => {
             let charset = '';
             let value = '';
-            processEncodedWords[key].forEach(val => {
-                let parts = val.split("'"); // eslint-disable-line quotes
-                charset = charset || parts.shift();
-                value += (parts.pop() || '').replace(/%/g, '=');
-            });
+
+            let isCharsetRequired = charsetRequired.has(processEncodedWords[key]);
+            if (!isCharsetRequired) {
+                charset = 'utf-8';
+                value = processEncodedWords[key].join('').replace(/%/g, '=');
+            } else {
+                processEncodedWords[key].forEach((val, i) => {
+                    if (!i) {
+                        let parts = val.split("'"); // eslint-disable-line quotes
+                        charset = parts.shift();
+                        parts.shift(); // lang argument, ignored
+                        val = parts.join("'"); // eslint-disable-line quotes
+                    }
+                    value += val.replace(/%/g, '=');
+                });
+            }
+
             data.params[key] = '=?' + (charset || 'ISO-8859-1').toUpperCase() + '?Q?' + value + '?=';
         });
 
@@ -336,5 +356,7 @@ function parse(rfc822) {
     response = parser.tree.childNodes[0] || false;
     return response;
 }
+
+parse.MIMEParser = MIMEParser;
 
 module.exports = parse;

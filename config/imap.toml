@@ -1,46 +1,46 @@
 # If enabled then WildDuck exposes an IMAP interface for listing and fetching emails
-enabled=true
-port=9993
-host="0.0.0.0"
+enabled = true
+port = 9993
+host = "0.0.0.0"
 
 # Use `true` for port 993 and `false` for 143. If connection is not secured
 # on connection then WildDuck enables STARTTLS extension
-secure=true
+secure = true
 
 # Max size for messages uploaded via APPEND
-maxMB=25
+maxMB = 25
 
 # delete messages from \Trash and \Junk after retention days
-retention=30
+retention = 30
 
 # Default max donwload bandwith per day in megabytes
 # Replaced by 'const:max:imap:download' setting
-maxDownloadMB=10240
+maxDownloadMB = 10240
 
 # Default max upload bandwith per day in  megabytes
 # Replaced by 'const:max:imap:upload' setting
-maxUploadMB=10240
+maxUploadMB = 10240
 
 # Default max concurrent connections per service per client
-maxConnections=15
+maxConnections = 15
 
 # if `true` then do not autodelete expired messages
-disableRetention=false
+disableRetention = false
 
 # If true, then disables STARTTLS support
-disableSTARTTLS=false
+disableSTARTTLS = false
 
 # If true, then advertises COMPRESS=DEFLATE capability
-enableCompression=false
+enableCompression = false
 
 # If true, then expect HAProxy PROXY header as the first line of data
-useProxy=false
+useProxy = false
 # useProxy=true # expect PROXY from all conections
 # useProxy=['*'] # expect PROXY from all conections
 # useProxy=['1.2.3.4', '1.2.3.5'] # expect PROXY only from connections from listed IP addresses
 
 # an array of IP addresses to ignore (not logged)
-ignoredHosts=[]
+ignoredHosts = []
 
 #name="WildDuck IMAP"
 #version="1.0.0"
@@ -56,8 +56,8 @@ ignoredHosts=[]
 
 [setup]
 # Public configuration for IMAP
-hostname="localhost"
-secure=true
+hostname = "localhost"
+secure = true
 # port defaults to imap.port
 #port=9993
 

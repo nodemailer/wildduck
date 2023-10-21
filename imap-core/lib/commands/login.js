@@ -124,6 +124,7 @@ module.exports = {
                 this.state = 'Authenticated';
                 this.setupNotificationListener();
                 imapTools.sendCapabilityResponse(this);
+                imapTools.logClientId(this);
 
                 callback(null, {
                     response: 'OK',

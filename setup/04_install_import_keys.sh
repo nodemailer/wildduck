@@ -20,30 +20,35 @@ echo "# Add your public key here
 chown -R deploy:deploy /home/deploy
 
 export DEBIAN_FRONTEND=noninteractive
+keyring="/usr/share/keyrings"
 
 # nodejs
-wget -qO- https://deb.nodesource.com/gpgkey/nodesource.gpg.key | apt-key add -
-echo "deb https://deb.nodesource.com/$NODEREPO $CODENAME main" > /etc/apt/sources.list.d/nodesource.list
-echo "deb-src https://deb.nodesource.com/$NODEREPO $CODENAME main" >> /etc/apt/sources.list.d/nodesource.list
+node_key_url="https://deb.nodesource.com/gpgkey/nodesource.gpg.key"
+local_node_key="${keyring}/nodesource.gpg"
+curl -fsSL $node_key_url | gpg --dearmor | tee $local_node_key >/dev/null
 
-# mongo keys
-# ubuntu focal is supported as of 2021-06-14!
-MONGORELEASE=$CODENAME
-# if [ "$MONGORELEASE" = "focal" ]; then
-  # Ubuntu 20 is not yet supported (as of 2020-07-01), fallback to 18
-  # MONGORELEASE="bionic"
-# fi
+echo "deb [signed-by=${local_node_key}] https://deb.nodesource.com/$NODEREPO $CODENAME main" > /etc/apt/sources.list.d/nodesource.list
+echo "deb-src [signed-by=${local_node_key}] https://deb.nodesource.com/$NODEREPO $CODENAME main" >> /etc/apt/sources.list.d/nodesource.list
 
-wget -qO- https://www.mongodb.org/static/pgp/server-${MONGODB}.asc | apt-key add
-echo "deb [ arch=amd64 ] http://repo.mongodb.org/apt/ubuntu $MONGORELEASE/mongodb-org/$MONGODB multiverse" > /etc/apt/sources.list.d/mongodb-org.list
+# mongodb
+mongo_key_url="https://pgp.mongodb.com/server-${MONGODB}.asc"
+local_mongo_key="${keyring}/mongodb-server-${MONGODB}.gpg"
+curl -fsSL $mongo_key_url | gpg --dearmor | tee ${local_mongo_key} >/dev/null
+echo "deb [ arch=amd64,arm64 signed-by=${local_mongo_key} ] https://repo.mongodb.org/apt/ubuntu ${CODENAME}/mongodb-org/${MONGODB} multiverse" > /etc/apt/sources.list.d/mongodb-org-${MONGODB}.list
 
 # rspamd
-wget -O- https://rspamd.com/apt-stable/gpg.key | apt-key add -
-echo "deb http://rspamd.com/apt-stable/ $CODENAME main" > /etc/apt/sources.list.d/rspamd.list
-echo "deb-src http://rspamd.com/apt-stable/ $CODENAME main" >> /etc/apt/sources.list.d/rspamd.list
-apt-get update
+rspamd_key_url="https://rspamd.com/apt-stable/gpg.key"
+local_rspamd_key="${keyring}/rspamd.gpg"
+curl -fsSL $rspamd_key_url | gpg --dearmor | tee ${local_rspamd_key} >/dev/null
+
+echo "deb [signed-by=${local_rspamd_key}] http://rspamd.com/apt-stable/ $CODENAME main" > /etc/apt/sources.list.d/rspamd.list
+echo "deb-src [signed-by=${local_rspamd_key}] http://rspamd.com/apt-stable/ $CODENAME main" >> /etc/apt/sources.list.d/rspamd.list
 
 # redis
-# use redis team repo
-add-apt-repository -y ppa:redislabs/redis
-# apt-add-repository -y ppa:chris-lea/redis-server
+redis_key_url="https://packages.redis.io/gpg"
+local_redis_key="${keyring}/redis-archive-keyring.gpg"
+curl -fsSL $redis_key_url | gpg --dearmor | tee ${local_redis_key} >/dev/null
+
+echo "deb [signed-by=${local_redis_key}] https://packages.redis.io/deb $CODENAME main" > tee /etc/apt/sources.list.d/redis.list
+
+apt-get update

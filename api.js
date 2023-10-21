@@ -4,7 +4,7 @@ const config = require('wild-config');
 const restify = require('restify');
 const log = require('npmlog');
 const logger = require('restify-logger');
-const corsMiddleware = require('@andris/restify-cors-middleware2');
+const corsMiddleware = require('restify-cors-middleware2');
 const UserHandler = require('./lib/user-handler');
 const MailboxHandler = require('./lib/mailbox-handler');
 const MessageHandler = require('./lib/message-handler');
@@ -23,6 +23,7 @@ const ObjectId = require('mongodb').ObjectId;
 const tls = require('tls');
 const Lock = require('ioredfour');
 const Path = require('path');
+const errors = require('restify-errors');
 
 const acmeRoutes = require('./lib/api/acme');
 const usersRoutes = require('./lib/api/users');
@@ -199,7 +200,7 @@ server.use(
     restify.plugins.bodyParser({
         maxBodySize: 0,
         mapParams: true,
-        mapFiles: false,
+        mapFiles: true,
         overrideParams: false
     })
 );
@@ -249,13 +250,13 @@ server.use(async (req, res) => {
     let tokenRequired = false;
 
     let fail = () => {
-        res.status(403);
-        res.charSet('utf-8');
-        res.json({
-            error: 'Invalid accessToken value',
-            code: 'InvalidToken'
-        });
-        return;
+        let error = new errors.ForbiddenError(
+            {
+                code: 'InvalidToken'
+            },
+            'Invalid accessToken value'
+        );
+        throw error;
     };
 
     req.validate = permission => {
@@ -403,6 +404,7 @@ server.use(async (req, res) => {
                     }
                 }
 
+                // pass
                 return;
             }
         }
@@ -559,6 +561,17 @@ module.exports = done => {
     certsRoutes(db, server);
     webhooksRoutes(db, server);
     settingsRoutes(db, server, settingsHandler);
+
+    if (process.env.NODE_ENV === 'test') {
+        server.get(
+            { name: 'api-methods', path: '/api-methods' },
+            tools.responseWrapper(async (req, res) => {
+                res.charSet('utf-8');
+
+                return res.json(server.router.getRoutes());
+            })
+        );
+    }
 
     server.on('error', err => {
         if (!started) {

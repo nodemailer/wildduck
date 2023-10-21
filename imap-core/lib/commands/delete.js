@@ -46,7 +46,7 @@ module.exports = {
 
         let logdata = {
             short_message: '[DELETE]',
-            _mail_action: 'create',
+            _mail_action: 'delete',
             _path: path,
             _user: this.session.user.id.toString(),
             _sess: this.id

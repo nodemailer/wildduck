@@ -105,6 +105,8 @@ let createInterface = (ifaceOptions, callback) => {
 
     certs.loadTLSOptions(serverOptions, 'imap');
 
+    serverOptions.logoutMessages = config.imap.quotes;
+
     const server = new IMAPServer(serverOptions);
 
     certs.registerReload(server, 'imap');

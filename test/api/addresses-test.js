@@ -58,9 +58,14 @@ describe('API Users', function () {
         expect(response.body.success).to.be.true;
 
         user = false;
+
+        const response2 = await server.delete(`/users/${user2}`).expect(200);
+        expect(response2.body.success).to.be.true;
+
+        user2 = false;
     });
 
-    it('should POST /users/{user}/addresses', async () => {
+    it('should POST /users/{user}/addresses expect success', async () => {
         const response = await server
             .post(`/users/${user}/addresses`)
             .send({
@@ -89,25 +94,30 @@ describe('API Users', function () {
         expect(response3.body.success).to.be.true;
     });
 
-    it('should GET /addresses', async () => {
+    it('should GET /addresses expect success', async () => {
         const addressListResponse = await server.get(`/addresses`).expect(200);
         expect(addressListResponse.body.success).to.be.true;
         expect(addressListResponse.body.total).to.gt(3);
     });
 
-    it('should GET /addresses with tags', async () => {
+    it('should GET /addresses expect failure / incorrect query params data', async () => {
+        const addressListResponse = await server.get(`/addresses?limit=-1&query=${'a'.repeat(256)}`).expect(400);
+        expect(addressListResponse.body.code).to.be.equal('InputValidationError');
+    });
+
+    it('should GET /addresses expect success / with tags', async () => {
         const addressListResponse = await server.get(`/addresses?tags=tag2,tag3`).expect(200);
         expect(addressListResponse.body.success).to.be.true;
         expect(addressListResponse.body.total).to.equal(2);
     });
 
-    it('should GET /addresses with required tags', async () => {
+    it('should GET /addresses expect success / with required tags', async () => {
         const addressListResponse = await server.get(`/addresses?requiredTags=tag2,tag3`).expect(200);
         expect(addressListResponse.body.success).to.be.true;
         expect(addressListResponse.body.total).to.equal(1);
     });
 
-    it('should GET /addresses with a user token', async () => {
+    it('should GET /addresses expect success / with a user token', async () => {
         const authResponse = await server
             .post('/authenticate')
             .send({
@@ -128,7 +138,7 @@ describe('API Users', function () {
         expect(userListResponse.body.total).to.equal(3);
     });
 
-    it('should GET /users/{user}/addresses', async () => {
+    it('should GET /users/{user}/addresses expect success', async () => {
         const addressListResponse = await server.get(`/users/${user}/addresses`).expect(200);
         expect(addressListResponse.body.success).to.be.true;
 
@@ -137,7 +147,18 @@ describe('API Users', function () {
         expect(addressListResponse.body.results.find(addr => addr.main).address).to.equal('addressuser.addrtest@example.com');
     });
 
-    it('should PUT /users/{user}/addresses/{address}', async () => {
+    it('should GET /users/{user}/addresses expect failure / incorrect user', async () => {
+        const addressListResponse = await server.get(`/users/${123}/addresses`).expect(400);
+        expect(addressListResponse.body.code).to.be.equal('InputValidationError');
+    });
+
+    it('should GET /users/{user}/addresses expect failure / user missing', async () => {
+        const addressListResponse = await server.get(`/users/${'0'.repeat(24)}/addresses`).expect(404);
+        expect(addressListResponse.body.code).to.be.equal('UserNotFound');
+        expect(addressListResponse.body.error).to.be.equal('This user does not exist');
+    });
+
+    it('should PUT /users/{user}/addresses/{id} expect success', async () => {
         let addressListResponse = await server.get(`/users/${user}/addresses`).expect(200);
         expect(addressListResponse.body.success).to.be.true;
         let addresses = addressListResponse.body.results;
@@ -159,7 +180,7 @@ describe('API Users', function () {
         expect(addressListResponse.body.results.find(addr => addr.main).address).to.equal('user1.1.addrtest@example.com');
     });
 
-    it('should DELETE /users/{user}/addresses/{address} and fail', async () => {
+    it('should DELETE /users/{user}/addresses/{address} expect failure', async () => {
         let addressListResponse = await server.get(`/users/${user}/addresses`).expect(200);
         expect(addressListResponse.body.success).to.be.true;
         let addresses = addressListResponse.body.results;
@@ -170,7 +191,7 @@ describe('API Users', function () {
         expect(response.body.code).to.equal('NotPermitted');
     });
 
-    it('should DELETE /users/{user}/addresses/{address}', async () => {
+    it('should DELETE /users/{user}/addresses/{address} expect success', async () => {
         let addressListResponse = await server.get(`/users/${user}/addresses`).expect(200);
         expect(addressListResponse.body.success).to.be.true;
         let addresses = addressListResponse.body.results;
@@ -180,7 +201,7 @@ describe('API Users', function () {
         expect(response.body.success).to.be.true;
     });
 
-    it('should POST /addresses/forwarded', async () => {
+    it('should POST /addresses/forwarded expect success', async () => {
         const response = await server
             .post(`/addresses/forwarded`)
             .send({
@@ -193,14 +214,14 @@ describe('API Users', function () {
         forwarded = response.body.id;
     });
 
-    it('should GET /addresses with query', async () => {
+    it('should GET /addresses expect success / with query', async () => {
         const addressListResponse = await server.get(`/addresses?query=forwarded.1.addrtest`).expect(200);
         expect(addressListResponse.body.success).to.be.true;
         expect(addressListResponse.body.total).to.equal(1);
         expect(forwarded).to.exist;
     });
 
-    it('should PUT /addresses/forwarded/{address}', async () => {
+    it('should PUT /addresses/forwarded/{id} expect success', async () => {
         const response = await server
             .put(`/addresses/forwarded/${forwarded}`)
             .send({

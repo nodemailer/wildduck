@@ -4,7 +4,7 @@ const log = require('npmlog');
 const config = require('wild-config');
 const Gelf = require('gelf');
 const os = require('os');
-const Queue = require('bull');
+const { Queue, Worker } = require('bullmq');
 const db = require('./lib/db');
 const tools = require('./lib/tools');
 const { ObjectId } = require('mongodb');
@@ -13,6 +13,7 @@ const packageData = require('./package.json');
 const { MARKED_SPAM, MARKED_HAM } = require('./lib/events');
 
 let loggelf;
+let queueWorkers = {};
 
 async function postWebhook(webhook, data) {
     let res;
@@ -117,133 +118,151 @@ module.exports.start = callback => {
         }
     };
 
-    const webhooksQueue = new Queue('webhooks', typeof config.dbs.redis === 'object' ? { redis: config.dbs.redis } : config.dbs.redis);
-    const webhooksPostQueue = new Queue('webhooks_post', typeof config.dbs.redis === 'object' ? { redis: config.dbs.redis } : config.dbs.redis);
+    const webhooksPostQueue = new Queue('webhooks_post', db.queueConf);
 
-    webhooksQueue.process(async job => {
-        try {
-            if (!job || !job.data || !job.data.ev) {
-                return false;
-            }
+    queueWorkers.webhooks = new Worker(
+        'webhooks',
+        async job => {
+            try {
+                if (!job || !job.data || !job.data.ev) {
+                    return false;
+                }
 
-            const data = job.data;
+                const data = job.data;
 
-            let evtList = ['*'];
-            let typeParts = data.ev.split('.');
-            typeParts.pop();
-            for (let i = 1; i <= typeParts.length; i++) {
-                evtList.push(typeParts.slice(0, i) + '.*');
-            }
-            evtList.push(data.ev);
+                let evtList = ['*'];
+                let typeParts = data.ev.split('.');
+                typeParts.pop();
+                for (let i = 1; i <= typeParts.length; i++) {
+                    evtList.push(typeParts.slice(0, i) + '.*');
+                }
+                evtList.push(data.ev);
 
-            const query = { type: { $in: evtList } };
-            if (data.user) {
-                query.user = { $in: [new ObjectId(data.user), null] };
-            }
+                const query = { type: { $in: evtList } };
+                if (data.user) {
+                    query.user = { $in: [new ObjectId(data.user), null] };
+                }
 
-            let whid = new ObjectId();
-            let count = 0;
+                let whid = new ObjectId();
+                let count = 0;
 
-            let webhooks = await db.users.collection('webhooks').find(query).toArray();
+                let webhooks = await db.users.collection('webhooks').find(query).toArray();
 
-            if (!webhooks.length) {
-                // ignore this event
-                return;
-            }
-
-            if ([MARKED_SPAM, MARKED_HAM].includes(data.ev)) {
-                let message = new ObjectId(data.message);
-                data.message = data.id;
-                delete data.id;
-
-                let messageData = await db.database.collection('messages').findOne(
-                    { _id: message },
-                    {
-                        projection: {
-                            _id: true,
-                            uid: true,
-                            msgid: true,
-                            subject: true,
-                            mailbox: true,
-                            mimeTree: true,
-                            idate: true
-                        }
-                    }
-                );
-
-                if (!messageData) {
-                    // message already deleted?
+                if (!webhooks.length) {
+                    // ignore this event
                     return;
                 }
 
-                let parsedHeader = (messageData.mimeTree && messageData.mimeTree.parsedHeader) || {};
+                if ([MARKED_SPAM, MARKED_HAM].includes(data.ev)) {
+                    let message = new ObjectId(data.message);
+                    data.message = data.id;
+                    delete data.id;
 
-                let from = parsedHeader.from ||
-                    parsedHeader.sender || [
+                    let messageData = await db.database.collection('messages').findOne(
+                        { _id: message },
                         {
-                            name: '',
-                            address: (messageData.meta && messageData.meta.from) || ''
-                        }
-                    ];
-
-                let addresses = {
-                    to: [].concat(parsedHeader.to || []),
-                    cc: [].concat(parsedHeader.cc || []),
-                    bcc: [].concat(parsedHeader.bcc || [])
-                };
-
-                tools.decodeAddresses(from);
-                tools.decodeAddresses(addresses.to);
-                tools.decodeAddresses(addresses.cc);
-                tools.decodeAddresses(addresses.bcc);
-
-                if (from && from[0]) {
-                    data.from = from[0];
-                }
-                for (let addrType of ['to', 'cc', 'bcc']) {
-                    if (addresses[addrType] && addresses[addrType].length) {
-                        data[addrType] = addresses[addrType];
-                    }
-                }
-
-                data.messageId = messageData.msgid;
-                data.subject = messageData.subject;
-                data.date = messageData.idate.toISOString();
-            }
-
-            for (let webhook of webhooks) {
-                count++;
-                try {
-                    await webhooksPostQueue.add(
-                        { data: Object.assign({ id: `${whid.toHexString()}:${count}` }, data), webhook },
-                        {
-                            removeOnComplete: true,
-                            removeOnFail: 500,
-                            attempts: 5,
-                            backoff: {
-                                type: 'exponential',
-                                delay: 2000
+                            projection: {
+                                _id: true,
+                                uid: true,
+                                msgid: true,
+                                subject: true,
+                                mailbox: true,
+                                mimeTree: true,
+                                idate: true
                             }
                         }
                     );
-                } catch (err) {
-                    // ignore?
-                    log.error('Events', err);
-                }
-            }
-        } catch (err) {
-            log.error('Webhooks', err);
-            throw err;
-        }
-    });
 
-    webhooksPostQueue.process(async job => {
-        if (!job || !job.data) {
-            return false;
-        }
-        const { data, webhook } = job.data;
-        return await postWebhook(webhook, data);
-    });
+                    if (!messageData) {
+                        // message already deleted?
+                        return;
+                    }
+
+                    let parsedHeader = (messageData.mimeTree && messageData.mimeTree.parsedHeader) || {};
+
+                    let from = parsedHeader.from ||
+                        parsedHeader.sender || [
+                            {
+                                name: '',
+                                address: (messageData.meta && messageData.meta.from) || ''
+                            }
+                        ];
+
+                    let addresses = {
+                        to: [].concat(parsedHeader.to || []),
+                        cc: [].concat(parsedHeader.cc || []),
+                        bcc: [].concat(parsedHeader.bcc || [])
+                    };
+
+                    tools.decodeAddresses(from);
+                    tools.decodeAddresses(addresses.to);
+                    tools.decodeAddresses(addresses.cc);
+                    tools.decodeAddresses(addresses.bcc);
+
+                    if (from && from[0]) {
+                        data.from = from[0];
+                    }
+                    for (let addrType of ['to', 'cc', 'bcc']) {
+                        if (addresses[addrType] && addresses[addrType].length) {
+                            data[addrType] = addresses[addrType];
+                        }
+                    }
+
+                    data.messageId = messageData.msgid;
+                    data.subject = messageData.subject;
+                    data.date = messageData.idate.toISOString();
+                }
+
+                for (let webhook of webhooks) {
+                    count++;
+                    try {
+                        await webhooksPostQueue.add(
+                            'webhook',
+                            { data: Object.assign({ id: `${whid.toHexString()}:${count}` }, data), webhook },
+                            {
+                                removeOnComplete: true,
+                                removeOnFail: 500,
+                                attempts: 5,
+                                backoff: {
+                                    type: 'exponential',
+                                    delay: 2000
+                                }
+                            }
+                        );
+                    } catch (err) {
+                        // ignore?
+                        log.error('Events', err);
+                    }
+                }
+            } catch (err) {
+                log.error('Webhooks', err);
+                throw err;
+            }
+        },
+        Object.assign(
+            {
+                concurrency: 1
+            },
+            db.queueConf
+        )
+    );
+
+    queueWorkers.webhooksPost = new Worker(
+        'webhooks_post',
+        async job => {
+            if (!job || !job.data) {
+                return false;
+            }
+            const { data, webhook } = job.data;
+            return await postWebhook(webhook, data);
+        },
+        Object.assign(
+            {
+                concurrency: 1
+            },
+            db.queueConf
+        )
+    );
 
     callback();
 };
