@@ -73,7 +73,7 @@
         "libmime": "5.2.1",
         "libqp": "2.0.1",
         "logic-query-parser": "0.0.5",
-        "mailauth": "4.5.2",
+        "mailauth": "4.6.0",
         "mailsplit": "5.4.0",
         "mobileconfig": "2.4.0",
         "mongo-cursor-pagination": "8.1.3",
