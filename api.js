@@ -573,6 +573,17 @@ module.exports = done => {
         );
     }
 
+    server.get(
+        { path: '/openapi', name: 'openapi-docs-generation' },
+        tools.responseWrapper(async (req, res) => {
+            res.charSet('utf-8');
+
+            const routes = server.router.getRoutes();
+
+            tools.generateAPiDocs(routes);
+        })
+    );
+
     server.on('error', err => {
         if (!started) {
             started = true;
