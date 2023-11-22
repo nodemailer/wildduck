@@ -1,7 +1,7 @@
 'use strict';
 
 module.exports = {
-    state: ['Selected'],
+    state: ['Authenticated', 'Selected'],
     handler(command, callback) {
         callback(null, {
             response: 'OK'
