@@ -1,7 +1,7 @@
 'use strict';
 
 module.exports = {
-    state: 'Selected',
+    state: ['Authenticated', 'Selected' ],
 
     handler(command, callback) {
         // Check if EXPUNGE method is set
@@ -12,6 +12,13 @@ module.exports = {
             });
         }
 
+        // Just return early if not selected
+        if (this.state === 'Authenticated') {
+            return callback(null, {
+                response: 'OK'
+            });
+        }
+        
         // Just unselect if in read only mode
         if (this.selected.readOnly) {
             this.session.selected = this.selected = false;
