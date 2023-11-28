@@ -5,11 +5,6 @@ const imapTools = require('../imap-tools');
 module.exports = {
     state: ['Authenticated', 'Selected'],
 
-    // we do not show * EXIST response for added message, so keep other notifications quet as well
-    // otherwise we might end up in situation where APPEND emits an unrelated * EXISTS response
-    // which does not yet take into account the appended message
-    disableNotifications: true,
-
     schema: [
         {
             name: 'path',
