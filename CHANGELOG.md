@@ -1,5 +1,25 @@
 # Changelog
 
+## [1.41.0](https://github.com/nodemailer/wildduck/compare/v1.40.10...v1.41.0) (2023-11-30)
+
+
+### Features
+
+* **apidocs:** Autogenerate OpenAPI docs ZMS-100 ([#552](https://github.com/nodemailer/wildduck/issues/552)) ([ea24b93](https://github.com/nodemailer/wildduck/commit/ea24b9328b6984db841de86309f1712f100acb97))
+* **docs:** ZMS-[9x] Automatic API generation ([#535](https://github.com/nodemailer/wildduck/issues/535)) ([c1cc143](https://github.com/nodemailer/wildduck/commit/c1cc143663bc8ad81794eb9bf4cee04a37937899))
+* **mailbox-count-limit:** Set a limit for maximum number of mailbox folders ZMS-93 ([#542](https://github.com/nodemailer/wildduck/issues/542)) ([779bb11](https://github.com/nodemailer/wildduck/commit/779bb11e831eb902330db3ed9056f90aeba4234c))
+
+
+### Bug Fixes
+
+* **addressregister:** Do not add no-reply addresses to the addressregister ZMS-99 ([#551](https://github.com/nodemailer/wildduck/issues/551)) ([be24af0](https://github.com/nodemailer/wildduck/commit/be24af0d2665fb27f85ff0f0435e4480c21575fa))
+* **audit:** Fixed `find()` query for expired audits ([#547](https://github.com/nodemailer/wildduck/issues/547)) ([48b9efb](https://github.com/nodemailer/wildduck/commit/48b9efb8ca4b300597b2e8f5ef4aa307ac97dcfe))
+* **docs:** Added support for enums ZMS-104 ([#565](https://github.com/nodemailer/wildduck/issues/565)) ([28bdc76](https://github.com/nodemailer/wildduck/commit/28bdc7621e13a96965a2a24caee873cf15b8aa31))
+* **docs:** Fixed descriptions ZMS-101 ([#553](https://github.com/nodemailer/wildduck/issues/553)) ([3c9e175](https://github.com/nodemailer/wildduck/commit/3c9e17595cffd32475f51aa104ab09d721989e6f))
+* **imap-search:** rename `headerdate` to `date` (closes [#560](https://github.com/nodemailer/wildduck/issues/560)) ([#561](https://github.com/nodemailer/wildduck/issues/561)) ([fd98244](https://github.com/nodemailer/wildduck/commit/fd98244342089dc8a587e3e45b559f12f8764140))
+* **imap:** fixed string conversion to utf8 vs binary (closes [#563](https://github.com/nodemailer/wildduck/issues/563)) ([#564](https://github.com/nodemailer/wildduck/issues/564)) ([ee2708e](https://github.com/nodemailer/wildduck/commit/ee2708e4c150f79745a2a81e3e4555a7549c426d))
+* **mailbox-create:** Use correct database for loading User data when creating mailboxes ([#550](https://github.com/nodemailer/wildduck/issues/550)) ([4434cb5](https://github.com/nodemailer/wildduck/commit/4434cb5e1ff4414da874b62997da5ea41892a286))
+
 ## [1.40.10](https://github.com/nodemailer/wildduck/compare/v1.40.9...v1.40.10) (2023-10-16)
 
 
