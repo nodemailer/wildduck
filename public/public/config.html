@@ -191,8 +191,18 @@
 
                 if (setting.default) {
                     let defaultTextElm = document.createElement('code');
-                    defaultTextElm.textContent = formatNumber(setting.default, setting.type);
-                    defaultTdElm.title = setting.description;
+
+                    let formattedValue = formatNumber(setting.default, setting.type);
+                    let settingTitle = setting.description;
+
+                    if (typeof formattedValue !== 'string' || formattedValue.length < 12) {
+                        defaultTextElm.textContent = formattedValue;
+                    } else {
+                        defaultTextElm.textContent = formattedValue.substr(0, 8) + '…';
+                        settingTitle += '\nDefault: "' + formattedValue + '"';
+                    }
+
+                    defaultTdElm.title = settingTitle;
                     defaultTdElm.appendChild(defaultTextElm);
                 } else {
                     defaultTdElm.textContent = ' ';
