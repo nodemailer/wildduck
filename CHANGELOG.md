@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.41.1](https://github.com/nodemailer/wildduck/compare/v1.41.0...v1.41.1) (2023-12-14)
+
+
+### Bug Fixes
+
+* **defer:** Added new setting const:sender:defer_times ZMS 63 ([#574](https://github.com/nodemailer/wildduck/issues/574)) ([9aab242](https://github.com/nodemailer/wildduck/commit/9aab24267b8c90d7d1af30fcace8c60704e1ea27))
+* **mime-parsing:** ensure that text content for multipart nodes always ends with a newline. Fixes [#571](https://github.com/nodemailer/wildduck/issues/571) ([6f4994d](https://github.com/nodemailer/wildduck/commit/6f4994d3a00c8ec73921b443aee4c2cc65561922))
+
 ## [1.41.0](https://github.com/nodemailer/wildduck/compare/v1.40.10...v1.41.0) (2023-11-30)
 
 
