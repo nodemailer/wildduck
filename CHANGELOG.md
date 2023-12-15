@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.41.2](https://github.com/nodemailer/wildduck/compare/v1.41.1...v1.41.2) (2023-12-15)
+
+
+### Bug Fixes
+
+* **upload:** allow empty name field in the Upload message FROM: header  ZMS-113 ([#577](https://github.com/nodemailer/wildduck/issues/577)) ([c1e28db](https://github.com/nodemailer/wildduck/commit/c1e28db0f3d37b507e7aaef6b26557b27f7ab2f3))
+
 ## [1.41.1](https://github.com/nodemailer/wildduck/compare/v1.41.0...v1.41.1) (2023-12-14)
 
 
