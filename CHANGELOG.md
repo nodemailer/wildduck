@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.41.3](https://github.com/nodemailer/wildduck/compare/v1.41.2...v1.41.3) (2023-12-19)
+
+
+### Bug Fixes
+
+* **api:** Remove unnecessary required() that brakes the e-mail send ([#580](https://github.com/nodemailer/wildduck/issues/580)) ([d80ba77](https://github.com/nodemailer/wildduck/commit/d80ba77650f539a47e5a7c28cfd9c9d0de48b3e4))
+
 ## [1.41.2](https://github.com/nodemailer/wildduck/compare/v1.41.1...v1.41.2) (2023-12-15)
 
 
