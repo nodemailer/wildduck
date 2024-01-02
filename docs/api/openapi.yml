@@ -1305,7 +1305,9 @@ paths:
                     content:
                         application/octet-stream:
                             schema:
-                                type: binary
+                                type: string
+                                description: Success
+                                format: binary
 
     /data/import:
         post:
@@ -1319,7 +1321,9 @@ paths:
                 content:
                     application/octet-stream:
                         schema:
-                            type: binary  
+                            type: string
+                            description: Success
+                            format: binary
                 required: true
             responses:
                 '200':
@@ -2105,7 +2109,6 @@ paths:
                                     description: 'Partial match for the From: header line'
                                     type: string
                                 to:
-                                    in: query
                                     description: 'Partial match for the To: and Cc: header lines'
                                     type: string
                                 subject:
