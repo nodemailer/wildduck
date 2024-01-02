@@ -3,9 +3,9 @@
 OURNAME=01_install_commits.sh
 
 apt-get update
-apt-get install -y lsb-release curl gnupg
+apt-get install -y lsb-release ca-certificates curl gnupg
 
-NODEREPO="node_20.x"
+NODE_MAJOR="20"
 MONGODB="7.0"
 CODENAME=`lsb_release -c -s`
 

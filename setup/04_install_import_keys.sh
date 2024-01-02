@@ -23,12 +23,15 @@ export DEBIAN_FRONTEND=noninteractive
 keyring="/usr/share/keyrings"
 
 # nodejs
-node_key_url="https://deb.nodesource.com/gpgkey/nodesource.gpg.key"
+node_key_url="https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key"
 local_node_key="${keyring}/nodesource.gpg"
 curl -fsSL $node_key_url | gpg --dearmor | tee $local_node_key >/dev/null
 
-echo "deb [signed-by=${local_node_key}] https://deb.nodesource.com/$NODEREPO $CODENAME main" > /etc/apt/sources.list.d/nodesource.list
-echo "deb-src [signed-by=${local_node_key}] https://deb.nodesource.com/$NODEREPO $CODENAME main" >> /etc/apt/sources.list.d/nodesource.list
+echo "deb [signed-by=${local_node_key}] https://deb.nodesource.com/node_$NODE_MAJOR.x nodistro main" | sudo tee /etc/apt/sources.list.d/nodesource.list
+echo "deb-src [signed-by=${local_node_key}] https://deb.nodesource.com/node_$NODE_MAJOR.x nodistro main" | sudo tee /etc/apt/sources.list.d/nodesource.list
+
+echo "deb [signed-by=${local_node_key}] https://deb.nodesource.com/$NODEREPO $CODENAME main" | sudo tee /etc/apt/sources.list.d/nodesource.list
+echo "deb-src [signed-by=${local_node_key}] https://deb.nodesource.com/$NODEREPO $CODENAME main" | sudo tee /etc/apt/sources.list.d/nodesource.list
 
 # mongodb
 mongo_key_url="https://pgp.mongodb.com/server-${MONGODB}.asc"
