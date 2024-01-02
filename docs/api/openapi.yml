@@ -1945,6 +1945,11 @@ paths:
                   description: ID of the Mailbox
                   schema:
                       type: string
+                - name: id
+                  in: query
+                  description: Message ID values, only applies when used in combination with `mailbox`. Either comma separated numbers (1,2,3) or colon separated range (3:15), or a range from UID to end (3:*)
+                  schema:
+                      type: string
                 - name: thread
                   in: query
                   description: Thread ID
@@ -2090,6 +2095,9 @@ paths:
                             properties:
                                 mailbox:
                                     description: ID of the Mailbox
+                                    type: string
+                                id:
+                                    description: Message ID values, only applies when used in combination with `mailbox`. Either comma separated numbers (1,2,3) or colon separated range (3:15), or a range from UID to end (3:*)
                                     type: string
                                 thread:
                                     description: Thread ID
