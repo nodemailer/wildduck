@@ -60,7 +60,17 @@ class IMAPComposer extends Transform {
             );
         }
 
-        this.push(Buffer.from(compiled + '\r\n', 'binary'));
+        // <https://github.com/nodemailer/wildduck/issues/563>
+        // <https://github.com/nodemailer/wildduck/pull/564
+        if (typeof compiled === 'object') {
+          this.push(compiled);
+          this.push('\r\n');
+        } else if (typeof compiled === 'string') {
+          this.push(Buffer.from(compiled + '\r\n', 'binary'));
+        } else {
+          return done(new TypeError('"compiled" was not an object or string'));
+        }
+
         done();
     }
 
