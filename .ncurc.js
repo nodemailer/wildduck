@@ -5,6 +5,9 @@ module.exports = {
         'mongodb',
 
         // no support for Node 16
-        'undici'
+        'undici',
+
+        // esm
+        'chai'
     ]
 };
