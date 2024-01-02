@@ -30,9 +30,6 @@ curl -fsSL $node_key_url | gpg --dearmor | tee $local_node_key >/dev/null
 echo "deb [signed-by=${local_node_key}] https://deb.nodesource.com/node_$NODE_MAJOR.x nodistro main" | sudo tee /etc/apt/sources.list.d/nodesource.list
 echo "deb-src [signed-by=${local_node_key}] https://deb.nodesource.com/node_$NODE_MAJOR.x nodistro main" | sudo tee /etc/apt/sources.list.d/nodesource.list
 
-echo "deb [signed-by=${local_node_key}] https://deb.nodesource.com/$NODEREPO $CODENAME main" | sudo tee /etc/apt/sources.list.d/nodesource.list
-echo "deb-src [signed-by=${local_node_key}] https://deb.nodesource.com/$NODEREPO $CODENAME main" | sudo tee /etc/apt/sources.list.d/nodesource.list
-
 # mongodb
 mongo_key_url="https://pgp.mongodb.com/server-${MONGODB}.asc"
 local_mongo_key="${keyring}/mongodb-server-${MONGODB}.gpg"
