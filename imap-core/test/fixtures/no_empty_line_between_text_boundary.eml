@@ -1,0 +1,22 @@
+Content-Type: multipart/mixed; boundary="------------cWFvDSey27tFG0hVYLqp9hs9"
+MIME-Version: 1.0
+Message-ID: <beep-boop@example-1.com>
+To: foo-1@example-1.com
+From: foo-1@example-1.com
+Subject: test
+
+This is a multi-part message in MIME format.
+--------------cWFvDSey27tFG0hVYLqp9hs9
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 7bit
+
+test
+
+--------------cWFvDSey27tFG0hVYLqp9hs9
+Content-Type: text/plain; charset=UTF-8; name="example.txt"
+Content-Disposition: attachment; filename="example.txt"
+Content-Transfer-Encoding: base64
+
+ZXhhbXBsZQo=
+
+--------------cWFvDSey27tFG0hVYLqp9hs9--
