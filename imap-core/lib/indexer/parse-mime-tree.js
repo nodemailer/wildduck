@@ -125,6 +125,23 @@ class MIMEParser {
                     node.message = parse(node.body.join(''));
                 }
 
+                if (node.body && node.body.length && node.multipart) {
+                    // find last character from an array of strings
+                    let lastChar;
+                    let lastIndex = 0;
+                    for (let i = node.body.length - 1; i >= 0; i--) {
+                        if (typeof node.body[i] === 'string' && node.body[i].length) {
+                            lastChar = node.body[i].at(-1);
+                            lastIndex = i;
+                            break;
+                        }
+                    }
+                    if (lastChar && lastChar !== '\n') {
+                        // ensure that non-multipart body text always ends with a newline
+                        node.body[lastIndex] += '\n';
+                    }
+                }
+
                 node.lineCount = node.body.length ? node.body.length - 1 : 0;
                 node.body = Buffer.from(
                     node.body
