@@ -562,7 +562,7 @@ module.exports = done => {
     certsRoutes(db, server);
     webhooksRoutes(db, server);
     settingsRoutes(db, server, settingsHandler);
-    healthRoutes(db, server);
+    healthRoutes(db, server, loggelf);
 
     if (process.env.NODE_ENV === 'test') {
         server.get(
