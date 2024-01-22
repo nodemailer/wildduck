@@ -47,6 +47,7 @@ const dkimRoutes = require('./lib/api/dkim');
 const certsRoutes = require('./lib/api/certs');
 const webhooksRoutes = require('./lib/api/webhooks');
 const settingsRoutes = require('./lib/api/settings');
+const healthRoutes = require('./lib/api/health');
 const { SettingsHandler } = require('./lib/settings-handler');
 
 let userHandler;
@@ -561,6 +562,7 @@ module.exports = done => {
     certsRoutes(db, server);
     webhooksRoutes(db, server);
     settingsRoutes(db, server, settingsHandler);
+    healthRoutes(db, server);
 
     if (process.env.NODE_ENV === 'test') {
         server.get(
