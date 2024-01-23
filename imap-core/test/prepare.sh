@@ -6,7 +6,7 @@ which mongo
 DBNAME="$1"
 
 echo "Clearing DB"
-mongo "$DBNAME" --eval "db.getCollectionNames().forEach(function(key){db[key].deleteMany({});})" > /dev/null
+mongosh "$DBNAME" --eval "db.getCollectionNames().forEach(function(key){db[key].deleteMany({});})" > /dev/null
 
 echo "Creating user"
 USERRESPONSE=`curl --silent -XPOST http://127.0.0.1:8080/users \
@@ -69,7 +69,7 @@ subject: test6
 hello 6
 "
 
-mongo "$DBNAME" --eval "db.mailboxes.updateOne({_id: ObjectId('$INBOXID')}, {\$set:{modifyIndex: 5000, uidNext: 1000}});
+mongosh "$DBNAME" --eval "db.mailboxes.updateOne({_id: ObjectId('$INBOXID')}, {\$set:{modifyIndex: 5000, uidNext: 1000}});
 db.messages.updateOne({mailbox: ObjectId('$INBOXID'), uid:1}, {\$set:{modseq: 100}});
 db.messages.updateOne({mailbox: ObjectId('$INBOXID'), uid:2}, {\$set:{modseq: 5000}});
 db.messages.updateMany({}, {\$inc:{uid: 100}});" > /dev/null

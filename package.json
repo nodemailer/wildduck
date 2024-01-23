@@ -4,7 +4,7 @@
     "description": "IMAP/POP3 server built with Node.js and MongoDB",
     "main": "server.js",
     "scripts": {
-        "test": "mongo --eval 'db.dropDatabase()' wildduck-test && redis-cli -n 13 flushdb && npm run runtest",
+        "test": "mongosh --eval 'db.dropDatabase()' wildduck-test && redis-cli -n 13 flushdb && npm run runtest",
         "test:proto": "NODE_ENV=test grunt proto",
         "printconf": "NODE_CONFIG_ONLY=true npm start",
         "runtest": "NODE_ENV=test grunt",

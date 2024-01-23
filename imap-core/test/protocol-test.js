@@ -35,8 +35,8 @@ describe('IMAP Protocol integration tests', function () {
     });
 
     after(function (done) {
-        //mongo "$DBNAME" --eval "db.getCollectionNames().forEach(function(key){db[key].deleteMany({});})" > /dev/null
-        exec('mongo ' + config.dbs.dbname + ' --eval "db.getCollectionNames().forEach(function(key){db[key].deleteMany({});})"', err => {
+        //mongosh "$DBNAME" --eval "db.getCollectionNames().forEach(function(key){db[key].deleteMany({});})" > /dev/null
+        exec('mongosh ' + config.dbs.dbname + ' --eval "db.getCollectionNames().forEach(function(key){db[key].deleteMany({});})"', err => {
             if (err) {
                 return done(err);
             }
