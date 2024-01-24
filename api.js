@@ -49,6 +49,8 @@ const webhooksRoutes = require('./lib/api/webhooks');
 const settingsRoutes = require('./lib/api/settings');
 const { SettingsHandler } = require('./lib/settings-handler');
 
+const { generateAPiDocs } = require('./restifyOpenapiGenerator');
+
 let userHandler;
 let mailboxHandler;
 let messageHandler;
@@ -576,7 +578,7 @@ module.exports = done => {
     function apiGenerate(ctx) {
         const routes = ctx.router.getRoutes();
 
-        tools.generateAPiDocs(routes);
+        generateAPiDocs(routes);
 
         return (req, res, next) => next();
     }
