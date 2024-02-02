@@ -648,7 +648,7 @@ module.exports = done => {
                 }
             },
             security: [{ AccessTokenAuth: [] }],
-            docsPath: '/openapidocs.json'
+            docsPath: '/../../openapidocs.json'
         })
     );
 
