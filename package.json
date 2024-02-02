@@ -97,7 +97,7 @@
         "restify-logger": "2.0.1",
         "search-string": "3.1.0",
         "seq-index": "1.1.0",
-        "smtp-server": "3.13.0",
+        "smtp-server": "3.13.2",
         "speakeasy": "2.0.0",
         "undici": "5.28.2",
         "unix-crypt-td-js": "1.1.4",
