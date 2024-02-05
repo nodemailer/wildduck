@@ -1,5 +1,30 @@
 # Changelog
 
+## [1.42.0](https://github.com/nodemailer/wildduck/compare/v1.41.3...v1.42.0) (2024-02-05)
+
+
+### Features
+
+* **api-addresses:** ZMS-115 ([#608](https://github.com/nodemailer/wildduck/issues/608)) ([85e09ec](https://github.com/nodemailer/wildduck/commit/85e09ecc772618ea2bccc7912181c6217a6e7b9c))
+* **api-health:** Added `/health` endpoint to check Wildduck API health during runtime ZMS-120 ([#607](https://github.com/nodemailer/wildduck/issues/607)) ([84ab0c0](https://github.com/nodemailer/wildduck/commit/84ab0c09dcf915eb29652c49244708703be21b0c))
+* **api-mailboxes:** Mailboxes API endpoints added to automatic API docs generation ZMS-114 ([#602](https://github.com/nodemailer/wildduck/issues/602)) ([76d0e8f](https://github.com/nodemailer/wildduck/commit/76d0e8f9e29c09b60129d3c8bacfc1db64328c73))
+* **api-search:** Allow searching for messages by uid ([#587](https://github.com/nodemailer/wildduck/issues/587)) ([a4ae3d7](https://github.com/nodemailer/wildduck/commit/a4ae3d7113758d51a9ab04f6ea0bf97fbbcc48c2))
+* **api-upload:** Allow to upload a draft message with incorrect (non-emal) `to` addresses ZMS-117 ([#595](https://github.com/nodemailer/wildduck/issues/595)) ([8b7f6c9](https://github.com/nodemailer/wildduck/commit/8b7f6c923ef89fd4391862f3719810b56008ca22))
+* **upload:** ZMS-111 ([#584](https://github.com/nodemailer/wildduck/issues/584)) ([6bdeeaa](https://github.com/nodemailer/wildduck/commit/6bdeeaa164fbe125fc9e771c1846386299a0cc26))
+
+
+### Bug Fixes
+
+* **api-docs:** Fix openapi.yaml so it passes schema validation ([#588](https://github.com/nodemailer/wildduck/issues/588)) ([4a4fb2f](https://github.com/nodemailer/wildduck/commit/4a4fb2feeddcbf799b4fd36554b307b48cf0ace6))
+* **api-docs:** Fixed requestBody in API docs ZMS-118 ([#593](https://github.com/nodemailer/wildduck/issues/593)) ([fae91d1](https://github.com/nodemailer/wildduck/commit/fae91d148444029e6f1da101cb15da8d431ce6e4))
+* **api-search:** Fixed or query. Fixes [#592](https://github.com/nodemailer/wildduck/issues/592) ([4336554](https://github.com/nodemailer/wildduck/commit/43365542a375433174ea3f8659b4f3ffb0a67732))
+* **api:** header.key and header.value not required ZMS-116 ([#582](https://github.com/nodemailer/wildduck/issues/582)) ([29cffe0](https://github.com/nodemailer/wildduck/commit/29cffe0d5f92373d22dc3be0b36543ad0c7a381c))
+* **deps:** bumped deps to upgrade mailauth for fixed ed25519 DKIM support ([857e4c0](https://github.com/nodemailer/wildduck/commit/857e4c0a01327d12f87f0017dcf40e2c9967347e))
+* **docs:** /users API docs ZMS-110 ([#575](https://github.com/nodemailer/wildduck/issues/575)) ([a15878c](https://github.com/nodemailer/wildduck/commit/a15878c7d709473c5b0d4eec2062e9425c9b5e31))
+* **journal-parse:** Improve idle CPU performance ZMS-109 ([#597](https://github.com/nodemailer/wildduck/issues/597)) ([5721047](https://github.com/nodemailer/wildduck/commit/5721047bc1c23b816f08cbf1cba7fbe494724af5))
+* **message-threading:** Take non-standard but conventional subject prefixes into account ([#605](https://github.com/nodemailer/wildduck/issues/605)) ([816114f](https://github.com/nodemailer/wildduck/commit/816114f655e34adc15dc27ee13530fdc094b01e0))
+* **pop3:** if connection is closed during authentication, then do not process the response. Fixes [#596](https://github.com/nodemailer/wildduck/issues/596) ([eecb31a](https://github.com/nodemailer/wildduck/commit/eecb31ac9a55b6d60a0d5f956375b35a7a5c0363))
+
 ## [1.41.3](https://github.com/nodemailer/wildduck/compare/v1.41.2...v1.41.3) (2023-12-19)
 
 
