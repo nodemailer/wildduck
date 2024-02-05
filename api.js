@@ -50,6 +50,9 @@ const settingsRoutes = require('./lib/api/settings');
 const healthRoutes = require('./lib/api/health');
 const { SettingsHandler } = require('./lib/settings-handler');
 
+const restifyApiGenerate = require('restifyapigenerate');
+const restifyApiGenerateConfig = require('./config/apigeneration.json');
+
 let userHandler;
 let mailboxHandler;
 let messageHandler;
@@ -575,16 +578,7 @@ module.exports = done => {
         );
     }
 
-    server.get(
-        { path: '/openapi', name: 'openapi-docs-generation' },
-        tools.responseWrapper(async (req, res) => {
-            res.charSet('utf-8');
-
-            const routes = server.router.getRoutes();
-
-            tools.generateAPiDocs(routes);
-        })
-    );
+    server.pre(restifyApiGenerate(server, restifyApiGenerateConfig));
 
     server.on('error', err => {
         if (!started) {
