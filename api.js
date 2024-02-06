@@ -549,7 +549,7 @@ module.exports = done => {
     mailboxesRoutes(db, server, mailboxHandler);
     messagesRoutes(db, server, messageHandler, userHandler, storageHandler, settingsHandler);
     storageRoutes(db, server, storageHandler);
-    filtersRoutes(db, server, userHandler, settingsHandler);
+    filtersRoutes(db, server, userHandler, settingsHandler, loggelf);
     domainaccessRoutes(db, server);
     aspsRoutes(db, server, userHandler);
     totpRoutes(db, server, userHandler);
