@@ -8,6 +8,9 @@ module.exports = {
         'undici',
 
         // esm
-        'chai'
+        'chai',
+
+        // temporary
+        'joi'
     ]
 };
