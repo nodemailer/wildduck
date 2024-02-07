@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.42.1](https://github.com/nodemailer/wildduck/compare/v1.42.0...v1.42.1) (2024-02-07)
+
+
+### Bug Fixes
+
+* **api-filters:** Add Filters API endpoints to API docs generation ZMS-121 ([#611](https://github.com/nodemailer/wildduck/issues/611)) ([95f829d](https://github.com/nodemailer/wildduck/commit/95f829d16aa24883bd763179581b5288acc51f3d))
+* **api-generate:** Move API generation code into separate package and use it ZMS-119 ([#613](https://github.com/nodemailer/wildduck/issues/613)) ([c7a1ab4](https://github.com/nodemailer/wildduck/commit/c7a1ab49874ae422c28129f77d5624ccc89af1ff))
+* **deps:** downgraded joi to fix conflict with restifyapigenerate ([6724ec9](https://github.com/nodemailer/wildduck/commit/6724ec9f5ecc4ff67ffc8cbc30d42c5bec135ec5))
+
 ## [1.42.0](https://github.com/nodemailer/wildduck/compare/v1.41.3...v1.42.0) (2024-02-05)
 
 
