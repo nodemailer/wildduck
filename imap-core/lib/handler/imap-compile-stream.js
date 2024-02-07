@@ -146,88 +146,90 @@ module.exports = (response, isLogging) => {
                 return;
             }
 
-            switch (node.type.toUpperCase()) {
-                case 'LITERAL': {
-                    let nodeValue = node.value;
-
-                    if (typeof nodeValue === 'number') {
-                        nodeValue = nodeValue.toString();
-                    }
-
-                    let len;
-
-                    // Figure out correct byte length
-                    if (nodeValue && typeof nodeValue.pipe === 'function') {
-                        len = node.expectedLength || 0;
-                        if (node.startFrom) {
-                            len -= node.startFrom;
+            if (typeof node?.type === 'string') {
+                switch (node.type.toUpperCase()) {
+                    case 'LITERAL': {
+                        let nodeValue = node.value;
+    
+                        if (typeof nodeValue === 'number') {
+                            nodeValue = nodeValue.toString();
                         }
-                        if (node.maxLength) {
-                            len = Math.min(len, node.maxLength);
-                        }
-                    } else {
-                        len = (nodeValue || '').toString().length;
-                    }
-
-                    if (isLogging) {
-                        resp.push(Buffer.from('"(* ' + len + 'B literal *)"'));
-                    } else {
-                        resp.push(Buffer.from('{' + Math.max(len, 0) + '}\r\n'));
-
+    
+                        let len;
+    
+                        // Figure out correct byte length
                         if (nodeValue && typeof nodeValue.pipe === 'function') {
-                            //value is a stream object
-                            // emit existing string before passing the stream
-                            await emit(nodeValue, node.expectedLength, node.startFrom, node.maxLength);
-                        } else if (Buffer.isBuffer(nodeValue)) {
-                            resp.push(nodeValue);
+                            len = node.expectedLength || 0;
+                            if (node.startFrom) {
+                                len -= node.startFrom;
+                            }
+                            if (node.maxLength) {
+                                len = Math.min(len, node.maxLength);
+                            }
                         } else {
-                            resp.push(Buffer.from((nodeValue || '').toString('binary'), 'binary'));
+                            len = (nodeValue || '').toString().length;
                         }
-                    }
-                    break;
-                }
-                case 'STRING':
-                    if (isLogging && node.value.length > 20) {
-                        resp.push(Buffer.from('"(* ' + node.value.length + 'B string *)"'));
-                    } else {
-                        // JSON.stringify conveniently adds enclosing quotes and escapes any "\ occurences
-                        resp.push(Buffer.from(JSON.stringify((node.value || '').toString('binary')), 'binary'));
-                    }
-                    break;
-
-                case 'TEXT':
-                case 'SEQUENCE':
-                    if (Buffer.isBuffer(node.value)) {
-                        resp.push(node.value);
-                    } else {
-                        resp.push(Buffer.from((node.value || '').toString('binary'), 'binary'));
-                    }
-                    break;
-
-                case 'NUMBER':
-                    resp.push(Buffer.from((node.value || 0).toString()));
-                    break;
-
-                case 'ATOM':
-                case 'SECTION': {
-                    val = (node.value || '').toString();
-
-                    if (imapFormalSyntax.verify(val.charAt(0) === '\\' ? val.substr(1) : val, imapFormalSyntax['ATOM-CHAR']()) >= 0) {
-                        val = JSON.stringify(val);
-                    }
-
-                    resp.push(Buffer.from(val));
-
-                    if (node.section) {
-                        resp.push(LEFT_SQUARE_BRACKET);
-                        for (let child of node.section) {
-                            await walk(child);
+    
+                        if (isLogging) {
+                            resp.push(Buffer.from('"(* ' + len + 'B literal *)"'));
+                        } else {
+                            resp.push(Buffer.from('{' + Math.max(len, 0) + '}\r\n'));
+    
+                            if (nodeValue && typeof nodeValue.pipe === 'function') {
+                                //value is a stream object
+                                // emit existing string before passing the stream
+                                await emit(nodeValue, node.expectedLength, node.startFrom, node.maxLength);
+                            } else if (Buffer.isBuffer(nodeValue)) {
+                                resp.push(nodeValue);
+                            } else {
+                                resp.push(Buffer.from((nodeValue || '').toString('binary'), 'binary'));
+                            }
                         }
-                        resp.push(RIGHT_SQUARE_BRACKET);
+                        break;
                     }
-
-                    if (node.partial) {
-                        resp.push(Buffer.from('<' + node.partial[0] + '>'));
+                    case 'STRING':
+                        if (isLogging && node.value.length > 20) {
+                            resp.push(Buffer.from('"(* ' + node.value.length + 'B string *)"'));
+                        } else {
+                            // JSON.stringify conveniently adds enclosing quotes and escapes any "\ occurences
+                            resp.push(Buffer.from(JSON.stringify((node.value || '').toString('binary')), 'binary'));
+                        }
+                        break;
+    
+                    case 'TEXT':
+                    case 'SEQUENCE':
+                        if (Buffer.isBuffer(node.value)) {
+                            resp.push(node.value);
+                        } else {
+                            resp.push(Buffer.from((node.value || '').toString('binary'), 'binary'));
+                        }
+                        break;
+    
+                    case 'NUMBER':
+                        resp.push(Buffer.from((node.value || 0).toString()));
+                        break;
+    
+                    case 'ATOM':
+                    case 'SECTION': {
+                        val = (node.value || '').toString();
+    
+                        if (imapFormalSyntax.verify(val.charAt(0) === '\\' ? val.substr(1) : val, imapFormalSyntax['ATOM-CHAR']()) >= 0) {
+                            val = JSON.stringify(val);
+                        }
+    
+                        resp.push(Buffer.from(val));
+    
+                        if (node.section) {
+                            resp.push(LEFT_SQUARE_BRACKET);
+                            for (let child of node.section) {
+                                await walk(child);
+                            }
+                            resp.push(RIGHT_SQUARE_BRACKET);
+                        }
+    
+                        if (node.partial) {
+                            resp.push(Buffer.from('<' + node.partial[0] + '>'));
+                        }
                     }
                 }
             }
