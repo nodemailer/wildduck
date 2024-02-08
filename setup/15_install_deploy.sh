@@ -99,6 +99,11 @@ Also copy the following two files too:
 pem: private key (guard it well)
 cert: public key
 
+DMARC
+---
+Add this TXT record to the $MAILDOMAIN DNS zone:
+
+_dmarc.$MAILDOMAIN. IN TXT \"v=DMARC1; p=reject;\"
 
 PTR
 ---
@@ -107,7 +112,19 @@ If your hosting provider does not allow you to set PTR records but has
 assigned their own hostname, then edit /etc/zone-mta/pools.toml and replace
 the hostname $HOSTNAME with the actual hostname of this server.
 
+
+TL;DR
+-----
+Add the following DNS records to the $MAILDOMAIN DNS zone:
+
+$MAILDOMAIN. IN MX 5 $HOSTNAME.
+$MAILDOMAIN. IN TXT \"v=spf1 ip4:$PUBLIC_IP ~all\"
+$DKIM_SELECTOR._domainkey.$MAILDOMAIN. IN TXT \"$DKIM_DNS\"
+_dmarc.$MAILDOMAIN. IN TXT \"v=DMARC1; p=reject;\"
+
+
 (this text is also stored to $INSTALLDIR/$MAILDOMAIN-nameserver.txt)" > "$INSTALLDIR/$MAILDOMAIN-nameserver.txt"
+
 
 printf "Waiting for the server to start up.."
 
