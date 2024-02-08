@@ -106,7 +106,7 @@
         "uuid": "9.0.1",
         "wild-config": "1.7.1",
         "yargs": "17.7.2",
-        "zone-mta": "3.9.1"
+        "zone-mta": "3.9.2"
     },
     "repository": {
         "type": "git",
