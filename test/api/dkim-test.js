@@ -16,7 +16,7 @@ describe('API DKIM', function () {
 
     this.timeout(10000); // eslint-disable-line no-invalid-this
 
-    it('should POST /dkim expect success', async () => {
+    it('should POST /dkim expect success / RSA pem', async () => {
         const response = await server
             .post('/dkim')
             .send({
@@ -24,6 +24,40 @@ describe('API DKIM', function () {
                 selector: 'wildduck',
                 privateKey:
                     '-----BEGIN RSA PRIVATE KEY-----\nMIICXQIBAAKBgQDFCPszabID2MLAzzfja3/TboKp4dHUGSkl6hNSly7IRdAhfh6J\nh6vNa+2Y7pyNagX00ukycZ/03O/93X3UxjzX/NpLESo3GwSjp39R4AgdW91nKt7X\nzGoz4ZQELAao+AH1QhJ8vumXFLFc6sS9l7Eu3+cZcAdWij2TCPKrB56tMQIDAQAB\nAoGAAQNfz07e1Hg74CPwpKG74Yly8I6xtoZ+mKxQdx9B5VO+kz2DyK9C6eaBLUUk\n1vFRoIWpH1JIQUkVjtehuwNd8rgPacPZRjSJrGuvwtP/bjzA8m/z/lI0+rfQW7L7\nRfPoi2fl6MJ3KkjNypmVPPNvtJA42aPUDW6SFcXFvSv43gECQQD12RFLlZ5H3W6z\n2ncJXiZha508LoyABkYeb+veCFwicoNEreQrToDgC3GuBRkODsUgRZaVu2sa4tlv\nzO0rwkXRAkEAzSvmAxTvkSf/gMy5mO+sZKeUEtMHibF4LKxw7Men2oADgVTnS38r\nf8uYJteLt3lkfHfV5ezEOERvQutKnMfpYQJBAL7apceUvkyyBWfQWIrIMWl9vpHi\n3SXiOPsWDfjPap8/YNKnYDOSfQ/xMm5S/NFh+/yCqVVSKuKzavOVFiXbapECQQDC\nhWdK7rN/xRNaUz93/2xL9hHOkyNnacoNWOSrqVO8NnicSxoLmyNrw2SbFusRZdde\npuM2XfdffYqbQKd545OhAkBiCm/hUl5+hCJI6xl4wh3aR4h8j/TA6/u4ohPjqYco\nLUPpKBaWeKdwQRbkkpMsVz6lFtpyZlV6V8joGEd8OLMO\n-----END RSA PRIVATE KEY-----',
+                description: 'Some text about this DKIM certificate',
+                sess: '12345',
+                ip: '127.0.0.1'
+            })
+            .expect(200);
+        expect(response.body.success).to.be.true;
+        expect(/^[0-9a-f]{24}$/.test(response.body.id)).to.be.true;
+        dkim = response.body.id;
+    });
+
+    it('should POST /dkim expect success / ED25519 pem', async () => {
+        const response = await server
+            .post('/dkim')
+            .send({
+                domain: 'example.com',
+                selector: 'wildduck',
+                privateKey: '-----BEGIN PRIVATE KEY-----\nMC4CAQAwBQYDK2VwBCIEIOQu92qofG/p0yAHDTNAawKchxOf/3MpDiPaCPk2xSPg\n-----END PRIVATE KEY-----',
+                description: 'Some text about this DKIM certificate',
+                sess: '12345',
+                ip: '127.0.0.1'
+            })
+            .expect(200);
+        expect(response.body.success).to.be.true;
+        expect(/^[0-9a-f]{24}$/.test(response.body.id)).to.be.true;
+        dkim = response.body.id;
+    });
+
+    it('should POST /dkim expect success / ED25519 raw', async () => {
+        const response = await server
+            .post('/dkim')
+            .send({
+                domain: 'example.com',
+                selector: 'wildduck',
+                privateKey: 'nWGxne/9WmC6hEr0kuwsxERJxWl7MmkZcDusAxyuf2A=',
                 description: 'Some text about this DKIM certificate',
                 sess: '12345',
                 ip: '127.0.0.1'
