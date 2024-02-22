@@ -11,6 +11,7 @@ chai.config.includeStack = true;
 const config = require('wild-config');
 
 const server = supertest.agent(`http://127.0.0.1:${config.api.port}`);
+const ObjectId = require('mongodb').ObjectId;
 
 describe('API tests', function () {
     let userId, asp, address, inbox;
@@ -416,7 +417,8 @@ describe('API tests', function () {
                 text: '',
                 html: '',
                 start: false,
-                end: false
+                end: false,
+                created: false
             });
 
             r = await server
@@ -432,6 +434,8 @@ describe('API tests', function () {
                 .expect(200);
             expect(r.body.success).to.be.true;
 
+            const autoreplyId = new ObjectId(r.body._id);
+
             r = await server.get(`/users/${userId}/autoreply`).expect(200);
             expect(r.body).to.deep.equal({
                 success: true,
@@ -441,7 +445,8 @@ describe('API tests', function () {
                 text: 'Away from office until Dec.19',
                 html: '',
                 start: '2017-11-15T00:00:00.000Z',
-                end: '2017-12-19T00:00:00.000Z'
+                end: '2017-12-19T00:00:00.000Z',
+                created: autoreplyId.getTimestamp().toISOString()
             });
 
             r = await server
@@ -463,7 +468,8 @@ describe('API tests', function () {
                 text: 'Away from office until Dec.19',
                 html: '',
                 start: false,
-                end: '2017-12-19T00:00:00.000Z'
+                end: '2017-12-19T00:00:00.000Z',
+                created: autoreplyId.getTimestamp().toISOString()
             });
 
             await server.delete(`/users/${userId}/autoreply`).expect(200);
@@ -476,7 +482,8 @@ describe('API tests', function () {
                 text: '',
                 html: '',
                 start: false,
-                end: false
+                end: false,
+                created: false
             });
         });
     });
