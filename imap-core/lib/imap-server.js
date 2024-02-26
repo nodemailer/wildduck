@@ -402,21 +402,17 @@ class IMAPServer extends EventEmitter {
         }
 
         if (this.options.secure) {
-            // appy changes
-
+            // apply changes
             Object.keys(defaultTlsOptions || {}).forEach(key => {
                 if (!(key in this.options)) {
                     this.options[key] = defaultTlsOptions[key];
                 }
             });
-
-            // ensure SNICallback method
-            if (typeof this.options.SNICallback !== 'function') {
-                // create default SNI handler
-                this.options.SNICallback = (servername, cb) => {
-                    cb(null, this.secureContext.get(servername));
-                };
-            }
+        } else if (typeof this.options.SNICallback !== 'function') {
+            // ensure SNICallback method and create default SNI handler
+            this.options.SNICallback = (servername, cb) => {
+                cb(null, this.secureContext.get(servername));
+            };
         }
     }
 
