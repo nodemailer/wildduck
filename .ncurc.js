@@ -7,8 +7,9 @@ module.exports = {
         // no support for Node 16
         'undici',
 
-        // esm
+        // esm only
         'chai',
+        'unixcrypt',
 
         // temporary
         'joi'

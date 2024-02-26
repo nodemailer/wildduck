@@ -29,7 +29,7 @@ Assuming you have MongoDB and Redis running somewhere.
 #### Step 1\. Get the code from github
 
 ```
-$ git clone git://github.com/nodemailer/wildduck.git
+$ git clone https://github.com/nodemailer/wildduck.git
 $ cd wildduck
 ```
 
