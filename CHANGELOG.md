@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.42.2](https://github.com/nodemailer/wildduck/compare/v1.42.1...v1.42.2) (2024-02-26)
+
+
+### Bug Fixes
+
+* **api-2fa:** Added 2FA API endpoints to API docs generation ZMS-124 ([#626](https://github.com/nodemailer/wildduck/issues/626)) ([0efae19](https://github.com/nodemailer/wildduck/commit/0efae19f9e5d6368ec4121d7f4601df470ebba24))
+* **api-addresses:** Fix tags typo in addresses.js ([#627](https://github.com/nodemailer/wildduck/issues/627)) ([7e9e62e](https://github.com/nodemailer/wildduck/commit/7e9e62ea7ae05da7f7b20ec1027df5649c26534e))
+* **api-autoreply:** Autoreply API endpoints added to API docs generation ZMS-130 ([#632](https://github.com/nodemailer/wildduck/issues/632)) ([aa60ef9](https://github.com/nodemailer/wildduck/commit/aa60ef93fec943718a5a1fa03494526162cbabed))
+* **api-dkim:** Add all DKIM API endpoints to API docs generation ZMS-129 ([#630](https://github.com/nodemailer/wildduck/issues/630)) ([78a9e1b](https://github.com/nodemailer/wildduck/commit/78a9e1b2a8fbc413663716bfe92fe3b2855c54d1))
+* **api-dkim:** DKIM now supports ED25519 keys, both in PEM and raw format as input ZMS-125 ([#617](https://github.com/nodemailer/wildduck/issues/617)) ([3d7d0a6](https://github.com/nodemailer/wildduck/commit/3d7d0a6d6a8e38d9e368cc9ffa9abe9c3302b232))
+* **api-filters:** Filter creation is now logged to graylog and authlog ZMS-34 ([#616](https://github.com/nodemailer/wildduck/issues/616)) ([6f0e4b5](https://github.com/nodemailer/wildduck/commit/6f0e4b54be9dd83ebd781d3aed204a8934da29fe))
+* **git:** Changed git: url in install script to https: ([#610](https://github.com/nodemailer/wildduck/issues/610)) ([5019cf1](https://github.com/nodemailer/wildduck/commit/5019cf13b28dc30b6e1440717fe9ece031da9cba))
+* **imap-starttls:** define `SNICallback` only when insecure (closes [#635](https://github.com/nodemailer/wildduck/issues/635)) ([#637](https://github.com/nodemailer/wildduck/issues/637)) ([4b19dee](https://github.com/nodemailer/wildduck/commit/4b19dee20b740f9636ab6a06f1379a4fe5f433fb))
+* **pop3-starttls:** ensure default SNICallback option ([f61111e](https://github.com/nodemailer/wildduck/commit/f61111e3cc2d48aaa4ae0ad31e0665caa3db8394))
+
 ## [1.42.1](https://github.com/nodemailer/wildduck/compare/v1.42.0...v1.42.1) (2024-02-07)
 
 
