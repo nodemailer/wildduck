@@ -95,7 +95,7 @@
         "restify-cors-middleware2": "2.2.1",
         "restify-errors": "8.0.2",
         "restify-logger": "2.0.1",
-        "restifyapigenerate": "1.1.0",
+        "restifyapigenerate": "1.2.0",
         "search-string": "3.1.0",
         "seq-index": "1.1.0",
         "smtp-server": "3.13.2",
