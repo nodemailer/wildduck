@@ -9,9 +9,6 @@ module.exports = {
 
         // esm only
         'chai',
-        'unixcrypt',
-
-        // temporary
-        'joi'
+        'unixcrypt'
     ]
 };

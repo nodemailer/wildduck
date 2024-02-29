@@ -50,8 +50,10 @@ const settingsRoutes = require('./lib/api/settings');
 const healthRoutes = require('./lib/api/health');
 const { SettingsHandler } = require('./lib/settings-handler');
 
-const restifyApiGenerate = require('restifyapigenerate');
+const { RestifyApiGenerate } = require('restifyapigenerate');
+const Joi = require('joi');
 const restifyApiGenerateConfig = require('./config/apigeneration.json');
+const restifyApiGenerate = new RestifyApiGenerate(Joi, __dirname);
 
 let userHandler;
 let mailboxHandler;
@@ -579,7 +581,7 @@ module.exports = done => {
         );
     }
 
-    server.pre(restifyApiGenerate(server, restifyApiGenerateConfig));
+    server.pre(restifyApiGenerate.restifyApiGenerate(server, restifyApiGenerateConfig));
 
     server.on('error', err => {
         if (!started) {
