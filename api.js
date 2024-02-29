@@ -467,7 +467,7 @@ module.exports = done => {
                   emit: (key, message) => log.info('Gelf', JSON.stringify(message))
               };
 
-    loggelf = message => {
+    loggelf = (message, requiredKeys = []) => {
         if (typeof message === 'string') {
             message = {
                 short_message: message
@@ -484,7 +484,8 @@ module.exports = done => {
         message.timestamp = Date.now() / 1000;
         message._component = component;
         Object.keys(message).forEach(key => {
-            if (!message[key]) {
+            if (!message[key] && !requiredKeys.includes(key)) {
+                // remove the key if it empty/falsy/undefined/null and it is not required to stay
                 delete message[key];
             }
         });
@@ -538,7 +539,7 @@ module.exports = done => {
 
     settingsHandler = new SettingsHandler({ db: db.database });
 
-    server.loggelf = message => loggelf(message);
+    server.loggelf = (message, requiredKeys = []) => loggelf(message, requiredKeys);
 
     server.lock = new Lock({
         redis: db.redis,
