@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.42.4](https://github.com/nodemailer/wildduck/compare/v1.42.3...v1.42.4) (2024-03-14)
+
+
+### Bug Fixes
+
+* **deploy:** Fixed package-lock for release ([d57a397](https://github.com/nodemailer/wildduck/commit/d57a397fd33da28c86b22887474202fef3c5884b))
+
 ## [1.42.3](https://github.com/nodemailer/wildduck/compare/v1.42.2...v1.42.3) (2024-03-14)
 
 
