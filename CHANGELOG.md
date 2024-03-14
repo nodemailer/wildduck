@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.42.5](https://github.com/nodemailer/wildduck/compare/v1.42.4...v1.42.5) (2024-03-14)
+
+
+### Bug Fixes
+
+* **roles:** Added new role 'downloader' that can download any email ([4dbc5c5](https://github.com/nodemailer/wildduck/commit/4dbc5c50329f33127edf1949123579ac6a2cc8a7))
+
 ## [1.42.4](https://github.com/nodemailer/wildduck/compare/v1.42.3...v1.42.4) (2024-03-14)
 
 
