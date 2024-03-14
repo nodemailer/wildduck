@@ -416,5 +416,11 @@
             "update:any": ["*"],
             "delete:any": ["*"]
         }
+    },
+
+    "downloader": {
+        "messages": {
+            "read:any": ["*"]
+        }
     }
 }
