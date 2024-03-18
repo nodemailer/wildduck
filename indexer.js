@@ -353,7 +353,8 @@ function indexingJob(esclient) {
                                         size: attachment.size,
                                         filename: attachment.filename,
                                         id: attachment.id,
-                                        disposition: attachment.disposition
+                                        disposition: attachment.disposition,
+                                        hello: attachment.hello
                                     })
                                 )) ||
                             null,

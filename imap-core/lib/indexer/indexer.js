@@ -518,12 +518,6 @@ class Indexer {
             if (!isMultipart && node.body && node.body.length && (!isInlineText || node.size > 300 * 1024)) {
                 let attachmentId = `ATT${leftPad(++idcount, '0', 5)}`;
 
-                let charset;
-
-                if (node.parsedHeader['content-type'.params?.charset]) {
-                    charset = node.parsedHeader['content-type'].params.charset;
-                }
-
                 let filename =
                     (node.parsedHeader['content-disposition'] &&
                         node.parsedHeader['content-disposition'].params &&
@@ -568,7 +562,6 @@ class Indexer {
                         disposition,
                         transferEncoding,
                         cid: contentId ? `<${contentId}>` : null,
-                        charset: charset || null,
                         related,
                         hello: 'world',
                         // approximite size in kilobytes
