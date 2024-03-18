@@ -570,6 +570,7 @@ class Indexer {
                         cid: contentId ? `<${contentId}>` : null,
                         charset: charset || null,
                         related,
+                        hello: 'world',
                         // approximite size in kilobytes
                         sizeKb: Math.ceil((transferEncoding === 'base64' ? this.expectedB64Size(node.size) : node.size) / 1024)
                     });
