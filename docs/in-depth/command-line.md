@@ -5,7 +5,7 @@
 Well, the whole idea is, we can administrate wilduck via the REST api. 
 So we are crafting http queries, and sending it via `curl`.
 
-You can save these commands to `~/.bashrc` file (which is executed if you are comming through ssh, 
+You can save these commands to `~/.bashrc` file (which is executed if you are coming through ssh, 
 the `~/.profile` file is for interactive login).
 Not as *aliases* (because *alias* can not have arguments), but you can save them 
 as bash *functions*, which behave exactly like *aliases* but can have arguments too.
