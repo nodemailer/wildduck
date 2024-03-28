@@ -611,7 +611,7 @@ module.exports = done => {
     });
 
     server.listen(config.api.port, config.api.host, () => {
-        if (!started) {
+        if (started) {
             return server.close();
         }
         started = true;
