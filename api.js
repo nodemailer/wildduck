@@ -581,7 +581,18 @@ module.exports = done => {
         );
     }
 
-    server.pre(restifyApiGenerate.restifyApiGenerate(server, restifyApiGenerateConfig));
+    if (process.env.GENERATE_API_DOCS === 'true') {
+        server.pre(restifyApiGenerate.restifyApiGenerate(server, restifyApiGenerateConfig));
+    }
+
+    if (process.env.REGENERATE_API_DOCS === 'true') {
+        // allow 2.5 seconds for services to start and the api doc to be generated, after that exit process
+        (async function () {
+            const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+            await sleep(2500);
+            process.exit(0);
+        })();
+    }
 
     server.on('error', err => {
         if (!started) {
@@ -600,11 +611,12 @@ module.exports = done => {
     });
 
     server.listen(config.api.port, config.api.host, () => {
-        if (started) {
+        if (!started) {
             return server.close();
         }
         started = true;
         log.info('API', 'Server listening on %s:%s', config.api.host || '0.0.0.0', config.api.port);
+
         done(null, server);
     });
 };
