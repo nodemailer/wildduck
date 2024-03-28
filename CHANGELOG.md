@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.42.6](https://github.com/nodemailer/wildduck/compare/v1.42.5...v1.42.6) (2024-03-28)
+
+
+### Bug Fixes
+
+* **api-ApplicationPassword:** Added all ApplicationPasswords API endpoints to API docs generation ZMS-136 ([#645](https://github.com/nodemailer/wildduck/issues/645)) ([9f9c55a](https://github.com/nodemailer/wildduck/commit/9f9c55a886aa73777ed425680a3fd98dfbe9887f))
+* **api-audit:** Added all Audit API endpoints to API docs generation ZMS-135 ([#642](https://github.com/nodemailer/wildduck/issues/642)) ([b9e3f94](https://github.com/nodemailer/wildduck/commit/b9e3f94c6f561dff8598f160aac009adedeb2ec7))
+
 ## [1.42.5](https://github.com/nodemailer/wildduck/compare/v1.42.4...v1.42.5) (2024-03-14)
 
 
