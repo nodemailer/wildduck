@@ -28,9 +28,7 @@ ignoredHosts=[]
 #version="1.0.0"
 
 [tls]
-# If certificate path is not defined, use global or built-in self-signed certs
-#key="/path/to/server/key.pem"
-#cert="/path/to/server/cert.pem"
+# @include "tls.toml"
 
 [setup]
 # Public configuration for POP3
