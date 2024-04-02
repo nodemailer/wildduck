@@ -16,6 +16,22 @@ describe('API DKIM', function () {
 
     this.timeout(10000); // eslint-disable-line no-invalid-this
 
+    it('should POST /dkim expect success / key empty', async () => {
+        const response = await server
+            .post('/dkim')
+            .send({
+                domain: 'example.com',
+                selector: 'wildduck',
+                description: 'Some text about this DKIM certificate',
+                sess: '12345',
+                ip: '127.0.0.1'
+            })
+            .expect(200);
+        expect(response.body.success).to.be.true;
+        expect(/^[0-9a-f]{24}$/.test(response.body.id)).to.be.true;
+        dkim = response.body.id;
+    });
+
     it('should POST /dkim expect success / RSA pem', async () => {
         const response = await server
             .post('/dkim')
