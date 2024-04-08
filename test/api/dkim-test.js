@@ -30,6 +30,9 @@ describe('API DKIM', function () {
         expect(response.body.success).to.be.true;
         expect(/^[0-9a-f]{24}$/.test(response.body.id)).to.be.true;
         dkim = response.body.id;
+        expect(response.body.dnsTxt.value).to.not.be.undefined;
+        expect(response.body.dnsTxt.value.split('p=').length).to.be.equal(2); // check that splitting is correct
+        expect(response.body.dnsTxt.value.split('p=')[1]).to.be.not.empty; // check that we actually have the key part and it is not an empty string
     });
 
     it('should POST /dkim expect success / RSA pem', async () => {
