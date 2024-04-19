@@ -9,6 +9,10 @@ module.exports = {
 
         // esm only
         'chai',
-        'unixcrypt'
+        'unixcrypt',
+
+        // api changes, fix later
+        'eslint',
+        'grunt-eslint'
     ]
 };
