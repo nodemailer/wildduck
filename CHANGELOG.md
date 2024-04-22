@@ -1,5 +1,23 @@
 # Changelog
 
+## [1.42.6](https://github.com/nodemailer/wildduck/compare/v1.42.5...v1.42.6) (2024-04-22)
+
+
+### Bug Fixes
+
+* **api-ApplicationPassword:** Added all ApplicationPasswords API endpoints to API docs generation ZMS-136 ([#645](https://github.com/nodemailer/wildduck/issues/645)) ([9f9c55a](https://github.com/nodemailer/wildduck/commit/9f9c55a886aa73777ed425680a3fd98dfbe9887f))
+* **api-audit:** Added all Audit API endpoints to API docs generation ZMS-135 ([#642](https://github.com/nodemailer/wildduck/issues/642)) ([b9e3f94](https://github.com/nodemailer/wildduck/commit/b9e3f94c6f561dff8598f160aac009adedeb2ec7))
+* **api-certs:** Certs API endpoints added to API docs generation ZMS-141 ([#663](https://github.com/nodemailer/wildduck/issues/663)) ([f55ddea](https://github.com/nodemailer/wildduck/commit/f55ddea06df53005aa464378b3229ea0cd140b46))
+* **api-dkim:** Fix empty p value in dnsText.value if no private key initially given ZMS-142 ([#664](https://github.com/nodemailer/wildduck/issues/664)) ([d983477](https://github.com/nodemailer/wildduck/commit/d9834776f3afc0895dd36a3b6589ccd4d3b85385))
+* **api-domainaccess:** Added all DomainAccess endpoints to api docs generation ZMS-144 ([#670](https://github.com/nodemailer/wildduck/issues/670)) ([c846b66](https://github.com/nodemailer/wildduck/commit/c846b66e170412e44112470242624b64a99dd9dd))
+* **api-generate:** API docs generation now is run through a separate npm command ZMS-139 ([#659](https://github.com/nodemailer/wildduck/issues/659)) ([6548f3c](https://github.com/nodemailer/wildduck/commit/6548f3cd5efcf3a768dced5661ef9c61c797a45a))
+* **api-messages-attachment-download:** is sendAsString param is set, and is set to true then decode the original file and send back as UTF-8 ZMS-134 ([#655](https://github.com/nodemailer/wildduck/issues/655)) ([1f27778](https://github.com/nodemailer/wildduck/commit/1f27778ae88947027ec613bb3e4f1dd3aff6351f))
+* **api-messages-intro:** Take intro from HTML if possible ZMS-112 ([#672](https://github.com/nodemailer/wildduck/issues/672)) ([9d9fbd2](https://github.com/nodemailer/wildduck/commit/9d9fbd25c4b5559e654f7a071c47b42b7856fd74))
+* **api-messages:** Added all messages endpoints to api docs generation ZMS-140 ([#666](https://github.com/nodemailer/wildduck/issues/666)) ([6e251c5](https://github.com/nodemailer/wildduck/commit/6e251c5baed520b7e165de514d9308323d1e1ef8))
+* **api-messages:** messages fix response types ([#673](https://github.com/nodemailer/wildduck/issues/673)) ([16c6fb8](https://github.com/nodemailer/wildduck/commit/16c6fb8b7c6af0de5d338e5d80d67f0243ea9e25))
+* **api-settings:** Added all Settings API endpoints to API docs generation ZMS-145 ([#671](https://github.com/nodemailer/wildduck/issues/671)) ([02a43c6](https://github.com/nodemailer/wildduck/commit/02a43c6330edded905568e178456d1ef44ca14c1))
+* **deps:** Bumped deps ([2d0e920](https://github.com/nodemailer/wildduck/commit/2d0e920e0b04b18c4f189bd5835e84af78066b81))
+
 ## [1.42.5](https://github.com/nodemailer/wildduck/compare/v1.42.4...v1.42.5) (2024-03-14)
 
 
