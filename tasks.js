@@ -124,6 +124,7 @@ module.exports.start = callback => {
         secret: config.certs && config.certs.secret,
         database: db.database,
         redis: db.redis,
+        users: db.users,
         acmeConfig: config.acme,
         loggelf: message => loggelf(message)
     });
