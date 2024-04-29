@@ -11,7 +11,7 @@ const crypto = require('crypto');
 const counters = require('./lib/counters');
 const { ObjectId } = require('mongodb');
 const libmime = require('libmime');
-const punycode = require('punycode/');
+const punycode = require('punycode.js');
 const { getClient } = require('./lib/elasticsearch');
 
 let loggelf;
