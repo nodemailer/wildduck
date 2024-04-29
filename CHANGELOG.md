@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.43.1](https://github.com/nodemailer/wildduck/compare/v1.43.0...v1.43.1) (2024-04-29)
+
+
+### Bug Fixes
+
+* **api-submit:** Added submission api endpoint to api docs generation ([#676](https://github.com/nodemailer/wildduck/issues/676)) ([82133df](https://github.com/nodemailer/wildduck/commit/82133df0c9b01e9bf4fcfcfea6ed660f37aeffe3))
+* **SNI:** disable SNI certificate autogeneration by default ([ecbdc9b](https://github.com/nodemailer/wildduck/commit/ecbdc9be5fefeebc71452f621dcd72e0844955ca))
+
 ## [1.43.0](https://github.com/nodemailer/wildduck/compare/v1.42.6...v1.43.0) (2024-04-29)
 
 
