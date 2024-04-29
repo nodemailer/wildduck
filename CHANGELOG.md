@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.43.2](https://github.com/nodemailer/wildduck/compare/v1.43.1...v1.43.2) (2024-04-29)
+
+
+### Bug Fixes
+
+* **SNI:** do not use the default db for SNI ([a6c53eb](https://github.com/nodemailer/wildduck/commit/a6c53eba1fb3a6ed929050742b8681dafc472ce8))
+
 ## [1.43.1](https://github.com/nodemailer/wildduck/compare/v1.43.0...v1.43.1) (2024-04-29)
 
 
