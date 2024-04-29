@@ -19,7 +19,8 @@ keyExponent = 65537
 
 [autogenerate]
 # If enabled then automatically generates TLS certificates based on SNI servernames
-enabled = true
+enabled = false
+
 [autogenerate.cnameMapping]
 # Sudomain CNAME mapping
 #   "abc" = ["def.com"] means that if the SNI servername domain is "abc.{domain}"
@@ -27,9 +28,10 @@ enabled = true
 #   If multiple CNAME targets are defined (eg ["def.com", "bef.com"], then at least 1 must match.
 #   Additionally, there must be at least 1 email account with "@{domain}" address.
 #   If there is no match, then TLS certificate is not generated.
-imap = ["imap.example.com"]
-smtp = ["smtp.example.com"]
-pop3 = ["imap.example.com"]
+
+# imap = ["imap.example.com"]
+# smtp = ["smtp.example.com"]
+# pop3 = ["imap.example.com"]
 
 [agent]
 # If enabled then starts a HTTP server that listens for ACME verification requests
