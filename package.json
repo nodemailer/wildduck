@@ -56,7 +56,7 @@
         "base32.js": "0.1.0",
         "bcryptjs": "2.4.3",
         "bson": "6.6.0",
-        "bullmq": "5.7.5",
+        "bullmq": "5.7.6",
         "fido2-lib": "3.5.3",
         "gelf": "2.0.1",
         "generate-password": "1.7.1",
