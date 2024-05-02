@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.43.3](https://github.com/nodemailer/wildduck/compare/v1.43.2...v1.43.3) (2024-05-02)
+
+
+### Bug Fixes
+
+* **api-storage:** Added all storage endpoints to API docs generation ZMS-149 ([#675](https://github.com/nodemailer/wildduck/issues/675)) ([8e9af88](https://github.com/nodemailer/wildduck/commit/8e9af88a62960207d68f28fb71cd540be7a66fd5))
+* **autsni:** Fixed garbage collection for unfinished certificates ([5bf6c86](https://github.com/nodemailer/wildduck/commit/5bf6c865428d743f7ce328647146c95e07f3ace2))
+
 ## [1.43.2](https://github.com/nodemailer/wildduck/compare/v1.43.1...v1.43.2) (2024-04-29)
 
 
