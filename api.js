@@ -101,11 +101,10 @@ const serverOptions = {
             };
 
             Object.keys(req.params || {}).forEach(key => {
-                // cast value to string, as we want to have value present whenever there is some actual value (whatever the data type)
-                let value = typeof req.params[key] === 'string' ? req.params[key] : util.inspect(req.params[key], false, 3).trim();
+                let value = req.params[key];
 
-                if (!value) {
-                    // check for empty string
+                if (!value && value !== 0) {
+                    // if falsy don't continue, allow 0 integer as value
                     return;
                 }
 
@@ -113,12 +112,6 @@ const serverOptions = {
                     value = '***';
                 } else if (value.length > 128) {
                     value = value.substr(0, 128) + '…';
-                } else if (key === 'end') {
-                    // in case param name is end
-                    if (key.includes('false')) {
-                        // end is false (boolean as string)
-                        return;
-                    }
                 }
 
                 if (key.length > 30) {
