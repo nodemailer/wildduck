@@ -108,6 +108,9 @@ const serverOptions = {
                     return;
                 }
 
+                // cast value to string
+                value = util.inspect(req.params[key], false, 3).trim();
+
                 if (['password'].includes(key)) {
                     value = '***';
                 } else if (value.length > 128) {
