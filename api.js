@@ -101,11 +101,15 @@ const serverOptions = {
             };
 
             Object.keys(req.params || {}).forEach(key => {
-                let value = typeof req.params[key] === 'string' ? req.params[key] : util.inspect(req.params[key], false, 3).toString().trim();
+                let value = req.params[key];
 
-                if (!value) {
+                if (!value && value !== 0) {
+                    // if falsy don't continue, allow 0 integer as value
                     return;
                 }
+
+                // cast value to string
+                value = util.inspect(req.params[key], false, 3).trim();
 
                 if (['password'].includes(key)) {
                     value = '***';
