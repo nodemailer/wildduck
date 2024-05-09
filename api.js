@@ -217,7 +217,7 @@ server.use(
 
 // public files
 server.get(
-    { name: 'public_get', path: '/public/*' },
+    { name: 'public_get', path: '/public/*', excludeRoute: true },
     restify.plugins.serveStatic({
         directory: Path.join(__dirname, 'public'),
         default: 'index.html'
