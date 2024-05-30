@@ -64,5 +64,5 @@
         }
     },
     "security": [{ "AccessTokenAuth": [] }],
-    "docsPath": "/openapidocs.json"
+    "docsPath": "/docs/api/openapidocs.json"
 }
