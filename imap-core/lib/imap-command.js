@@ -49,7 +49,8 @@ const commands = new Map([
     ['GETQUOTAROOT', require('./commands/getquotaroot')],
     ['SETQUOTA', require('./commands/setquota')],
     ['GETQUOTA', require('./commands/getquota')],
-    ['COMPRESS', require('./commands/compress')]
+    ['COMPRESS', require('./commands/compress')],
+    ['XAPPLEPUSHSERVICE', require('./commands/xapplepushservice')]
     /*eslint-enable global-require*/
 ]);
 
