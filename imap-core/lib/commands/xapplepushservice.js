@@ -10,7 +10,8 @@
 module.exports = {
     state: ['Authenticated', 'Selected'],
 
-    schema: [
+	/*
+    Schema: [
         {
             name: 'aps-version',
             type: 'number' // always 2
@@ -34,63 +35,112 @@ module.exports = {
             type: 'string' // e.g. (INBOX Notes)
         }
     ],
+    */
 
-    handler(command, callback) {
-        const version = Buffer.from((command.attributes[0] && command.attributes[0].value) || '', 'binary').toString();
-        if (version !== "2")
-            return callback(null, {
-                response: 'NO',
-                code: 'CLIENTBUG'
-            });
+	// it's actually something like this in production
+	// [
+	//   { type: 'ATOM', value: 'aps-version' },
+	//   { type: 'ATOM', value: '2' },
+	//   { type: 'ATOM', value: 'aps-account-id' },
+	//   { type: 'ATOM', value: 'xxxxxxx' },
+	//   { type: 'ATOM', value: 'aps-device-token' },
+	//   {
+	//     type: 'ATOM',
+	//     value: 'xxxxxx'
+	//   },
+	//   { type: 'ATOM', value: 'aps-subtopic' },
+	//   { type: 'ATOM', value: 'com.apple.mobilemail' },
+	//   { type: 'ATOM', value: 'mailboxes' },
+	//   [
+	//     { type: 'STRING', value: 'Sent Mail' },
+	//     { type: 'STRING', value: 'INBOX' }
+	//   ]
+	// ]
 
-        const accountID = Buffer.from((command.attributes[1] && command.attributes[1].value) || '', 'binary').toString();
-        const deviceToken = Buffer.from((command.attributes[2] && command.attributes[2].value) || '', 'binary').toString();
-        const subTopic = Buffer.from((command.attributes[3] && command.attributes[3].value) || '', 'binary').toString();
+	// disabled for now
+	schema: false,
 
-        if (subTopic !== "com.apple.mobilemail")
-            return callback(null, {
-                response: 'NO',
-                code: 'CLIENTBUG'
-            });
+	handler(command, callback) {
+		// Command = {
+		//   tag: 'I5',
+		//   command: 'XAPPLEPUSHSERVICE',
+		//   attributes: [
+		//     { type: 'ATOM', value: 'aps-version' }, // 0
+		//     { type: 'ATOM', value: '2' }, // 1
+		//     { type: 'ATOM', value: 'aps-account-id' }, // 2
+		//     { type: 'ATOM', value: 'xxxxxx' }, // 3
+		//     { type: 'ATOM', value: 'aps-device-token' }, // 4
+		//     {  // 5
+		//       type: 'ATOM',
+		//       value: 'xxxxxx'
+		//     },
+		//     { type: 'ATOM', value: 'aps-subtopic' }, // 6
+		//     { type: 'ATOM', value: 'com.apple.mobilemail' }, // 7
+		//     { type: 'ATOM', value: 'mailboxes' }, // 8
+		//     [ // 9
+		//       { type: 'STRING', value: 'Sent Mail' },
+		//       { type: 'STRING', value: 'INBOX' }
+		//     ]
+		//   ]
+		// }
 
-        // NOTE: mailboxes param is not used at this time (it's a list anyways too)
-        const mailboxes = Buffer.from((command.attributes[4] && command.attributes[4].value) || '', 'binary').toString();
+		const version = (command.attributes[1] && command.attributes[1].value) || '';
+		if (version !== '2') {
+			return callback(null, {
+				response: 'NO',
+				code: 'CLIENTBUG',
+			});
+		}
 
-        if (typeof this._server.onXAPPLEPUSHSERVICE !== 'function') {
-            return callback(null, {
-                response: 'NO',
-                message: command.command + ' not implemented'
-            });
-        }
+		const accountID = (command.attributes[3] && command.attributes[3].value) || '';
+		const deviceToken = (command.attributes[5] && command.attributes[5].value) || '';
+		const subTopic = (command.attributes[7] && command.attributes[7].value) || '';
 
-        let logdata = {
-            short_message: '[XAPPLEPUSHSERVICE]',
-            _mail_action: 'xapplepushservice',
-            _accountId: accountID,
-            _deviceToken: deviceToken,
-            _subTopic: subTopic,
-            _mailboxes: mailboxes,
-            _user: this.session.user.id.toString(),
-            _sess: this.id
-        };
+		if (subTopic !== 'com.apple.mobilemail') {
+			return callback(null, {
+				response: 'NO',
+				code: 'CLIENTBUG',
+			});
+		}
 
-        this._server.onXAPPLEPUSHSERVICE(accountID, deviceToken, subTopic, mailboxes, this.session, (err) => {
-            if (err) {
-                logdata._error = err.message;
-                logdata._code = err.code;
-                logdata._response = err.response;
-                this._server.loggelf(logdata);
+		// NOTE: mailboxes param is not used at this time (it's a list anyways too)
+		const mailboxes = command.attributes[9] && Array.isArray(command.attributes[9]) && command.attributes[9].length > 0 ? command.attributes[9].map(object => object.value) : [];
 
-                return callback(null, {
-                    response: 'NO',
-                    code: 'TEMPFAIL'
-                });
-            }
+		if (typeof this._server.onXAPPLEPUSHSERVICE !== 'function') {
+			return callback(null, {
+				response: 'NO',
+				message: command.command + ' not implemented',
+			});
+		}
 
-            callback(null, {
-                response: 'OK',
-                message: 'Success'
-            });
-        });
-    }
+		const logdata = {
+			short_message: '[XAPPLEPUSHSERVICE]',
+			_mail_action: 'xapplepushservice',
+			_accountId: accountID,
+			_deviceToken: deviceToken,
+			_subTopic: subTopic,
+			_mailboxes: mailboxes,
+			_user: this.session.user.id.toString(),
+			_sess: this.id,
+		};
+
+		this._server.onXAPPLEPUSHSERVICE(accountID, deviceToken, subTopic, mailboxes, this.session, error => {
+			if (error) {
+				logdata._error = error.message;
+				logdata._code = error.code;
+				logdata._response = error.response;
+				this._server.loggelf(logdata);
+
+				return callback(null, {
+					response: 'NO',
+					code: 'TEMPFAIL',
+				});
+			}
+
+			callback(null, {
+				response: 'OK',
+				message: 'Success',
+			});
+		});
+	},
 };
