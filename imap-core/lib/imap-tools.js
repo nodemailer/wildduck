@@ -717,6 +717,9 @@ module.exports.getQueryResponse = function (query, message, options) {
 module.exports.sendCapabilityResponse = connection => {
     let capabilities = [];
 
+    if (typeof connection._server.onXAPPLEPUSHSERVICE === 'function')
+      capabilities.push('XAPPLEPUSHSERVICE');
+    
     if (!connection.secure) {
         if (!connection._server.options.disableSTARTTLS) {
             capabilities.push('STARTTLS');
