@@ -137,9 +137,12 @@ module.exports = {
 				});
 			}
 
+      // <https://opensource.apple.com/source/dovecot/dovecot-293/dovecot/src/imap/cmd-x-apple-push-service.c.auto.html>
+      // <https://github.com/st3fan/dovecot-xaps-plugin/blob/3d1c71e0c78cc35ca6ead21f49a8e0e35e948a7c/xaps-imap-plugin.c#L158-L166>
+      this.send(`* XAPPLEPUSHSERVICE aps-version "${version}" aps-topic "${subTopic}"`);
 			callback(null, {
 				response: 'OK',
-				message: 'Success',
+        message: 'XAPPLEPUSHSERVICE Registration successful.'
 			});
 		});
 	},
