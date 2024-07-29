@@ -36,7 +36,7 @@ const onMove = require('./lib/handlers/on-move');
 const onSearch = require('./lib/handlers/on-search');
 const onGetQuotaRoot = require('./lib/handlers/on-get-quota-root');
 const onGetQuota = require('./lib/handlers/on-get-quota');
-// const onXAPPLEPUSHSERVICE = require('./lib/handlers/on-xapplepushservice');
+const onXAPPLEPUSHSERVICE = require('./lib/handlers/on-xapplepushservice');
 
 let logger = {
     info(...args) {
@@ -77,6 +77,8 @@ let createInterface = (ifaceOptions, callback) => {
             version: config.imap.version || packageData.version,
             vendor: config.imap.vendor || 'Kreata'
         },
+
+        aps: config.imap.aps,
 
         logger,
 
@@ -157,7 +159,7 @@ let createInterface = (ifaceOptions, callback) => {
     server.onSearch = onSearch(server);
     server.onGetQuotaRoot = onGetQuotaRoot(server);
     server.onGetQuota = onGetQuota(server);
-    // server.onXAPPLEPUSHSERVICE = onXAPPLEPUSHSERVICE(server);
+    server.onXAPPLEPUSHSERVICE = onXAPPLEPUSHSERVICE(server);
 
     if (loggelf) {
         server.loggelf = loggelf;
