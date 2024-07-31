@@ -2,6 +2,12 @@
 
 This is an overview of any third party projects that integrate with or relate to WildDuck.
 
+## Forward Email
+
+https://forwardemail.net
+
+Forward Email (@forwardemail) is a 100% open-source and privacy-focused email service that combines WildDuck with [an encrypted SQLite storage layer](https://forwardemail.net/blog/docs/best-quantum-safe-encrypted-email-service) and offers IMAP/POP3/SMTP/CalDAV and more.
+
 ## Astzweig Docker Wildduck
 
 https://github.com/astzweig/docker-wildduck
