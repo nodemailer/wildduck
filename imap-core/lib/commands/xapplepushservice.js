@@ -159,7 +159,8 @@ module.exports = {
             _sess: this.id
         };
 
-        this._server.onXAPPLEPUSHSERVICE(accountID, deviceToken, subTopic, mailboxes, this.session, error => {
+        // <https://github.com/freswa/dovecot-xaps-daemon/issues/39#issuecomment-2263472541>
+        this._server.onXAPPLEPUSHSERVICE(accountID, deviceToken, subTopic, mailboxes, this.session, (error, topic) => {
             if (error) {
                 logdata._error = error.message;
                 logdata._code = error.code;
@@ -172,9 +173,16 @@ module.exports = {
                 });
             }
 
+            // this is a developer bug, they forgot to return a topic in callback
+            if (typeof topic !== 'string' || !topic)
+                return callback(null, {
+                    response: 'NO',
+                    code: 'TEMPFAIL'
+                });
+
             // <https://opensource.apple.com/source/dovecot/dovecot-293/dovecot/src/imap/cmd-x-apple-push-service.c.auto.html>
             // <https://github.com/st3fan/dovecot-xaps-plugin/blob/3d1c71e0c78cc35ca6ead21f49a8e0e35e948a7c/xaps-imap-plugin.c#L158-L166>
-            this.send(`* XAPPLEPUSHSERVICE aps-version "${version}" aps-topic "${subTopic}"`);
+            this.send(`* XAPPLEPUSHSERVICE aps-version "${version}" aps-topic "${topic}"`);
             callback(null, {
                 response: 'OK',
                 message: 'XAPPLEPUSHSERVICE Registration successful.'
