@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.45.0](https://github.com/nodemailer/wildduck/compare/v1.44.0...v1.45.0) (2024-08-01)
+
+
+### Features
+
+* added [@forwardemail](https://github.com/forwardemail) to third-party projects ([#716](https://github.com/nodemailer/wildduck/issues/716)) ([66f8c12](https://github.com/nodemailer/wildduck/commit/66f8c123c37f425ed1eb98aa0eae36c6504b4fd5))
+
+
+### Bug Fixes
+
+* fixed XAPPLEPUSHSERVICE command (needs to return topic) ([#719](https://github.com/nodemailer/wildduck/issues/719)) ([ba0258f](https://github.com/nodemailer/wildduck/commit/ba0258fc5bc7697ada157f77538eadf667690cd2))
+* **lib-filter:** ZMS-161 ([#718](https://github.com/nodemailer/wildduck/issues/718)) ([f32dc14](https://github.com/nodemailer/wildduck/commit/f32dc147e631ac398d5d3a661611e607d2688c47))
+
 ## [1.44.0](https://github.com/nodemailer/wildduck/compare/v1.43.3...v1.44.0) (2024-07-29)
 
 
