@@ -54,6 +54,11 @@ ignoredHosts = []
 #secure=false
 #ignoreSTARTTLS=true
 
+# Apple push notificiations
+# TODO: missing actual implementation for Apple Push Service
+[aps]
+enabled = false
+
 [setup]
 # Public configuration for IMAP
 hostname = "localhost"

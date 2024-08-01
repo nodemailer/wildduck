@@ -763,6 +763,10 @@ module.exports.sendCapabilityResponse = connection => {
         if (connection._server.options.maxMessage) {
             capabilities.push('APPENDLIMIT=' + connection._server.options.maxMessage);
         }
+
+        if (connection._server.options.aps?.enabled) {
+            capabilities.push('XAPPLEPUSHSERVICE');
+        }
     }
 
     capabilities.sort((a, b) => a.localeCompare(b));
