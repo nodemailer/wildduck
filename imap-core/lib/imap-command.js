@@ -360,11 +360,19 @@ class IMAPCommand {
         let minArgs = schema.filter(item => !item.optional).length;
 
         // Check if the command can be run in current state
-        if (handler.state && [].concat(handler.state || []).indexOf(this.connection.state) < 0) {
+        const states = handler.state && [].concat(handler.state || []);
+        if (states && !states.includes(this.connection.state)) {
             let err = new Error(parsed.command.toUpperCase() + ' not allowed now');
             err.responseCode = 500;
             err.code = 'InvalidState';
-            return callback(err);
+            callback(err);
+            // <https://github.com/nodemailer/wildduck/issues/726>
+            if (states.includes('Authenticated')) {
+              this.connection.clearNotificationListener();
+              this.connection.send('* BYE Logout requested');
+              setImmediate(() => this.connection.close());
+            }
+            return;
         }
 
         if (handler.schema === false) {
