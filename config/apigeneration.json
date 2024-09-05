@@ -3,7 +3,6 @@
     "info": {
         "title": "WildDuck API",
         "description": "WildDuck API docs",
-        "version": "1.0.0",
         "contact": {
             "url": "https://github.com/nodemailer/wildduck"
         }
