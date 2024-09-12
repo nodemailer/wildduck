@@ -148,7 +148,7 @@ describe('Mailboxes tests', function () {
 
         expect(response.body.success).to.be.true;
         expect(response.body.results).to.not.be.empty;
-        expect(response.body.results.length).to.be.equal(8);
+        expect(response.body.results.length).to.be.equal(9);
     });
 
     it('should GET /users/{user}/mailboxes expect success / all params', async () => {
@@ -164,7 +164,7 @@ describe('Mailboxes tests', function () {
 
         expect(response.body.success).to.be.true;
         expect(response.body.results).to.not.be.empty;
-        expect(response.body.results.length).to.be.equal(8);
+        expect(response.body.results.length).to.be.equal(9);
     });
 
     it('should GET /users/{user}/mailboxes expect failure / params incorrect type', async () => {
@@ -525,7 +525,7 @@ describe('Mailboxes tests', function () {
         let path = '';
 
         for (let i = 0; i < MAX_SUB_MAILBOXES; i++) {
-            path += `${'a'.repeat(MAX_MAILBOX_NAME_LENGTH)}/`;
+            path += `${`${i % 10}`.repeat(MAX_MAILBOX_NAME_LENGTH)}/`;
         }
 
         path = path.substring(0, path.length - 1);
