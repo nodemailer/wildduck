@@ -11,6 +11,8 @@ const expect = chai.expect;
 chai.config.includeStack = true;
 const config = require('wild-config');
 
+const { MAX_MAILBOX_NAME_LENGTH, MAX_SUB_MAILBOXES } = require('../../lib/consts');
+
 const server = supertest.agent(`http://127.0.0.1:${config.api.port}`);
 
 describe('Mailboxes tests', function () {
@@ -442,7 +444,7 @@ describe('Mailboxes tests', function () {
     it('should POST /users/{user}/mailboxes expect failure / too many subpaths in mailbox path', async () => {
         let path = '';
 
-        for (let i = 0; i < 128 + 1; i++) {
+        for (let i = 0; i < MAX_SUB_MAILBOXES + 1; i++) {
             path += `subpath${i}/`;
         }
 
@@ -450,7 +452,7 @@ describe('Mailboxes tests', function () {
         const response = await server.post(`/users/${user}/mailboxes`).send({ path, hidden: false }).expect(400);
 
         expect(response.body.code).to.eq('InputValidationError');
-        expect(response.body.error).to.eq('The mailbox path cannot be more than 128 levels deep');
+        expect(response.body.error).to.eq(`The mailbox path cannot be more than ${MAX_SUB_MAILBOXES} levels deep`);
     });
 
     it('should POST /users/{user}/mailboxes expect failure / subpath too long', async () => {
@@ -459,7 +461,7 @@ describe('Mailboxes tests', function () {
         for (let i = 0; i < 16; i++) {
             if (i % 5 === 0) {
                 // every fifth
-                path += `${'a'.repeat(512 + 1)}/`;
+                path += `${'a'.repeat(MAX_MAILBOX_NAME_LENGTH + 1)}/`;
             } else {
                 path += `subpath${i}/`;
             }
@@ -469,14 +471,14 @@ describe('Mailboxes tests', function () {
         const response = await server.post(`/users/${user}/mailboxes`).send({ path, hidden: false }).expect(400);
 
         expect(response.body.code).to.eq('InputValidationError');
-        expect(response.body.error).to.eq('Any part of the mailbox path cannot be longer than 512 chars long');
+        expect(response.body.error).to.eq(`Any part of the mailbox path cannot be longer than ${MAX_MAILBOX_NAME_LENGTH} chars long`);
     });
 
     it('should POST /users/{user}/mailboxes expect success / edge case for subpath length and subpath count', async () => {
         let path = '';
 
-        for (let i = 0; i < 128; i++) {
-            path += `${'a'.repeat(512)}/`;
+        for (let i = 0; i < MAX_SUB_MAILBOXES; i++) {
+            path += `${'a'.repeat(MAX_MAILBOX_NAME_LENGTH)}/`;
         }
 
         path = path.substring(0, path.length - 1);
@@ -489,7 +491,7 @@ describe('Mailboxes tests', function () {
     it('should PUT /users/{user}/mailboxes/{mailbox} expect failure / too many subpaths in mailbox path', async () => {
         let path = '';
 
-        for (let i = 0; i < 128 + 1; i++) {
+        for (let i = 0; i < MAX_SUB_MAILBOXES + 1; i++) {
             path += `subpath${i}/`;
         }
 
@@ -497,7 +499,7 @@ describe('Mailboxes tests', function () {
         const response = await server.put(`/users/${user}/mailboxes/${mailboxForPut}`).send({ path, hidden: false }).expect(400);
 
         expect(response.body.code).to.eq('InputValidationError');
-        expect(response.body.error).to.eq('The mailbox path cannot be more than 128 levels deep');
+        expect(response.body.error).to.eq(`The mailbox path cannot be more than ${MAX_SUB_MAILBOXES} levels deep`);
     });
 
     it('should PUT /users/{user}/mailboxes/{mailbox} expect failure / subpath too long', async () => {
@@ -506,7 +508,7 @@ describe('Mailboxes tests', function () {
         for (let i = 0; i < 16; i++) {
             if (i % 5 === 0) {
                 // every fifth
-                path += `${'a'.repeat(512 + 1)}/`;
+                path += `${'a'.repeat(MAX_MAILBOX_NAME_LENGTH + 1)}/`;
             } else {
                 path += `subpath${i}/`;
             }
@@ -516,14 +518,14 @@ describe('Mailboxes tests', function () {
         const response = await server.put(`/users/${user}/mailboxes/${mailboxForPut}`).send({ path, hidden: false }).expect(400);
 
         expect(response.body.code).to.eq('InputValidationError');
-        expect(response.body.error).to.eq('Any part of the mailbox path cannot be longer than 512 chars long');
+        expect(response.body.error).to.eq(`Any part of the mailbox path cannot be longer than ${MAX_MAILBOX_NAME_LENGTH} chars long`);
     });
 
     it('should PUT /users/{user}/mailboxes/{mailbox} expect success / edge case for subpath length and subpath count', async () => {
         let path = '';
 
-        for (let i = 0; i < 128; i++) {
-            path += `${'a'.repeat(512)}/`;
+        for (let i = 0; i < MAX_SUB_MAILBOXES; i++) {
+            path += `${'a'.repeat(MAX_MAILBOX_NAME_LENGTH)}/`;
         }
 
         path = path.substring(0, path.length - 1);
