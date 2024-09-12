@@ -85,7 +85,7 @@ module.exports = {
                 this._server.loggelf(logdata);
                 return callback(null, {
                     response: 'NO',
-                    code: 'TEMPFAIL'
+                    code: err.code || 'TEMPFAIL'
                 });
             }
 

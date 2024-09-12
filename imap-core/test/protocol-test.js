@@ -472,6 +472,66 @@ describe('IMAP Protocol integration tests', function () {
                 }
             );
         });
+
+        it('cannot create a mailbox with subpath length bigger than 512 chars', function (done) {
+            let cmds = [
+                'T1 LOGIN testuser pass',
+                `T2 CREATE parent/child/${'a'.repeat(512 + 1)}`,
+                'T3 CREATE parent/child',
+                'T4 CREATE testfolder',
+                'T5 LIST "" "*"',
+                'T6 LOGOUT'
+            ];
+
+            testClient(
+                {
+                    commands: cmds,
+                    secure: true,
+                    port
+                },
+                function (resp) {
+                    resp = resp.toString();
+                    expect(/^T2 NO \[CANNOT\]/m.test(resp)).to.be.true;
+                    expect(/^T3 OK/m.test(resp)).to.be.true;
+                    expect(/^T4 OK/m.test(resp)).to.be.true;
+                    expect(resp.indexOf('\r\n* LIST (\\HasNoChildren) "/" "testfolder"\r\n') >= 0).to.be.true;
+                    expect(resp.indexOf('\r\n* LIST (\\Noselect \\HasChildren) "/" "parent"\r\n') >= 0).to.be.true;
+                    expect(resp.indexOf('\r\n* LIST (\\HasNoChildren) "/" "parent/child"\r\n') >= 0).to.be.true;
+                    done();
+                }
+            );
+        });
+
+        it('cannot create a mailbox with more than 128 subpaths', function (done) {
+            let cmds = ['T1 LOGIN testuser pass', `T2 CREATE tobechanged`, 'T3 CREATE parent/child', 'T4 CREATE testfolder', 'T5 LIST "" "*"', 'T6 LOGOUT'];
+
+            let path = '';
+
+            for (let i = 0; i < 128 + 1; i++) {
+                path += `subpath${i}/`;
+            }
+            path = path.substring(0, path.length - 1);
+
+            cmds[1] = `T2 CREATE ${path}`;
+
+            testClient(
+                {
+                    commands: cmds,
+                    secure: true,
+                    port
+                },
+                function (resp) {
+                    resp = resp.toString();
+                    expect(/^T2 NO \[CANNOT\]/m.test(resp)).to.be.true;
+                    expect(/^T3 OK/m.test(resp)).to.be.true;
+                    expect(/^T4 OK/m.test(resp)).to.be.true;
+                    expect(resp.indexOf('\r\n* LIST (\\HasNoChildren) "/" "testfolder"\r\n') >= 0).to.be.true;
+                    expect(resp.indexOf('\r\n* LIST (\\Noselect \\HasChildren) "/" "parent"\r\n') >= 0).to.be.true;
+                    expect(resp.indexOf('\r\n* LIST (\\HasNoChildren) "/" "parent/child"\r\n') >= 0).to.be.true;
+                    done();
+                }
+            );
+        });
     });
 
     describe('RENAME', function () {
@@ -498,6 +558,57 @@ describe('IMAP Protocol integration tests', function () {
                     expect(resp.indexOf('\r\n* LIST (\\HasNoChildren) "/" "testfolder"\r\n') >= 0).to.be.false;
                     expect(resp.indexOf('\r\n* LIST (\\Noselect \\HasChildren) "/" "parent"\r\n') >= 0).to.be.true;
                     expect(resp.indexOf('\r\n* LIST (\\HasNoChildren) "/" "parent/child"\r\n') >= 0).to.be.true;
+                    done();
+                }
+            );
+        });
+
+        it('cannot rename a mailbox to a mailbox path where subpath length is bigger than max allowed', function (done) {
+            let cmds = [
+                'T1 LOGIN testuser pass',
+                'T2 CREATE testfolder',
+                `T3 RENAME testfolder parent/child/${'a'.repeat(512 + 1)}`,
+                'T5 LIST "" "*"',
+                'T6 LOGOUT'
+            ];
+
+            testClient(
+                {
+                    commands: cmds,
+                    secure: true,
+                    port
+                },
+                function (resp) {
+                    resp = resp.toString();
+                    expect(/^T3 NO \[CANNOT\]/m.test(resp)).to.be.true;
+                    expect(resp.indexOf('\r\n* LIST (\\HasNoChildren) "/" "testfolder"\r\n') >= 0).to.be.true;
+                    done();
+                }
+            );
+        });
+
+        it('cannot rename a mailbox to a mailbox path where there are more than max subpath count', function (done) {
+            let cmds = ['T1 LOGIN testuser pass', 'T2 CREATE testfolder', `T3 RENAME testfolder parent/child`, 'T5 LIST "" "*"', 'T6 LOGOUT'];
+
+            let path = '';
+
+            for (let i = 0; i < 128 + 1; i++) {
+                path += `subpath${i}/`;
+            }
+            path = path.substring(0, path.length - 1);
+
+            cmds[2] = `T3 RENAME testfolder ${path}`;
+
+            testClient(
+                {
+                    commands: cmds,
+                    secure: true,
+                    port
+                },
+                function (resp) {
+                    resp = resp.toString();
+                    expect(/^T3 NO \[CANNOT\]/m.test(resp)).to.be.true;
+                    expect(resp.indexOf('\r\n* LIST (\\HasNoChildren) "/" "testfolder"\r\n') >= 0).to.be.true;
                     done();
                 }
             );
