@@ -13,6 +13,8 @@ let chunks = require('./fixtures/chunks');
 let expect = chai.expect;
 chai.config.includeStack = true;
 
+const { MAX_SUB_MAILBOXES, MAX_MAILBOX_NAME_LENGTH } = require('../../lib/consts.js');
+
 describe('IMAP Protocol integration tests', function () {
     this.timeout(100000); // eslint-disable-line no-invalid-this
     let port = 9993;
@@ -473,10 +475,10 @@ describe('IMAP Protocol integration tests', function () {
             );
         });
 
-        it('cannot create a mailbox with subpath length bigger than 512 chars', function (done) {
+        it(`cannot create a mailbox with subpath length bigger than ${MAX_MAILBOX_NAME_LENGTH} chars`, function (done) {
             let cmds = [
                 'T1 LOGIN testuser pass',
-                `T2 CREATE parent/child/${'a'.repeat(512 + 1)}`,
+                `T2 CREATE parent/child/${'a'.repeat(MAX_MAILBOX_NAME_LENGTH + 1)}`,
                 'T3 CREATE parent/child',
                 'T4 CREATE testfolder',
                 'T5 LIST "" "*"',
@@ -502,12 +504,12 @@ describe('IMAP Protocol integration tests', function () {
             );
         });
 
-        it('cannot create a mailbox with more than 128 subpaths', function (done) {
+        it(`cannot create a mailbox with more than ${MAX_SUB_MAILBOXES} subpaths`, function (done) {
             let cmds = ['T1 LOGIN testuser pass', `T2 CREATE tobechanged`, 'T3 CREATE parent/child', 'T4 CREATE testfolder', 'T5 LIST "" "*"', 'T6 LOGOUT'];
 
             let path = '';
 
-            for (let i = 0; i < 128 + 1; i++) {
+            for (let i = 0; i < MAX_SUB_MAILBOXES + 1; i++) {
                 path += `subpath${i}/`;
             }
             path = path.substring(0, path.length - 1);
@@ -567,7 +569,7 @@ describe('IMAP Protocol integration tests', function () {
             let cmds = [
                 'T1 LOGIN testuser pass',
                 'T2 CREATE testfolder',
-                `T3 RENAME testfolder parent/child/${'a'.repeat(512 + 1)}`,
+                `T3 RENAME testfolder parent/child/${'a'.repeat(MAX_MAILBOX_NAME_LENGTH + 1)}`,
                 'T5 LIST "" "*"',
                 'T6 LOGOUT'
             ];
@@ -592,7 +594,7 @@ describe('IMAP Protocol integration tests', function () {
 
             let path = '';
 
-            for (let i = 0; i < 128 + 1; i++) {
+            for (let i = 0; i < MAX_SUB_MAILBOXES + 1; i++) {
                 path += `subpath${i}/`;
             }
             path = path.substring(0, path.length - 1);
