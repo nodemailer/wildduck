@@ -11,12 +11,15 @@ const expect = chai.expect;
 chai.config.includeStack = true;
 const config = require('wild-config');
 
+const { MAX_MAILBOX_NAME_LENGTH, MAX_SUB_MAILBOXES } = require('../../lib/consts');
+
 const server = supertest.agent(`http://127.0.0.1:${config.api.port}`);
 
 describe('Mailboxes tests', function () {
     this.timeout(10000); // eslint-disable-line no-invalid-this
 
     let user;
+    let mailboxForPut;
 
     before(async () => {
         // ensure that we have an existing user account
@@ -33,6 +36,9 @@ describe('Mailboxes tests', function () {
         expect(response.body.id).to.exist;
 
         user = response.body.id;
+
+        const responseMailboxPutCreate = await server.post(`/users/${user}/mailboxes`).send({ path: '/path/for/put', hidden: false, retention: 0 }).expect(200);
+        mailboxForPut = responseMailboxPutCreate.body.id;
     });
 
     after(async () => {
@@ -142,7 +148,7 @@ describe('Mailboxes tests', function () {
 
         expect(response.body.success).to.be.true;
         expect(response.body.results).to.not.be.empty;
-        expect(response.body.results.length).to.be.equal(8);
+        expect(response.body.results.length).to.be.equal(9);
     });
 
     it('should GET /users/{user}/mailboxes expect success / all params', async () => {
@@ -158,7 +164,7 @@ describe('Mailboxes tests', function () {
 
         expect(response.body.success).to.be.true;
         expect(response.body.results).to.not.be.empty;
-        expect(response.body.results.length).to.be.equal(8);
+        expect(response.body.results.length).to.be.equal(9);
     });
 
     it('should GET /users/{user}/mailboxes expect failure / params incorrect type', async () => {
@@ -433,5 +439,116 @@ describe('Mailboxes tests', function () {
 
         expect(response.body.error).to.be.equal('Mailbox deletion failed with code DisallowedMailboxMethod');
         expect(response.body.code).to.be.equal('DisallowedMailboxMethod');
+    });
+
+    it('should POST /users/{user}/mailboxes expect failure / too many subpaths in mailbox path', async () => {
+        let path = '';
+
+        for (let i = 0; i < MAX_SUB_MAILBOXES + 1; i++) {
+            path += `subpath${i}/`;
+        }
+
+        path = path.substring(0, path.length - 1);
+        const response = await server.post(`/users/${user}/mailboxes`).send({ path, hidden: false }).expect(400);
+
+        expect(response.body.code).to.eq('InputValidationError');
+        expect(response.body.error).to.eq(`The mailbox path cannot be more than ${MAX_SUB_MAILBOXES} levels deep`);
+    });
+
+    it('should POST /users/{user}/mailboxes expect failure / subpath too long', async () => {
+        let path = '';
+
+        for (let i = 0; i < 16; i++) {
+            if (i % 5 === 0) {
+                // every fifth
+                path += `${'a'.repeat(MAX_MAILBOX_NAME_LENGTH + 1)}/`;
+            } else {
+                path += `subpath${i}/`;
+            }
+        }
+
+        path = path.substring(0, path.length - 1);
+        const response = await server.post(`/users/${user}/mailboxes`).send({ path, hidden: false }).expect(400);
+
+        expect(response.body.code).to.eq('InputValidationError');
+        expect(response.body.error).to.eq(`Any part of the mailbox path cannot be longer than ${MAX_MAILBOX_NAME_LENGTH} chars long`);
+    });
+
+    it('should POST /users/{user}/mailboxes expect success / edge case for subpath length and subpath count', async () => {
+        let path = '';
+
+        for (let i = 0; i < MAX_SUB_MAILBOXES; i++) {
+            path += `${'a'.repeat(MAX_MAILBOX_NAME_LENGTH)}/`;
+        }
+
+        path = path.substring(0, path.length - 1);
+        const response = await server.post(`/users/${user}/mailboxes`).send({ path, hidden: false }).expect(200);
+
+        expect(response.body.success).to.be.true;
+        expect(response.body.id).to.not.be.empty;
+    });
+
+    it('should PUT /users/{user}/mailboxes/{mailbox} expect failure / too many subpaths in mailbox path', async () => {
+        let path = '';
+
+        for (let i = 0; i < MAX_SUB_MAILBOXES + 1; i++) {
+            path += `subpath${i}/`;
+        }
+
+        path = path.substring(0, path.length - 1);
+        const response = await server.put(`/users/${user}/mailboxes/${mailboxForPut}`).send({ path, hidden: false }).expect(400);
+
+        expect(response.body.code).to.eq('InputValidationError');
+        expect(response.body.error).to.eq(`The mailbox path cannot be more than ${MAX_SUB_MAILBOXES} levels deep`);
+    });
+
+    it('should PUT /users/{user}/mailboxes/{mailbox} expect failure / subpath too long', async () => {
+        let path = '';
+
+        for (let i = 0; i < 16; i++) {
+            if (i % 5 === 0) {
+                // every fifth
+                path += `${'a'.repeat(MAX_MAILBOX_NAME_LENGTH + 1)}/`;
+            } else {
+                path += `subpath${i}/`;
+            }
+        }
+
+        path = path.substring(0, path.length - 1);
+        const response = await server.put(`/users/${user}/mailboxes/${mailboxForPut}`).send({ path, hidden: false }).expect(400);
+
+        expect(response.body.code).to.eq('InputValidationError');
+        expect(response.body.error).to.eq(`Any part of the mailbox path cannot be longer than ${MAX_MAILBOX_NAME_LENGTH} chars long`);
+    });
+
+    it('should PUT /users/{user}/mailboxes/{mailbox} expect success / edge case for subpath length and subpath count', async () => {
+        let path = '';
+
+        for (let i = 0; i < MAX_SUB_MAILBOXES; i++) {
+            path += `${`${i % 10}`.repeat(MAX_MAILBOX_NAME_LENGTH)}/`;
+        }
+
+        path = path.substring(0, path.length - 1);
+        const response = await server.put(`/users/${user}/mailboxes/${mailboxForPut}`).send({ path, hidden: false }).expect(200);
+
+        expect(response.body.success).to.be.true;
+    });
+
+    it('should POST /users/{user}/mailboxes expect failure / trailing slash', async () => {
+        let path = 'somepath/abc/';
+
+        const response = await server.post(`/users/${user}/mailboxes`).send({ path, hidden: false }).expect(400);
+
+        expect(response.body.code).to.eq('InputValidationError');
+        expect(response.body.error).to.eq('"path" with value "somepath/abc/" matches the inverted pattern: /\\/{2,}|\\/$/');
+    });
+
+    it('should PUT /users/{user}/mailboxes/{mailbox} expect failure / trailing slash', async () => {
+        let path = 'somepath/abc/';
+
+        const response = await server.put(`/users/${user}/mailboxes/${mailboxForPut}`).send({ path, hidden: false }).expect(400);
+
+        expect(response.body.code).to.eq('InputValidationError');
+        expect(response.body.error).to.eq('"path" with value "somepath/abc/" matches the inverted pattern: /\\/{2,}|\\/$/');
     });
 });
