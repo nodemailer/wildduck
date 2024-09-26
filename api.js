@@ -108,8 +108,8 @@ const serverOptions = {
                     return;
                 }
 
-                // cast value to string
-                value = util.inspect(req.params[key], false, 3).trim();
+                // cast value to string if not string
+                value = typeof req.params[key] === 'string' ? req.params[key] : util.inspect(req.params[key], false, 3).toString().trim();
 
                 if (['password'].includes(key)) {
                     value = '***';
@@ -620,7 +620,6 @@ module.exports = done => {
         }
         started = true;
         log.info('API', 'Server listening on %s:%s', config.api.host || '0.0.0.0', config.api.port);
-
         done(null, server);
     });
 };
