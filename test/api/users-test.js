@@ -11,6 +11,8 @@ const config = require('wild-config');
 
 const server = supertest.agent(`http://127.0.0.1:${config.api.port}`);
 
+const os = require('os');
+
 describe('API Users', function () {
     this.timeout(10000); // eslint-disable-line no-invalid-this
 
@@ -81,6 +83,7 @@ describe('API Users', function () {
         expect(authResponse.body.success).to.be.true;
         expect(authResponse.body).to.deep.equal({
             success: true,
+            address: 'john@example.com',
             id: user,
             username: 'myuser2',
             scope: 'master',
@@ -155,6 +158,7 @@ describe('API Users', function () {
         expect(authResponse.body.success).to.be.true;
         expect(authResponse.body).to.deep.equal({
             success: true,
+            address: `myuser2hash@${os.hostname().toLowerCase()}`,
             id: user2,
             username: 'myuser2hash',
             scope: 'master',
@@ -332,6 +336,7 @@ describe('API Users', function () {
         expect(authResponse.body.success).to.be.true;
         expect(authResponse.body).to.deep.equal({
             success: true,
+            address: 'john@example.com',
             id: user,
             username: 'myuser2',
             scope: 'master',
