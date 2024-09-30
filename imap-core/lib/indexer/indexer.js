@@ -619,15 +619,19 @@ class Indexer {
             }
 
             let node = nodes[pos++];
-            this.attachmentStorage.create(node, (err, id) => {
+            this.attachmentStorage.create(node, (err, id, fileContentHash) => {
                 if (err) {
                     return callback(err);
                 }
                 mimeTree.attachmentMap[node.attachmentId] = id;
 
-                let attachmentInfo = maildata.attachments && maildata.attachments.find(a => a.id === node.attachmentId);
+                let attachmentInfo = maildata.attachments && maildata.attachments.find(a => a.id === node.attachmentId); // get reference to attachment info
                 if (attachmentInfo && node.body) {
                     attachmentInfo.size = node.body.length;
+                }
+
+                if (fileContentHash) {
+                    attachmentInfo.fileContentHash = fileContentHash;
                 }
 
                 return storeNode();
