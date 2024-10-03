@@ -47,7 +47,7 @@ module.exports = {
         let type = 'flags'; // currently hard coded, in the future might support other values as well, eg. X-GM-LABELS
         let range = (command.attributes[0] && command.attributes[0].value) || '';
 
-        // if arguments include extenstions at index 1, then length is 4, otherwise 3
+        // if arguments include extensions at index 1, then length is 4, otherwise 3
         let pos = command.attributes.length === 4 ? 1 : 0;
 
         let action = ((command.attributes[pos + 1] && command.attributes[pos + 1].value) || '').toString().toUpperCase();
@@ -124,7 +124,7 @@ module.exports = {
             _user: this.session.user.id.toString(),
             _mailbox: this.selected.mailbox,
             _sess: this.id,
-            _message_count: messages.lentgh,
+            _message_count: messages.length,
             _flags: flags.join(', '),
             _store_action: action,
             _silent: silent ? 'yes' : '',
@@ -157,11 +157,13 @@ module.exports = {
                 // STORE returns MODIFIED as sequence numbers, so convert UIDs to sequence list
                 if (modified && modified.length) {
                     logdata._modified = modified.length;
-                    modified = modified.map(uid => this.selected.uidList.indexOf(uid) + 1).filter(
-                        seq =>
-                            // ensure that deleted items (eg seq=0) do not end up in the list
-                            seq > 0
-                    );
+                    modified = modified
+                        .map(uid => this.selected.uidList.indexOf(uid) + 1)
+                        .filter(
+                            seq =>
+                                // ensure that deleted items (eg seq=0) do not end up in the list
+                                seq > 0
+                        );
                 }
 
                 let message = success === true ? 'STORE completed' : false;
@@ -181,8 +183,8 @@ module.exports = {
                         typeof success === 'string'
                             ? success.toUpperCase()
                             : modified && modified.length
-                                ? 'MODIFIED ' + imapTools.packMessageRange(modified)
-                                : false,
+                            ? 'MODIFIED ' + imapTools.packMessageRange(modified)
+                            : false,
                     message
                 };
 

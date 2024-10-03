@@ -29,7 +29,7 @@ let liveIndexingQueue;
 const FORCE_DISABLED_MESSAGE = 'Can not set up change streams. Not a replica set. Changes are not indexed to ElasticSearch.';
 
 class Indexer {
-    constuctor() {
+    constructor() {
         this.running = false;
     }
 
@@ -297,11 +297,11 @@ function indexingJob(esclient) {
                         .exec();
 
                     if (err1) {
-                        log.verbose('Indexing', 'Failed checking tombstone key=%s erro=%s', tombstoneTdy, err1.message);
+                        log.verbose('Indexing', 'Failed checking tombstone key=%s error=%s', tombstoneTdy, err1.message);
                     }
 
                     if (err2) {
-                        log.verbose('Indexing', 'Failed checking tombstone key=%s erro=%s', tombstoneYdy, err2.message);
+                        log.verbose('Indexing', 'Failed checking tombstone key=%s error=%s', tombstoneYdy, err2.message);
                     }
 
                     if (isDeleted1 || isDeleted2) {

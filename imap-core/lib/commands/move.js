@@ -48,7 +48,7 @@ module.exports = {
             _user: this.session.user.id.toString(),
             _mailbox: this.selected.mailbox,
             _sess: this.id,
-            _message_count: messages.lentgh
+            _message_count: messages.length
         };
 
         this._server.onMove(
