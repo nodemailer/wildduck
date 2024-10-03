@@ -592,6 +592,7 @@ describe('API tests', function () {
                 {
                     contentType: 'image/png',
                     disposition: 'inline',
+                    fileContentHash: 'SnEfXNA8Cf15ri8Zuy9xFo5xwYt1YmJqGujZnrwyEv8=',
                     filename: 'attachment-1.png',
                     hash: '6bb932138c9062004611ca0170d773e78d79154923c5daaf6d8a2f27361c33a2',
                     id: 'ATT00001',
