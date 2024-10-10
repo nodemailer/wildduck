@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.45.1](https://github.com/nodemailer/wildduck/compare/v1.45.0...v1.45.1) (2024-10-10)
+
+
+### Bug Fixes
+
+* **api-attachment:** Calculate file content hash when uploading attachment ZMS-172 ([#733](https://github.com/nodemailer/wildduck/issues/733)) ([8730ed5](https://github.com/nodemailer/wildduck/commit/8730ed58f6c7630d63e86bcdc9a755d8904d3df0))
+* **api-auth:** /preauth and /authenticate endpoints also return the default address of an user ZMS-175 ([#738](https://github.com/nodemailer/wildduck/issues/738)) ([6dac6ae](https://github.com/nodemailer/wildduck/commit/6dac6ae256ef6d4c555363591392f752cd4e51d3))
+* **api-generation:** remove "version" from apigeneration.json ZMS-160 ([#729](https://github.com/nodemailer/wildduck/issues/729)) ([971a0f1](https://github.com/nodemailer/wildduck/commit/971a0f1ba1e66c4fe2bad947d090189be605d21d))
+* **api-graylog-req:** Do not use util.inspect if value already string ZMS-174 ([#736](https://github.com/nodemailer/wildduck/issues/736)) ([1a12b03](https://github.com/nodemailer/wildduck/commit/1a12b03a838a6cc2ebba81d13a6a33a8a5591783))
+* **api&imap-mailboxes:** Added mailbox subpath and whole path max length limits to API and IMAP ZMS-169 ([#732](https://github.com/nodemailer/wildduck/issues/732)) ([ee870b9](https://github.com/nodemailer/wildduck/commit/ee870b9fed8a344242349fe36581f4894f190c06))
+* **handler-filter:** Filter handler response includes file content sha256 hash ZMS-176 ([#739](https://github.com/nodemailer/wildduck/issues/739)) ([37374be](https://github.com/nodemailer/wildduck/commit/37374be43903737f6c4710537b6fe281fa3ab434))
+* **idle:** Fixed IDLE bug with Outlook ([f2c8545](https://github.com/nodemailer/wildduck/commit/f2c8545293277b382b2d357671e9649e9f7c3b9e))
+* **log:** Log validation information if command schema validation fails ([1354bf0](https://github.com/nodemailer/wildduck/commit/1354bf0c0508355f77d1fccf8877148513997b29))
+
 ## [1.45.0](https://github.com/nodemailer/wildduck/compare/v1.44.0...v1.45.0) (2024-08-01)
 
 
