@@ -505,7 +505,13 @@ class IMAPConnection extends EventEmitter {
         }
 
         if (!command.final) {
-            currentCommand.append(command, callback);
+            currentCommand.append(command, (err, ...args) => {
+                if (err) {
+                    // cancel pending command
+                    this._currentCommand = false;
+                }
+                callback(err, ...args);
+            });
         } else {
             this._currentCommand = false;
             currentCommand.end(command, callback);

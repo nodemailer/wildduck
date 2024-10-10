@@ -147,6 +147,21 @@ class IMAPCommand {
                 if (command.expecting > maxAllowed) {
                     // APPENDLIMIT response for too large messages
                     // TOOBIG: https://tools.ietf.org/html/rfc4469#section-4.2
+
+                    this.connection?.loggelf({
+                        short_message: '[TOOBIG] Too big literal used',
+                        _error: 'toobig',
+                        _service: 'imap',
+                        _command: this.command,
+                        _payload: this.payload ? (this.payload.length < 256 ? this.payload : this.payload.toString().substring(0, 256) + '...') : command.value,
+                        _literal_expecting: command.expecting,
+                        _literal_allowed: maxAllowed,
+                        _sess: this.connection?.session?.id,
+                        _user: this.connection?.user?.id,
+                        _cid: this.connection?.id,
+                        _ip: this.remoteAddress
+                    });
+
                     this.connection.send(this.tag + ' NO [TOOBIG] Literal too large');
                 } else {
                     this.connection.send(this.tag + ' NO Literal too large');
