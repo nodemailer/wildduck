@@ -223,7 +223,7 @@ function parseQueryTerms(terms, uidList) {
                 break;
 
             case 'or':
-                // ensure that value is alwas an array
+                // ensure that value is always an array
                 response.value = [].concat(curTerm.slice(1) || []);
                 break;
 

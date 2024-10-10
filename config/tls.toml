@@ -1,4 +1,4 @@
-# Default TLS keys (can be overriden by individual services)
+# Default TLS keys (can be overridden by individual services)
 #key="/path/to/server/key.pem"
 #ca=["/path/to/server/ca1.pem", "/path/to/server/ca2.pem"]
 #cert="/path/to/server/cert.pem"

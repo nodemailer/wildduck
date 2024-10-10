@@ -26,7 +26,7 @@
 -   `FileNotFound`: This file does not exist
 -   `InsecurePasswordError`: Provided password was found from breached passwords list
 -   `ERRCOMPOSE`: Could not queue message for delivery
--   `KeyGenereateError`: Failed to generate private or public key
+-   `KeyGenerateError`: Failed to generate private or public key
 -   `InternalConfigError`: Invalid encryption settings
 -   `HashError`
 -   `UserUpdateFail`: Could not update user

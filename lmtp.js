@@ -57,7 +57,7 @@ const serverOptions = {
         // reset session entries
         session.users = [];
 
-        // accept alls sender addresses
+        // accept all sender addresses
         return callback();
     },
 
