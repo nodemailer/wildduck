@@ -148,8 +148,15 @@ class IMAPCommand {
                     // APPENDLIMIT response for too large messages
                     // TOOBIG: https://tools.ietf.org/html/rfc4469#section-4.2
 
+                    let errorMessage;
+                    if (this.command === 'APPEND') {
+                        errorMessage = `Message size exceeds allowed limit: attempted ${command.expecting} bytes, but maximum allowed is ${maxAllowed} bytes.`;
+                    } else {
+                        errorMessage = 'Literal too large';
+                    }
+
                     this.connection?.loggelf({
-                        short_message: '[TOOBIG] Too big literal used',
+                        short_message: `[TOOBIG] ${errorMessage}`,
                         _error: 'toobig',
                         _service: 'imap',
                         _command: this.command,
@@ -162,9 +169,9 @@ class IMAPCommand {
                         _ip: this.remoteAddress
                     });
 
-                    this.connection.send(this.tag + ' NO [TOOBIG] Literal too large');
+                    this.connection.send(`${this.tag} NO [TOOBIG] ${errorMessage}`);
                 } else {
-                    this.connection.send(this.tag + ' NO Literal too large');
+                    this.connection.send(`${this.tag} NO Literal too large`);
                 }
 
                 let err = new Error('Literal too large');
