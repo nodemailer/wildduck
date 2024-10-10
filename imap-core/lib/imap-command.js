@@ -156,8 +156,9 @@ class IMAPCommand {
                     }
 
                     this.connection?.loggelf({
-                        short_message: `[TOOBIG] ${errorMessage}`,
+                        short_message: `[TOOBIG] Literal too large`,
                         _error: 'toobig',
+                        _error_response: `${this.tag} NO [TOOBIG] ${errorMessage}`,
                         _service: 'imap',
                         _command: this.command,
                         _payload: this.payload ? (this.payload.length < 256 ? this.payload : this.payload.toString().substring(0, 256) + '...') : command.value,
