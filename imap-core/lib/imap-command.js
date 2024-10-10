@@ -385,6 +385,12 @@ class IMAPCommand {
             let err = new Error('Not enough arguments provided');
             err.responseCode = 400;
             err.code = 'InvalidArguments';
+            err.meta = {
+                validation_command: this.command,
+                validation_schema: JSON.stringify(schema || null).substring(0, 255),
+                validation_minArgs: minArgs,
+                validation_attributes: JSON.stringify(parsed.attributes || null).substring(0, 255)
+            };
             return callback(err);
         }
 
