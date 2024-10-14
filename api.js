@@ -355,7 +355,7 @@ server.use(async (req, res) => {
                         req.role = tokenData.role;
                         req.user = tokenData.user;
 
-                        // make a reference to original method, otherwise might be overrided
+                        // make a reference to original method, otherwise might be overridden
                         let setAuthToken = userHandler.setAuthToken.bind(userHandler);
 
                         req.accessToken = {

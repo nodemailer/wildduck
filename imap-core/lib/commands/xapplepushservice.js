@@ -116,7 +116,7 @@ module.exports = {
             }
         }
 
-        // Make sure all required keys (exept mailboxes) are present
+        // Make sure all required keys (except mailboxes) are present
         for (let requiredKey of requiredKeys) {
             if (!data[requiredKey] && requiredKey !== 'mailboxes') {
                 return callback(null, {

@@ -75,7 +75,7 @@ wduck-users() {
 }
 ```
 
-### Query user informations
+### Query user information
 
 ```
   curl -i http://localhost:8080/users/$USERID

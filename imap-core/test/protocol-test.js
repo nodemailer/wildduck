@@ -47,7 +47,7 @@ describe('IMAP Protocol integration tests', function () {
     });
 
     describe('CAPABILITY', function () {
-        it('should list capabilites', function (done) {
+        it('should list capabilities', function (done) {
             let cmds = ['T1 CAPABILITY', 'T2 LOGOUT'];
 
             testClient(

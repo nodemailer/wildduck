@@ -18,7 +18,7 @@ export NC='\033[0m' # No Color
 # GLOBAL FUNCTIONS
 
 fun_get_password(){
-# If we are not root, we should aquire the sudo password
+# If we are not root, we should acquire the sudo password
 if [ `whoami` == 'root' ]
   then
     PASSWORD=''

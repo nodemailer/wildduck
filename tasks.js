@@ -213,7 +213,7 @@ module.exports.start = callback => {
         ensureCollections(() => {
             deleteIndexes(() => {
                 ensureIndexes(() => {
-                    // Do not release the indexing lock immediatelly
+                    // Do not release the indexing lock immediately
                     setTimeout(() => {
                         gcLock.releaseLock(lock, err => {
                             if (err) {
