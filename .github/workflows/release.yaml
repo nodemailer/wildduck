@@ -84,3 +84,6 @@ jobs:
                       ${{ github.repository }}:${{needs.release_please.outputs.major}}.${{needs.release_please.outputs.minor}}.${{needs.release_please.outputs.patch}}
                       ${{ github.repository }}:${{needs.release_please.outputs.major}}.${{needs.release_please.outputs.minor}}
                       ${{ github.repository }}:${{needs.release_please.outputs.major}}
+                      ghcr.io/${{ github.repository }}:${{needs.release_please.outputs.major}}.${{needs.release_please.outputs.minor}}.${{needs.release_please.outputs.patch}}
+                      ghcr.io/${{ github.repository }}:${{needs.release_please.outputs.major}}.${{needs.release_please.outputs.minor}}
+                      ghcr.io/${{ github.repository }}:${{needs.release_please.outputs.major}}
