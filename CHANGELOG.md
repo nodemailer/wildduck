@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.45.3](https://github.com/nodemailer/wildduck/compare/v1.45.2...v1.45.3) (2024-11-05)
+
+
+### Bug Fixes
+
+* **bimi:** Added 'type' for BIMI information schema ([61f03dc](https://github.com/nodemailer/wildduck/commit/61f03dce8f09e23218b4cd90e88568a5cda3c8ff))
+
 ## [1.45.2](https://github.com/nodemailer/wildduck/compare/v1.45.1...v1.45.2) (2024-11-05)
 
 
