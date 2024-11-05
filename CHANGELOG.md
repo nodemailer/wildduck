@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.45.2](https://github.com/nodemailer/wildduck/compare/v1.45.1...v1.45.2) (2024-11-05)
+
+
+### Bug Fixes
+
+* **deps:** Upgraded mailauth for BIMI CMC support ([20f8e9a](https://github.com/nodemailer/wildduck/commit/20f8e9a39f14feda0facfa2ba5c4edb0a550811a))
+* **IMAP:** Use a non-round number for socket timeout to decrease race conditions where both the server and the client wait for the same time ([686cd86](https://github.com/nodemailer/wildduck/commit/686cd8644c34c11099752d0d26430080b649edab))
+
 ## [1.45.1](https://github.com/nodemailer/wildduck/compare/v1.45.0...v1.45.1) (2024-10-28)
 
 
