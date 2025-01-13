@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.45.4](https://github.com/nodemailer/wildduck/compare/v1.45.3...v1.45.4) (2025-01-13)
+
+
+### Bug Fixes
+
+* **docs-client-gen:** add more readable operationId and response types, fix deps ZMS-188 ([#759](https://github.com/nodemailer/wildduck/issues/759)) ([978ce06](https://github.com/nodemailer/wildduck/commit/978ce0685f3aa2e10f3c3407bb1b9e732e9cf5f2))
+* **encrypted-mailboxes:** Add functionality of singular encrypted mailboxes ZMS-181 ([#758](https://github.com/nodemailer/wildduck/issues/758)) ([17bca3e](https://github.com/nodemailer/wildduck/commit/17bca3e9ed21942e37765083d0ac8d5e46379131))
+* **imap-indexer:** fix fileContentHash error in imap indexer, check for attachmentInfo beforehand ZMS-186 ([#756](https://github.com/nodemailer/wildduck/issues/756)) ([7daa0e3](https://github.com/nodemailer/wildduck/commit/7daa0e35d5462c46ff4228638f2e9e5f30ed880d))
+* **imap-socket-hang:** When allocating IMAP connection, check if socket is still alive ZMS-196 ([#772](https://github.com/nodemailer/wildduck/issues/772)) ([8feae38](https://github.com/nodemailer/wildduck/commit/8feae388367ca8804bb009a8d745e79c64aa9d25))
+
 ## [1.45.3](https://github.com/nodemailer/wildduck/compare/v1.45.2...v1.45.3) (2024-11-05)
 
 
