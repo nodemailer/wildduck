@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.45.5](https://github.com/nodemailer/wildduck/compare/v1.45.4...v1.45.5) (2025-01-16)
+
+
+### Bug Fixes
+
+* **general-docs-docker:** fix docker general documentation ZMS-197 ([#774](https://github.com/nodemailer/wildduck/issues/774)) ([284ba63](https://github.com/nodemailer/wildduck/commit/284ba638bd633699c8792ba789722dfeb1bdef20))
+
 ## [1.45.4](https://github.com/nodemailer/wildduck/compare/v1.45.3...v1.45.4) (2025-01-13)
 
 
