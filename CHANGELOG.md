@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.45.5](https://github.com/nodemailer/wildduck/compare/v1.45.4...v1.45.5) (2025-02-05)
+
+
+### Bug Fixes
+
+* **api-getMessagesList:** getMessages list, add attachmentsList to response for easier attachment handling ZMS-195 ([#773](https://github.com/nodemailer/wildduck/issues/773)) ([959c707](https://github.com/nodemailer/wildduck/commit/959c70734b2b2c09d232aa21fedf64e8c4aadc20))
+* fixed edge case where `session` not set and uncaught exception occurs ([#780](https://github.com/nodemailer/wildduck/issues/780)) ([8244559](https://github.com/nodemailer/wildduck/commit/82445592301047d0b43992106091d10456ae5611))
+* **general-docs-docker:** fix docker general documentation ZMS-197 ([#774](https://github.com/nodemailer/wildduck/issues/774)) ([284ba63](https://github.com/nodemailer/wildduck/commit/284ba638bd633699c8792ba789722dfeb1bdef20))
+
 ## [1.45.4](https://github.com/nodemailer/wildduck/compare/v1.45.3...v1.45.4) (2025-01-13)
 
 
