@@ -10,7 +10,7 @@
   <a href="https://travis-ci.org/github/nodemailer/wildduck" target="_blank"><img src="https://img.shields.io/travis/nodemailer/wildduck" alt="build" /></a>
   <a href="https://david-dm.org/nodemailer/wildduck" target="_blank"><img src="https://img.shields.io/david/nodemailer/wildduck" alt="dependencies" /></a>
   <a href="https://david-dm.org/nodemailer/wildduck?type=dev" target="_blank"><img src="https://img.shields.io/david/dev/nodemailer/wildduck?label=devDependencies" alt="devDependencies" /></a>
-  <a href="https://snyk.io/test/github/nodemailer/wildduck" target="_blank"><img src="https://img.shields.io/snyk/vulnerabilities/github/nodemailer/wildduck" alt="Vulnerabilities" /></a>
+  <a href="https://snyk.io/test/github/nodemailer/wildduck" target="_blank"><img src="https://snyk.io/test/github/nodemailer/wildduck/badge.svg" alt="Vulnerabilities" /></a>
   <a href="https://hub.docker.com/r/nodemailer/wildduck" target="_blank"><img src="https://img.shields.io/docker/image-size/nodemailer/wildduck?label=docker%20image" alt="docker" /></a>
   <a href="https://gitter.im/nodemailer/wildduck" target="_blank"><img src="https://img.shields.io/gitter/room/nodemailer/wildduck?color=orange" alt="gitter" /></a>
   <a href="https://docs.wildduck.email/api/openapi.yml"><img src="https://img.shields.io/swagger/valid/3.0?specUrl=https%3A%2F%2Fdocs.wildduck.email%2Fapi%2Fopenapi.yml"></a>
