@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.51.0](https://github.com/zone-eu/wildduck/compare/v1.50.2...v1.51.0) (2026-09-06)
+
+
+### Features
+
+* **mcp:** ZMS-96: add read-only MCP service ([#1161](https://github.com/zone-eu/wildduck/issues/1161)) ([990b4f0](https://github.com/zone-eu/wildduck/commit/990b4f00a1b2952e31e3fc622a9a45ad94dbf8de))
+
 ## [1.50.2](https://github.com/zone-eu/wildduck/compare/v1.50.1...v1.50.2) (2026-08-30)
 
 
